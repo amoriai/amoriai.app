@@ -1,148 +1,187 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 
 type Locale = "fr" | "en" | "es";
 
-const STRINGS: Record<Locale, any> = {
+const STRINGS: Record<
+  Locale,
+  {
+    brandTagline: string;
+    nav: { home: string; features: string; pricing: string };
+    navLogin: string;
+    navSignup: string;
+    heroKicker: string;
+    heroTitle: string;
+    heroSubtitle: string;
+    heroPrimary: string;
+    heroSupport: string;
+    heroNoAccount: string;
+    heroAlready: string;
+    langNote: string;
+    energiesTitle: string;
+    energies: { id: string; title: string; description: string }[];
+    chooseEnergy: string;
+    pricingTitle: string;
+    pricingText: string;
+    pricingCta: string;
+    videoCaption: string;
+    footerCopy: string;
+  }
+> = {
   fr: {
     brandTagline: "Partenaire IA bienveillant·e • FR / EN / ES",
     nav: { home: "Accueil", features: "Fonctionnalités", pricing: "Tarifs" },
-    heroEyebrow: "Bienvenue sur AmoriA.app",
+    navLogin: "Me connecter",
+    navSignup: "Créer mon compte AmoriA",
+    heroKicker: "BIENVENUE SUR AMORIA.APP",
     heroTitle: "Votre partenaire IA bienveillant·e & multilingue.",
     heroSubtitle:
       "AmoriA est une présence douce, disponible 24/7 pour discuter, réfléchir avec vous, poser les bonnes questions et vous aider à mieux comprendre vos émotions.",
-    heroNote:
+    heroPrimary: "Commencer avec AmoriA",
+    heroSupport:
       "Optimisée pour les échanges profonds, les journaux émotionnels et le coaching doux du quotidien.",
-    heroPrimary: "Créer mon compte AmoriA",
-    heroSecondary: "Me connecter",
-    heroLangLine: "AmoriA vous accueille en français, anglais ou espagnol.",
-    personasTitle: "Choisissez l’énergie qui vous ressemble",
-    personas: [
+    heroNoAccount: "Pas encore de compte ?",
+    heroAlready: "Déjà inscrit·e ?",
+    langNote: "AmoriA vous accueille en français, anglais ou espagnol.",
+    energiesTitle: "Choisissez l’énergie qui vous ressemble",
+    energies: [
       {
-        key: "analytique",
-        title: "AmorIA Analytique",
-        desc: "Pose des questions précises, vous aide à décortiquer vos pensées et à prendre des décisions rationnelles, sans perdre l’empathie.",
-        image: "/amoria-analyste.png",
+        id: "analytic",
+        title: "AmoriA Analytique",
+        description:
+          "Pose des questions précises, vous aide à décortiquer vos pensées et à prendre des décisions rationnelles, sans perdre l’empathie.",
       },
       {
-        key: "artiste",
-        title: "AmorIA Artiste",
-        desc: "Parfaite pour brainstormer des projets créatifs, écrire, imaginer des univers et transformer vos idées en véritables œuvres.",
-        image: "/amoria-artiste.png",
+        id: "artist",
+        title: "AmoriA Artiste",
+        description:
+          "Parfaite pour brainstormer des projets créatifs, écrire, imaginer des univers et transformer vos idées en véritables œuvres.",
       },
       {
-        key: "lumineuse",
-        title: "AmorIA Lumineuse",
-        desc: "Énergie douce, optimiste et chaleureuse. Idéale pour vous remonter le moral après une journée difficile.",
-        image: "/amoria-blonde.png",
+        id: "bright",
+        title: "AmoriA Lumineuse",
+        description:
+          "Énergie douce, optimiste et chaleureuse. Idéale pour vous remonter le moral après une journée difficile.",
       },
       {
-        key: "intuitive",
-        title: "AmorIA Intuitive",
-        desc: "Une présence plus introspective, tournée vers l’écoute, les ressentis et les questionnements émotionnels profonds.",
-        image: "/amoria-rousse.png",
+        id: "intuitive",
+        title: "AmoriA Intuitive",
+        description:
+          "Une présence plus introspective, tournée vers l’écoute, les ressentis et les questionnements émotionnels profonds.",
       },
     ],
-    personaCta: "Choisir cette énergie",
-    footerLeft: "© 2025 AmoriA.app",
-    footerRight: "Créé avec bienveillance au Québec",
-    authHint:
-      "Pas encore de compte ? Créez votre espace AmoriA en quelques clics. Déjà inscrit·e ? Connectez-vous pour retrouver vos échanges.",
+    chooseEnergy: "Choisir cette énergie",
+    pricingTitle: "Des tarifs simples & transparents",
+    pricingText:
+      "Les formules détaillées arrivent bientôt. En attendant, vous pouvez déjà réserver votre accès à la beta privée.",
+    pricingCta: "Être informé·e du lancement",
+    videoCaption: "AmoriA est disponible en français, anglais et espagnol.",
+    footerCopy: "© 2025 AmoriA.app",
   },
   en: {
     brandTagline: "Caring AI partner • FR / EN / ES",
     nav: { home: "Home", features: "Features", pricing: "Pricing" },
-    heroEyebrow: "Welcome to AmoriA.app",
+    navLogin: "Log in",
+    navSignup: "Create my AmoriA account",
+    heroKicker: "WELCOME TO AMORIA.APP",
     heroTitle: "Your caring & multilingual AI partner.",
     heroSubtitle:
       "AmoriA is a gentle 24/7 presence to talk with, reflect with, ask better questions and help you understand your emotions.",
-    heroNote:
+    heroPrimary: "Start with AmoriA",
+    heroSupport:
       "Designed for deep conversations, emotional journaling and soft everyday coaching.",
-    heroPrimary: "Create my AmoriA account",
-    heroSecondary: "Log in",
-    heroLangLine: "AmoriA is available in French, English and Spanish.",
-    personasTitle: "Choose the energy that feels like you",
-    personas: [
+    heroNoAccount: "No account yet?",
+    heroAlready: "Already registered?",
+    langNote: "AmoriA is available in French, English and Spanish.",
+    energiesTitle: "Choose the energy that fits you best",
+    energies: [
       {
-        key: "analytical",
-        title: "AmorIA Analytical",
-        desc: "Asks precise questions, helps you unpack your thoughts and make rational decisions without losing empathy.",
-        image: "/amoria-analyste.png",
+        id: "analytic",
+        title: "Analytic AmoriA",
+        description:
+          "Asks precise questions, helps you unpack your thoughts and make rational decisions without losing empathy.",
       },
       {
-        key: "creative",
-        title: "AmorIA Creative",
-        desc: "Perfect to brainstorm creative projects, write stories, imagine new worlds and turn your ideas into reality.",
-        image: "/amoria-artiste.png",
+        id: "artist",
+        title: "Creative AmoriA",
+        description:
+          "Perfect to brainstorm creative projects, write, imagine new worlds and turn ideas into real outcomes.",
       },
       {
-        key: "bright",
-        title: "AmorIA Bright",
-        desc: "Soft, optimistic and warm energy. Ideal when you need comfort and a little boost after a hard day.",
-        image: "/amoria-blonde.png",
+        id: "bright",
+        title: "Bright AmoriA",
+        description:
+          "Soft, optimistic and warm energy. Ideal to lift your mood after a difficult day.",
       },
       {
-        key: "intuitive",
-        title: "AmorIA Intuitive",
-        desc: "More introspective, focused on listening, feelings and deeper emotional questions.",
-        image: "/amoria-rousse.png",
+        id: "intuitive",
+        title: "Intuitive AmoriA",
+        description:
+          "More introspective presence, focused on listening, feelings and deep emotional questions.",
       },
     ],
-    personaCta: "Choose this energy",
-    footerLeft: "© 2025 AmoriA.app",
-    footerRight: "Created with care in Québec",
-    authHint:
-      "No account yet? Create your AmoriA space in a few clicks. Already registered? Log in to continue your conversations.",
+    chooseEnergy: "Choose this energy",
+    pricingTitle: "Simple & transparent pricing",
+    pricingText:
+      "Detailed plans are coming soon. Meanwhile, you can already reserve your spot for the private beta.",
+    pricingCta: "Get notified about the launch",
+    videoCaption: "AmoriA is available in French, English and Spanish.",
+    footerCopy: "© 2025 AmoriA.app",
   },
   es: {
-    brandTagline: "Compañerx IA amable • FR / EN / ES",
+    brandTagline: "Compañerx de IA amable • FR / EN / ES",
     nav: { home: "Inicio", features: "Funciones", pricing: "Precios" },
-    heroEyebrow: "Bienvenid·x a AmoriA.app",
+    navLogin: "Iniciar sesión",
+    navSignup: "Crear mi cuenta AmoriA",
+    heroKicker: "BIENVENIDx A AMORIA.APP",
     heroTitle: "Tu compañerx de IA amable y multilingüe.",
     heroSubtitle:
-      "AmoriA es una presencia suave, disponible 24/7 para conversar contigo, reflexionar, hacerte mejores preguntas y ayudarte a comprender tus emociones.",
-    heroNote:
-      "Optimizada para conversaciones profundas, diarios emocionales y acompañamiento cotidiano.",
-    heroPrimary: "Crear mi cuenta AmoriA",
-    heroSecondary: "Iniciar sesión",
-    heroLangLine: "AmoriA te acompaña en francés, inglés y español.",
-    personasTitle: "Elige la energía que va contigo",
-    personas: [
+      "AmoriA es una presencia suave, disponible 24/7 para conversar contigo, reflexionar, hacer mejores preguntas y ayudarte a entender tus emociones.",
+    heroPrimary: "Empezar con AmoriA",
+    heroSupport:
+      "Pensada para conversaciones profundas, diarios emocionales y acompañamiento suave del día a día.",
+    heroNoAccount: "¿Todavía sin cuenta?",
+    heroAlready: "¿Ya tienes cuenta?",
+    langNote: "AmoriA te recibe en francés, inglés o español.",
+    energiesTitle: "Elige la energía que más se parece a ti",
+    energies: [
       {
-        key: "analitica",
-        title: "AmorIA Analítica",
-        desc: "Hace preguntas precisas, te ayuda a ordenar tus ideas y tomar decisiones racionales sin perder la empatía.",
-        image: "/amoria-analyste.png",
+        id: "analytic",
+        title: "AmoriA Analítica",
+        description:
+          "Hace preguntas precisas y te ayuda a desarmar tus pensamientos y tomar decisiones racionales sin perder empatía.",
       },
       {
-        key: "artista",
-        title: "AmorIA Artista",
-        desc: "Perfecta para proyectos creativos, escribir historias, imaginar universos y dar forma a tus ideas.",
-        image: "/amoria-artiste.png",
+        id: "artist",
+        title: "AmoriA Creativa",
+        description:
+          "Perfecta para proyectos creativos, escribir, imaginar universos nuevos y convertir ideas en realidad.",
       },
       {
-        key: "luminosa",
-        title: "AmorIA Luminosa",
-        desc: "Energía suave, optimista y cálida. Ideal para levantar el ánimo después de un día difícil.",
-        image: "/amoria-blonde.png",
+        id: "bright",
+        title: "AmoriA Lumínica",
+        description:
+          "Energía suave, optimista y cálida. Ideal para levantarte el ánimo después de un día difícil.",
       },
       {
-        key: "intuitiva",
-        title: "AmorIA Intuitiva",
-        desc: "Más introspectiva, centrada en la escucha, las sensaciones y las preguntas emocionales profundas.",
-        image: "/amoria-rousse.png",
+        id: "intuitive",
+        title: "AmoriA Intuitiva",
+        description:
+          "Presencia más introspectiva, centrada en la escucha, las sensaciones y las preguntas emocionales profundas.",
       },
     ],
-    personaCta: "Elegir esta energía",
-    footerLeft: "© 2025 AmoriA.app",
-    footerRight: "Creado con cariño en Quebec",
-    authHint:
-      "¿Todavía no tienes cuenta? Crea tu espacio AmoriA en pocos clics. ¿Ya estás registrad·x? Inicia sesión para retomar tus conversaciones.",
+    chooseEnergy: "Elegir esta energía",
+    pricingTitle: "Precios simples y transparentes",
+    pricingText:
+      "Los planes detallados llegarán pronto. Mientras tanto, ya puedes reservar tu acceso a la beta privada.",
+    pricingCta: "Avisarme cuando se lance",
+    videoCaption: "AmoriA está disponible en francés, inglés y español.",
+    footerCopy: "© 2025 AmoriA.app",
   },
 };
 
-export default function Home() {
+export default function HomePage() {
   const [locale, setLocale] = useState<Locale>("fr");
   const t = STRINGS[locale];
 
@@ -154,277 +193,264 @@ export default function Home() {
       : "/amoria_es.mp4";
 
   return (
-    <div className="amoria-page">
-      {/* NAVBAR */}
-      <header className="amoria-nav-wrapper">
-        <div className="amoria-nav">
-          <div className="amoria-brand">
+    <main className="amoria-root">
+      {/* HEADER */}
+      <header className="amoria-header">
+        <div className="amoria-header-left">
+          <div className="amoria-logo-mark">
             <img
               src="/AmorIA_logo_transparent.png"
-              alt="AmoriA logo"
-              className="amoria-logo"
+              alt="Logo AmoriA.app"
+              className="amoria-logo-img"
             />
-            <div className="amoria-brand-text">
-              <span className="amoria-brand-name">AmoriA.app</span>
-              <span className="amoria-brand-tagline">{t.brandTagline}</span>
-            </div>
+          </div>
+          <div className="amoria-logo-text">
+            <div className="amoria-logo-title">AmorIA.app</div>
+            <div className="amoria-logo-tagline">{t.brandTagline}</div>
+          </div>
+        </div>
+
+        <nav className="amoria-nav">
+          <a href="#hero" className="amoria-nav-link">
+            {t.nav.home}
+          </a>
+          <a href="#features" className="amoria-nav-link">
+            {t.nav.features}
+          </a>
+          <a href="#pricing" className="amoria-nav-link">
+            {t.nav.pricing}
+          </a>
+        </nav>
+
+        <div className="amoria-nav-right">
+          <div className="amoria-lang-switch">
+            {(["fr", "en", "es"] as Locale[]).map((code) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => setLocale(code)}
+                className={
+                  "amoria-lang-pill" +
+                  (locale === code ? " amoria-lang-pill--active" : "")
+                }
+              >
+                {code.toUpperCase()}
+              </button>
+            ))}
           </div>
 
-          <nav className="amoria-nav-links">
-            <a href="#top" className="amoria-nav-link">
-              {t.nav.home}
-            </a>
-            <a href="#features" className="amoria-nav-link">
-              {t.nav.features}
-            </a>
-            <a href="#pricing" className="amoria-nav-link">
-              {t.nav.pricing}
-            </a>
-          </nav>
-
-          <div className="amoria-nav-right">
-            <div className="amoria-lang-switch">
-              {(["fr", "en", "es"] as Locale[]).map((code) => (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => setLocale(code)}
-                  className={
-                    "amoria-lang-pill" +
-                    (locale === code ? " amoria-lang-pill--active" : "")
-                  }
-                >
-                  {code.toUpperCase()}
-                </button>
-              ))}
-            </div>
+          <div className="amoria-auth-nav">
+            <button type="button" className="amoria-nav-btn amoria-nav-btn--ghost">
+              {t.navLogin}
+            </button>
+            <button
+              type="button"
+              className="amoria-nav-btn amoria-nav-btn--primary"
+            >
+              {t.navSignup}
+            </button>
           </div>
         </div>
       </header>
 
-      {/* MAIN CONTENT */}
-      <main className="amoria-main" id="top">
-        {/* HERO */}
-        <section className="amoria-hero">
-          <div className="amoria-hero-grid">
-            <div className="amoria-hero-text">
-              <p className="amoria-hero-eyebrow">{t.heroEyebrow}</p>
-              <h1 className="amoria-hero-title">{t.heroTitle}</h1>
-              <p className="amoria-hero-subtitle">{t.heroSubtitle}</p>
+      {/* HERO */}
+      <section id="hero" className="amoria-hero">
+        <div className="amoria-hero-left">
+          <p className="amoria-hero-kicker">{t.heroKicker}</p>
+          <h1 className="amoria-hero-title">{t.heroTitle}</h1>
+          <p className="amoria-hero-subtitle">{t.heroSubtitle}</p>
 
-              <div className="amoria-hero-actions">
-                <button type="button" className="amoria-btn amoria-btn--primary">
-                  {t.heroPrimary}
-                </button>
-                <button
-                  type="button"
-                  className="amoria-btn amoria-btn--secondary"
-                >
-                  {t.heroSecondary}
-                </button>
-              </div>
-
-              <p className="amoria-hero-note">{t.heroNote}</p>
-              <p className="amoria-auth-hint">{t.authHint}</p>
-            </div>
-
-            <div className="amoria-hero-media">
-              <div className="amoria-hero-video-wrapper">
-                <div className="amoria-hero-video-border">
-                  <video
-                    className="amoria-hero-video"
-                    src={videoSrc}
-                    controls
-                    playsInline
-                    poster="/amoria-rousse.png"
-                  >
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
-                <p className="amoria-hero-langline">{t.heroLangLine}</p>
-              </div>
-            </div>
+          <div className="amoria-hero-actions">
+            <button
+              type="button"
+              className="amoria-btn amoria-btn--primary amoria-btn--big"
+            >
+              {t.heroPrimary}
+            </button>
           </div>
-        </section>
 
-        {/* PERSONAS */}
-        <section className="amoria-section amoria-section-personas" id="features">
-          <h2 className="amoria-section-title">{t.personasTitle}</h2>
+          <p className="amoria-hero-support">{t.heroSupport}</p>
+          <p className="amoria-hero-note">{t.langNote}</p>
+        </div>
 
-          <div className="amoria-personas-grid">
-            {t.personas.map((persona: any) => (
-              <article key={persona.key} className="amoria-persona-card">
-                <div className="amoria-persona-image-wrapper">
+        <div className="amoria-hero-right">
+          <div className="amoria-video-frame">
+            <video
+              className="amoria-video"
+              src={videoSrc}
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              poster="/amoria-m-romantique.png"
+            />
+          </div>
+          <p className="amoria-video-caption">{t.videoCaption}</p>
+        </div>
+      </section>
+
+      {/* ENERGIES */}
+      <section id="features" className="amoria-section">
+        <h2 className="amoria-section-title">{t.energiesTitle}</h2>
+        <div className="amoria-card-grid">
+          {t.energies.map((energy) => {
+            const imageSrc =
+              energy.id === "analytic"
+                ? "/amoria-analyste.png"
+                : energy.id === "artist"
+                ? "/amoria-artiste.png"
+                : energy.id === "bright"
+                ? "/amoria-blonde.png"
+                : "/amoria-rousse.png";
+
+            return (
+              <article key={energy.id} className="amoria-card">
+                <div className="amoria-card-image-wrapper">
                   <img
-                    src={persona.image}
-                    alt={persona.title}
-                    className="amoria-persona-image"
+                    src={imageSrc}
+                    alt={energy.title}
+                    className="amoria-card-image"
                   />
                 </div>
-                <div className="amoria-persona-body">
-                  <h3 className="amoria-persona-title">{persona.title}</h3>
-                  <p className="amoria-persona-desc">{persona.desc}</p>
+                <div className="amoria-card-body">
+                  <h3 className="amoria-card-title">{energy.title}</h3>
+                  <p className="amoria-card-text">{energy.description}</p>
                   <button
                     type="button"
-                    className="amoria-btn amoria-btn--ghost"
+                    className="amoria-btn amoria-btn--ghost amoria-btn--full"
                   >
-                    {t.personaCta}
+                    {t.chooseEnergy}
                   </button>
                 </div>
               </article>
-            ))}
-          </div>
-        </section>
+            );
+          })}
+        </div>
+      </section>
 
-        {/* PLACEHOLDER TARIFS */}
-        <section className="amoria-section" id="pricing">
-          <h2 className="amoria-section-title">
-            {locale === "fr"
-              ? "Tarifs simples & transparents"
-              : locale === "en"
-              ? "Simple & transparent pricing"
-              : "Precios simples y transparentes"}
-          </h2>
-          <p className="amoria-section-subtitle">
-            {locale === "fr"
-              ? "Les plans détaillés arrivent bientôt. En attendant, vous pouvez déjà réserver votre accès à la beta privée."
-              : locale === "en"
-              ? "Detailed plans are coming soon. For now, you can reserve your spot for the private beta."
-              : "Los planes detallados llegarán pronto. Mientras tanto, puedes reservar tu acceso a la beta privada."}
-          </p>
-          <div className="amoria-pricing-placeholder">
-            <button className="amoria-btn amoria-btn--primary" type="button">
-              {locale === "fr"
-                ? "Être informé·e du lancement"
-                : locale === "en"
-                ? "Get notified when we launch"
-                : "Quiero saber cuándo se lanza"}
-            </button>
-          </div>
-        </section>
-      </main>
+      {/* PRICING */}
+      <section id="pricing" className="amoria-section amoria-section--pricing">
+        <h2 className="amoria-section-title">{t.pricingTitle}</h2>
+        <p className="amoria-section-text">{t.pricingText}</p>
+        <button
+          type="button"
+          className="amoria-btn amoria-btn--primary amoria-btn--medium"
+        >
+          {t.pricingCta}
+        </button>
+      </section>
 
       {/* FOOTER */}
       <footer className="amoria-footer">
-        <div className="amoria-footer-inner">
-          <span>{t.footerLeft}</span>
-          <span>•</span>
-          <span>{t.footerRight} ♡</span>
-        </div>
+        <span>{t.footerCopy}</span>
       </footer>
 
       {/* STYLES */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
-          --amoria-bg-elevated: #020617;
-          --amoria-surface: #020617;
-          --amoria-surface-soft: #020617;
+          --amoria-bg-elevated: #02081f;
           --amoria-border-subtle: rgba(148, 163, 184, 0.35);
           --amoria-text-main: #e5e7eb;
           --amoria-text-muted: #9ca3af;
-          --amoria-accent: #fb7185;
-          --amoria-accent-2: #6366f1;
-          --amoria-pill: #0f172a;
-          --amoria-card-bg: #020617;
+          --amoria-accent: #fb37ff;
+          --amoria-accent-2: #ff6b9c;
+          --amoria-accent-soft: rgba(251, 55, 255, 0.12);
         }
 
         body {
           margin: 0;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-            sans-serif;
-          background: radial-gradient(circle at top, #0f172a 0, #020617 55%);
+          padding: 0;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+            "Helvetica Neue", Arial, sans-serif;
+          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
           color: var(--amoria-text-main);
         }
 
-        .amoria-page {
+        .amoria-root {
           min-height: 100vh;
-          background: radial-gradient(circle at top, #0f172a 0, #020617 55%);
+          background: radial-gradient(circle at top left, #111827 0, #020617 55%, #000 100%);
           color: var(--amoria-text-main);
+          padding-bottom: 3rem;
         }
 
-        .amoria-nav-wrapper {
-          border-bottom: 1px solid rgba(148, 163, 184, 0.27);
-          background: radial-gradient(circle at top, #020617 0, #020617 55%);
-          position: sticky;
-          top: 0;
-          z-index: 40;
-        }
-
-        .amoria-nav {
+        /* HEADER */
+        .amoria-header {
           max-width: 1120px;
           margin: 0 auto;
-          padding: 0.9rem 1.5rem;
+          padding: 1rem 1.5rem;
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 1rem;
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          backdrop-filter: blur(16px);
+          background: linear-gradient(
+            to bottom,
+            rgba(15, 23, 42, 0.92),
+            rgba(15, 23, 42, 0.75),
+            transparent
+          );
         }
 
-        .amoria-brand {
+        .amoria-header-left {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
-          min-width: 0;
+          gap: 0.6rem;
         }
 
-        .amoria-logo {
-          width: 34px;
-          height: 34px;
+        .amoria-logo-mark {
+          width: 32px;
+          height: 32px;
           border-radius: 999px;
-          object-fit: contain;
-          background: radial-gradient(circle at 30% 0%, #f97316, #ec4899 55%);
-          padding: 2px;
+          background: radial-gradient(circle at 30% 0, #fde68a, #f97316);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
         }
 
-        .amoria-brand-text {
+        .amoria-logo-img {
+          width: 115%;
+          height: 115%;
+          object-fit: contain;
+        }
+
+        .amoria-logo-text {
           display: flex;
           flex-direction: column;
-          gap: 0.15rem;
         }
 
-        .amoria-brand-name {
+        .amoria-logo-title {
           font-weight: 600;
-          letter-spacing: 0.02em;
-          font-size: 0.95rem;
+          font-size: 0.96rem;
         }
 
-        .amoria-brand-tagline {
+        .amoria-logo-tagline {
           font-size: 0.72rem;
           color: var(--amoria-text-muted);
         }
 
-        .amoria-nav-links {
+        .amoria-nav {
           display: flex;
           align-items: center;
-          gap: 1.5rem;
-          font-size: 0.9rem;
+          gap: 1.2rem;
         }
 
         .amoria-nav-link {
+          font-size: 0.82rem;
           color: var(--amoria-text-muted);
           text-decoration: none;
-          position: relative;
-          padding-bottom: 0.15rem;
+          padding-bottom: 0.1rem;
+          border-bottom: 1px solid transparent;
         }
 
-        .amoria-nav-link::after {
-          content: "";
-          position: absolute;
-          left: 0;
-          bottom: 0;
-          width: 0;
-          height: 2px;
-          background: linear-gradient(
-            135deg,
-            var(--amoria-accent),
-            var(--amoria-accent-2)
-          );
-          transition: width 0.18s ease-out;
-        }
-
-        .amoria-nav-link:hover::after {
-          width: 100%;
+        .amoria-nav-link:hover {
+          color: #f9fafb;
+          border-color: rgba(148, 163, 184, 0.7);
         }
 
         .amoria-nav-right {
@@ -434,312 +460,319 @@ export default function Home() {
         }
 
         .amoria-lang-switch {
-          display: inline-flex;
-          padding: 0.15rem;
-          border-radius: 999px;
+          display: flex;
+          gap: 0.25rem;
           background: rgba(15, 23, 42, 0.9);
+          padding: 0.18rem;
+          border-radius: 999px;
           border: 1px solid rgba(148, 163, 184, 0.4);
         }
 
         .amoria-lang-pill {
+          border-radius: 999px;
           border: none;
+          padding: 0.15rem 0.48rem;
+          font-size: 0.72rem;
           background: transparent;
           color: var(--amoria-text-muted);
-          font-size: 0.75rem;
-          padding: 0.15rem 0.6rem;
-          border-radius: 999px;
           cursor: pointer;
         }
 
         .amoria-lang-pill--active {
-          background: linear-gradient(
-            135deg,
-            rgba(251, 113, 133, 0.1),
-            rgba(99, 102, 241, 0.2)
-          );
+          background: #0f172a;
           color: #f9fafb;
         }
 
-        .amoria-main {
-          max-width: 1120px;
-          margin: 0 auto;
-          padding: 2.75rem 1.5rem 3rem;
-        }
-
-        .amoria-hero {
-          padding-bottom: 2.5rem;
-        }
-
-        .amoria-hero-grid {
-          display: grid;
-          grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-          gap: 3rem;
+        .amoria-auth-nav {
+          display: flex;
           align-items: center;
+          gap: 0.5rem;
         }
 
-        .amoria-hero-text {
-          display: flex;
-          flex-direction: column;
-          gap: 1.2rem;
-        }
-
-        .amoria-hero-eyebrow {
-          text-transform: uppercase;
-          letter-spacing: 0.12em;
-          font-size: 0.7rem;
-          color: #a5b4fc;
-        }
-
-        .amoria-hero-title {
-          font-size: 2.25rem;
-          line-height: 1.12;
-          font-weight: 700;
-        }
-
-        .amoria-hero-subtitle {
-          font-size: 0.98rem;
-          color: var(--amoria-text-muted);
-          max-width: 34rem;
-        }
-
-        .amoria-hero-actions {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.75rem;
-        }
-
-        .amoria-btn {
+        .amoria-nav-btn {
           border-radius: 999px;
-          padding: 0.65rem 1.35rem;
-          font-size: 0.9rem;
+          padding: 0.4rem 0.9rem;
+          font-size: 0.78rem;
           border: 1px solid transparent;
           cursor: pointer;
-          transition: transform 0.12s ease-out, box-shadow 0.12s ease-out,
-            background 0.12s ease-out, border-color 0.12s ease-out;
           white-space: nowrap;
         }
 
-        .amoria-btn--primary {
+        .amoria-nav-btn--primary {
           background: linear-gradient(
             135deg,
             var(--amoria-accent),
             var(--amoria-accent-2)
           );
           color: #f9fafb;
-          box-shadow: 0 12px 28px rgba(15, 23, 42, 0.9);
         }
 
-        .amoria-btn--primary:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 18px 40px rgba(15, 23, 42, 1);
-        }
-
-        .amoria-btn--secondary {
-          background: rgba(15, 23, 42, 0.9);
-          border-color: rgba(148, 163, 184, 0.55);
-          color: var(--amoria-text-main);
-        }
-
-        .amoria-btn--secondary:hover {
-          background: rgba(15, 23, 42, 1);
-        }
-
-        .amoria-btn--ghost {
+        .amoria-nav-btn--ghost {
           background: transparent;
           border-color: rgba(148, 163, 184, 0.5);
           color: var(--amoria-text-main);
-          padding-inline: 1rem;
-          padding-block: 0.55rem;
-          width: 100%;
         }
 
-        .amoria-btn--ghost:hover {
-          background: rgba(15, 23, 42, 0.9);
+        /* HERO */
+        .amoria-hero {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 1.5rem 1.5rem 2.5rem;
+          display: grid;
+          grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+          gap: 2.5rem;
+          align-items: center;
+        }
+
+        .amoria-hero-left {
+          display: flex;
+          flex-direction: column;
+          gap: 0.9rem;
+        }
+
+        .amoria-hero-kicker {
+          font-size: 0.8rem;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #a5b4fc;
+        }
+
+        .amoria-hero-title {
+          font-size: clamp(1.9rem, 3vw, 2.3rem);
+          line-height: 1.1;
+          font-weight: 700;
+        }
+
+        .amoria-hero-subtitle {
+          font-size: 0.92rem;
+          line-height: 1.6;
+          color: var(--amoria-text-muted);
+          max-width: 32rem;
+        }
+
+        .amoria-hero-actions {
+          margin-top: 0.6rem;
+          display: flex;
+          gap: 0.8rem;
+          flex-wrap: wrap;
+        }
+
+        .amoria-hero-support {
+          margin-top: 0.4rem;
+          font-size: 0.82rem;
+          color: var(--amoria-text-muted);
         }
 
         .amoria-hero-note {
-          font-size: 0.78rem;
-          color: var(--amoria-text-muted);
-        }
-
-        .amoria-auth-hint {
-          font-size: 0.78rem;
+          margin-top: 0.2rem;
+          font-size: 0.8rem;
           color: #e5e7eb;
-          max-width: 32rem;
         }
 
-        .amoria-hero-media {
+        .amoria-hero-right {
           display: flex;
-          justify-content: center;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.6rem;
         }
 
-        .amoria-hero-video-wrapper {
+        .amoria-video-frame {
+          border-radius: 1.6rem;
+          padding: 0.22rem;
+          background: linear-gradient(135deg, #f97316, #fb37ff, #38bdf8);
+          max-width: 340px;
           width: 100%;
-          max-width: 360px;
         }
 
-        .amoria-hero-video-border {
-          padding: 0.5rem;
-          border-radius: 1.5rem;
-          background: linear-gradient(
-            135deg,
-            rgba(251, 113, 133, 0.6),
-            rgba(99, 102, 241, 0.8)
-          );
-          box-shadow: 0 18px 36px rgba(15, 23, 42, 1);
-        }
-
-        .amoria-hero-video {
+        .amoria-video {
           width: 100%;
-          height: 460px;
-          border-radius: 1.25rem;
           display: block;
-          object-fit: cover;
-          object-position: center top;
+          border-radius: 1.45rem;
           background: #020617;
         }
 
-        .amoria-hero-langline {
-          margin-top: 0.65rem;
+        .amoria-video-caption {
           font-size: 0.78rem;
           color: var(--amoria-text-muted);
+        }
+
+        /* BUTTONS */
+        .amoria-btn {
+          border-radius: 999px;
+          border: 1px solid transparent;
+          font-size: 0.86rem;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .amoria-btn--primary {
+          padding: 0.7rem 1.3rem;
+          background: linear-gradient(
+            135deg,
+            var(--amoria-accent),
+            var(--amoria-accent-2)
+          );
+          color: #f9fafb;
+          box-shadow: 0 12px 30px rgba(248, 113, 113, 0.35);
+        }
+
+        .amoria-btn--ghost {
+          padding: 0.7rem 1.2rem;
+          border-color: rgba(148, 163, 184, 0.45);
+          background: rgba(15, 23, 42, 0.9);
+          color: var(--amoria-text-main);
+        }
+
+        .amoria-btn--full {
+          width: 100%;
+          justify-content: center;
+          display: inline-flex;
+          align-items: center;
           text-align: center;
         }
 
-        .amoria-section {
-          padding-top: 2.4rem;
+        .amoria-btn--big {
+          padding-inline: 1.9rem;
+          padding-block: 0.85rem;
+          font-size: 1rem;
         }
 
-        .amoria-section-personas {
-          border-top: 1px solid rgba(148, 163, 184, 0.35);
-          margin-top: 1.5rem;
-          padding-top: 2.5rem;
+        .amoria-btn--medium {
+          padding-inline: 1.4rem;
+          padding-block: 0.7rem;
+        }
+
+        /* SECTIONS */
+        .amoria-section {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 0 1.5rem 2.5rem;
         }
 
         .amoria-section-title {
-          font-size: 1.3rem;
-          margin-bottom: 1.5rem;
+          font-size: 1.25rem;
+          margin-bottom: 1.3rem;
         }
 
-        .amoria-section-subtitle {
+        .amoria-section--pricing {
+          text-align: center;
+        }
+
+        .amoria-section-text {
           font-size: 0.9rem;
           color: var(--amoria-text-muted);
           max-width: 32rem;
+          margin: 0 auto 1.3rem;
         }
 
-        .amoria-personas-grid {
+        /* CARDS */
+        .amoria-card-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 1.3rem;
+          gap: 1.2rem;
         }
 
-        .amoria-persona-card {
-          background: rgba(15, 23, 42, 0.95);
-          border-radius: 1.3rem;
-          border: 1px solid rgba(148, 163, 184, 0.4);
+        .amoria-card {
+          background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
+          border-radius: 1.2rem;
+          border: 1px solid var(--amoria-border-subtle);
           overflow: hidden;
           display: flex;
           flex-direction: column;
-          box-shadow: 0 14px 30px rgba(15, 23, 42, 0.9);
+          min-height: 100%;
         }
 
-        .amoria-persona-image-wrapper {
+        .amoria-card-image-wrapper {
           width: 100%;
-          height: 220px;
+          height: 230px;
           overflow: hidden;
         }
 
-        .amoria-persona-image {
+        .amoria-card-image {
           width: 100%;
           height: 100%;
           object-fit: cover;
-          object-position: top;
+          object-position: top center;
           display: block;
         }
 
-        .amoria-persona-body {
-          padding: 1rem 1.1rem 1.1rem;
+        .amoria-card-body {
+          padding: 0.9rem 0.95rem 1rem;
           display: flex;
           flex-direction: column;
           gap: 0.55rem;
-          flex: 1;
         }
 
-        .amoria-persona-title {
-          font-size: 0.98rem;
+        .amoria-card-title {
+          font-size: 0.95rem;
           font-weight: 600;
         }
 
-        .amoria-persona-desc {
+        .amoria-card-text {
           font-size: 0.8rem;
           color: var(--amoria-text-muted);
           flex: 1;
         }
 
-        .amoria-pricing-placeholder {
-          margin-top: 1.6rem;
-        }
-
+        /* FOOTER */
         .amoria-footer {
-          border-top: 1px solid rgba(148, 163, 184, 0.3);
-          padding: 1rem 1.5rem 1.2rem;
-          margin-top: 0.5rem;
-        }
-
-        .amoria-footer-inner {
           max-width: 1120px;
           margin: 0 auto;
-          display: flex;
-          justify-content: center;
-          gap: 0.5rem;
+          padding: 1.5rem 1.5rem 0;
           font-size: 0.78rem;
           color: var(--amoria-text-muted);
           text-align: center;
         }
 
         /* RESPONSIVE */
-
-        @media (max-width: 900px) {
-          .amoria-nav {
+        @media (max-width: 960px) {
+          .amoria-header {
             flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.6rem 1rem;
           }
 
-          .amoria-nav-links {
+          .amoria-nav {
             display: none;
           }
 
-          .amoria-hero-grid {
+          .amoria-hero {
             grid-template-columns: minmax(0, 1fr);
-            gap: 2rem;
+            padding-top: 1rem;
           }
 
-          .amoria-hero-media {
+          .amoria-hero-right {
             order: -1;
           }
 
-          .amoria-main {
-            padding-inline: 1rem;
-          }
-
-          .amoria-personas-grid {
+          .amoria-card-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
         }
 
         @media (max-width: 640px) {
-          .amoria-hero-title {
-            font-size: 1.6rem;
+          .amoria-header {
+            padding-inline: 1rem;
           }
 
-          .amoria-hero-video {
-            height: 360px;
+          .amoria-hero,
+          .amoria-section {
+            padding-inline: 1rem;
           }
 
-          .amoria-personas-grid {
+          .amoria-card-grid {
             grid-template-columns: minmax(0, 1fr);
+          }
+
+          .amoria-auth-nav {
+            display: none; /* sur mobile: on garde juste gros bouton dans le hero */
+          }
+
+          .amoria-video-frame {
+            max-width: 280px;
           }
         }
       `}</style>
-    </div>
+    </main>
   );
 }
