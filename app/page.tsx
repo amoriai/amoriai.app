@@ -25,7 +25,6 @@ const STRINGS: Record<
     pricingTitle: string;
     pricingText: string;
     pricingCta: string;
-    videoCaption: string;
     footerCopy: string;
   }
 > = {
@@ -76,7 +75,6 @@ const STRINGS: Record<
     pricingText:
       "Les formules détaillées arrivent bientôt. En attendant, vous pouvez déjà réserver votre accès à la beta privée.",
     pricingCta: "Être informé·e du lancement",
-    videoCaption: "AmoriA est disponible en français, anglais et espagnol.",
     footerCopy: "© 2025 AmoriA.app",
   },
   en: {
@@ -126,7 +124,6 @@ const STRINGS: Record<
     pricingText:
       "Detailed plans are coming soon. Meanwhile, you can already reserve your spot for the private beta.",
     pricingCta: "Get notified about the launch",
-    videoCaption: "AmoriA is available in French, English and Spanish.",
     footerCopy: "© 2025 AmoriA.app",
   },
   es: {
@@ -176,7 +173,6 @@ const STRINGS: Record<
     pricingText:
       "Los planes detallados llegarán pronto. Mientras tanto, ya puedes reservar tu acceso a la beta privada.",
     pricingCta: "Avisarme cuando se lance",
-    videoCaption: "AmoriA está disponible en francés, inglés y español.",
     footerCopy: "© 2025 AmoriA.app",
   },
 };
@@ -240,7 +236,10 @@ export default function HomePage() {
           </div>
 
           <div className="amoria-auth-nav">
-            <button type="button" className="amoria-nav-btn amoria-nav-btn--ghost">
+            <button
+              type="button"
+              className="amoria-nav-btn amoria-nav-btn--ghost"
+            >
               {t.navLogin}
             </button>
             <button
@@ -286,7 +285,6 @@ export default function HomePage() {
               poster="/amoria-m-romantique.png"
             />
           </div>
-          <p className="amoria-video-caption">{t.videoCaption}</p>
         </div>
       </section>
 
@@ -370,7 +368,12 @@ export default function HomePage() {
 
         .amoria-root {
           min-height: 100vh;
-          background: radial-gradient(circle at top left, #111827 0, #020617 55%, #000 100%);
+          background: radial-gradient(
+            circle at top left,
+            #111827 0,
+            #020617 55%,
+            #000 100%
+          );
           color: var(--amoria-text-main);
           padding-bottom: 3rem;
         }
@@ -591,11 +594,6 @@ export default function HomePage() {
           background: #020617;
         }
 
-        .amoria-video-caption {
-          font-size: 0.78rem;
-          color: var(--amoria-text-muted);
-        }
-
         /* BUTTONS */
         .amoria-btn {
           border-radius: 999px;
@@ -765,7 +763,7 @@ export default function HomePage() {
           }
 
           .amoria-auth-nav {
-            display: none; /* sur mobile: on garde juste gros bouton dans le hero */
+            display: none;
           }
 
           .amoria-video-frame {
