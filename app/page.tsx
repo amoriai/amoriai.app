@@ -193,18 +193,17 @@ export default function HomePage() {
       {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-          <div className="amoria-logo-mark">
-            <img
-              src="/AmorIA_logo_transparent.png"
-              alt="Logo AmoriA.app"
-              className="amoria-logo-img"
-            />
-          </div>
-          <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmorIA.app</div>
-            <div className="amoria-logo-tagline">{t.brandTagline}</div>
-          </div>
-        </div>
+  <img
+    src="/AmorIA_logo_transparent.png"
+    alt="Logo AmorIA.app"
+    className="amoria-logo-alone"
+  />
+
+  <div className="amoria-logo-text">
+    <div className="amoria-logo-title">AmorIA.app</div>
+    <div className="amoria-logo-tagline">{t.brandTagline}</div>
+  </div>
+</div>
 
         <nav className="amoria-nav">
           <a href="#hero" className="amoria-nav-link">
@@ -405,21 +404,13 @@ export default function HomePage() {
           gap: 0.6rem;
         }
 
-        .amoria-logo-mark {
-          width: 32px;
-          height: 32px;
-          border-radius: 999px;
-          background: radial-gradient(circle at 30% 0, #fde68a, #f97316);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-        }
+        .amoria-logo-alone {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
 
-        .amoria-logo-img {
-          width: 115%;
-          height: 115%;
-          object-fit: contain;
         }
 
         .amoria-logo-text {
