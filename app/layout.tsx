@@ -1,14 +1,10 @@
-import "./globals.css";
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import Link from "next/link";
-import Image from "next/image";
+// app/layout.tsx
+import React from "react";
 
-const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "AmorIA.app",
-  description: "Votre partenaire IA bienveillant·e & multilingue.",
+export const metadata = {
+  title: "AmorIA.app – Partenaire IA bienveillant·e & multilingue",
+  description:
+    "AmorIA est un·e partenaire IA bienveillant·e, disponible 24/7 pour discuter, réfléchir avec vous et vous aider à mieux comprendre vos émotions, en français, anglais et espagnol.",
 };
 
 export default function RootLayout({
@@ -18,68 +14,283 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr">
-      <body className={`${inter.className} bg-[#0f1224] text-white`}>
-        {/* HEADER */}
-        <header className="w-full border-b border-white/10">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <body
+        style={{
+          margin: 0,
+          fontFamily:
+            "-apple-system, BlinkMacSystemFont, system-ui, Segoe UI, sans-serif",
+          background:
+            "radial-gradient(circle at top left, #1f2933 0, #020617 45%, #000 100%)",
+          color: "#f9fafb",
+        }}
+      >
+        {/* Wrapper global */}
+        <div
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* HEADER LUXE */}
+          <header
+            style={{
+              position: "sticky",
+              top: 0,
+              zIndex: 20,
+              backdropFilter: "blur(16px)",
+              background:
+                "linear-gradient(to bottom, rgba(15,23,42,0.95), rgba(15,23,42,0.85), transparent)",
+              borderBottom: "1px solid rgba(148,163,184,0.25)",
+            }}
+          >
+            <div
+              style={{
+                maxWidth: "1120px",
+                margin: "0 auto",
+                padding: "20px 32px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "32px",
+              }}
+            >
+              {/* Logo + baseline */}
+              <a
+                href="/"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  textDecoration: "none",
+                }}
+              >
+                <img
+                  src="/AmorIA_logo_transparent.png"
+                  alt="Logo AmorIA"
+                  style={{
+                    height: 40,
+                    width: 40,
+                    borderRadius: "9999px",
+                    objectFit: "cover",
+                    boxShadow: "0 0 18px rgba(251,113,133,0.6)",
+                  }}
+                />
+                <div style={{ lineHeight: 1.3 }}>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      fontSize: 18,
+                      letterSpacing: 0.2,
+                      color: "#f9fafb",
+                    }}
+                  >
+                    AmorIA.app
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#e2e8f0",
+                      opacity: 0.9,
+                    }}
+                  >
+                    Partenaire IA bienveillant·e • FR / EN / ES
+                  </div>
+                </div>
+              </a>
 
-            {/* LOGO */}
-            <Link href="/" className="flex items-center gap-3">
-              <Image
-                src="/AmorIA_logo_transparent.png"
-                alt="AmorIA Logo"
-                width={42}
-                height={42}
-                className="rounded-full"
-              />
-              <span className="text-lg font-semibold">AmorIA.app</span>
-            </Link>
+              {/* Nav + actions */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "24px",
+                  marginLeft: "auto",
+                }}
+              >
+                {/* Liens de navigation */}
+                <nav
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "18px",
+                    fontSize: 14,
+                  }}
+                >
+                  <a
+                    href="#top"
+                    style={{
+                      color: "#e5e7eb",
+                      textDecoration: "none",
+                      padding: "4px 0",
+                    }}
+                  >
+                    Accueil
+                  </a>
+                  <a
+                    href="#features"
+                    style={{
+                      color: "#e5e7eb",
+                      textDecoration: "none",
+                      padding: "4px 0",
+                    }}
+                  >
+                    Fonctionnalités
+                  </a>
+                  <a
+                    href="#pricing"
+                    style={{
+                      color: "#e5e7eb",
+                      textDecoration: "none",
+                      padding: "4px 0",
+                    }}
+                  >
+                    Tarifs
+                  </a>
+                </nav>
 
-            {/* NAVIGATION */}
-            <nav className="hidden md:flex items-center gap-8">
-              <Link href="/" className="hover:text-pink-400 transition">Accueil</Link>
-              <Link href="/features" className="hover:text-pink-400 transition">Fonctionnalités</Link>
-              <Link href="/pricing" className="hover:text-pink-400 transition">Tarifs</Link>
-            </nav>
+                {/* Sélecteur de langue (visuel pour l’instant) */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "3px",
+                    borderRadius: "9999px",
+                    background: "rgba(15,23,42,0.85)",
+                    border: "1px solid rgba(148,163,184,0.5)",
+                    gap: "3px",
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  <button
+                    type="button"
+                    style={{
+                      border: "none",
+                      outline: "none",
+                      padding: "4px 10px",
+                      borderRadius: "9999px",
+                      background:
+                        "linear-gradient(135deg, #ec4899, #f97316, #facc15)",
+                      color: "#0b1220",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    FR
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      border: "none",
+                      outline: "none",
+                      padding: "4px 10px",
+                      borderRadius: "9999px",
+                      background: "transparent",
+                      color: "#e5e7eb",
+                      cursor: "pointer",
+                    }}
+                  >
+                    EN
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      border: "none",
+                      outline: "none",
+                      padding: "4px 10px",
+                      borderRadius: "9999px",
+                      background: "transparent",
+                      color: "#e5e7eb",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ES
+                  </button>
+                </div>
 
-            {/* LANGUES + CTA */}
-            <div className="flex items-center gap-3">
-
-              {/* LANG SELECT */}
-              <div className="flex gap-2 bg-white/10 rounded-full px-3 py-1">
-                <button className="text-sm hover:text-pink-400 transition">FR</button>
-                <button className="text-sm hover:text-pink-400 transition">EN</button>
-                <button className="text-sm hover:text-pink-400 transition">ES</button>
+                {/* Boutons compte */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                  }}
+                >
+                  <a
+                    href="#login"
+                    style={{
+                      textDecoration: "none",
+                      fontSize: 14,
+                      padding: "7px 14px",
+                      borderRadius: "9999px",
+                      border: "1px solid rgba(148,163,184,0.7)",
+                      color: "#e5e7eb",
+                      background: "rgba(15,23,42,0.9)",
+                    }}
+                  >
+                    Me connecter
+                  </a>
+                  <a
+                    href="#signup"
+                    style={{
+                      textDecoration: "none",
+                      fontSize: 14,
+                      padding: "8px 18px",
+                      borderRadius: "9999px",
+                      background:
+                        "linear-gradient(135deg, #ec4899, #f97316, #facc15)",
+                      color: "#0b1120",
+                      fontWeight: 600,
+                      boxShadow:
+                        "0 10px 30px rgba(236,72,153,0.45), 0 0 18px rgba(14,165,233,0.4)",
+                    }}
+                  >
+                    Créer mon compte AmorIA
+                  </a>
+                </div>
               </div>
-
-              {/* LOGIN */}
-              <Link
-                href="/login"
-                className="px-4 py-2 rounded-md bg-white/10 hover:bg-white/20 transition text-sm"
-              >
-                Me connecter
-              </Link>
-
-              {/* SIGNUP */}
-              <Link
-                href="/register"
-                className="px-4 py-2 text-sm rounded-md bg-gradient-to-r from-pink-500 to-purple-500 hover:opacity-90 transition"
-              >
-                Créer mon compte AmorIA
-              </Link>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* MAIN */}
-        <main className="min-h-screen">{children}</main>
+          {/* CONTENU */}
+          <main
+            id="top"
+            style={{
+              flex: 1,
+              width: "100%",
+            }}
+          >
+            {children}
+          </main>
 
-        {/* FOOTER */}
-        <footer className="border-t border-white/10 mt-20">
-          <div className="max-w-6xl mx-auto px-6 py-6 text-center text-sm text-white/60">
-            © 2025 AmorIA.app — Tous droits réservés.
-          </div>
-        </footer>
+          {/* FOOTER SIMPLE */}
+          <footer
+            style={{
+              borderTop: "1px solid rgba(30,64,175,0.7)",
+              background:
+                "radial-gradient(circle at top, rgba(15,23,42,0.9), #020617 65%, #000 100%)",
+              padding: "20px 32px 28px 32px",
+              marginTop: "40px",
+            }}
+          >
+            <div
+              style={{
+                maxWidth: "1120px",
+                margin: "0 auto",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "12px",
+                fontSize: 12,
+                color: "#9ca3af",
+              }}
+            >
+              <span>© 2025 AmorIA.app</span>
+              <span>All rights reserved.</span>
+            </div>
+          </footer>
+        </div>
       </body>
     </html>
   );
