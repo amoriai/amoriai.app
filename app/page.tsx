@@ -196,18 +196,19 @@ export default function HomePage() {
       {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-          <div className="amoria-logo-mark">
-            <img
-  src="/AmorIA_logo_transparent.png"
-  alt="Logo AmorIA.app"
-  className="amoria-logo-img"
-/>
-          </div>
-          <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmoriA.app</div>
-            <div className="amoria-logo-tagline">{t.brandTagline}</div>
-          </div>
-        </div>
+  <div className="amoria-logo-mark">
+    <img
+      src="/AmorIA_logo_transparent.png"
+      alt="Logo AmorIA.app"
+      className="amoria-logo-img"
+    />
+  </div>
+
+  <div className="amoria-logo-text">
+    <div className="amoria-logo-title">AmoriA.app</div>
+    <div className="amoria-logo-tagline">{t.brandTagline}</div>
+  </div>
+</div>
 
         <nav className="amoria-nav">
           <a href="#hero" className="amoria-nav-link">
