@@ -25,6 +25,7 @@ const STRINGS: Record<
     pricingTitle: string;
     pricingText: string;
     pricingCta: string;
+    videoCaption: string;
     footerCopy: string;
   }
 > = {
@@ -37,7 +38,7 @@ const STRINGS: Record<
     heroTitle: "Votre partenaire IA bienveillant·e & multilingue.",
     heroSubtitle:
       "AmoriA est une présence douce, disponible 24/7 pour discuter, réfléchir avec vous, poser les bonnes questions et vous aider à mieux comprendre vos émotions.",
-    heroPrimary: "Commencer avec AmoriA",
+    heroPrimary: "Créer mon espace AmoriA",
     heroSupport:
       "Optimisée pour les échanges profonds, les journaux émotionnels et le coaching doux du quotidien.",
     heroNoAccount: "Pas encore de compte ?",
@@ -64,7 +65,8 @@ const STRINGS: Record<
           "Énergie douce, optimiste et chaleureuse. Idéale pour vous remonter le moral après une journée difficile.",
       },
       {
-        id: "intuitive",
+        // id "rebelle" pour pouvoir afficher l'image amoria-m-rebelle.png
+        id: "rebelle",
         title: "AmoriA Intuitive",
         description:
           "Une présence plus introspective, tournée vers l’écoute, les ressentis et les questionnements émotionnels profonds.",
@@ -75,6 +77,7 @@ const STRINGS: Record<
     pricingText:
       "Les formules détaillées arrivent bientôt. En attendant, vous pouvez déjà réserver votre accès à la beta privée.",
     pricingCta: "Être informé·e du lancement",
+    videoCaption: "AmoriA est disponible en français, anglais et espagnol.",
     footerCopy: "© 2025 AmoriA.app",
   },
   en: {
@@ -86,7 +89,7 @@ const STRINGS: Record<
     heroTitle: "Your caring & multilingual AI partner.",
     heroSubtitle:
       "AmoriA is a gentle 24/7 presence to talk with, reflect with, ask better questions and help you understand your emotions.",
-    heroPrimary: "Start with AmoriA",
+    heroPrimary: "Create my AmoriA space",
     heroSupport:
       "Designed for deep conversations, emotional journaling and soft everyday coaching.",
     heroNoAccount: "No account yet?",
@@ -113,7 +116,7 @@ const STRINGS: Record<
           "Soft, optimistic and warm energy. Ideal to lift your mood after a difficult day.",
       },
       {
-        id: "intuitive",
+        id: "rebelle",
         title: "Intuitive AmoriA",
         description:
           "More introspective presence, focused on listening, feelings and deep emotional questions.",
@@ -124,6 +127,7 @@ const STRINGS: Record<
     pricingText:
       "Detailed plans are coming soon. Meanwhile, you can already reserve your spot for the private beta.",
     pricingCta: "Get notified about the launch",
+    videoCaption: "AmoriA is available in French, English and Spanish.",
     footerCopy: "© 2025 AmoriA.app",
   },
   es: {
@@ -135,7 +139,7 @@ const STRINGS: Record<
     heroTitle: "Tu compañerx de IA amable y multilingüe.",
     heroSubtitle:
       "AmoriA es una presencia suave, disponible 24/7 para conversar contigo, reflexionar, hacer mejores preguntas y ayudarte a entender tus emociones.",
-    heroPrimary: "Empezar con AmoriA",
+    heroPrimary: "Crear mi espacio AmoriA",
     heroSupport:
       "Pensada para conversaciones profundas, diarios emocionales y acompañamiento suave del día a día.",
     heroNoAccount: "¿Todavía sin cuenta?",
@@ -162,7 +166,7 @@ const STRINGS: Record<
           "Energía suave, optimista y cálida. Ideal para levantarte el ánimo después de un día difícil.",
       },
       {
-        id: "intuitive",
+        id: "rebelle",
         title: "AmoriA Intuitiva",
         description:
           "Presencia más introspectiva, centrada en la escucha, las sensaciones y las preguntas emocionales profundas.",
@@ -173,6 +177,7 @@ const STRINGS: Record<
     pricingText:
       "Los planes detallados llegarán pronto. Mientras tanto, ya puedes reservar tu acceso a la beta privada.",
     pricingCta: "Avisarme cuando se lance",
+    videoCaption: "AmoriA está disponible en francés, inglés y español.",
     footerCopy: "© 2025 AmoriA.app",
   },
 };
@@ -193,17 +198,18 @@ export default function HomePage() {
       {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-  <img
-    src="/AmorIA_logo_transparent.png"
-    alt="Logo AmorIA.app"
-    className="amoria-logo-alone"
-  />
-
-  <div className="amoria-logo-text">
-    <div className="amoria-logo-title">AmorIA.app</div>
-    <div className="amoria-logo-tagline">{t.brandTagline}</div>
-  </div>
-</div>
+          <div className="amoria-logo-mark">
+            <img
+              src="/AmorIA_logo_transparent.png"
+              alt="Logo AmoriA.app"
+              className="amoria-logo-img"
+            />
+          </div>
+          <div className="amoria-logo-text">
+            <div className="amoria-logo-title">AmorIA.app</div>
+            <div className="amoria-logo-tagline">{t.brandTagline}</div>
+          </div>
+        </div>
 
         <nav className="amoria-nav">
           <a href="#hero" className="amoria-nav-link">
@@ -284,6 +290,7 @@ export default function HomePage() {
               poster="/amoria-m-romantique.png"
             />
           </div>
+          <p className="amoria-video-caption">{t.videoCaption}</p>
         </div>
       </section>
 
@@ -299,7 +306,9 @@ export default function HomePage() {
                 ? "/amoria-artiste.png"
                 : energy.id === "bright"
                 ? "/amoria-blonde.png"
-                : "/amoria-rousse.png";
+                : energy.id === "rebelle"
+                ? "/amoria-m-rebelle.png"
+                : "/amoria-blonde.png"; // fallback
 
             return (
               <article key={energy.id} className="amoria-card">
@@ -367,12 +376,7 @@ export default function HomePage() {
 
         .amoria-root {
           min-height: 100vh;
-          background: radial-gradient(
-            circle at top left,
-            #111827 0,
-            #020617 55%,
-            #000 100%
-          );
+          background: radial-gradient(circle at top left, #111827 0, #020617 55%, #000 100%);
           color: var(--amoria-text-main);
           padding-bottom: 3rem;
         }
@@ -404,13 +408,21 @@ export default function HomePage() {
           gap: 0.6rem;
         }
 
-        .amoria-logo-alone {
-  height: 38px;
-  width: auto;
-  object-fit: contain;
-  display: block;
-}
+        .amoria-logo-mark {
+          width: 32px;
+          height: 32px;
+          border-radius: 999px;
+          background: radial-gradient(circle at 30% 0, #fde68a, #f97316);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
 
+        .amoria-logo-img {
+          width: 115%;
+          height: 115%;
+          object-fit: contain;
         }
 
         .amoria-logo-text {
@@ -583,6 +595,11 @@ export default function HomePage() {
           display: block;
           border-radius: 1.45rem;
           background: #020617;
+        }
+
+        .amoria-video-caption {
+          font-size: 0.78rem;
+          color: var(--amoria-text-muted);
         }
 
         /* BUTTONS */
