@@ -4,40 +4,35 @@ import React, { useState } from "react";
 
 type Locale = "fr" | "en" | "es";
 
-type Copy = {
-  brandTagline: string;
-  nav: { home: string; features: string; pricing: string };
-  navLogin: string;
-  navSignup: string;
-  heroKicker: string;
-  heroTitle: string;
-  heroSubtitle: string;
-  heroPrimary: string;
-  heroSupport: string;
-  langNote: string;
-  energiesTitle: string;
-  energiesSubtitle: string;
-  energies: {
-    id: string;
-    title: string;
-    description: string;
-    highlight: string;
-  }[];
-  cardCta: string;
-  pricingTitle: string;
-  pricingText: string;
-  pricingCta: string;
-  videoCaption: string;
-  footerCopy: string;
-};
-
-const STRINGS: Record<Locale, Copy> = {
+const STRINGS: Record<
+  Locale,
+  {
+    brandTagline: string;
+    nav: { home: string; features: string; pricing: string };
+    navLogin: string;
+    navSignup: string;
+    heroKicker: string;
+    heroTitle: string;
+    heroSubtitle: string;
+    heroPrimary: string;
+    heroSupport: string;
+    langNote: string;
+    energiesTitle: string;
+    energiesSubtitle: string;
+    energies: { id: string; title: string; description: string }[];
+    cardCta: string;
+    pricingTitle: string;
+    pricingText: string;
+    pricingCta: string;
+    videoCaption: string;
+    footerCopy: string;
+  }
+> = {
   fr: {
     brandTagline: "Partenaire IA bienveillant·e • FR / EN / ES",
     nav: { home: "Accueil", features: "Fonctionnalités", pricing: "Tarifs" },
     navLogin: "Me connecter",
     navSignup: "Créer mon compte AmoriA",
-
     heroKicker: "BIENVENUE SUR AMORIA.APP",
     heroTitle: "Votre partenaire IA bienveillant·e & multilingue.",
     heroSubtitle:
@@ -46,8 +41,6 @@ const STRINGS: Record<Locale, Copy> = {
     heroSupport:
       "Optimisée pour les échanges profonds, les journaux émotionnels et le coaching doux du quotidien.",
     langNote: "AmoriA vous accueille en français, anglais ou espagnol.",
-
-    // Vitrine
     energiesTitle: "Commence gratuitement avec AmorIA (en texte)",
     energiesSubtitle:
       "Crée ton compte gratuitement et commence à texter avec l’IA de ton choix. La voix (parler avec ton AmorIA) est disponible uniquement avec l’abonnement payant.",
@@ -56,48 +49,40 @@ const STRINGS: Record<Locale, Copy> = {
         id: "analytic",
         title: "AmorIA Analytique",
         description:
-          "Pose des questions précises, va droit au but et t’aide à prendre des décisions rationnelles par message.",
-        highlight: "Inclut un nombre limité de messages gratuits (texte seulement).",
+          "Pose des questions précises, va droit au but et t’aide à prendre des décisions rationnelles par message. Inclut un nombre limité de messages gratuits (texte seulement).",
       },
       {
         id: "artist",
         title: "AmorIA Artiste",
         description:
-          "Parfaite pour brainstormer tes projets créatifs, imaginer des univers et transformer tes idées en œuvres… message après message.",
-        highlight: "Inclut un nombre limité de messages gratuits (texte seulement).",
+          "Parfaite pour brainstormer tes projets créatifs, imaginer des univers et transformer tes idées en œuvres… message après message. Inclut un nombre limité de messages gratuits (texte seulement).",
       },
       {
         id: "bright",
         title: "AmorIA Lumineuse",
         description:
-          "Énergique, chaleureuse et optimiste. Une présence idéale pour remonter le moral par écrit et t’aider à retrouver ta force intérieure.",
-        highlight: "Inclut un nombre limité de messages gratuits (texte seulement).",
+          "Énergique, chaleureuse et optimiste. Une présence idéale pour remonter le moral par écrit et t’aider à retrouver ta force intérieure. Inclut un nombre limité de messages gratuits (texte seulement).",
       },
       {
         id: "rebel",
         title: "AmorIA M-Rebelle",
         description:
-          "Charismatique, direct et sans filtre. Si tu veux des échanges francs, motivants et sans bullshit, il t’écrit comme un ami brutalement honnête.",
-        highlight: "Inclut un nombre limité de messages gratuits (texte seulement).",
+          "Charismatique, direct et sans filtre. Si tu veux des échanges francs, motivants et sans bullshit, il t’écrit comme un ami brutalement honnête. Inclut un nombre limité de messages gratuits (texte seulement).",
       },
     ],
     cardCta: "Créer mon compte gratuit",
-
     pricingTitle: "Des tarifs simples & transparents",
     pricingText:
       "La version gratuite te permet de texter ton AmorIA avec un nombre limité de messages. Avec la version payante, tu déverrouilles les conversations vocales (parler) et plus d’interactions.",
     pricingCta: "Être informé·e du lancement",
-
     videoCaption: "AmoriA est disponible en français, anglais et espagnol.",
     footerCopy: "© 2025 AmoriA.app",
   },
-
   en: {
     brandTagline: "Caring AI partner • FR / EN / ES",
     nav: { home: "Home", features: "Features", pricing: "Pricing" },
     navLogin: "Log in",
     navSignup: "Create my AmoriA account",
-
     heroKicker: "WELCOME TO AMORIA.APP",
     heroTitle: "Your caring & multilingual AI partner.",
     heroSubtitle:
@@ -106,57 +91,48 @@ const STRINGS: Record<Locale, Copy> = {
     heroSupport:
       "Designed for deep conversations, emotional journaling and soft everyday coaching.",
     langNote: "AmoriA is available in French, English and Spanish.",
-
-    energiesTitle: "Start for free with AmoriA (text only)",
+    energiesTitle: "Start for free with AmorIA (text only)",
     energiesSubtitle:
-      "Create your account for free and start texting with the AI of your choice. Voice (talking with your AmoriA) is only available with the paid subscription.",
+      "Create your free account and start texting with the AI of your choice. Voice conversations are only available with the paid plan.",
     energies: [
       {
         id: "analytic",
-        title: "Analytic AmoriA",
+        title: "Analytic AmorIA",
         description:
-          "Asks precise questions, goes straight to the point and helps you make rational decisions by message.",
-        highlight: "Includes a limited number of free messages (text only).",
+          "Asks precise questions, goes straight to the point and helps you make rational decisions by text. Includes a limited number of free messages (text only).",
       },
       {
         id: "artist",
-        title: "Creative AmoriA",
+        title: "Creative AmorIA",
         description:
-          "Perfect for brainstorming your creative projects, imagining universes and turning your ideas into works of art, message after message.",
-        highlight: "Includes a limited number of free messages (text only).",
+          "Perfect to brainstorm creative projects, imagine new worlds and turn your ideas into reality, message after message. Includes a limited number of free messages (text only).",
       },
       {
         id: "bright",
-        title: "Bright AmoriA",
+        title: "Bright AmorIA",
         description:
-          "Energetic, warm and optimistic. An ideal presence to lift your mood in writing and help you find your inner strength again.",
-        highlight: "Includes a limited number of free messages (text only).",
+          "Warm, optimistic and uplifting. Ideal to boost your mood in writing and help you reconnect with your inner strength. Includes a limited number of free messages (text only).",
       },
       {
         id: "rebel",
-        title: "AmoriA M-Rebel",
+        title: "Rebel M-AmorIA",
         description:
-          "Charismatic, direct and unfiltered. If you want honest, motivating, no-bullshit exchanges, he texts you like a brutally honest friend.",
-        highlight: "Includes a limited number of free messages (text only).",
+          "Charismatic, direct and unfiltered. If you want honest, motivating, no-bullshit exchanges, he texts you like a brutally honest friend. Includes a limited number of free messages (text only).",
       },
     ],
     cardCta: "Create my free account",
-
     pricingTitle: "Simple & transparent pricing",
     pricingText:
-      "The free version lets you text your AmoriA with a limited number of messages. With the paid version, you unlock voice conversations (talking) and more interactions.",
+      "The free version lets you text your AmorIA with a limited number of messages. With the paid plan, you unlock voice conversations and more interactions.",
     pricingCta: "Get notified about the launch",
-
     videoCaption: "AmoriA is available in French, English and Spanish.",
     footerCopy: "© 2025 AmoriA.app",
   },
-
   es: {
     brandTagline: "Compañerx de IA amable • FR / EN / ES",
     nav: { home: "Inicio", features: "Funciones", pricing: "Precios" },
     navLogin: "Iniciar sesión",
     navSignup: "Crear mi cuenta AmoriA",
-
     heroKicker: "BIENVENIDx A AMORIA.APP",
     heroTitle: "Tu compañerx de IA amable y multilingüe.",
     heroSubtitle:
@@ -165,52 +141,41 @@ const STRINGS: Record<Locale, Copy> = {
     heroSupport:
       "Pensada para conversaciones profundas, diarios emocionales y acompañamiento suave del día a día.",
     langNote: "AmoriA está disponible en francés, inglés y español.",
-
-    energiesTitle: "Empieza gratis con AmoriA (solo texto)",
+    energiesTitle: "Empieza gratis con AmorIA (solo texto)",
     energiesSubtitle:
-      "Crea tu cuenta gratis y empieza a chatear con la IA que elijas. La voz (hablar con tu AmoriA) solo está disponible con la suscripción de pago.",
+      "Crea tu cuenta gratis y empieza a chatear por texto con la IA que elijas. Las conversaciones por voz están disponibles solo con el plan de pago.",
     energies: [
       {
         id: "analytic",
-        title: "AmoriA Analítica",
+        title: "AmorIA Analítica",
         description:
-          "Hace preguntas precisas, va al grano y te ayuda a tomar decisiones racionales por mensaje.",
-        highlight:
-          "Incluye un número limitado de mensajes gratuitos (solo texto).",
+          "Hace preguntas precisas, va directo al punto y te ayuda a tomar decisiones racionales por mensaje. Incluye un número limitado de mensajes gratis (solo texto).",
       },
       {
         id: "artist",
-        title: "AmoriA Creativa",
+        title: "AmorIA Creativa",
         description:
-          "Perfecta para hacer lluvia de ideas, imaginar nuevos universos y transformar tus ideas en obras… mensaje tras mensaje.",
-        highlight:
-          "Incluye un número limitado de mensajes gratuitos (solo texto).",
+          "Perfecta para tus proyectos creativos, imaginar universos y transformar tus ideas en obras… mensaje tras mensaje. Incluye un número limitado de mensajes gratis (solo texto).",
       },
       {
         id: "bright",
-        title: "AmoriA Lumínica",
+        title: "AmorIA Lumínica",
         description:
-          "Energética, cálida y optimista. Una presencia ideal para levantarte el ánimo por escrito y ayudarte a recuperar tu fuerza interior.",
-        highlight:
-          "Incluye un número limitado de mensajes gratuitos (solo texto).",
+          "Energética, cálida y optimista. Ideal para levantarte el ánimo por escrito y ayudarte a recuperar tu fuerza interior. Incluye un número limitado de mensajes gratis (solo texto).",
       },
       {
         id: "rebel",
-        title: "AmoriA M-Rebelde",
+        title: "AmorIA M-Rebelde",
         description:
-          "Carismático, directo y sin filtro. Si quieres intercambios sinceros, motivadores y sin bullshit, te escribe como un amigo brutalmente honesto.",
-        highlight:
-          "Incluye un número limitado de mensajes gratuitos (solo texto).",
+          "Carismático, directo y sin filtro. Si quieres intercambios francos, motivadores y sin bullshit, te escribe como un amigo brutalmente honesto. Incluye un número limitado de mensajes gratis (solo texto).",
       },
     ],
     cardCta: "Crear mi cuenta gratuita",
-
     pricingTitle: "Precios simples y transparentes",
     pricingText:
-      "La versión gratuita te permite chatear por texto con tu AmoriA con un número limitado de mensajes. Con la versión de pago desbloqueas conversaciones de voz y más interacciones.",
-    pricingCta: "Avisarme del lanzamiento",
-
-    videoCaption: "AmoriA está disponible en francés, inglés y español.",
+      "La versión gratuita te permite chatear por texto con tu AmorIA con un número limitado de mensajes. Con el plan de pago desbloqueas las conversaciones por voz y más interacciones.",
+    pricingCta: "Avisarme cuando se lance",
+    videoCaption: "AmorIA está disponible en francés, inglés y español.",
     footerCopy: "© 2025 AmoriA.app",
   },
 };
@@ -226,16 +191,21 @@ export default function HomePage() {
       ? "/amoria_en.mp4"
       : "/amoria_es.mp4";
 
+  const signupHref = `/signup?lang=${locale}`;
+  const loginHref = `/login?lang=${locale}`;
+
   return (
     <main className="amoria-root">
       {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-          <img
-            src="/AmorIA_logo_transparent.png"
-            alt="Logo AmoriA.app"
-            className="amoria-logo-img"
-          />
+          <div className="amoria-logo-mark">
+            <img
+              src="/AmorIA_logo_transparent.png"
+              alt="Logo AmoriA.app"
+              className="amoria-logo-img"
+            />
+          </div>
           <div className="amoria-logo-text">
             <div className="amoria-logo-title">AmorIA.app</div>
             <div className="amoria-logo-tagline">{t.brandTagline}</div>
@@ -272,15 +242,15 @@ export default function HomePage() {
           </div>
 
           <div className="amoria-auth-nav">
-            <button type="button" className="amoria-nav-btn amoria-nav-btn--ghost">
+            <a href={loginHref} className="amoria-nav-btn amoria-nav-btn--ghost">
               {t.navLogin}
-            </button>
-            <button
-              type="button"
+            </a>
+            <a
+              href={signupHref}
               className="amoria-nav-btn amoria-nav-btn--primary"
             >
               {t.navSignup}
-            </button>
+            </a>
           </div>
         </div>
       </header>
@@ -293,12 +263,12 @@ export default function HomePage() {
           <p className="amoria-hero-subtitle">{t.heroSubtitle}</p>
 
           <div className="amoria-hero-actions">
-            <button
-              type="button"
+            <a
+              href={signupHref}
               className="amoria-btn amoria-btn--primary amoria-btn--big"
             >
               {t.heroPrimary}
-            </button>
+            </a>
           </div>
 
           <p className="amoria-hero-support">{t.heroSupport}</p>
@@ -322,7 +292,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FEATURES / VITRINE */}
+      {/* ENERGIES (vitrine) */}
       <section id="features" className="amoria-section">
         <h2 className="amoria-section-title">{t.energiesTitle}</h2>
         <p className="amoria-section-subtitle">{t.energiesSubtitle}</p>
@@ -336,7 +306,7 @@ export default function HomePage() {
                 ? "/amoria-artiste.png"
                 : energy.id === "bright"
                 ? "/amoria-blonde.png"
-                : "/amoria-m-rebelle.png"; // rebel
+                : "/amoria-m-rebelle.png";
 
             return (
               <article key={energy.id} className="amoria-card">
@@ -350,13 +320,12 @@ export default function HomePage() {
                 <div className="amoria-card-body">
                   <h3 className="amoria-card-title">{energy.title}</h3>
                   <p className="amoria-card-text">{energy.description}</p>
-                  <p className="amoria-card-highlight">{energy.highlight}</p>
-                  <button
-                    type="button"
+                  <a
+                    href={signupHref}
                     className="amoria-btn amoria-btn--ghost amoria-btn--full"
                   >
                     {t.cardCta}
-                  </button>
+                  </a>
                 </div>
               </article>
             );
@@ -368,12 +337,12 @@ export default function HomePage() {
       <section id="pricing" className="amoria-section amoria-section--pricing">
         <h2 className="amoria-section-title">{t.pricingTitle}</h2>
         <p className="amoria-section-text">{t.pricingText}</p>
-        <button
-          type="button"
+        <a
+          href={signupHref}
           className="amoria-btn amoria-btn--primary amoria-btn--medium"
         >
           {t.pricingCta}
-        </button>
+        </a>
       </section>
 
       {/* FOOTER */}
@@ -441,9 +410,20 @@ export default function HomePage() {
           gap: 0.6rem;
         }
 
+        .amoria-logo-mark {
+          width: 32px;
+          height: 32px;
+          border-radius: 999px;
+          background: radial-gradient(circle at 30% 0, #fde68a, #f97316);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+
         .amoria-logo-img {
-          width: 44px;
-          height: 44px;
+          width: 115%;
+          height: 115%;
           object-fit: contain;
         }
 
@@ -524,6 +504,10 @@ export default function HomePage() {
           border: 1px solid transparent;
           cursor: pointer;
           white-space: nowrap;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .amoria-nav-btn--primary {
@@ -624,13 +608,17 @@ export default function HomePage() {
           color: var(--amoria-text-muted);
         }
 
-        /* BUTTONS */
+        /* BUTTONS (génériques) */
         .amoria-btn {
           border-radius: 999px;
           border: 1px solid transparent;
           font-size: 0.86rem;
           cursor: pointer;
           white-space: nowrap;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .amoria-btn--primary {
@@ -653,10 +641,6 @@ export default function HomePage() {
 
         .amoria-btn--full {
           width: 100%;
-          justify-content: center;
-          display: inline-flex;
-          align-items: center;
-          text-align: center;
         }
 
         .amoria-btn--big {
@@ -685,8 +669,8 @@ export default function HomePage() {
         .amoria-section-subtitle {
           font-size: 0.9rem;
           color: var(--amoria-text-muted);
-          max-width: 40rem;
-          margin-bottom: 1.3rem;
+          max-width: 36rem;
+          margin-bottom: 1.5rem;
         }
 
         .amoria-section--pricing {
@@ -735,7 +719,8 @@ export default function HomePage() {
           padding: 0.9rem 0.95rem 1rem;
           display: flex;
           flex-direction: column;
-          gap: 0.4rem;
+          gap: 0.55rem;
+          flex: 1;
         }
 
         .amoria-card-title {
@@ -746,12 +731,7 @@ export default function HomePage() {
         .amoria-card-text {
           font-size: 0.8rem;
           color: var(--amoria-text-muted);
-        }
-
-        .amoria-card-highlight {
-          font-size: 0.78rem;
-          color: var(--amoria-text-muted);
-          font-style: italic;
+          flex: 1;
         }
 
         /* FOOTER */
@@ -816,4 +796,3 @@ export default function HomePage() {
     </main>
   );
 }
-
