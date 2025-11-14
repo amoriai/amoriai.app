@@ -32,7 +32,7 @@ const STRINGS: Record<
     brandTagline: "Partenaire IA bienveillant·e • FR / EN / ES",
     nav: { home: "Accueil", features: "Fonctionnalités", pricing: "Tarifs" },
     navLogin: "Me connecter",
-    navSignup: "Créer mon compte AmoriA",
+    navSignup: "Créer mon compte gratuit",
     heroKicker: "BIENVENUE SUR AMORIA.APP",
     heroTitle: "Votre partenaire IA bienveillant·e & multilingue.",
     heroSubtitle:
@@ -82,7 +82,7 @@ const STRINGS: Record<
     brandTagline: "Caring AI partner • FR / EN / ES",
     nav: { home: "Home", features: "Features", pricing: "Pricing" },
     navLogin: "Log in",
-    navSignup: "Create my AmoriA account",
+    navSignup: "Create my free account",
     heroKicker: "WELCOME TO AMORIA.APP",
     heroTitle: "Your caring & multilingual AI partner.",
     heroSubtitle:
@@ -132,7 +132,7 @@ const STRINGS: Record<
     brandTagline: "Compañerx de IA amable • FR / EN / ES",
     nav: { home: "Inicio", features: "Funciones", pricing: "Precios" },
     navLogin: "Iniciar sesión",
-    navSignup: "Crear mi cuenta AmoriA",
+    navSignup: "Crear mi cuenta gratuita",
     heroKicker: "BIENVENIDx A AMORIA.APP",
     heroTitle: "Tu compañerx de IA amable y multilingüe.",
     heroSubtitle:
@@ -196,19 +196,19 @@ export default function HomePage() {
       {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-  <div className="amoria-logo-mark">
-    <img
-      src="/AmorIA_logo_transparent.png"
-      alt="Logo AmorIA.app"
-      className="amoria-logo-img"
-    />
-  </div>
+          <div className="amoria-logo-mark">
+            <img
+              src="/AmorIA_logo_transparent.png"
+              alt="Logo AmorIA.app"
+              className="amoria-logo-img"
+            />
+          </div>
 
-  <div className="amoria-logo-text">
-    <div className="amoria-logo-title">AmoriA.app</div>
-    <div className="amoria-logo-tagline">{t.brandTagline}</div>
-  </div>
-</div>
+          <div className="amoria-logo-text">
+            <div className="amoria-logo-title">AmoriA.app</div>
+            <div className="amoria-logo-tagline">{t.brandTagline}</div>
+          </div>
+        </div>
 
         <nav className="amoria-nav">
           <a href="#hero" className="amoria-nav-link">
