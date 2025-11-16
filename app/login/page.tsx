@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import { useSearchParams } from "next/navigation";
+import React, { useEffect, useState, FormEvent } from "react";
 
 type Locale = "fr" | "en" | "es";
 
@@ -9,134 +8,156 @@ const STRINGS: Record<
   Locale,
   {
     title: string;
-    subtitle: string;
-    helper: string;
-    button: string;
+    emailLabel: string;
+    passwordLabel: string;
+    submit: string;
+    noAccount: string;
+    createAccount: string;
   }
 > = {
   fr: {
-    title: "Connexion AmorIA",
-    subtitle:
-      "La page de connexion complète (Google, email, mot de passe) arrive bientôt.",
-    helper:
-      "Pour l’instant, tu peux déjà créer ton compte gratuit sur la page d’inscription.",
-    button: "Créer mon compte gratuit",
+    title: "Connexion à mon compte",
+    emailLabel: "Adresse courriel",
+    passwordLabel: "Mot de passe",
+    submit: "Me connecter",
+    noAccount: "Pas encore de compte ?",
+    createAccount: "Créer mon compte",
   },
   en: {
-    title: "AmorIA login",
-    subtitle:
-      "The full login page (Google, email, password) is coming soon.",
-    helper:
-      "For now, you can already create your free account on the sign-up page.",
-    button: "Create my free account",
+    title: "Log in to my account",
+    emailLabel: "Email address",
+    passwordLabel: "Password",
+    submit: "Log in",
+    noAccount: "Don't have an account?",
+    createAccount: "Create an account",
   },
   es: {
-    title: "Inicio de sesión AmorIA",
-    subtitle:
-      "La página completa de inicio de sesión (Google, email, contraseña) llegará pronto.",
-    helper:
-      "Por ahora, ya puedes crear tu cuenta gratuita en la página de registro.",
-    button: "Crear mi cuenta gratuita",
+    title: "Iniciar sesión",
+    emailLabel: "Correo electrónico",
+    passwordLabel: "Contraseña",
+    submit: "Iniciar sesión",
+    noAccount: "¿No tienes cuenta?",
+    createAccount: "Crear cuenta",
   },
 };
 
 export default function LoginPage() {
-  const searchParams = useSearchParams();
-  const lang = (searchParams.get("lang") as Locale) || "fr";
-  const t = STRINGS[lang] ?? STRINGS.fr;
+  const [locale, setLocale] = useState<Locale>("fr");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const lang = params.get("lang");
+    if (lang === "fr" || lang === "en" || lang === "es") {
+      setLocale(lang);
+    }
+  }, []);
+
+  const t = STRINGS[locale];
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+
+    // plus tard: appel auth
+
+    // après login → page IA
+    window.location.href = `/create-ai?lang=${locale}`;
+  };
 
   return (
-    <main className="amoria-auth-root">
-      <div className="amoria-auth-card">
-        <h1 className="amoria-auth-title">{t.title}</h1>
-        <p className="amoria-auth-subtitle">{t.subtitle}</p>
-        <p className="amoria-auth-helper">{t.helper}</p>
+    <main
+      style={{
+        minHeight: "100vh",
+        padding: "2rem",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background:
+          "radial-gradient(circle at top, #111827 0, #020617 45%, #000 100%)",
+        color: "#e5e7eb",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "420px",
+          background:
+            "linear-gradient(145deg, rgba(15,23,42,0.98), rgba(15,23,42,0.94))",
+          padding: "2rem",
+          borderRadius: "1.5rem",
+          border: "1px solid rgba(148,163,184,0.4)",
+        }}
+      >
+        <h1 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>{t.title}</h1>
 
-        <a
-          href={`/signup?lang=${lang}`}
-          className="amoria-btn amoria-btn--primary amoria-auth-btn"
+        <form onSubmit={handleSubmit}>
+          <label style={{ display: "block", marginBottom: "0.3rem" }}>
+            {t.emailLabel}
+          </label>
+          <input
+            type="email"
+            required
+            style={{
+              width: "100%",
+              padding: "0.7rem",
+              marginBottom: "1rem",
+              background: "#020617",
+              border: "1px solid rgba(148,163,184,0.6)",
+              borderRadius: "0.75rem",
+              color: "#fff",
+            }}
+          />
+
+          <label style={{ display: "block", marginBottom: "0.3rem" }}>
+            {t.passwordLabel}
+          </label>
+          <input
+            type="password"
+            required
+            style={{
+              width: "100%",
+              padding: "0.7rem",
+              marginBottom: "1.2rem",
+              background: "#020617",
+              border: "1px solid rgba(148,163,184,0.6)",
+              borderRadius: "0.75rem",
+              color: "#fff",
+            }}
+          />
+
+          <button
+            type="submit"
+            style={{
+              width: "100%",
+              padding: "0.8rem",
+              background:
+                "linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316)",
+              borderRadius: "999px",
+              border: "none",
+              color: "#fff",
+              fontWeight: 600,
+            }}
+          >
+            {t.submit}
+          </button>
+        </form>
+
+        <p
+          style={{
+            marginTop: "1rem",
+            fontSize: "0.85rem",
+            textAlign: "center",
+            color: "#9ca3af",
+          }}
         >
-          {t.button}
-        </a>
+          {t.noAccount}{" "}
+          <a
+            href={`/signup?lang=${locale}`}
+            style={{ color: "#f9a8d4", textDecoration: "none" }}
+          >
+            {t.createAccount}
+          </a>
+        </p>
       </div>
-
-      <style jsx global>{`
-        .amoria-auth-root {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 1.5rem;
-          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-            "Helvetica Neue", Arial, sans-serif;
-          color: #e5e7eb;
-        }
-
-        .amoria-auth-card {
-          max-width: 520px;
-          width: 100%;
-          background: #02081f;
-          border-radius: 1.5rem;
-          border: 1px solid rgba(148, 163, 184, 0.5);
-          padding: 2.2rem 2.4rem 2.4rem;
-          box-shadow: 0 18px 40px rgba(15, 23, 42, 0.7);
-          text-align: center;
-        }
-
-        .amoria-auth-title {
-          font-size: 1.6rem;
-          margin: 0 0 0.75rem;
-        }
-
-        .amoria-auth-subtitle {
-          font-size: 0.95rem;
-          margin: 0 0 0.9rem;
-          color: #e5e7eb;
-          font-weight: 500;
-        }
-
-        .amoria-auth-helper {
-          font-size: 0.85rem;
-          margin: 0 0 1.7rem;
-          color: #9ca3af;
-        }
-
-        .amoria-auth-btn {
-          display: inline-flex;
-          margin: 0 auto;
-        }
-
-        /* On réutilise le style général des boutons AmorIA */
-        .amoria-btn {
-          border-radius: 999px;
-          border: 1px solid transparent;
-          font-size: 0.9rem;
-          cursor: pointer;
-          white-space: nowrap;
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .amoria-btn--primary {
-          padding: 0.8rem 1.7rem;
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c);
-          color: #f9fafb;
-          box-shadow: 0 12px 30px rgba(248, 113, 113, 0.35);
-        }
-
-        @media (max-width: 640px) {
-          .amoria-auth-card {
-            padding: 1.8rem 1.6rem 2rem;
-          }
-
-          .amoria-auth-title {
-            font-size: 1.4rem;
-          }
-        }
-      `}</style>
     </main>
   );
 }
