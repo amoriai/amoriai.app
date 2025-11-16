@@ -68,7 +68,7 @@ export default function SignupPage() {
         setLocale(lang);
       }
     } catch {
-      // on ignore si jamais ça plante (très improbable)
+      // ignore
     }
   }, []);
 
@@ -76,8 +76,10 @@ export default function SignupPage() {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // Ici tu brancheras plus tard ton vrai système d’auth
-    alert("Inscription démo – la logique d’auth sera branchée plus tard.");
+
+    // plus tard: appel à ton backend / Supabase / etc.
+    // Pour l’instant on enchaîne direct sur la création d’IA
+    window.location.href = `/create-ai?lang=${locale}`;
   };
 
   return (
@@ -108,7 +110,7 @@ export default function SignupPage() {
           border: "1px solid rgba(148,163,184,0.45)",
         }}
       >
-        {/* Petit lien retour en haut */}
+        {/* Lien retour en haut */}
         <a
           href="/"
           style={{
@@ -160,7 +162,6 @@ export default function SignupPage() {
             cursor: "pointer",
           }}
         >
-          {/* Icône Google simplifiée (placeholder) */}
           <span
             style={{
               width: "18px",
