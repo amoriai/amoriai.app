@@ -59,7 +59,7 @@ const STRINGS: Record<
 export default function SignupPage() {
   const [locale, setLocale] = useState<Locale>("fr");
 
-  // On lit ?lang=fr|en|es côté client seulement
+  // Lire ?lang=fr|en|es côté client
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -68,7 +68,7 @@ export default function SignupPage() {
         setLocale(lang);
       }
     } catch {
-      // ignore
+      // on ignore en cas de souci
     }
   }, []);
 
@@ -77,8 +77,14 @@ export default function SignupPage() {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
-    // plus tard: appel à ton backend / Supabase / etc.
-    // Pour l’instant on enchaîne direct sur la création d’IA
+    // Plus tard: appel à ton backend / Supabase / etc.
+    // Pour l’instant on enchaîne sur la création d’IA
+    window.location.href = `/create-ai?lang=${locale}`;
+  };
+
+  const handleGoogleClick = () => {
+    // Plus tard: vraie authentification Google (OAuth)
+    // Pour l’instant, on simule le flow et on envoie aussi vers create-ai
     window.location.href = `/create-ai?lang=${locale}`;
   };
 
@@ -110,7 +116,7 @@ export default function SignupPage() {
           border: "1px solid rgba(148,163,184,0.45)",
         }}
       >
-        {/* Lien retour en haut */}
+        {/* Lien retour */}
         <a
           href="/"
           style={{
@@ -147,6 +153,7 @@ export default function SignupPage() {
         {/* Bouton Google */}
         <button
           type="button"
+          onClick={handleGoogleClick}
           style={{
             width: "100%",
             padding: "0.7rem 1rem",
@@ -162,6 +169,7 @@ export default function SignupPage() {
             cursor: "pointer",
           }}
         >
+          {/* Icône Google simplifiée (placeholder) */}
           <span
             style={{
               width: "18px",
