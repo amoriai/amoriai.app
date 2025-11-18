@@ -1,309 +1,193 @@
 "use client";
 
-import React, { useEffect, useState, FormEvent } from "react";
-
-type Locale = "fr" | "en" | "es";
-
-const STRINGS: Record<
-  Locale,
-  {
-    title: string;
-    subtitle: string;
-    withGoogle: string;
-    or: string;
-    emailLabel: string;
-    passwordLabel: string;
-    submit: string;
-    already: string;
-    loginLink: string;
-  }
-> = {
-  fr: {
-    title: "Créer mon compte gratuit",
-    subtitle:
-      "Crée ton compte gratuitement et commence à texter avec l’IA de ton choix. La voix (parler avec ton AmorIA) est disponible uniquement avec l’abonnement payant.",
-    withGoogle: "Continuer avec Google",
-    or: "ou",
-    emailLabel: "Adresse courriel",
-    passwordLabel: "Mot de passe",
-    submit: "Créer mon compte",
-    already: "Tu as déjà un compte ?",
-    loginLink: "Me connecter",
-  },
-  en: {
-    title: "Create my free account",
-    subtitle:
-      "Create your free account and start texting with the AI of your choice. Voice conversations are only available with the paid plan.",
-    withGoogle: "Continue with Google",
-    or: "or",
-    emailLabel: "Email address",
-    passwordLabel: "Password",
-    submit: "Create my account",
-    already: "Already have an account?",
-    loginLink: "Log in",
-  },
-  es: {
-    title: "Crear mi cuenta gratuita",
-    subtitle:
-      "Crea tu cuenta gratis y empieza a chatear por texto con la IA que elijas. Las conversaciones por voz están disponibles solo con el plan de pago.",
-    withGoogle: "Continuar con Google",
-    or: "o",
-    emailLabel: "Correo electrónico",
-    passwordLabel: "Contraseña",
-    submit: "Crear mi cuenta",
-    already: "¿Ya tienes una cuenta?",
-    loginLink: "Iniciar sesión",
-  },
-};
+import React, { FormEvent, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function SignupPage() {
-  const [locale, setLocale] = useState<Locale>("fr");
+  const searchParams = useSearchParams();
+  const locale = searchParams.get("lang") ?? "fr";
 
-  // Lire ?lang=fr|en|es côté client
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const lang = params.get("lang");
-      if (lang === "fr" || lang === "en" || lang === "es") {
-        setLocale(lang);
-      }
-    } catch {
-      // on ignore en cas de souci
-    }
-  }, []);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loadingEmail, setLoadingEmail] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
-  const t = STRINGS[locale];
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-
-    // Plus tard: appel à ton backend / Supabase / etc.
-    // Pour l’instant on enchaîne sur la création d’IA
-    window.location.href = `/create-ai?lang=${locale}`;
+  const redirectAfterAuth = () => {
+    const url = `/create-ai?lang=${locale}`;
+    window.location.href = url;
   };
 
-  const handleGoogleClick = () => {
-    // Plus tard: vraie authentification Google (OAuth)
-    // Pour l’instant, on simule le flow et on envoie aussi vers create-ai
-    window.location.href = `/create-ai?lang=${locale}`;
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    setLoadingEmail(true);
+
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          // Si tu veux obliger la confirmation par email, garde ça.
+          // L’utilisateur sera redirigé ici après avoir cliqué dans le courriel.
+          emailRedirectTo: `${window.location.origin}/create-ai?lang=${locale}`,
+        },
+      });
+
+      if (error) {
+        setError(error.message);
+      } else {
+        // Si tu désactives la confirmation email dans Supabase,
+        // tu peux rediriger directement :
+        redirectAfterAuth();
+        // Sinon, affiche un message :
+        // setInfo("Vérifie ta boîte courriel pour confirmer ton compte.");
+      }
+    } catch (err: any) {
+      setError(err?.message ?? "Erreur inconnue");
+    } finally {
+      setLoadingEmail(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setError(null);
+    setInfo(null);
+    setLoadingGoogle(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/create-ai?lang=${locale}`,
+        },
+      });
+
+      if (error) {
+        setError(error.message);
+        setLoadingGoogle(false);
+      }
+      // Aucun redirect manuel ici : Google/Supabase gère la redirection.
+    } catch (err: any) {
+      setError(err?.message ?? "Erreur inconnue");
+      setLoadingGoogle(false);
+    }
   };
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        margin: 0,
-        padding: "2rem 1rem",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background:
-          "radial-gradient(circle at top, #111827 0, #020617 45%, #000 100%)",
-        color: "#e5e7eb",
-        fontFamily:
-          'system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif',
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "420px",
-          background:
-            "linear-gradient(145deg, rgba(15,23,42,0.98), rgba(15,23,42,0.94))",
-          borderRadius: "1.5rem",
-          padding: "2rem 1.75rem",
-          boxShadow: "0 24px 60px rgba(15,23,42,0.9)",
-          border: "1px solid rgba(148,163,184,0.45)",
-        }}
-      >
-        {/* Lien retour */}
-        <a
-          href="/"
-          style={{
-            fontSize: "0.78rem",
-            color: "#9ca3af",
-            textDecoration: "none",
-          }}
-        >
-          ← Retour à la page d’accueil
-        </a>
-
-        <h1
-          style={{
-            marginTop: "1.25rem",
-            marginBottom: "0.75rem",
-            fontSize: "1.4rem",
-            fontWeight: 600,
-          }}
-        >
-          {t.title}
-        </h1>
-
-        <p
-          style={{
-            fontSize: "0.85rem",
-            color: "#9ca3af",
-            lineHeight: 1.6,
-            marginBottom: "1.5rem",
-          }}
-        >
-          {t.subtitle}
-        </p>
-
-        {/* Bouton Google */}
-        <button
-          type="button"
-          onClick={handleGoogleClick}
-          style={{
-            width: "100%",
-            padding: "0.7rem 1rem",
-            borderRadius: "999px",
-            border: "1px solid rgba(148,163,184,0.6)",
-            background: "#020617",
-            color: "#e5e7eb",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.6rem",
-            fontSize: "0.86rem",
-            cursor: "pointer",
-          }}
-        >
-          {/* Icône Google simplifiée (placeholder) */}
-          <span
-            style={{
-              width: "18px",
-              height: "18px",
-              borderRadius: "999px",
-              background: "#fff",
-              display: "inline-block",
-            }}
-          />
-          <span>{t.withGoogle}</span>
-        </button>
-
-        {/* Séparateur "ou" */}
-        <div
-          style={{
-            margin: "1.4rem 0",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.75rem",
-            fontSize: "0.75rem",
-            color: "#6b7280",
-          }}
-        >
-          <div
-            style={{
-              height: "1px",
-              flex: 1,
-              background:
-                "linear-gradient(to right, transparent, rgba(148,163,184,0.6), transparent)",
-            }}
-          />
-          <span>{t.or}</span>
-          <div
-            style={{
-              height: "1px",
-              flex: 1,
-              background:
-                "linear-gradient(to right, transparent, rgba(148,163,184,0.6), transparent)",
-            }}
-          />
-        </div>
-
-        {/* Formulaire email + mot de passe */}
-        <form onSubmit={handleSubmit}>
-          <label
-            style={{
-              display: "block",
-              fontSize: "0.8rem",
-              marginBottom: "0.25rem",
-            }}
-          >
-            {t.emailLabel}
-          </label>
-          <input
-            type="email"
-            required
-            style={{
-              width: "100%",
-              padding: "0.6rem 0.8rem",
-              borderRadius: "0.75rem",
-              border: "1px solid rgba(148,163,184,0.6)",
-              background: "#020617",
-              color: "#e5e7eb",
-              fontSize: "0.86rem",
-              marginBottom: "0.9rem",
-            }}
-          />
-
-          <label
-            style={{
-              display: "block",
-              fontSize: "0.8rem",
-              marginBottom: "0.25rem",
-            }}
-          >
-            {t.passwordLabel}
-          </label>
-          <input
-            type="password"
-            required
-            style={{
-              width: "100%",
-              padding: "0.6rem 0.8rem",
-              borderRadius: "0.75rem",
-              border: "1px solid rgba(148,163,184,0.6)",
-              background: "#020617",
-              color: "#e5e7eb",
-              fontSize: "0.86rem",
-              marginBottom: "1.2rem",
-            }}
-          />
-
+    <div className="min-h-screen flex items-center justify-center bg-[#050816] px-4">
+      <div className="w-full max-w-md rounded-3xl bg-gradient-to-b from-[#0b1020] to-[#050816] p-[1px] shadow-2xl">
+        <div className="rounded-3xl bg-[#050816] px-8 py-10">
           <button
-            type="submit"
-            style={{
-              width: "100%",
-              padding: "0.75rem 1.2rem",
-              borderRadius: "999px",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "0.9rem",
-              fontWeight: 500,
-              background:
-                "linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316)",
-              color: "#f9fafb",
-              boxShadow: "0 16px 40px rgba(248, 113, 113, 0.45)",
-            }}
+            type="button"
+            onClick={() => (window.location.href = "/")}
+            className="text-sm text-slate-400 mb-6 hover:text-white"
           >
-            {t.submit}
+            ← Retour à la page d’accueil
           </button>
-        </form>
 
-        {/* Lien "déjà un compte" */}
-        <p
-          style={{
-            marginTop: "1rem",
-            fontSize: "0.8rem",
-            color: "#9ca3af",
-            textAlign: "center",
-          }}
-        >
-          {t.already}{" "}
-          <a
-            href={`/login?lang=${locale}`}
-            style={{
-              color: "#f9a8d4",
-              textDecoration: "none",
-              fontWeight: 500,
-            }}
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white mb-2">
+            Créer mon compte gratuit
+          </h1>
+          <p className="text-sm text-slate-400 mb-8">
+            Crée ton compte gratuitement et commence à texter avec l’IA de ton
+            choix. La voix (parler avec ton AmorIA) est disponible uniquement
+            avec l’abonnement payant.
+          </p>
+
+          {/* Google */}
+          <button
+            type="button"
+            onClick={handleGoogle}
+            disabled={loadingGoogle || loadingEmail}
+            className="w-full flex items-center justify-center gap-2 rounded-full bg-white text-slate-900 font-medium py-3 mb-4 hover:bg-slate-100 disabled:opacity-60"
           >
-            {t.loginLink}
-          </a>
-        </p>
+            {loadingGoogle ? "Connexion avec Google..." : "Continuer avec Google"}
+          </button>
+
+          <div className="flex items-center gap-3 mb-4">
+            <div className="h-px flex-1 bg-slate-700" />
+            <span className="text-xs text-slate-400">ou</span>
+            <div className="h-px flex-1 bg-slate-700" />
+          </div>
+
+          {/* Formulaire email */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-slate-200 mb-1"
+              >
+                Adresse courriel
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl bg-[#0b1020] border border-slate-700 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                placeholder="toi@example.com"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-slate-200 mb-1"
+              >
+                Mot de passe
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl bg-[#0b1020] border border-slate-700 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                placeholder="••••••••"
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-red-400 bg-red-950/40 border border-red-700/40 rounded-xl px-3 py-2">
+                {error}
+              </p>
+            )}
+
+            {info && (
+              <p className="text-sm text-emerald-300 bg-emerald-950/40 border border-emerald-700/40 rounded-xl px-3 py-2">
+                {info}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loadingEmail || loadingGoogle}
+              className="mt-2 w-full rounded-full bg-gradient-to-r from-pink-500 to-orange-400 py-3 text-sm font-semibold text-white shadow-lg shadow-pink-500/30 hover:brightness-110 disabled:opacity-60"
+            >
+              {loadingEmail ? "Création du compte..." : "Créer mon compte"}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-slate-400">
+            Tu as déjà un compte ?{" "}
+            <button
+              type="button"
+              onClick={() =>
+                (window.location.href = `/login?lang=${locale}`)
+              }
+              className="text-pink-400 hover:text-pink-300 font-medium"
+            >
+              Me connecter
+            </button>
+          </p>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
