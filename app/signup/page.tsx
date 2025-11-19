@@ -26,7 +26,7 @@ export default function SignupPage() {
 
     const { error } = await supabase.auth.signUp({
       email,
-      password
+      password,
     });
 
     setLoadingEmail(false);
@@ -36,7 +36,8 @@ export default function SignupPage() {
       return;
     }
 
-    // Redirection après la création du compte
+    // Supabase envoie normalement un email de confirmation.
+    // On fait comme si tout était OK et on enchaîne vers la création d'IA.
     window.location.href = `/create-ai?lang=${locale}`;
   };
 
@@ -58,7 +59,7 @@ export default function SignupPage() {
       setError(error.message);
       return;
     }
-    // Redirection gérée automatiquement par Google + Supabase
+    // La redirection est gérée par Google / Supabase.
   };
 
   const t = {
@@ -88,7 +89,7 @@ export default function SignupPage() {
         </h1>
         <p className="text-sm text-white/70 mb-6">{t.subtitle}</p>
 
-        {/* GOOGLE */}
+        {/* Bouton Google */}
         <button
           type="button"
           onClick={handleGoogle}
@@ -107,7 +108,7 @@ export default function SignupPage() {
           <div className="h-px flex-1 bg-white/10" />
         </div>
 
-        {/* FORM */}
+        {/* Formulaire email + mot de passe */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm mb-1">{t.emailLabel}</label>
