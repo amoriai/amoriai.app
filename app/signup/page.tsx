@@ -1,11 +1,10 @@
+export const dynamic = "force-dynamic";
+
 "use client";
 
 import React, { useState, FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
-
-// ⬇️ C’est la ligne qu’on ajoute pour forcer le rendu dynamique
-export const dynamic = "force-dynamic";
 
 export default function SignupPage() {
   const searchParams = useSearchParams();
@@ -27,7 +26,7 @@ export default function SignupPage() {
 
     const { error } = await supabase.auth.signUp({
       email,
-      password,
+      password
     });
 
     setLoadingEmail(false);
@@ -37,8 +36,7 @@ export default function SignupPage() {
       return;
     }
 
-    // Supabase envoie normalement un email de confirmation.
-    // On enchaîne vers la création d'IA.
+    // Redirection après la création du compte
     window.location.href = `/create-ai?lang=${locale}`;
   };
 
@@ -60,7 +58,7 @@ export default function SignupPage() {
       setError(error.message);
       return;
     }
-    // Redirection gérée par Google/Supabase
+    // Redirection gérée automatiquement par Google + Supabase
   };
 
   const t = {
@@ -90,7 +88,7 @@ export default function SignupPage() {
         </h1>
         <p className="text-sm text-white/70 mb-6">{t.subtitle}</p>
 
-        {/* Bouton Google */}
+        {/* GOOGLE */}
         <button
           type="button"
           onClick={handleGoogle}
@@ -109,7 +107,7 @@ export default function SignupPage() {
           <div className="h-px flex-1 bg-white/10" />
         </div>
 
-        {/* Formulaire email + mot de passe */}
+        {/* FORM */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm mb-1">{t.emailLabel}</label>
