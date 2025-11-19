@@ -4,6 +4,9 @@ import React, { useState, FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
+// ⬇️ C’est la ligne qu’on ajoute pour forcer le rendu dynamique
+export const dynamic = "force-dynamic";
+
 export default function SignupPage() {
   const searchParams = useSearchParams();
   const locale = searchParams.get("lang") || "fr";
@@ -35,7 +38,7 @@ export default function SignupPage() {
     }
 
     // Supabase envoie normalement un email de confirmation.
-    // On fait comme si tout était OK et on enchaîne vers la création d'IA.
+    // On enchaîne vers la création d'IA.
     window.location.href = `/create-ai?lang=${locale}`;
   };
 
@@ -46,7 +49,6 @@ export default function SignupPage() {
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      // tu peux ajouter redirectTo si tu veux contrôler le retour :
       // options: {
       //   redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/create-ai?lang=${locale}`,
       // },
@@ -58,9 +60,7 @@ export default function SignupPage() {
       setError(error.message);
       return;
     }
-
-    // La redirection sera gérée par Supabase / Google.
-    // Si tu ajoutes redirectTo ci-dessus, l’utilisateur reviendra sur create-ai.
+    // Redirection gérée par Google/Supabase
   };
 
   const t = {
