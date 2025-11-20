@@ -1,13 +1,18 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+// app/layout.tsx
+import type { ReactNode } from "react";
+import "./globals.css";
 
-/* Style global simple */
-body {
-  @apply bg-[#050816] text-white;
-}
+export const metadata = {
+  title: "AmorIA.app",
+  description: "Partenaire IA bienveillant·e et multilingue.",
+};
 
-/* Optionnel : style des liens */
-a {
-  @apply text-pink-400 hover:text-pink-300 underline-offset-2;
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="fr">
+      <body className="min-h-screen bg-[#050816] text-white antialiased">
+        {children}
+      </body>
+    </html>
+  );
 }
