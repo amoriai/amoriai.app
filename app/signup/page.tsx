@@ -1,14 +1,17 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
-import React, { useState, FormEvent } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, FormEvent } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
+// Récupère la langue dans l'URL côté navigateur
+function getLocaleFromUrl(): string {
+  if (typeof window === "undefined") return "fr";
+  const params = new URLSearchParams(window.location.search);
+  return params.get("lang") || "fr";
+}
+
 export default function SignupPage() {
-  const searchParams = useSearchParams();
-  const locale = searchParams.get("lang") || "fr";
+  const [locale] = useState<string>(getLocaleFromUrl);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +39,7 @@ export default function SignupPage() {
       return;
     }
 
-    // Après inscription par email → page de création d’IA
+    // Après inscription → page de création d'IA
     window.location.href = `/create-ai?lang=${locale}`;
   };
 
@@ -45,16 +48,11 @@ export default function SignupPage() {
     setInfo(null);
     setLoadingGoogle(true);
 
-    // URL complète vers la page de création d’IA
-    const redirectTo =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/create-ai?lang=${locale}`
-        : "https://amoriai.app/create-ai?lang=fr";
-
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo,
+        // On renvoie toujours vers /create-ai sur le bon domaine (localhost ou prod)
+        redirectTo: `${window.location.origin}/create-ai?lang=${locale}`,
       },
     });
 
@@ -64,8 +62,6 @@ export default function SignupPage() {
       setError(error.message);
       return;
     }
-    // Pas besoin de faire autre chose :
-    // Supabase va rediriger automatiquement vers redirectTo
   };
 
   const t = {
@@ -159,7 +155,9 @@ export default function SignupPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-white/60">{t.already}</p>
+        <p className="mt-6 text-center text-xs text-white/60">
+          {t.already}
+        </p>
       </div>
     </main>
   );
