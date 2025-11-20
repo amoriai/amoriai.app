@@ -3,18 +3,13 @@
 import React, { useState } from "react";
 
 type Locale = "fr" | "en" | "es";
+
 type PersonaId = "lyra" | "orion" | "kai" | "maelis";
 
-const PERSONAS: Record<
-  PersonaId,
-  {
-    image: string;
-  }
-> = {
-  lyra: { image: "/amoria_lyra.png" }, // optionnel : image de fallback
-  orion: { image: "/amoria_orion.png" },
-  kai: { image: "/amoria_kai.png" },
-  maelis: { image: "/amoria_maelis.png" },
+type Persona = {
+  id: PersonaId;
+  title: string;
+  description: string;
 };
 
 const STRINGS: Record<
@@ -30,10 +25,10 @@ const STRINGS: Record<
     heroPrimary: string;
     heroSupport: string;
     langNote: string;
-    energiesTitle: string;
-    energiesSubtitle: string;
-    energies: { id: PersonaId; title: string; description: string }[];
-    chooseEnergy: string;
+    personasTitle: string;
+    personasSubtitle: string;
+    personas: Persona[];
+    choosePersona: string;
     pricingTitle: string;
     pricingText: string;
     pricingCta: string;
@@ -49,15 +44,15 @@ const STRINGS: Record<
     heroKicker: "BIENVENUE SUR AMORIA.APP",
     heroTitle: "Votre partenaire IA bienveillant·e & multilingue.",
     heroSubtitle:
-      "AmorIA est une présence douce, disponible 24/7 pour discuter, réfléchir avec vous, poser les bonnes questions et vous aider à mieux comprendre vos émotions.",
+      "AmoriA est une présence douce, disponible 24/7 pour discuter, réfléchir avec vous, poser les bonnes questions et vous aider à mieux comprendre vos émotions.",
     heroPrimary: "Créer mon compte gratuit",
     heroSupport:
       "Optimisée pour les échanges profonds, les journaux émotionnels et le coaching doux du quotidien.",
-    langNote: "AmorIA vous accueille en français, anglais ou espagnol.",
-    energiesTitle: "Commence gratuitement avec AmorIA (en texte)",
-    energiesSubtitle:
+    langNote: "AmoriA vous accueille en français, anglais ou espagnol.",
+    personasTitle: "Commence gratuitement avec AmorIA (en texte)",
+    personasSubtitle:
       "Crée ton compte gratuitement et commence à texter avec l’IA de ton choix. La voix (parler avec ton AmorIA) est disponible uniquement avec l’abonnement payant.",
-    energies: [
+    personas: [
       {
         id: "lyra",
         title: "Lyra – AmorIA féminine",
@@ -83,13 +78,13 @@ const STRINGS: Record<
           "Figure plus mature et expérimentée, avec une énergie de mentor bienveillant et réaliste.",
       },
     ],
-    chooseEnergy: "Créer mon compte gratuit",
+    choosePersona: "Créer mon compte gratuit",
     pricingTitle: "Des tarifs simples & transparents",
     pricingText:
       "La version gratuite te permet de texter ton AmorIA avec un nombre limité de messages. Avec la version payante, tu déverrouilles les conversations vocales (parler) et plus d’interactions.",
     pricingCta: "Découvrir les abonnements",
-    videoCaption: "AmorIA est disponible en français, anglais et espagnol.",
-    footerCopy: "© 2025 AmorIA.app",
+    videoCaption: "AmoriA est disponible en français, anglais et espagnol.",
+    footerCopy: "© 2025 AmoriA.app",
   },
   en: {
     brandTagline: "Caring AI partner • FR / EN / ES",
@@ -99,20 +94,20 @@ const STRINGS: Record<
     heroKicker: "WELCOME TO AMORIA.APP",
     heroTitle: "Your caring & multilingual AI partner.",
     heroSubtitle:
-      "AmorIA is a gentle 24/7 presence to talk with, reflect with, ask better questions and help you understand your emotions.",
+      "AmoriA is a gentle 24/7 presence to talk with, reflect with, ask better questions and help you understand your emotions.",
     heroPrimary: "Create my free account",
     heroSupport:
       "Designed for deep conversations, emotional journaling and soft everyday coaching.",
-    langNote: "AmorIA is available in French, English and Spanish.",
-    energiesTitle: "Start for free with AmorIA (text only)",
-    energiesSubtitle:
+    langNote: "AmoriA is available in French, English and Spanish.",
+    personasTitle: "Start for free with AmorIA (text only)",
+    personasSubtitle:
       "Create your free account and start texting with the AI of your choice. Voice (talking to your AmorIA) is only available with the paid subscription.",
-    energies: [
+    personas: [
       {
         id: "lyra",
         title: "Lyra – Feminine AmorIA",
         description:
-          "A soft, empathic and reassuring presence, perfect to put your feelings into words.",
+          "A gentle, empathetic and reassuring presence, perfect for writing down your emotions.",
       },
       {
         id: "orion",
@@ -124,22 +119,22 @@ const STRINGS: Record<
         id: "kai",
         title: "Kai – Androgynous AmorIA",
         description:
-          "Fluid, inclusive presence, neither fully male nor female, centred on nuance and listening.",
+          "A fluid and inclusive presence, neither fully male nor female, focused on listening and nuance.",
       },
       {
         id: "maelis",
         title: "Maelis – 50+ Feminine AmorIA",
         description:
-          "More mature and experienced figure, with a warm mentor-like energy.",
+          "A more mature, experienced figure with the energy of a caring and realistic mentor.",
       },
     ],
-    chooseEnergy: "Create my free account",
+    choosePersona: "Create my free account",
     pricingTitle: "Simple & transparent pricing",
     pricingText:
       "The free version lets you text your AmorIA with a limited number of messages. With the paid plan, you unlock voice conversations and more interactions.",
     pricingCta: "See plans & pricing",
-    videoCaption: "AmorIA is available in French, English and Spanish.",
-    footerCopy: "© 2025 AmorIA.app",
+    videoCaption: "AmoriA is available in French, English and Spanish.",
+    footerCopy: "© 2025 AmoriA.app",
   },
   es: {
     brandTagline: "Compañerx de IA amable • FR / EN / ES",
@@ -149,87 +144,74 @@ const STRINGS: Record<
     heroKicker: "BIENVENIDx A AMORIA.APP",
     heroTitle: "Tu compañerx de IA amable y multilingüe.",
     heroSubtitle:
-      "AmorIA es una presencia suave, disponible 24/7 para conversar, reflexionar, hacer mejores preguntas y ayudarte a entender tus emociones.",
+      "AmoriA es una presencia suave, disponible 24/7 para conversar contigo, reflexionar, hacer mejores preguntas y ayudarte a entender tus emociones.",
     heroPrimary: "Crear mi cuenta gratuita",
     heroSupport:
       "Pensada para conversaciones profundas, diarios emocionales y acompañamiento suave del día a día.",
-    langNote: "AmorIA te recibe en francés, inglés o español.",
-    energiesTitle: "Empieza gratis con AmorIA (solo texto)",
-    energiesSubtitle:
+    langNote: "AmoriA te recibe en francés, inglés o español.",
+    personasTitle: "Empieza gratis con AmorIA (solo texto)",
+    personasSubtitle:
       "Crea tu cuenta gratuita y empieza a chatear por texto con la IA que elijas. La voz (hablar con tu AmorIA) está disponible solo con la suscripción de pago.",
-    energies: [
+    personas: [
       {
         id: "lyra",
         title: "Lyra – AmorIA femenina",
         description:
-          "Presencia suave, empática y tranquilizadora, ideal para poner tus emociones por escrito.",
+          "Presencia dulce, empática y tranquilizadora, ideal para escribir tus emociones.",
       },
       {
         id: "orion",
         title: "Orion – AmorIA masculina",
         description:
-          "Energía estable, protectora y estructurada para ayudarte a pensar con claridad y decidir.",
+          "Energía estable, protectora y estructurada para ayudarte a pensar y tomar decisiones.",
       },
       {
         id: "kai",
         title: "Kai – AmorIA andrógina",
         description:
-          "Presencia fluida e inclusiva, ni totalmente hombre ni mujer, centrada en la escucha.",
+          "Presencia fluida e inclusiva, ni totalmente hombre ni mujer, centrada en la escucha y el matiz.",
       },
       {
         id: "maelis",
         title: "Maelis – AmorIA 50+ femenina",
         description:
-          "Figura más madura y experimentada, con energía de mentora cálida y realista.",
+          "Figura más madura y experimentada, con energía de mentora amable y realista.",
       },
     ],
-    chooseEnergy: "Crear mi cuenta gratuita",
+    choosePersona: "Crear mi cuenta gratuita",
     pricingTitle: "Precios simples y transparentes",
     pricingText:
       "La versión gratuita te permite chatear por texto con tu AmorIA con un número limitado de mensajes. Con la versión de pago desbloqueas conversaciones de voz y más interacciones.",
     pricingCta: "Ver planes y precios",
-    videoCaption: "AmorIA está disponible en francés, inglés y español.",
-    footerCopy: "© 2025 AmorIA.app",
+    videoCaption: "AmoriA está disponible en francés, inglés y español.",
+    footerCopy: "© 2025 AmoriA.app",
   },
 };
-
-function getHeroVideoSrc(locale: Locale): string {
-  switch (locale) {
-    case "fr":
-      return "/amoria_fr.mp4";
-    case "en":
-      return "/amoria_en.mp4";
-    case "es":
-      return "/amoria_es.mp4";
-  }
-}
-
-function getPersonaVideoSrc(personaId: PersonaId, locale: Locale): string {
-  // Tes fichiers sont du type: amoria_lyra_fr.mp4, amoria_orion_en.mp4, etc.
-  return `/amoria_${personaId}_${locale}.mp4`;
-}
 
 export default function HomePage() {
   const [locale, setLocale] = useState<Locale>("fr");
   const t = STRINGS[locale];
 
-  const heroVideoSrc = getHeroVideoSrc(locale);
+  // Vidéo héro en fonction de la langue
+  const heroVideoSrc = `/amoria_${locale}.mp4`;
+
+  // Vidéo des cartes : /amoria_{id}_{lang}.mp4
+  const getPersonaVideoSrc = (id: PersonaId) =>
+    `/amoria_${id}_${locale}.mp4`;
 
   return (
     <main className="amoria-root">
       {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-          <div className="amoria-logo-mark">
-            <img
-              src="/AmorIA_logo_transparent.png"
-              alt="Logo AmorIA.app"
-              className="amoria-logo-img"
-            />
-          </div>
-
+          {/* Logo complet transparent */}
+          <img
+            src="/AmorIA_logo_transparent.png"
+            alt="Logo AmorIA.app"
+            className="amoria-logo-full"
+          />
           <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmorIA.app</div>
+            <div className="amoria-logo-title">AmoriA.app</div>
             <div className="amoria-logo-tagline">{t.brandTagline}</div>
           </div>
         </div>
@@ -304,52 +286,42 @@ export default function HomePage() {
             <video
               className="amoria-video"
               src={heroVideoSrc}
-              autoPlay
-              muted
-              loop
-              playsInline
               controls
+              playsInline
             />
           </div>
           <p className="amoria-video-caption">{t.videoCaption}</p>
         </div>
       </section>
 
-      {/* VITRINE DES 4 IA */}
+      {/* PERSONAS / VITRINE */}
       <section id="features" className="amoria-section">
-        <h2 className="amoria-section-title">{t.energiesTitle}</h2>
-        <p className="amoria-section-subtitle">{t.energiesSubtitle}</p>
+        <h2 className="amoria-section-title">{t.personasTitle}</h2>
+        <p className="amoria-section-subtitle">{t.personasSubtitle}</p>
 
         <div className="amoria-card-grid">
-          {t.energies.map((energy) => {
-            const persona = PERSONAS[energy.id];
-            const videoSrc = getPersonaVideoSrc(energy.id, locale);
-
-            return (
-              <article key={energy.id} className="amoria-card">
-                <div className="amoria-card-media">
-                  <video
-                    className="amoria-card-video"
-                    src={videoSrc}
-                    playsInline
-                    controls
-                    // pas d’autoplay ici pour éviter 4 vidéos en même temps
-                    poster={persona.image}
-                  />
-                </div>
-                <div className="amoria-card-body">
-                  <h3 className="amoria-card-title">{energy.title}</h3>
-                  <p className="amoria-card-text">{energy.description}</p>
-                  <a
-                    href={`/signup?lang=${locale}`}
-                    className="amoria-btn amoria-btn--ghost amoria-btn--full"
-                  >
-                    {t.chooseEnergy}
-                  </a>
-                </div>
-              </article>
-            );
-          })}
+          {t.personas.map((persona) => (
+            <article key={persona.id} className="amoria-card">
+              <div className="amoria-card-media">
+                <video
+                  className="amoria-card-video"
+                  src={getPersonaVideoSrc(persona.id)}
+                  controls
+                  playsInline
+                />
+              </div>
+              <div className="amoria-card-body">
+                <h3 className="amoria-card-title">{persona.title}</h3>
+                <p className="amoria-card-text">{persona.description}</p>
+                <a
+                  href={`/signup?lang=${locale}`}
+                  className="amoria-btn amoria-btn--ghost amoria-btn--full"
+                >
+                  {t.choosePersona}
+                </a>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -386,20 +358,15 @@ export default function HomePage() {
         body {
           margin: 0;
           padding: 0;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+            "Helvetica Neue", Arial, sans-serif;
           background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
           color: var(--amoria-text-main);
         }
 
         .amoria-root {
           min-height: 100vh;
-          background: radial-gradient(
-            circle at top left,
-            #111827 0,
-            #020617 55%,
-            #000 100%
-          );
+          background: radial-gradient(circle at top left, #111827 0, #020617 55%, #000 100%);
           color: var(--amoria-text-main);
           padding-bottom: 3rem;
         }
@@ -431,21 +398,9 @@ export default function HomePage() {
           gap: 0.6rem;
         }
 
-        .amoria-logo-mark {
-          width: 32px;
-          height: 32px;
-          border-radius: 999px;
-          background: radial-gradient(circle at 30% 0, #fde68a, #f97316);
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .amoria-logo-img {
-          width: 110%;
-          height: 110%;
-          object-fit: contain;
+        .amoria-logo-full {
+          height: 36px;
+          width: auto;
         }
 
         .amoria-logo-text {
@@ -707,12 +662,7 @@ export default function HomePage() {
         }
 
         .amoria-card {
-          background: radial-gradient(
-            circle at top,
-            #020617,
-            #020617 40%,
-            #000 100%
-          );
+          background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
           border-radius: 1.2rem;
           border: 1px solid var(--amoria-border-subtle);
           overflow: hidden;
@@ -723,15 +673,17 @@ export default function HomePage() {
 
         .amoria-card-media {
           width: 100%;
-          aspect-ratio: 9 / 16; /* évite les têtes coupées avec tes vidéos verticales */
+          aspect-ratio: 4 / 5; /* pour éviter les têtes coupées */
           overflow: hidden;
-          background: #000;
+          border-bottom: 1px solid rgba(15, 23, 42, 0.9);
+          background: #020617;
         }
 
         .amoria-card-video {
           width: 100%;
           height: 100%;
-          object-fit: contain; /* on voit la tête en entier, même s’il y a des barres noires */
+          object-fit: cover;
+          object-position: center;
           display: block;
         }
 
