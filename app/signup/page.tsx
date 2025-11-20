@@ -1,72 +1,110 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
-  // Ne surtout pas mettre d'argument — Next.js 14 impose ça
-  const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Langue par défaut = FR
-  const [locale, setLocale] = useState("fr");
+  const [locale, setLocale] = useState<"fr" | "en" | "es">("fr");
 
-  // Lire ?lang=fr/en/es dans l'URL
-  useEffect(() => {
-    const lang = searchParams.get("lang");
-    if (lang === "fr" || lang === "en" || lang === "es") {
-      setLocale(lang);
-    }
-  }, [searchParams]);
-
-  // Traductions
-  const translations: Record<string, any> = {
+  const t = {
     fr: {
-      title: "Créer ton partenaire IA",
-      subtitle: "Personnalise ta connexion gratuite",
+      title: "Créer mon compte gratuit",
+      subtitle:
+        "Crée un compte gratuitement et commence à texter avec ton IA préférée.",
       google: "Continuer avec Google",
-      selectLang: "Choisis ta langue",
+      email: "Adresse courriel",
+      password: "Mot de passe",
+      submit: "Créer mon compte",
+      login: "Tu as déjà un compte ? Me connecter",
     },
     en: {
-      title: "Create your AI partner",
-      subtitle: "Customize your free connection",
+      title: "Create your free account",
+      subtitle:
+        "Create an account for free and start texting your favorite AI.",
       google: "Continue with Google",
-      selectLang: "Choose your language",
+      email: "Email address",
+      password: "Password",
+      submit: "Create my account",
+      login: "Already have an account? Log in",
     },
     es: {
-      title: "Crea tu compañero IA",
-      subtitle: "Personaliza tu conexión gratuita",
+      title: "Crear mi cuenta gratis",
+      subtitle:
+        "Crea una cuenta gratis y comienza a chatear con tu IA favorita.",
       google: "Continuar con Google",
-      selectLang: "Elige tu idioma",
+      email: "Correo electrónico",
+      password: "Contraseña",
+      submit: "Crear mi cuenta",
+      login: "¿Ya tienes una cuenta? Iniciar sesión",
     },
   };
 
-  const t = translations[locale];
+  const dict = t[locale];
 
-  // Lancement Google Auth
-  const handleLogin = () => {
-    window.location.href = "/api/login";
-  };
+  // ---- Login Google ----
+  async function handleGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: "https://amoriai.app/create-ai",
+      },
+    });
+
+    if (error) alert(error.message);
+  }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center">
-      <h1 className="text-3xl font-bold mb-2">{t.title}</h1>
-      <p className="mb-8 text-lg opacity-80">{t.subtitle}</p>
+    <div className="min-h-screen flex items-center justify-center p-6 bg-[#050816]">
+      <div className="bg-gray-900/40 backdrop-blur-xl p-10 rounded-2xl shadow-xl w-full max-w-md border border-white/10">
 
-      <button
-        onClick={handleLogin}
-        className="px-6 py-3 rounded-lg bg-white text-black font-semibold shadow hover:bg-gray-200 transition"
-      >
-        {t.google}
-      </button>
-
-      <div className="mt-10">
-        <p className="mb-2 text-sm opacity-70">{t.selectLang}</p>
-        <div className="flex gap-4 text-blue-400 underline">
-          <Link href="?lang=fr">FR</Link>
-          <Link href="?lang=en">EN</Link>
-          <Link href="?lang=es">ES</Link>
+        {/* Sélecteur de langue */}
+        <div className="flex justify-end mb-4">
+          <select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as any)}
+            className="bg-gray-800 text-white px-3 py-1 rounded"
+          >
+            <option value="fr">FR</option>
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+          </select>
         </div>
+
+        <h1 className="text-2xl font-bold mb-2">{dict.title}</h1>
+        <p className="text-gray-300 mb-6">{dict.subtitle}</p>
+
+        <button
+          onClick={handleGoogle}
+          className="w-full bg-white text-black py-3 rounded-xl mb-6"
+        >
+          {dict.google}
+        </button>
+
+        <div className="text-center my-4 text-gray-400">— OU —</div>
+
+        <input
+          type="email"
+          placeholder={dict.email}
+          className="w-full bg-gray-800 text-white p-3 rounded-lg mb-3"
+        />
+
+        <input
+          type="password"
+          placeholder={dict.password}
+          className="w-full bg-gray-800 text-white p-3 rounded-lg mb-6"
+        />
+
+        <button className="w-full bg-gradient-to-r from-pink-500 to-orange-500 py-3 rounded-xl">
+          {dict.submit}
+        </button>
+
+        <p className="text-center text-gray-400 mt-4 cursor-pointer">
+          {dict.login}
+        </p>
       </div>
     </div>
   );
