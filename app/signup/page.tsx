@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { useState, FormEvent } from "react";
+import React, { useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -59,7 +59,6 @@ export default function SignupPage() {
       setError(error.message);
       return;
     }
-    // Redirection gérée par Google / Supabase
   };
 
   const t = {
