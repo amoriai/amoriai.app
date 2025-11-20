@@ -6,17 +6,13 @@ import React, { useState, useEffect, FormEvent } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function SignupPage() {
-  // Locale par défaut
   const [locale, setLocale] = useState("fr");
 
-  // On lit ?lang=... dans l’URL uniquement côté navigateur
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const params = new URLSearchParams(window.location.search);
-    const fromUrl = params.get("lang");
-    if (fromUrl) {
-      setLocale(fromUrl);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const lang = params.get("lang");
+      if (lang) setLocale(lang);
     }
   }, []);
 
@@ -26,147 +22,123 @@ export default function SignupPage() {
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    setInfo(null);
     setLoadingEmail(true);
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
+    const { error } = await supabase.auth.signUp({ email, password });
     setLoadingEmail(false);
 
-    if (error) {
-      setError(error.message);
-      return;
-    }
+    if (error) return setError(error.message);
 
-    // Supabase envoie un email de confirmation.
-    // On redirige vers la création d’IA.
     window.location.href = `/create-ai?lang=${locale}`;
   };
 
   const handleGoogle = async () => {
     setError(null);
-    setInfo(null);
     setLoadingGoogle(true);
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      // options: {
-      //   redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/create-ai?lang=${locale}`,
-      // },
     });
 
     setLoadingGoogle(false);
-
-    if (error) {
-      setError(error.message);
-      return;
-    }
-    // La redirection est gérée par Google / Supabase.
-  };
-
-  const t = {
-    title: "Créer mon compte gratuit",
-    subtitle:
-      "Crée ton compte gratuitement et commence à texter avec l’IA de ton choix. La voix est disponible seulement avec l’abonnement payant.",
-    emailLabel: "Adresse courriel",
-    passwordLabel: "Mot de passe",
-    submit: loadingEmail ? "Création en cours..." : "Créer mon compte",
-    google: loadingGoogle ? "Connexion à Google..." : "Continuer avec Google",
-    or: "ou",
-    already: "Tu as déjà un compte ? Me connecter",
+    if (error) return setError(error.message);
   };
 
   return (
-    <main className="min-h-screen bg-[#050816] text-white flex items-center justify-center px-4">
-      <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-white/0 p-8 shadow-2xl">
-        <a
-          href="/"
-          className="mb-6 inline-flex items-center text-sm text-white/70 hover:text-white"
-        >
-          ← Retour à la page d’accueil
-        </a>
+    <main className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-black via-[#0a0121] to-[#18012f] text-white relative overflow-hidden">
 
-        <h1 className="text-2xl md:text-3xl font-semibold mb-2">
-          {t.title}
-        </h1>
-        <p className="text-sm text-white/70 mb-6">{t.subtitle}</p>
+      {/* Glow background */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-20 -left-20 w-[300px] h-[300px] rounded-full bg-pink-600/20 blur-[140px]" />
+        <div className="absolute -bottom-20 right-0 w-[300px] h-[300px] rounded-full bg-purple-600/20 blur-[140px]" />
+      </div>
 
-        {/* Bouton Google */}
-        <button
-          type="button"
-          onClick={handleGoogle}
-          disabled={loadingGoogle}
-          className="w-full mb-4 flex items-center justify-center gap-2 rounded-full bg-white text-black py-3 text-sm font-medium hover:bg-gray-100 disabled:opacity-60"
-        >
-          <span>G</span>
-          <span>{t.google}</span>
-        </button>
+      <div className="w-full max-w-md relative z-10">
 
-        <div className="flex items-center gap-3 my-4">
-          <div className="h-px flex-1 bg-white/10" />
-          <span className="text-xs text-white/50 uppercase tracking-wide">
-            {t.or}
-          </span>
-          <div className="h-px flex-1 bg-white/10" />
-        </div>
+        {/* Card */}
+        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-xl">
 
-        {/* Formulaire email + mot de passe */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm mb-1">{t.emailLabel}</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl bg-black/40 border border-white/15 px-3 py-2 text-sm outline-none focus:border-pink-400"
-            />
-          </div>
+          <a href="/" className="text-xs text-white/60 hover:text-white">
+            ← Retour à l’accueil
+          </a>
 
-          <div>
-            <label className="block text-sm mb-1">{t.passwordLabel}</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl bg-black/40 border border-white/15 px-3 py-2 text-sm outline-none focus:border-pink-400"
-            />
-          </div>
+          <h1 className="text-3xl font-semibold mt-4 mb-2">Créer mon compte gratuit</h1>
+          <p className="text-sm text-white/70 mb-6">
+            Crée un compte gratuitement et commence à texter avec ton IA préférée.
+          </p>
 
-          {error && (
-            <p className="text-sm text-red-400 bg-red-950/40 rounded-xl px-3 py-2">
-              {error}
-            </p>
-          )}
-
-          {info && (
-            <p className="text-sm text-emerald-300 bg-emerald-950/40 rounded-xl px-3 py-2">
-              {info}
-            </p>
-          )}
-
+          {/* Google Button */}
           <button
-            type="submit"
-            disabled={loadingEmail}
-            className="w-full mt-2 rounded-full bg-gradient-to-r from-pink-500 to-orange-400 py-3 text-sm font-semibold shadow-lg shadow-pink-500/40 disabled:opacity-60"
+            onClick={handleGoogle}
+            disabled={loadingGoogle}
+            className="w-full flex items-center justify-center gap-2 bg-white text-black py-3 rounded-full text-sm font-medium hover:bg-gray-200 disabled:opacity-50"
           >
-            {t.submit}
+            <span className="text-lg">🌐</span>
+            {loadingGoogle ? "Connexion..." : "Continuer avec Google"}
           </button>
-        </form>
 
-        <p className="mt-6 text-center text-xs text-white/60">
-          {t.already}
-        </p>
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-white/20" />
+            <span className="text-xs text-white/40 uppercase tracking-widest">OU</span>
+            <div className="flex-1 h-px bg-white/20" />
+          </div>
+
+          {/* Email form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+
+            <div>
+              <label className="text-sm text-white/80">Adresse courriel</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full mt-1 px-4 py-2 rounded-xl bg-black/30 border border-white/20 placeholder-white/40 focus:border-pink-400 outline-none"
+                placeholder="exemple@email.com"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-white/80">Mot de passe</label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full mt-1 px-4 py-2 rounded-xl bg-black/30 border border-white/20 placeholder-white/40 focus:border-pink-400 outline-none"
+                placeholder="******"
+              />
+            </div>
+
+            {error && (
+              <div className="text-sm text-red-400 bg-red-900/40 rounded-xl px-3 py-2">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loadingEmail}
+              className="w-full mt-4 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 py-3 text-sm font-bold shadow-lg shadow-pink-500/30 disabled:opacity-60"
+            >
+              {loadingEmail ? "Création en cours..." : "Créer mon compte"}
+            </button>
+          </form>
+
+          <p className="text-center text-xs mt-6 text-white/60">
+            Tu as déjà un compte ?{" "}
+            <a href="/login" className="text-pink-400 hover:underline">
+              Me connecter
+            </a>
+          </p>
+
+        </div>
       </div>
     </main>
   );
