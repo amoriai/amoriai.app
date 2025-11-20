@@ -3,11 +3,13 @@
 export const dynamic = "force-dynamic";
 
 import React, { useState, FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function SignupPage() {
-  // Pour l’instant on force le français
-  const locale = "fr";
+  // IMPORTANT avec Next 14 : suspense désactivé
+  const searchParams = useSearchParams({ suspense: false });
+  const locale = searchParams.get("lang") || "fr";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +37,7 @@ export default function SignupPage() {
       return;
     }
 
-    // Email de confirmation envoyé par Supabase, on redirige vers la création d’IA
+    // Après inscription → page de création d'IA
     window.location.href = `/create-ai?lang=${locale}`;
   };
 
@@ -46,7 +48,6 @@ export default function SignupPage() {
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      // Si tu veux un retour précis après Google :
       // options: {
       //   redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/create-ai?lang=${locale}`,
       // },
@@ -69,14 +70,12 @@ export default function SignupPage() {
     submit: loadingEmail ? "Création en cours..." : "Créer mon compte",
     google: loadingGoogle ? "Connexion à Google..." : "Continuer avec Google",
     or: "ou",
-    already: "Tu as déjà un compte ?",
-    login: "Me connecter",
+    already: "Tu as déjà un compte ? Me connecter",
   };
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-gradient-to-b from-white/10/10 to-white/0 p-8 shadow-2xl backdrop-blur-md">
-        {/* Lien retour */}
+      <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-gradient-to-b from-white/10 to-white/0 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.6)] backdrop-blur-md">
         <a
           href="/"
           className="mb-6 inline-flex items-center text-sm text-white/70 hover:text-white"
@@ -84,28 +83,20 @@ export default function SignupPage() {
           ← Retour à l’accueil
         </a>
 
-        {/* Titre + sous-titre */}
-        <h1 className="text-3xl md:text-4xl font-semibold mb-2">
-          {t.title}
-        </h1>
-        <p className="text-sm text-white/70 mb-6 leading-relaxed">
-          {t.subtitle}
-        </p>
+        <h1 className="text-3xl font-semibold mb-2">{t.title}</h1>
+        <p className="text-sm text-white/70 mb-6">{t.subtitle}</p>
 
         {/* Bouton Google */}
         <button
           type="button"
           onClick={handleGoogle}
           disabled={loadingGoogle}
-          className="w-full mb-4 flex items-center justify-center gap-2 rounded-full bg-white text-black py-3 text-sm font-medium hover:bg-gray-100 disabled:opacity-60 transition"
+          className="w-full mb-4 flex items-center justify-center gap-2 rounded-full bg-white text-black py-3 text-sm font-medium hover:bg-gray-100 disabled:opacity-60"
         >
-          <span className="rounded-full bg-black text-white w-6 h-6 flex items-center justify-center text-xs font-bold">
-            G
-          </span>
+          <span className="font-semibold text-lg">G</span>
           <span>{t.google}</span>
         </button>
 
-        {/* Séparateur */}
         <div className="flex items-center gap-3 my-4">
           <div className="h-px flex-1 bg-white/10" />
           <span className="text-xs text-white/50 uppercase tracking-wide">
@@ -124,7 +115,7 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="exemple@email.com"
-              className="w-full rounded-xl bg-black/40 border border-white/15 px-3 py-2 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-500/40"
+              className="w-full rounded-xl bg-black/40 border border-white/20 px-3 py-2 text-sm outline-none focus:border-pink-400 focus:ring-1 focus:ring-pink-400"
             />
           </div>
 
@@ -136,21 +127,18 @@ export default function SignupPage() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl bg-black/40 border border-white/15 px-3 py-2 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-500/40"
+              className="w-full rounded-xl bg-black/40 border border-white/20 px-3 py-2 text-sm outline-none focus:border-pink-400 focus:ring-1 focus:ring-pink-400"
             />
-            <p className="mt-1 text-[11px] text-white/50">
-              Minimum 6 caractères.
-            </p>
           </div>
 
           {error && (
-            <p className="text-sm text-red-400 bg-red-950/40 rounded-xl px-3 py-2">
+            <p className="text-sm text-red-300 bg-red-900/40 border border-red-500/40 rounded-xl px-3 py-2">
               {error}
             </p>
           )}
 
           {info && (
-            <p className="text-sm text-emerald-300 bg-emerald-950/40 rounded-xl px-3 py-2">
+            <p className="text-sm text-emerald-300 bg-emerald-900/40 border border-emerald-500/40 rounded-xl px-3 py-2">
               {info}
             </p>
           )}
@@ -158,21 +146,14 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loadingEmail}
-            className="w-full mt-2 rounded-full bg-gradient-to-r from-pink-500 to-orange-400 py-3 text-sm font-semibold shadow-lg shadow-pink-500/40 disabled:opacity-60 transition hover:brightness-110"
+            className="w-full mt-2 rounded-full bg-gradient-to-r from-pink-500 to-orange-400 py-3 text-sm font-semibold shadow-lg shadow-pink-500/40 disabled:opacity-60"
           >
             {t.submit}
           </button>
         </form>
 
-        {/* Lien connexion */}
         <p className="mt-6 text-center text-xs text-white/60">
-          {t.already}{" "}
-          <a
-            href="/login?lang=fr"
-            className="text-pink-400 hover:text-pink-300 underline underline-offset-2"
-          >
-            {t.login}
-          </a>
+          {t.already}
         </p>
       </div>
     </main>
