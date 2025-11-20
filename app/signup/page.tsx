@@ -36,7 +36,7 @@ export default function SignupPage() {
       return;
     }
 
-    // Après inscription email -> création d'IA
+    // Après inscription par email → page de création d’IA
     window.location.href = `/create-ai?lang=${locale}`;
   };
 
@@ -45,11 +45,11 @@ export default function SignupPage() {
     setInfo(null);
     setLoadingGoogle(true);
 
-    // URL complète vers la page de création d'IA
+    // URL complète vers la page de création d’IA
     const redirectTo =
       typeof window !== "undefined"
         ? `${window.location.origin}/create-ai?lang=${locale}`
-        : undefined;
+        : "https://amoriai.app/create-ai?lang=fr";
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -64,8 +64,8 @@ export default function SignupPage() {
       setError(error.message);
       return;
     }
-    // Pas besoin de rediriger ici : Supabase va déjà
-    // rediriger le navigateur vers redirectTo.
+    // Pas besoin de faire autre chose :
+    // Supabase va rediriger automatiquement vers redirectTo
   };
 
   const t = {
@@ -159,9 +159,7 @@ export default function SignupPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-white/60">
-          {t.already}
-        </p>
+        <p className="mt-6 text-center text-xs text-white/60">{t.already}</p>
       </div>
     </main>
   );
