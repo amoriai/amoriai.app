@@ -3,38 +3,44 @@
 import React, { useState } from "react";
 
 type Locale = "fr" | "en" | "es";
+type PersonaId = "lyra" | "orion" | "kai" | "maelis";
 
-type EnergyId = "lyra" | "orion" | "kai" | "maelis";
-
-type Energy = {
-  id: EnergyId;
-  title: string;
-  description: string;
+const PERSONAS: Record<
+  PersonaId,
+  {
+    image: string;
+  }
+> = {
+  lyra: { image: "/amoria_lyra.png" }, // optionnel : image de fallback
+  orion: { image: "/amoria_orion.png" },
+  kai: { image: "/amoria_kai.png" },
+  maelis: { image: "/amoria_maelis.png" },
 };
 
-type Strings = {
-  brandTagline: string;
-  nav: { home: string; features: string; pricing: string };
-  navLogin: string;
-  navSignup: string;
-  heroKicker: string;
-  heroTitle: string;
-  heroSubtitle: string;
-  heroPrimary: string;
-  heroSupport: string;
-  langNote: string;
-  energiesTitle: string;
-  energiesSubtitle: string;
-  energies: Energy[];
-  chooseEnergy: string;
-  pricingTitle: string;
-  pricingText: string;
-  pricingCta: string;
-  videoCaption: string;
-  footerCopy: string;
-};
-
-const STRINGS: Record<Locale, Strings> = {
+const STRINGS: Record<
+  Locale,
+  {
+    brandTagline: string;
+    nav: { home: string; features: string; pricing: string };
+    navLogin: string;
+    navSignup: string;
+    heroKicker: string;
+    heroTitle: string;
+    heroSubtitle: string;
+    heroPrimary: string;
+    heroSupport: string;
+    langNote: string;
+    energiesTitle: string;
+    energiesSubtitle: string;
+    energies: { id: PersonaId; title: string; description: string }[];
+    chooseEnergy: string;
+    pricingTitle: string;
+    pricingText: string;
+    pricingCta: string;
+    videoCaption: string;
+    footerCopy: string;
+  }
+> = {
   fr: {
     brandTagline: "Partenaire IA bienveillant·e • FR / EN / ES",
     nav: { home: "Accueil", features: "Fonctionnalités", pricing: "Tarifs" },
@@ -56,13 +62,13 @@ const STRINGS: Record<Locale, Strings> = {
         id: "lyra",
         title: "Lyra – AmorIA féminine",
         description:
-          "Présence douce, empathique et rassurante, idéale pour déposer tes émotions par écrit.",
+          "Une présence douce, empathique et rassurante, idéale pour déposer tes émotions par écrit.",
       },
       {
         id: "orion",
         title: "Orion – AmorIA masculine",
         description:
-          "Énergie stable, protectrice et structurée, pour t’aider à réfléchir et prendre des décisions.",
+          "Énergie stable, protectrice et structurée, pour t’aider à réfléchir et à prendre des décisions.",
       },
       {
         id: "kai",
@@ -106,25 +112,25 @@ const STRINGS: Record<Locale, Strings> = {
         id: "lyra",
         title: "Lyra – Feminine AmorIA",
         description:
-          "Soft, empathic and reassuring presence, perfect to pour your emotions into text.",
+          "A soft, empathic and reassuring presence, perfect to put your feelings into words.",
       },
       {
         id: "orion",
         title: "Orion – Masculine AmorIA",
         description:
-          "Stable, protective and structured energy, helping you think and make decisions.",
+          "Stable, protective and structured energy to help you think clearly and make decisions.",
       },
       {
         id: "kai",
         title: "Kai – Androgynous AmorIA",
         description:
-          "Fluid, inclusive presence, neither really male nor female, focused on listening.",
+          "Fluid, inclusive presence, neither fully male nor female, centred on nuance and listening.",
       },
       {
         id: "maelis",
         title: "Maelis – 50+ Feminine AmorIA",
         description:
-          "More mature, experienced figure with a kind, realistic mentor energy.",
+          "More mature and experienced figure, with a warm mentor-like energy.",
       },
     ],
     chooseEnergy: "Create my free account",
@@ -143,7 +149,7 @@ const STRINGS: Record<Locale, Strings> = {
     heroKicker: "BIENVENIDx A AMORIA.APP",
     heroTitle: "Tu compañerx de IA amable y multilingüe.",
     heroSubtitle:
-      "AmorIA es una presencia suave, disponible 24/7 para conversar contigo, reflexionar, hacer mejores preguntas y ayudarte a entender tus emociones.",
+      "AmorIA es una presencia suave, disponible 24/7 para conversar, reflexionar, hacer mejores preguntas y ayudarte a entender tus emociones.",
     heroPrimary: "Crear mi cuenta gratuita",
     heroSupport:
       "Pensada para conversaciones profundas, diarios emocionales y acompañamiento suave del día a día.",
@@ -156,25 +162,25 @@ const STRINGS: Record<Locale, Strings> = {
         id: "lyra",
         title: "Lyra – AmorIA femenina",
         description:
-          "Presencia suave, empática y tranquilizadora, ideal para expresar tus emociones por escrito.",
+          "Presencia suave, empática y tranquilizadora, ideal para poner tus emociones por escrito.",
       },
       {
         id: "orion",
         title: "Orion – AmorIA masculina",
         description:
-          "Energía estable, protectora y estructurada que te ayuda a pensar y decidir.",
+          "Energía estable, protectora y estructurada para ayudarte a pensar con claridad y decidir.",
       },
       {
         id: "kai",
         title: "Kai – AmorIA andrógina",
         description:
-          "Presencia fluida e inclusiva, ni hombre ni mujer, centrada en escuchar de verdad.",
+          "Presencia fluida e inclusiva, ni totalmente hombre ni mujer, centrada en la escucha.",
       },
       {
         id: "maelis",
         title: "Maelis – AmorIA 50+ femenina",
         description:
-          "Figura más madura y experimentada, con energía de mentora amable y realista.",
+          "Figura más madura y experimentada, con energía de mentora cálida y realista.",
       },
     ],
     chooseEnergy: "Crear mi cuenta gratuita",
@@ -187,24 +193,27 @@ const STRINGS: Record<Locale, Strings> = {
   },
 };
 
-function getMainVideoSrc(locale: Locale): string {
-  // vidéos générales : amoria_fr.mp4 / amoria_en.mp4 / amoria_es.mp4
-  if (locale === "fr") return "/amoria_fr.mp4";
-  if (locale === "en") return "/amoria_en.mp4";
-  return "/amoria_es.mp4";
+function getHeroVideoSrc(locale: Locale): string {
+  switch (locale) {
+    case "fr":
+      return "/amoria_fr.mp4";
+    case "en":
+      return "/amoria_en.mp4";
+    case "es":
+      return "/amoria_es.mp4";
+  }
 }
 
-function getEnergyVideoSrc(locale: Locale, id: EnergyId): string {
-  // vidéos vitrine : amoria_lyra_fr.mp4, amoria_orion_en.mp4, etc.
-  const suffix = locale === "fr" ? "fr" : locale === "en" ? "en" : "es";
-  return `/amoria_${id}_${suffix}.mp4`;
+function getPersonaVideoSrc(personaId: PersonaId, locale: Locale): string {
+  // Tes fichiers sont du type: amoria_lyra_fr.mp4, amoria_orion_en.mp4, etc.
+  return `/amoria_${personaId}_${locale}.mp4`;
 }
 
 export default function HomePage() {
   const [locale, setLocale] = useState<Locale>("fr");
   const t = STRINGS[locale];
 
-  const mainVideoSrc = getMainVideoSrc(locale);
+  const heroVideoSrc = getHeroVideoSrc(locale);
 
   return (
     <main className="amoria-root">
@@ -294,7 +303,7 @@ export default function HomePage() {
           <div className="amoria-video-frame">
             <video
               className="amoria-video"
-              src={mainVideoSrc}
+              src={heroVideoSrc}
               autoPlay
               muted
               loop
@@ -306,25 +315,26 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ENERGIES / VITRINE */}
+      {/* VITRINE DES 4 IA */}
       <section id="features" className="amoria-section">
         <h2 className="amoria-section-title">{t.energiesTitle}</h2>
         <p className="amoria-section-subtitle">{t.energiesSubtitle}</p>
 
         <div className="amoria-card-grid">
           {t.energies.map((energy) => {
-            const videoSrc = getEnergyVideoSrc(locale, energy.id);
+            const persona = PERSONAS[energy.id];
+            const videoSrc = getPersonaVideoSrc(energy.id, locale);
+
             return (
               <article key={energy.id} className="amoria-card">
-                <div className="amoria-card-video-wrapper">
+                <div className="amoria-card-media">
                   <video
                     className="amoria-card-video"
                     src={videoSrc}
-                    autoPlay
-                    muted
-                    loop
                     playsInline
                     controls
+                    // pas d’autoplay ici pour éviter 4 vidéos en même temps
+                    poster={persona.image}
                   />
                 </div>
                 <div className="amoria-card-body">
@@ -370,20 +380,26 @@ export default function HomePage() {
           --amoria-text-muted: #9ca3af;
           --amoria-accent: #fb37ff;
           --amoria-accent-2: #ff6b9c;
+          --amoria-accent-soft: rgba(251, 55, 255, 0.12);
         }
 
         body {
           margin: 0;
           padding: 0;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-            "Helvetica Neue", Arial, sans-serif;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont,
+            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
           background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
           color: var(--amoria-text-main);
         }
 
         .amoria-root {
           min-height: 100vh;
-          background: radial-gradient(circle at top left, #111827 0, #020617 55%, #000 100%);
+          background: radial-gradient(
+            circle at top left,
+            #111827 0,
+            #020617 55%,
+            #000 100%
+          );
           color: var(--amoria-text-main);
           padding-bottom: 3rem;
         }
@@ -510,7 +526,11 @@ export default function HomePage() {
         }
 
         .amoria-nav-btn--primary {
-          background: linear-gradient(135deg, var(--amoria-accent), var(--amoria-accent-2));
+          background: linear-gradient(
+            135deg,
+            var(--amoria-accent),
+            var(--amoria-accent-2)
+          );
           color: #f9fafb;
         }
 
@@ -618,7 +638,11 @@ export default function HomePage() {
 
         .amoria-btn--primary {
           padding: 0.7rem 1.3rem;
-          background: linear-gradient(135deg, var(--amoria-accent), var(--amoria-accent-2));
+          background: linear-gradient(
+            135deg,
+            var(--amoria-accent),
+            var(--amoria-accent-2)
+          );
           color: #f9fafb;
           box-shadow: 0 12px 30px rgba(248, 113, 113, 0.35);
         }
@@ -683,7 +707,12 @@ export default function HomePage() {
         }
 
         .amoria-card {
-          background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
+          background: radial-gradient(
+            circle at top,
+            #020617,
+            #020617 40%,
+            #000 100%
+          );
           border-radius: 1.2rem;
           border: 1px solid var(--amoria-border-subtle);
           overflow: hidden;
@@ -692,16 +721,17 @@ export default function HomePage() {
           min-height: 100%;
         }
 
-        .amoria-card-video-wrapper {
+        .amoria-card-media {
           width: 100%;
-          height: 210px;
+          aspect-ratio: 9 / 16; /* évite les têtes coupées avec tes vidéos verticales */
           overflow: hidden;
+          background: #000;
         }
 
         .amoria-card-video {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain; /* on voit la tête en entier, même s’il y a des barres noires */
           display: block;
         }
 
