@@ -1,5 +1,6 @@
 // app/layout.tsx
 import type { ReactNode } from "react";
+import "./globals.css"; // <-- IMPORTANT : on importe le CSS global
 
 export const metadata = {
   title: "AmorIA.app",
@@ -9,7 +10,9 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr">
-      <body>{children}</body>
+      <body className="bg-gray-50 text-gray-900 antialiased">
+        {children}
+      </body>
     </html>
   );
 }
