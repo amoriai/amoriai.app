@@ -2,10 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body {
-  margin: 0;
-  padding: 0;
-  background-color: #fafafa;
-  color: #111;
-  font-family: sans-serif;
+/* Style global simple */
+body {
+  @apply bg-[#050816] text-white;
+}
+
+/* Optionnel : style des liens */
+a {
+  @apply text-pink-400 hover:text-pink-300 underline-offset-2;
 }
