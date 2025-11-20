@@ -2,14 +2,23 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { useState, type FormEvent } from "react";
-import { useSearchParams } from "next/navigation";
+import React, { useState, useEffect, FormEvent } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function SignupPage() {
-  // FIX NEXT.JS : suspense must be disabled
-  const searchParams = useSearchParams({ suspense: false });
-  const locale = searchParams?.get("lang") || "fr";
+  // Locale par défaut
+  const [locale, setLocale] = useState("fr");
+
+  // On lit ?lang=... dans l’URL uniquement côté navigateur
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = params.get("lang");
+    if (fromUrl) {
+      setLocale(fromUrl);
+    }
+  }, []);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,11 +34,20 @@ export default function SignupPage() {
     setInfo(null);
     setLoadingEmail(true);
 
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
 
     setLoadingEmail(false);
-    if (error) return setError(error.message);
 
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    // Supabase envoie un email de confirmation.
+    // On redirige vers la création d’IA.
     window.location.href = `/create-ai?lang=${locale}`;
   };
 
@@ -40,10 +58,18 @@ export default function SignupPage() {
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
+      // options: {
+      //   redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/create-ai?lang=${locale}`,
+      // },
     });
 
     setLoadingGoogle(false);
-    if (error) return setError(error.message);
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    // La redirection est gérée par Google / Supabase.
   };
 
   const t = {
@@ -61,14 +87,19 @@ export default function SignupPage() {
   return (
     <main className="min-h-screen bg-[#050816] text-white flex items-center justify-center px-4">
       <div className="w-full max-w-lg rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-white/0 p-8 shadow-2xl">
-        <a href="/" className="mb-6 inline-flex items-center text-sm text-white/70 hover:text-white">
+        <a
+          href="/"
+          className="mb-6 inline-flex items-center text-sm text-white/70 hover:text-white"
+        >
           ← Retour à la page d’accueil
         </a>
 
-        <h1 className="text-2xl md:text-3xl font-semibold mb-2">{t.title}</h1>
+        <h1 className="text-2xl md:text-3xl font-semibold mb-2">
+          {t.title}
+        </h1>
         <p className="text-sm text-white/70 mb-6">{t.subtitle}</p>
 
-        {/* Google */}
+        {/* Bouton Google */}
         <button
           type="button"
           onClick={handleGoogle}
@@ -81,11 +112,13 @@ export default function SignupPage() {
 
         <div className="flex items-center gap-3 my-4">
           <div className="h-px flex-1 bg-white/10" />
-          <span className="text-xs text-white/50 uppercase tracking-wide">{t.or}</span>
+          <span className="text-xs text-white/50 uppercase tracking-wide">
+            {t.or}
+          </span>
           <div className="h-px flex-1 bg-white/10" />
         </div>
 
-        {/* Form */}
+        {/* Formulaire email + mot de passe */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm mb-1">{t.emailLabel}</label>
@@ -110,8 +143,17 @@ export default function SignupPage() {
             />
           </div>
 
-          {error && <p className="text-sm text-red-400 bg-red-950/40 rounded-xl px-3 py-2">{error}</p>}
-          {info && <p className="text-sm text-emerald-300 bg-emerald-950/40 rounded-xl px-3 py-2">{info}</p>}
+          {error && (
+            <p className="text-sm text-red-400 bg-red-950/40 rounded-xl px-3 py-2">
+              {error}
+            </p>
+          )}
+
+          {info && (
+            <p className="text-sm text-emerald-300 bg-emerald-950/40 rounded-xl px-3 py-2">
+              {info}
+            </p>
+          )}
 
           <button
             type="submit"
@@ -122,7 +164,9 @@ export default function SignupPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-white/60">{t.already}</p>
+        <p className="mt-6 text-center text-xs text-white/60">
+          {t.already}
+        </p>
       </div>
     </main>
   );
