@@ -1,4 +1,4 @@
-"use client";
+      "use client";
 
 import React, { useEffect, useState, FormEvent } from "react";
 
@@ -7,7 +7,6 @@ type CategoryId = "woman" | "man" | "androgynous" | "50plus";
 
 type AvatarDef = {
   id: string;
-  image: string;
   label: string;
   short: string;
 };
@@ -46,23 +45,25 @@ const STRINGS: Record<
     previewCategory: string;
     previewAvatar: string;
     previewGoal: string;
+    hiddenAvatarInfo: string;
     doneMessage: string;
   }
 > = {
   fr: {
     backHome: "← Retour à l’accueil",
-    langNote: "Tu peux créer ton AmorIA en français, anglais ou espagnol.",
+    langNote:
+      "Tu peux créer ton AmorIA en français, anglais ou espagnol. La langue vient de ta sélection sur la page principale.",
     stepLabel: (step, total) => `Étape ${step} sur ${total}`,
     wizardTitle: "Crée ton AmorIA en quelques clics",
     wizardSubtitle:
-      "Choisis le type d’IA, l’avatar qui te ressemble et personnalise sa mission. On fait comme si tout était déjà branché : tu verras ensuite ton AmorIA dans l’app.",
+      "Choisis le type d’IA, la vibe de ton avatar et personnalise sa mission. L’avatar final apparaîtra dans ton compte après la création.",
     steps: {
       oneTitle: "Choisis le type d’IA",
       oneSubtitle:
         "Préférence de genre et de style global. Tu pourras affiner ensuite.",
-      twoTitle: "Choisis ton avatar",
+      twoTitle: "Choisis la vibe de ton AmorIA",
       twoSubtitle:
-        "Parmi plusieurs visuels déjà prêts. Ils ne sont visibles qu’à toi dans ton compte.",
+        "Sélectionne le style de personnalité. L’image finale sera générée après.",
       threeTitle: "Personnalise ton AmorIA",
       threeSubtitle:
         "Donne-lui un prénom et une mission principale. Tu pourras modifier plus tard.",
@@ -96,28 +97,31 @@ const STRINGS: Record<
     submit: "Terminer et accéder à mon AmorIA",
     submitting: "Création en cours…",
     errorCategory: "Choisis d’abord un type d’IA pour continuer.",
-    errorAvatar: "Choisis un avatar avant de passer à l’étape suivante.",
+    errorAvatar: "Choisis un style d’IA avant de passer à l’étape suivante.",
     previewTitle: "Aperçu rapide",
     previewCategory: "Type d’IA",
-    previewAvatar: "Avatar choisi",
+    previewAvatar: "Style choisi",
     previewGoal: "Mission principale",
+    hiddenAvatarInfo:
+      "L’avatar visuel sera généré à partir de ces choix et apparaîtra dans ton compte.",
     doneMessage:
       "Ton AmorIA est créée (démo). Tu pourras brancher la vraie logique plus tard.",
   },
   en: {
     backHome: "← Back to home",
-    langNote: "You can create your AmorIA in French, English or Spanish.",
+    langNote:
+      "You can create your AmorIA in French, English or Spanish. The language comes from your choice on the main page.",
     stepLabel: (step, total) => `Step ${step} of ${total}`,
     wizardTitle: "Create your AmorIA in a few clicks",
     wizardSubtitle:
-      "Pick the type of AI, choose your avatar and define its main mission. We act as if everything is already wired: you’ll see your AmorIA next in the app.",
+      "Choose the AI type, pick its vibe and define its main mission. The final avatar will appear in your account after creation.",
     steps: {
       oneTitle: "Choose your AI type",
       oneSubtitle:
         "Gender preference and overall vibe. You can adjust later if needed.",
-      twoTitle: "Choose your avatar",
+      twoTitle: "Choose your AmorIA’s vibe",
       twoSubtitle:
-        "From several ready-made visuals. They’re only visible inside your private account.",
+        "Pick the personality style. The visual avatar will be generated after.",
       threeTitle: "Customize your AmorIA",
       threeSubtitle:
         "Give it a name and a main mission. You’ll be able to edit all this later.",
@@ -151,28 +155,31 @@ const STRINGS: Record<
     submit: "Finish and open my AmorIA",
     submitting: "Creating your AmorIA…",
     errorCategory: "Please choose a type of AI first.",
-    errorAvatar: "Please choose an avatar before continuing.",
+    errorAvatar: "Please choose a style before continuing.",
     previewTitle: "Quick preview",
     previewCategory: "AI type",
-    previewAvatar: "Selected avatar",
+    previewAvatar: "Selected style",
     previewGoal: "Main mission",
+    hiddenAvatarInfo:
+      "The visual avatar will be generated from these choices and appear in your account.",
     doneMessage:
       "Your AmorIA has been created (demo). You’ll plug the real logic later.",
   },
   es: {
     backHome: "← Volver al inicio",
-    langNote: "Puedes crear tu AmorIA en francés, inglés o español.",
+    langNote:
+      "Puedes crear tu AmorIA en francés, inglés o español. El idioma viene de tu elección en la página principal.",
     stepLabel: (step, total) => `Paso ${step} de ${total}`,
     wizardTitle: "Crea tu AmorIA en pocos clics",
     wizardSubtitle:
-      "Elige el tipo de IA, escoge un avatar y define su misión principal. Actuamos como si todo ya estuviera conectado: luego verás tu AmorIA en la app.",
+      "Elige el tipo de IA, define su estilo y su misión principal. El avatar final aparecerá en tu cuenta después de la creación.",
     steps: {
       oneTitle: "Elige el tipo de IA",
       oneSubtitle:
         "Preferencia de género y estilo global. Podrás ajustarlo más tarde.",
-      twoTitle: "Elige tu avatar",
+      twoTitle: "Elige el estilo de tu AmorIA",
       twoSubtitle:
-        "Entre varios avatares ya preparados. Solo serán visibles en tu cuenta.",
+        "Selecciona el tipo de personalidad. El avatar visual se generará después.",
       threeTitle: "Personaliza tu AmorIA",
       threeSubtitle:
         "Ponle un nombre y una misión principal. Podrás editarlo después.",
@@ -196,7 +203,7 @@ const STRINGS: Record<
       "50plus": {
         name: "50 años o más",
         description:
-          "Una IA con rostro más maduro, sabio, profesional o carismático.",
+          "Una IA con aspecto más maduro, sabio, profesional o carismático.",
       },
     },
     nameLabel: "Nombre de tu AmorIA",
@@ -206,11 +213,13 @@ const STRINGS: Record<
     submit: "Terminar y abrir mi AmorIA",
     submitting: "Creando tu AmorIA…",
     errorCategory: "Primero elige un tipo de IA.",
-    errorAvatar: "Elige un avatar antes de continuar.",
+    errorAvatar: "Elige un estilo antes de continuar.",
     previewTitle: "Vista rápida",
     previewCategory: "Tipo de IA",
-    previewAvatar: "Avatar elegido",
+    previewAvatar: "Estilo elegido",
     previewGoal: "Misión principal",
+    hiddenAvatarInfo:
+      "El avatar visual se generará a partir de estas elecciones y aparecerá en tu cuenta.",
     doneMessage:
       "Tu AmorIA ha sido creada (demo). Conectarás la lógica real más adelante.",
   },
@@ -220,37 +229,31 @@ const AVATARS: Record<CategoryId, AvatarDef[]> = {
   woman: [
     {
       id: "woman_blonde",
-      image: "/amoria-blonde.png",
       label: "Lumière chaleureuse",
       short: "Féminine, douce et optimiste.",
     },
     {
       id: "woman_rousse",
-      image: "/amoria-rousse.png",
       label: "Créative & intuitive",
       short: "Parfaite pour brainstormer et écrire.",
     },
     {
       id: "woman_mystique",
-      image: "/amoria-mystique.png",
       label: "Mystique",
       short: "Plus spirituelle, un peu mystérieuse.",
     },
     {
       id: "woman_passionnee",
-      image: "/amoria-passionnee.png",
       label: "Passionnée",
       short: "Énergique, motivante, très engagée.",
     },
     {
       id: "woman_analyste",
-      image: "/amoria-analyste.png",
       label: "Analytique",
       short: "Posée, rationnelle, structurée.",
     },
     {
       id: "woman_artiste",
-      image: "/amoria-artiste.png",
       label: "Artiste",
       short: "Axée projets créatifs et imagination.",
     },
@@ -258,37 +261,31 @@ const AVATARS: Record<CategoryId, AvatarDef[]> = {
   man: [
     {
       id: "man_ami",
-      image: "/amoria-m-ami.png",
       label: "Ami bienveillant",
       short: "Doux, présent, bon confident.",
     },
     {
       id: "man_intellectuel",
-      image: "/amoria-m-intellectuel.png",
       label: "Intellectuel",
       short: "Réfléchi, analytique, très logique.",
     },
     {
       id: "man_passionne",
-      image: "/amoria-m-passionne.png",
       label: "Passionné",
       short: "Énergique, motivant, beaucoup d’enthousiasme.",
     },
     {
       id: "man_protecteur",
-      image: "/amoria-m-protecteur.png",
       label: "Protecteur",
       short: "Calme, sécurisant, rassurant.",
     },
     {
       id: "man_rebelle",
-      image: "/amoria-m-rebelle.png",
       label: "Rebelle",
       short: "Franc, direct, zéro bullshit.",
     },
     {
       id: "man_romantique",
-      image: "/amoria-m-romantique.png",
       label: "Romantique",
       short: "Plus doux, sensible, axé connexion.",
     },
@@ -296,37 +293,31 @@ const AVATARS: Record<CategoryId, AvatarDef[]> = {
   androgynous: [
     {
       id: "andro_romantic",
-      image: "/amor-romantic-androgynous.png",
       label: "Romantique",
       short: "Androgyne doux, chaleureux, relationnel.",
     },
     {
       id: "andro_echo",
-      image: "/echo-custom-androgynous.png",
       label: "Coach personnalisé",
       short: "Aligné sur tes objectifs personnels.",
     },
     {
       id: "andro_eko",
-      image: "/eko-friend-androgynous.png",
       label: "Ami neutre",
       short: "Présence non genrée, très empathique.",
     },
     {
       id: "andro_lumen",
-      image: "/lumen-sensual-androgynous.png",
       label: "Sensuel·le",
       short: "Énergie douce et magnétique.",
     },
     {
       id: "andro_nova",
-      image: "/nova-mysterious-androgynous.png",
       label: "Mystérieux·se",
       short: "Vibe plus profonde, introspective.",
     },
     {
       id: "andro_sora",
-      image: "/sora-mentalcoach-androgynous.png",
       label: "Coach mental",
       short: "Focus mindset, confiance et clarté.",
     },
@@ -334,73 +325,61 @@ const AVATARS: Record<CategoryId, AvatarDef[]> = {
   "50plus": [
     {
       id: "50_man_charm",
-      image: "/amoria_50plus_man_charm.png",
       label: "Homme charismatique 50+",
       short: "Chaleureux, confiant, un peu séducteur.",
     },
     {
       id: "50_man_elegant",
-      image: "/amoria_50plus_man_elegant.png",
       label: "Homme élégant 50+",
       short: "Style très soigné, vibe mentor.",
     },
     {
       id: "50_man_empathic",
-      image: "/amoria_50plus_man_empathic.png",
       label: "Homme empathique 50+",
       short: "À l’écoute, rassurant, patient.",
     },
     {
       id: "50_man_mysterious",
-      image: "/amoria_50plus_man_mysterious.png",
       label: "Homme mystérieux 50+",
       short: "Plus réservé, profond, observateur.",
     },
     {
       id: "50_man_thoughtful",
-      image: "/amoria_50plus_man_thoughtful.png",
       label: "Homme réfléchi 50+",
       short: "Analytique, posé, très rationnel.",
     },
     {
       id: "50_man_warm",
-      image: "/amoria_50plus_man_warm.png",
       label: "Homme chaleureux 50+",
       short: "Très accessible, humour léger.",
     },
     {
       id: "50_woman_charisma",
-      image: "/amoria_50plus_woman_charisma.png",
       label: "Femme charismatique 50+",
       short: "Présence forte, inspirante.",
     },
     {
       id: "50_woman_elegant",
-      image: "/amoria_50plus_woman_elegant.png",
       label: "Femme élégante 50+",
       short: "Professionnelle, structurée, mentor.",
     },
     {
       id: "50_woman_pro",
-      image: "/amoria_50plus_woman_pro.png",
       label: "Femme pro 50+",
       short: "Business, organisation, carrière.",
     },
     {
       id: "50_woman_sage",
-      image: "/amoria_50plus_woman_sage.png",
       label: "Femme sage 50+",
       short: "Beaucoup d’expérience, conseils posés.",
     },
     {
       id: "50_woman_spiritual",
-      image: "/amoria_50plus_woman_spiritual.png",
       label: "Femme spirituelle 50+",
       short: "Intuitive, orientée bien-être.",
     },
     {
       id: "50_woman_whitehair",
-      image: "/amoria_50plus_woman_whitehair.png",
       label: "Femme cheveux blancs 50+",
       short: "Très assumée, vibe grand mentor.",
     },
@@ -417,7 +396,7 @@ export default function CreateAIPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // lire ?lang= côté client
+  // Langue provenant de ?lang=fr|en|es
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -426,7 +405,7 @@ export default function CreateAIPage() {
         setLocale(lang);
       }
     } catch {
-      // on ignore
+      // ignore
     }
   }, []);
 
@@ -455,17 +434,14 @@ export default function CreateAIPage() {
     setError(null);
     setIsSubmitting(true);
 
-    // Ici tu brancheras plus tard Supabase / Auth / sauvegarde de profil.
-    // Pour l’instant on simule puis on renvoie vers l’accueil.
+    // Ici tu brancheras Supabase plus tard.
     setTimeout(() => {
       alert(t.doneMessage);
       window.location.href = "/";
     }, 800);
   };
 
-  const activeAvatars =
-    category ? AVATARS[category] : ([] as AvatarDef[]);
-
+  const activeAvatars: AvatarDef[] = category ? AVATARS[category] : [];
   const selectedAvatar =
     category && avatarId
       ? activeAvatars.find((a) => a.id === avatarId) ?? null
@@ -480,33 +456,14 @@ export default function CreateAIPage() {
           </a>
           <span className="amoria-create-lang-note">{t.langNote}</span>
         </div>
-
-        <div className="amoria-lang-switch">
-          {(["fr", "en", "es"] as Locale[]).map((code) => (
-            <button
-              key={code}
-              type="button"
-              onClick={() => setLocale(code)}
-              className={
-                "amoria-lang-pill" +
-                (locale === code ? " amoria-lang-pill--active" : "")
-              }
-            >
-              {code.toUpperCase()}
-            </button>
-          ))}
-        </div>
+        {/* plus de switch de langue ici */}
       </header>
 
       <section className="amoria-create-main">
         <div className="amoria-create-left">
-          <p className="amoria-step-label">
-            {t.stepLabel(step, 3)}
-          </p>
+          <p className="amoria-step-label">{t.stepLabel(step, 3)}</p>
           <h1 className="amoria-create-title">{t.wizardTitle}</h1>
-          <p className="amoria-create-subtitle">
-            {t.wizardSubtitle}
-          </p>
+          <p className="amoria-create-subtitle">{t.wizardSubtitle}</p>
 
           <div className="amoria-steps-indicator">
             {[1, 2, 3].map((s) => (
@@ -526,9 +483,7 @@ export default function CreateAIPage() {
 
           {step === 1 && (
             <div>
-              <h2 className="amoria-step-title">
-                {t.steps.oneTitle}
-              </h2>
+              <h2 className="amoria-step-title">{t.steps.oneTitle}</h2>
               <p className="amoria-step-subtitle">
                 {t.steps.oneSubtitle}
               </p>
@@ -560,9 +515,7 @@ export default function CreateAIPage() {
                 })}
               </div>
 
-              {error && (
-                <p className="amoria-error">{error}</p>
-              )}
+              {error && <p className="amoria-error">{error}</p>}
 
               <div className="amoria-step-actions">
                 <button
@@ -578,9 +531,7 @@ export default function CreateAIPage() {
 
           {step === 2 && (
             <div>
-              <h2 className="amoria-step-title">
-                {t.steps.twoTitle}
-              </h2>
+              <h2 className="amoria-step-title">{t.steps.twoTitle}</h2>
               <p className="amoria-step-subtitle">
                 {t.steps.twoSubtitle}
               </p>
@@ -598,13 +549,7 @@ export default function CreateAIPage() {
                         (isSelected ? " amoria-avatar-card--active" : "")
                       }
                     >
-                      <div className="amoria-avatar-image-wrapper">
-                        <img
-                          src={avatar.image}
-                          alt={avatar.label}
-                          className="amoria-avatar-image"
-                        />
-                      </div>
+                      {/* PAS D’IMAGE ICI, seulement du texte */}
                       <div className="amoria-avatar-text">
                         <h3 className="amoria-avatar-label">
                           {avatar.label}
@@ -618,9 +563,7 @@ export default function CreateAIPage() {
                 })}
               </div>
 
-              {error && (
-                <p className="amoria-error">{error}</p>
-              )}
+              {error && <p className="amoria-error">{error}</p>}
 
               <div className="amoria-step-actions">
                 <button
@@ -646,9 +589,7 @@ export default function CreateAIPage() {
 
           {step === 3 && (
             <form onSubmit={handleSubmit}>
-              <h2 className="amoria-step-title">
-                {t.steps.threeTitle}
-              </h2>
+              <h2 className="amoria-step-title">{t.steps.threeTitle}</h2>
               <p className="amoria-step-subtitle">
                 {t.steps.threeSubtitle}
               </p>
@@ -698,7 +639,6 @@ export default function CreateAIPage() {
           )}
         </div>
 
-        {/* Colonne de droite : aperçu */}
         <aside className="amoria-create-right">
           <div className="amoria-preview-card">
             <h3 className="amoria-preview-title">
@@ -714,30 +654,13 @@ export default function CreateAIPage() {
               </span>
             </div>
 
-            <div className="amoria-preview-avatar-block">
-              {selectedAvatar ? (
-                <>
-                  <div className="amoria-preview-avatar-imgwrap">
-                    <img
-                      src={selectedAvatar.image}
-                      alt={selectedAvatar.label}
-                      className="amoria-preview-avatar-img"
-                    />
-                  </div>
-                  <div className="amoria-preview-avatar-text">
-                    <span className="amoria-preview-label">
-                      {t.previewAvatar}
-                    </span>
-                    <span className="amoria-preview-value">
-                      {selectedAvatar.label}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <p className="amoria-preview-placeholder">
-                  Choisis un avatar à l’étape 2 pour voir un aperçu.
-                </p>
-              )}
+            <div className="amoria-preview-row amoria-preview-row--column">
+              <span className="amoria-preview-label">
+                {t.previewAvatar}
+              </span>
+              <span className="amoria-preview-value">
+                {selectedAvatar ? selectedAvatar.label : "—"}
+              </span>
             </div>
 
             <div className="amoria-preview-row amoria-preview-row--column">
@@ -749,12 +672,14 @@ export default function CreateAIPage() {
               </span>
             </div>
 
+            <p className="amoria-preview-hidden-info">
+              {t.hiddenAvatarInfo}
+            </p>
+
             {name && (
               <div className="amoria-preview-row amoria-preview-row--column">
                 <span className="amoria-preview-label">Nom</span>
-                <span className="amoria-preview-value">
-                  {name}
-                </span>
+                <span className="amoria-preview-value">{name}</span>
               </div>
             )}
           </div>
@@ -804,30 +729,6 @@ export default function CreateAIPage() {
         .amoria-create-lang-note {
           font-size: 0.78rem;
           color: #9ca3af;
-        }
-
-        .amoria-lang-switch {
-          display: flex;
-          gap: 0.25rem;
-          background: rgba(15, 23, 42, 0.9);
-          padding: 0.18rem;
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.4);
-        }
-
-        .amoria-lang-pill {
-          border-radius: 999px;
-          border: none;
-          padding: 0.15rem 0.48rem;
-          font-size: 0.72rem;
-          background: transparent;
-          color: #9ca3af;
-          cursor: pointer;
-        }
-
-        .amoria-lang-pill--active {
-          background: #0f172a;
-          color: #f9fafb;
         }
 
         .amoria-create-main {
@@ -961,11 +862,11 @@ export default function CreateAIPage() {
           border-radius: 1.1rem;
           border: 1px solid rgba(148, 163, 184, 0.5);
           background: #020617;
-          overflow: hidden;
           cursor: pointer;
           text-align: left;
           display: flex;
           flex-direction: column;
+          padding: 0.7rem 0.75rem;
         }
 
         .amoria-avatar-card--active {
@@ -973,26 +874,14 @@ export default function CreateAIPage() {
           box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.6);
         }
 
-        .amoria-avatar-image-wrapper {
-          width: 100%;
-          height: 160px;
-          overflow: hidden;
-        }
-
-        .amoria-avatar-image {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-        }
-
         .amoria-avatar-text {
-          padding: 0.5rem 0.6rem 0.7rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
         }
 
         .amoria-avatar-label {
           font-size: 0.86rem;
-          margin-bottom: 0.2rem;
         }
 
         .amoria-avatar-short {
@@ -1087,36 +976,9 @@ export default function CreateAIPage() {
           font-size: 0.86rem;
         }
 
-        .amoria-preview-avatar-block {
-          margin: 0.8rem 0;
-          border-radius: 1rem;
-          border: 1px dashed rgba(148, 163, 184, 0.5);
-          padding: 0.7rem;
-          display: flex;
-          align-items: center;
-          gap: 0.7rem;
-        }
-
-        .amoria-preview-avatar-imgwrap {
-          width: 72px;
-          height: 72px;
-          border-radius: 0.9rem;
-          overflow: hidden;
-        }
-
-        .amoria-preview-avatar-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          display: block;
-        }
-
-        .amoria-preview-avatar-text {
-          flex: 1;
-        }
-
-        .amoria-preview-placeholder {
-          font-size: 0.8rem;
+        .amoria-preview-hidden-info {
+          margin-top: 0.8rem;
+          font-size: 0.78rem;
           color: #9ca3af;
         }
 
@@ -1153,4 +1015,3 @@ export default function CreateAIPage() {
     </main>
   );
 }
-
