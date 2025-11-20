@@ -1,6 +1,6 @@
 // app/layout.tsx
 import type { ReactNode } from "react";
-import "./globals.css"; // <-- IMPORTANT : on importe le CSS global
+import "./globals.css";
 
 export const metadata = {
   title: "AmorIA.app",
@@ -10,7 +10,7 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr">
-      <body className="bg-gray-50 text-gray-900 antialiased">
+      <body className="min-h-screen bg-[#050816] text-white antialiased">
         {children}
       </body>
     </html>
