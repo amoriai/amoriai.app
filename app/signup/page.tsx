@@ -7,8 +7,8 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function SignupPage() {
-  // IMPORTANT avec Next 14 : suspense désactivé
-  const searchParams = useSearchParams({ suspense: false });
+  // IMPORTANT : aucune option ici → pas de suspense param
+  const searchParams = useSearchParams();
   const locale = searchParams.get("lang") || "fr";
 
   const [email, setEmail] = useState("");
