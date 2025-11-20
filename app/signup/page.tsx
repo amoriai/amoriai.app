@@ -1,14 +1,14 @@
-// app/signup/page.tsx
 "use client";
 
 export const dynamic = "force-dynamic";
 
 import React, { useState, FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function SignupPage() {
-  // Pour l’instant on force le français
-  const locale = "fr";
+  const searchParams = useSearchParams();
+  const locale = searchParams.get("lang") || "fr";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +36,7 @@ export default function SignupPage() {
       return;
     }
 
-    // Après inscription → page de création d'IA
+    // Après inscription email -> création d'IA
     window.location.href = `/create-ai?lang=${locale}`;
   };
 
@@ -45,11 +45,17 @@ export default function SignupPage() {
     setInfo(null);
     setLoadingGoogle(true);
 
+    // URL complète vers la page de création d'IA
+    const redirectTo =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/create-ai?lang=${locale}`
+        : undefined;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      // options: {
-      //   redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/create-ai?lang=${locale}`,
-      // },
+      options: {
+        redirectTo,
+      },
     });
 
     setLoadingGoogle(false);
@@ -58,6 +64,8 @@ export default function SignupPage() {
       setError(error.message);
       return;
     }
+    // Pas besoin de rediriger ici : Supabase va déjà
+    // rediriger le navigateur vers redirectTo.
   };
 
   const t = {
