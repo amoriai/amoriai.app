@@ -1,14 +1,14 @@
+// app/signup/page.tsx
 "use client";
 
 export const dynamic = "force-dynamic";
 
 import React, { useState, FormEvent } from "react";
-import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function SignupPage() {
-  const searchParams = useSearchParams();
-  const locale = searchParams.get("lang") || "fr";
+  // Pour l’instant on force le français
+  const locale = "fr";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,6 +36,7 @@ export default function SignupPage() {
       return;
     }
 
+    // Après inscription → page de création d'IA
     window.location.href = `/create-ai?lang=${locale}`;
   };
 
@@ -46,6 +47,9 @@ export default function SignupPage() {
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
+      // options: {
+      //   redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/create-ai?lang=${locale}`,
+      // },
     });
 
     setLoadingGoogle(false);
@@ -81,6 +85,7 @@ export default function SignupPage() {
         <h1 className="text-3xl font-semibold mb-2">{t.title}</h1>
         <p className="text-sm text-white/70 mb-6">{t.subtitle}</p>
 
+        {/* Bouton Google */}
         <button
           type="button"
           onClick={handleGoogle}
@@ -99,6 +104,7 @@ export default function SignupPage() {
           <div className="h-px flex-1 bg-white/10" />
         </div>
 
+        {/* Formulaire email + mot de passe */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm mb-1">{t.emailLabel}</label>
@@ -145,7 +151,9 @@ export default function SignupPage() {
           </button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-white/60">{t.already}</p>
+        <p className="mt-6 text-center text-xs text-white/60">
+          {t.already}
+        </p>
       </div>
     </main>
   );
