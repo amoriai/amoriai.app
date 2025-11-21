@@ -60,7 +60,7 @@ const STRINGS: Record<Locale, Strings> = {
         id: "plus",
         badge: "Populaire",
         name: "AmorIA Plus",
-        price: "17,99 $",
+        price: "19,99 $",
         priceNote: "Parfait pour un usage régulier.",
         description:
           "Ton AmorIA te suit au quotidien, avec mémoire et un peu de voix chaque mois.",
@@ -136,7 +136,7 @@ const STRINGS: Record<Locale, Strings> = {
         id: "plus",
         badge: "Popular",
         name: "AmorIA Plus",
-        price: "$17.99",
+        price: "$19.99",
         priceNote: "Great for regular use.",
         description:
           "Your AmorIA follows you every day, with memory and some voice minutes each month.",
@@ -213,7 +213,7 @@ const STRINGS: Record<Locale, Strings> = {
         id: "plus",
         badge: "Popular",
         name: "AmorIA Plus",
-        price: "17,99 $",
+        price: "19,99 $",
         priceNote: "Perfecto para uso regular.",
         description:
           "Tu AmorIA te acompaña cada día, con memoria y algunos minutos de voz al mes.",
@@ -263,7 +263,7 @@ const STRINGS: Record<Locale, Strings> = {
 };
 
 export default function PricingPage() {
-  const searchParams = useSearchParams({ suspense: false });
+  const searchParams = useSearchParams();
 
   const langParam = (searchParams.get("lang") || "fr") as Locale;
   const locale: Locale =
