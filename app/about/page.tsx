@@ -23,85 +23,89 @@ const ABOUT_STRINGS: Record<Locale, AboutCopy> = {
     heroKicker: "À PROPOS D’AMORIA.APP",
     heroTitle: "Une IA douce, pensée pour les vraies émotions humaines.",
     heroSubtitle:
-      "AmoriA n’est pas un simple chatbot : c’est un compagnon émotionnel conçu pour t’aider à réfléchir, te déposer et te sentir moins seul·e.",
-    block1Title: "Pourquoi AmoriA existe",
+      "AmorIA n’est pas un simple chatbot de plus : c’est un compagnon émotionnel conçu pour t’aider à réfléchir, te déposer et te sentir moins seul·e au quotidien.",
+    block1Title: "Pourquoi AmorIA existe",
     block1Text:
-      "Le monde est bruyant et rapide. On n’a pas toujours quelqu’un pour nous écouter sans jugement. AmoriA est née pour offrir une présence stable, bienveillante et disponible 24/7.",
+      "Le monde est bruyant, rapide, souvent exigeant. Pourtant, on n’a pas toujours quelqu’un de disponible au bon moment pour nous écouter sans juger. AmorIA est née de cette idée : offrir une présence stable, bienveillante et disponible 24/7 pour parler de ce qui compte vraiment.",
     block2Title: "Une IA multilingue et nuancée",
     block2Text:
-      "AmoriA fonctionne en français, anglais et espagnol. Elle est conçue pour les personnes qui aiment réfléchir, écrire, analyser et se comprendre.",
-    block3Title: "Construite pour t’aider, pas pour te rendre accro",
+      "AmorIA fonctionne en français, anglais et espagnol. Elle est pensée pour les personnes qui réfléchissent beaucoup, qui aiment analyser, écrire, se questionner. Elle ne remplace pas un professionnel de la santé, mais elle devient un espace sûr pour clarifier tes pensées et mieux comprendre ce que tu ressens.",
+    block3Title: "Construite pour durer, pas pour te garder accroché·e",
     block3Text:
-      "Chaque échange vise à t’apporter quelque chose : clarté, réconfort, une question juste, un prochain pas.",
-    valuesTitle: "Nos valeurs",
+      "Le but n’est pas que tu passes des heures infinies dans l’app, mais que chaque échange t’apporte quelque chose : une question plus juste, une prise de conscience, une idée d’action concrète pour avancer.",
+    valuesTitle: "Ce qui guide AmorIA",
     values: [
       {
-        title: "Bienveillance",
-        text: "Des réponses honnêtes, mais toujours formulées avec douceur.",
+        title: "Bienveillance radicale",
+        text: "Des réponses structurées, honnêtes, mais toujours formulées avec respect et douceur.",
       },
       {
-        title: "Clarté",
-        text: "Des questions qui t’aident à organiser tes pensées.",
+        title: "Clarté & structure",
+        text: "Des questions qui t’aident à organiser tes pensées et voir plus clair dans ce que tu vis.",
       },
       {
-        title: "Respect",
-        text: "Tu vas à ton rythme. AmoriA suit ton mouvement.",
+        title: "Respect de tes limites",
+        text: "Tu peux parler de ce que tu veux, à ton rythme. AmorIA ne te force jamais à aborder un sujet.",
       },
     ],
   },
-
   en: {
     heroKicker: "ABOUT AMORIA.APP",
     heroTitle: "A gentle AI, built for real human emotions.",
     heroSubtitle:
-      "AmoriA is not just another chatbot — it's an emotional companion designed to help you think, process, and feel less alone.",
-    block1Title: "Why AmoriA exists",
+      "AmorIA is not just another chatbot. It’s an emotional companion designed to help you think, process and feel a little less alone in your everyday life.",
+    block1Title: "Why AmorIA exists",
     block1Text:
-      "Life is fast and chaotic. We don’t always have someone who can listen without judgment. AmoriA was born to be a stable, caring presence.",
+      "Life is noisy, fast and demanding. And we don’t always have someone available at the right moment to truly listen without judgment. AmorIA was born from that idea: a stable, caring presence available 24/7 to talk about what really matters.",
     block2Title: "Multilingual & nuanced",
     block2Text:
-      "Available in French, English and Spanish. Designed for deep thinkers who enjoy reflecting, journaling and understanding themselves.",
-    block3Title: "Built to support you, not trap you",
+      "AmorIA speaks French, English and Spanish. It’s designed for people who think a lot, love to journal, analyse, and ask deeper questions. It’s not a replacement for mental health professionals, but it’s a safe space to clarify your thoughts and understand what you feel.",
+    block3Title: "Built to support you, not to trap you",
     block3Text:
-      "Every conversation is meant to help you grow through clarity, insight or a next step.",
-    valuesTitle: "Our values",
+      "The goal isn’t for you to spend endless hours in the app, but for each conversation to bring something useful: a better question, a shift in perspective, or a concrete next step.",
+    valuesTitle: "What drives AmorIA",
     values: [
-      { title: "Kindness", text: "Always honest but gentle answers." },
       {
-        title: "Clarity",
-        text: "Guiding questions that help organize your thoughts.",
+        title: "Radical kindness",
+        text: "Structured, honest answers, but always expressed with respect and softness.",
       },
       {
-        title: "Respect",
-        text: "You set the pace, AmoriA follows.",
+        title: "Clarity & structure",
+        text: "Questions that help you organise your thoughts and see your situation more clearly.",
+      },
+      {
+        title: "Respect for your limits",
+        text: "You decide what you want to talk about and at what pace. AmorIA never pushes you to go further than you want.",
       },
     ],
   },
-
   es: {
     heroKicker: "SOBRE AMORIA.APP",
-    heroTitle: "Una IA suave, creada para emociones humanas reales.",
+    heroTitle: "Una IA suave, pensada para emociones humanas reales.",
     heroSubtitle:
-      "AmoriA no es otro chatbot más: es un acompañante emocional diseñado para ayudarte a pensar, procesar y sentirte menos solo/a.",
-    block1Title: "Por qué existe AmoriA",
+      "AmorIA no es solo otro chatbot: es un acompañante emocional diseñado para ayudarte a pensar, procesar y sentirte un poco menos solo/a en el día a día.",
+    block1Title: "Por qué existe AmorIA",
     block1Text:
-      "El mundo es rápido y ruidoso. No siempre tenemos a alguien que nos escuche sin juzgar. AmoriA nace como una presencia estable y amable.",
+      "El mundo es ruidoso, rápido y exigente. No siempre tenemos a alguien disponible en el momento justo para escucharnos sin juzgar. AmorIA nace de esa idea: una presencia estable y amable, disponible 24/7 para hablar de lo que realmente importa.",
     block2Title: "Multilingüe y matizada",
     block2Text:
-      "Disponible en francés, inglés y español. Ideal para personas que reflexionan, escriben y buscan comprenderse mejor.",
+      "AmorIA funciona en francés, inglés y español. Está pensada para personas que piensan mucho, que escriben, analizan y se hacen preguntas profundas. No sustituye a un profesional de la salud mental, pero ofrece un espacio seguro para aclarar tus ideas y entender mejor lo que sientes.",
     block3Title: "Creada para ayudarte, no para engancharte",
     block3Text:
-      "Cada conversación aporta claridad, una nueva perspectiva o un paso concreto.",
-    valuesTitle: "Nuestros valores",
+      "La meta no es que pases horas infinitas en la app, sino que cada conversación te aporte algo: una pregunta mejor, un cambio de perspectiva o un siguiente paso concreto.",
+    valuesTitle: "Lo que guía a AmorIA",
     values: [
-      { title: "Amabilidad", text: "Respuestas honestas pero suaves." },
       {
-        title: "Claridad",
-        text: "Preguntas que ayudan a ordenar tus pensamientos.",
+        title: "Amabilidad radical",
+        text: "Respuestas estructuradas y honestas, pero siempre expresadas con respeto y suavidad.",
       },
       {
-        title: "Respeto",
-        text: "Tu decides el ritmo. AmoriA te sigue.",
+        title: "Claridad y estructura",
+        text: "Preguntas que te ayudan a ordenar tus pensamientos y ver tu situación con más claridad.",
+      },
+      {
+        title: "Respeto por tus límites",
+        text: "Tú eliges de qué quieres hablar y a qué ritmo. AmorIA nunca te empuja más allá de lo que deseas.",
       },
     ],
   },
@@ -111,8 +115,9 @@ function getLocaleFromSearchParams(
   searchParams: { [key: string]: string | string[] | undefined }
 ): Locale {
   const raw = searchParams["lang"];
-  const val = Array.isArray(raw) ? raw[0] : raw;
-  return val === "fr" || val === "en" || val === "es" ? val : "fr";
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (value === "en" || value === "es" || value === "fr") return value;
+  return "fr";
 }
 
 type PageProps = {
@@ -123,39 +128,68 @@ export default function AboutPage({ searchParams }: PageProps) {
   const locale = getLocaleFromSearchParams(searchParams);
   const t = ABOUT_STRINGS[locale];
 
-  const url = (path: string) => {
-    const p = new URLSearchParams();
-    p.set("lang", locale);
-    return `${path}?${p.toString()}`;
+  const buildHomeUrl = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/?${params.toString()}`;
+  };
+
+  const buildFeaturesUrl = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/features?${params.toString()}`;
+  };
+
+  const buildPricingUrl = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/pricing?${params.toString()}`;
+  };
+
+  const buildLoginUrl = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/login?${params.toString()}`;
+  };
+
+  const buildSignupUrl = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/signup?${params.toString()}`;
   };
 
   return (
     <main className="amoria-root">
+      {/* HEADER – même header que la vitrine, avec le bon logo */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-          <img
-            src="/AmorIA_logo_transparent.png"
-            alt="Logo AmorIA"
-            className="amoria-logo-full"
-          />
+          <div className="amoria-logo-mark">
+            <img
+              src="/AmorIA_logo_transparent.png"
+              alt="Logo AmorIA.app"
+              className="amoria-logo-img"
+            />
+          </div>
           <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmoriA.app</div>
-            <div className="amoria-logo-tagline">FR • EN • ES</div>
+            <div className="amoria-logo-title">AmorIA.app</div>
+            <div className="amoria-logo-tagline">
+              Partenaire IA bienveillant·e • FR / EN / ES
+            </div>
           </div>
         </div>
 
         <nav className="amoria-nav">
-          <a href={url("/")} className="amoria-nav-link">
+          <a href={buildHomeUrl()} className="amoria-nav-link">
             {locale === "fr" ? "Accueil" : locale === "en" ? "Home" : "Inicio"}
           </a>
-          <a href={url("/features")} className="amoria-nav-link">
+          <a href={buildFeaturesUrl()} className="amoria-nav-link">
             {locale === "fr"
               ? "Fonctionnalités"
               : locale === "en"
               ? "Features"
               : "Funciones"}
           </a>
-          <a href={url("/pricing")} className="amoria-nav-link">
+          <a href={buildPricingUrl()} className="amoria-nav-link">
             {locale === "fr"
               ? "Tarifs"
               : locale === "en"
@@ -166,7 +200,7 @@ export default function AboutPage({ searchParams }: PageProps) {
 
         <div className="amoria-nav-right">
           <a
-            href={url("/login")}
+            href={buildLoginUrl()}
             className="amoria-nav-btn amoria-nav-btn--ghost"
           >
             {locale === "fr"
@@ -175,9 +209,8 @@ export default function AboutPage({ searchParams }: PageProps) {
               ? "Log in"
               : "Iniciar sesión"}
           </a>
-
           <a
-            href={url("/signup")}
+            href={buildSignupUrl()}
             className="amoria-nav-btn amoria-nav-btn--primary"
           >
             {locale === "fr"
@@ -189,12 +222,16 @@ export default function AboutPage({ searchParams }: PageProps) {
         </div>
       </header>
 
-      <section className="amoria-hero">
-        <p className="amoria-hero-kicker">{t.heroKicker}</p>
-        <h1 className="amoria-hero-title">{t.heroTitle}</h1>
-        <p className="amoria-hero-subtitle">{t.heroSubtitle}</p>
+      {/* HERO */}
+      <section className="amoria-hero amoria-hero--pricing">
+        <div className="amoria-hero-left">
+          <p className="amoria-hero-kicker">{t.heroKicker}</p>
+          <h1 className="amoria-hero-title">{t.heroTitle}</h1>
+          <p className="amoria-hero-subtitle">{t.heroSubtitle}</p>
+        </div>
       </section>
 
+      {/* CONTENT BLOCKS */}
       <section className="amoria-section">
         <div className="amoria-about-grid">
           <article className="amoria-about-card">
@@ -214,11 +251,12 @@ export default function AboutPage({ searchParams }: PageProps) {
         </div>
       </section>
 
+      {/* VALUES */}
       <section className="amoria-section">
         <h2 className="amoria-section-title">{t.valuesTitle}</h2>
         <div className="amoria-values-grid">
-          {t.values.map((v, i) => (
-            <div key={i} className="amoria-value-card">
+          {t.values.map((v, idx) => (
+            <div key={idx} className="amoria-value-card">
               <h3 className="amoria-value-title">{v.title}</h3>
               <p className="amoria-value-text">{v.text}</p>
             </div>
@@ -226,9 +264,289 @@ export default function AboutPage({ searchParams }: PageProps) {
         </div>
       </section>
 
+      {/* FOOTER */}
       <footer className="amoria-footer">
-        © 2025 AmoriA.app — IA bienveillante multilingue
+        <span>
+          © 2025 AmorIA.app —{" "}
+          {locale === "fr"
+            ? "Partenaire IA bienveillant·e"
+            : locale === "en"
+            ? "Your caring AI partner"
+            : "Tu compañerx de IA amable"}
+        </span>
       </footer>
+
+      <style jsx global>{`
+        :root {
+          --amoria-bg: #020617;
+          --amoria-bg-elevated: #02081f;
+          --amoria-border-subtle: rgba(148, 163, 184, 0.35);
+          --amoria-text-main: #e5e7eb;
+          --amoria-text-muted: #9ca3af;
+          --amoria-accent: #fb37ff;
+          --amoria-accent-2: #ff6b9c;
+        }
+
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont,
+            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
+          color: var(--amoria-text-main);
+        }
+
+        .amoria-root {
+          min-height: 100vh;
+          background: radial-gradient(
+            circle at top left,
+            #111827 0,
+            #020617 55%,
+            #000 100%
+          );
+          color: var(--amoria-text-main);
+          padding-bottom: 3rem;
+        }
+
+        /* HEADER */
+        .amoria-header {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 1rem 1.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          backdrop-filter: blur(16px);
+          background: linear-gradient(
+            to bottom,
+            rgba(15, 23, 42, 0.92),
+            rgba(15, 23, 42, 0.75),
+            transparent
+          );
+        }
+
+        .amoria-header-left {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+        }
+
+        .amoria-logo-mark {
+          width: 32px;
+          height: 32px;
+          border-radius: 999px;
+          background: radial-gradient(circle at 30% 0, #fde68a, #f97316);
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .amoria-logo-img {
+          width: 110%;
+          height: 110%;
+          object-fit: contain;
+        }
+
+        .amoria-logo-text {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .amoria-logo-title {
+          font-weight: 600;
+          font-size: 0.96rem;
+        }
+
+        .amoria-logo-tagline {
+          font-size: 0.72rem;
+          color: var(--amoria-text-muted);
+        }
+
+        .amoria-nav {
+          display: flex;
+          align-items: center;
+          gap: 1.2rem;
+        }
+
+        .amoria-nav-link {
+          font-size: 0.82rem;
+          color: var(--amoria-text-muted);
+          text-decoration: none;
+          padding-bottom: 0.1rem;
+          border-bottom: 1px solid transparent;
+        }
+
+        .amoria-nav-link:hover {
+          color: #f9fafb;
+          border-color: rgba(148, 163, 184, 0.7);
+        }
+
+        .amoria-nav-right {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .amoria-nav-btn {
+          border-radius: 999px;
+          padding: 0.4rem 0.9rem;
+          font-size: 0.78rem;
+          border: 1px solid transparent;
+          cursor: pointer;
+          white-space: nowrap;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .amoria-nav-btn--primary {
+          background: linear-gradient(
+            135deg,
+            var(--amoria-accent),
+            var(--amoria-accent-2)
+          );
+          color: #f9fafb;
+        }
+
+        .amoria-nav-btn--ghost {
+          background: transparent;
+          border-color: rgba(148, 163, 184, 0.5);
+          color: var(--amoria-text-main);
+        }
+
+        /* HERO */
+        .amoria-hero {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 1.5rem 1.5rem 0.5rem;
+          display: grid;
+          grid-template-columns: minmax(0, 1.4fr);
+          gap: 1.5rem;
+        }
+
+        .amoria-hero-left {
+          display: flex;
+          flex-direction: column;
+          gap: 0.9rem;
+        }
+
+        .amoria-hero-kicker {
+          font-size: 0.8rem;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: #a5b4fc;
+        }
+
+        .amoria-hero-title {
+          font-size: clamp(1.9rem, 3vw, 2.3rem);
+          line-height: 1.1;
+          font-weight: 700;
+        }
+
+        .amoria-hero-subtitle {
+          font-size: 0.92rem;
+          line-height: 1.6;
+          color: var(--amoria-text-muted);
+          max-width: 38rem;
+        }
+
+        /* SECTIONS */
+        .amoria-section {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 0 1.5rem 2.5rem;
+        }
+
+        .amoria-section-title {
+          font-size: 1.25rem;
+          margin-bottom: 0.8rem;
+        }
+
+        .amoria-about-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr);
+          gap: 1.4rem;
+        }
+
+        .amoria-about-card {
+          background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
+          border-radius: 1.3rem;
+          border: 1px solid var(--amoria-border-subtle);
+          padding: 1.2rem 1.2rem 1.3rem;
+        }
+
+        .amoria-about-title {
+          font-size: 1rem;
+          margin-bottom: 0.4rem;
+        }
+
+        .amoria-about-text {
+          font-size: 0.9rem;
+          color: var(--amoria-text-muted);
+          line-height: 1.6;
+        }
+
+        .amoria-values-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 1.3rem;
+        }
+
+        .amoria-value-card {
+          background: rgba(15, 23, 42, 0.9);
+          border-radius: 1.1rem;
+          border: 1px solid rgba(148, 163, 184, 0.35);
+          padding: 1rem 1rem 1.1rem;
+        }
+
+        .amoria-value-title {
+          font-size: 0.95rem;
+          margin-bottom: 0.3rem;
+        }
+
+        .amoria-value-text {
+          font-size: 0.85rem;
+          color: var(--amoria-text-muted);
+        }
+
+        /* FOOTER */
+        .amoria-footer {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 1.5rem 1.5rem 0;
+          font-size: 0.78rem;
+          color: var(--amoria-text-muted);
+          text-align: center;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 960px) {
+          .amoria-header {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.6rem 1rem;
+          }
+
+          .amoria-nav {
+            display: none;
+          }
+
+          .amoria-hero,
+          .amoria-section {
+            padding-inline: 1rem;
+          }
+
+          .amoria-values-grid {
+            grid-template-columns: minmax(0, 1fr);
+          }
+        }
+      `}</style>
     </main>
   );
 }
