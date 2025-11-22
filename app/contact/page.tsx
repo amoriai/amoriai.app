@@ -136,16 +136,16 @@ export default function ContactPage({ searchParams }: PageProps) {
 
   return (
     <main className="amoria-root">
-      {/* HEADER – même look que vitrine/pricing/features */}
+      {/* HEADER – même look/logo que la vitrine */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-          <div className="amoria-logo-mark">
-            <img
-              src="/AmorIA_logo_transparent.png"
-              alt="Logo AmorIA.app"
-              className="amoria-logo-img"
-            />
-          </div>
+          {/* Logo complet transparent */}
+          <img
+            src="/AmorIA_logo_transparent.png"
+            alt="Logo AmorIA.app"
+            className="amoria-logo-full"
+          />
+
           <div className="amoria-logo-text">
             <div className="amoria-logo-title">AmoriA.app</div>
             <div className="amoria-logo-tagline">
@@ -243,7 +243,6 @@ export default function ContactPage({ searchParams }: PageProps) {
 
             <form
               className="amoria-contact-form"
-              // Tu brancheras plus tard (API route, Supabase, etc.)
               onSubmit={(e) => e.preventDefault()}
             >
               <div className="amoria-form-row">
@@ -318,7 +317,7 @@ export default function ContactPage({ searchParams }: PageProps) {
         </span>
       </footer>
 
-      {/* STYLES (même base que vitrine/pricing) */}
+      {/* STYLES (même base que vitrine/pricing, avec le bon logo) */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
@@ -336,7 +335,12 @@ export default function ContactPage({ searchParams }: PageProps) {
           padding: 0;
           font-family: system-ui, -apple-system, BlinkMacSystemFont,
             "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
+          background: radial-gradient(
+            circle at top,
+            #020617 0,
+            #020617 40%,
+            #000 100%
+          );
           color: var(--amoria-text-main);
         }
 
@@ -352,7 +356,7 @@ export default function ContactPage({ searchParams }: PageProps) {
           padding-bottom: 3rem;
         }
 
-        /* HEADER (copié de la vitrine) */
+        /* HEADER (comme la vitrine) */
         .amoria-header {
           max-width: 1120px;
           margin: 0 auto;
@@ -379,20 +383,10 @@ export default function ContactPage({ searchParams }: PageProps) {
           gap: 0.6rem;
         }
 
-        .amoria-logo-mark {
-          width: 32px;
-          height: 32px;
-          border-radius: 999px;
-          background: radial-gradient(circle at 30% 0, #fde68a, #f97316);
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .amoria-logo-img {
-          width: 110%;
-          height: 110%;
+        /* Logo complet */
+        .amoria-logo-full {
+          height: 40px;
+          width: auto;
           object-fit: contain;
         }
 
@@ -528,7 +522,12 @@ export default function ContactPage({ searchParams }: PageProps) {
         }
 
         .amoria-contact-card {
-          background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
+          background: radial-gradient(
+            circle at top,
+            #020617,
+            #020617 40%,
+            #000 100%
+          );
           border-radius: 1.4rem;
           border: 1px solid var(--amoria-border-subtle);
           padding: 1.3rem 1.2rem 1.4rem;
