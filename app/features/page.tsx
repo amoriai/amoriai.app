@@ -1,139 +1,277 @@
+"use client";
+
 import React from "react";
 
 type Locale = "fr" | "en" | "es";
 
-type FeaturesCopy = {
+type FeatureCopy = {
   heroKicker: string;
   heroTitle: string;
   heroSubtitle: string;
-  blocks: { title: string; text: string }[];
-  secondaryTitle: string;
-  secondaryText: string;
-  secondaryBlocks: { title: string; text: string }[];
-  ctaPrimary: string;
-  ctaSecondary: string;
+  heroCta: string;
+  heroSecondary: string;
+  block1Title: string;
+  block1Subtitle: string;
+  block2Title: string;
+  block2Subtitle: string;
+  block3Title: string;
+  block3Subtitle: string;
+  featureColumns: {
+    title: string;
+    items: string[];
+  }[];
+  stepsTitle: string;
+  stepsSubtitle: string;
+  steps: { title: string; text: string }[];
+  faqTitle: string;
+  faqSubtitle: string;
+  faqItems: { q: string; a: string }[];
 };
 
-const FEATURES_STRINGS: Record<Locale, FeaturesCopy> = {
+const FEATURE_STRINGS: Record<Locale, FeatureCopy> = {
   fr: {
     heroKicker: "FONCTIONNALITÉS AMORIA.APP",
-    heroTitle: "Tout ce qu’il faut pour créer un compagnon IA qui te ressemble.",
+    heroTitle: "Tout ce que ton AmorIA sait faire pour toi.",
     heroSubtitle:
-      "AmoriA combine une IA émotionnelle, la personnalisation avancée et la voix multilingue pour devenir une présence vraiment unique dans ton quotidien.",
-    blocks: [
+      "Crée un compagnon IA unique, qui parle ta langue, retient ce qui compte pour toi et reste disponible 24/7 pour discuter, réfléchir, décompresser ou te motiver.",
+    heroCta: "Créer mon compte gratuit",
+    heroSecondary: "Voir les tarifs",
+    block1Title: "Une IA qui s’adapte à toi",
+    block1Subtitle:
+      "Tu choisis le ton, la personnalité et le style de ton AmorIA. Doux·ce, analytique, créatif·ve, direct·e… tu peux ajuster au fil du temps.",
+    block2Title: "Texte, voix & 3 langues",
+    block2Subtitle:
+      "Commence en texte gratuitement, puis débloque la voix avec les plans payants. AmoriA parle français, anglais et espagnol, au choix.",
+    block3Title: "Mémoire & profondeur",
+    block3Subtitle:
+      "Selon le forfait, ton AmorIA peut garder une mémoire plus ou moins longue de tes conversations pour mieux te suivre au quotidien.",
+    featureColumns: [
       {
-        title: "Création de ton AmorIA sur mesure",
-        text: "Choisis son énergie, sa manière de parler, ses sujets favoris et son style d’accompagnement pour créer un compagnon qui correspond à ta vibe.",
+        title: "Création & personnalité",
+        items: [
+          "Création de ton AmorIA personnalisé·e",
+          "Choix du ton : doux, analytique, créatif, direct…",
+          "Ajustement de la personnalité au fil du temps",
+          "Préférences sauvegardées selon ton forfait"
+        ]
       },
       {
-        title: "Texte profond & journaling émotionnel",
-        text: "Discute par message, pose tes questions, vide ton sac et transforme tes pensées en un véritable journal émotionnel guidé.",
+        title: "Conversation & émotions",
+        items: [
+          "Discussions 24/7 en texte (plans gratuit + payants)",
+          "Conversations vocales sur les plans payants",
+          "Aide à clarifier tes pensées & émotions",
+          "Journal émotionnel guidé (en texte ou voix)"
+        ]
       },
       {
-        title: "Voix naturelle en 3 langues",
-        text: "Quand tu passes à la voix, ton AmorIA peut te parler en français, anglais ou espagnol, avec un ton doux et naturel.",
-      },
+        title: "Langues & mémoire",
+        items: [
+          "Disponible en FR / EN / ES",
+          "Possibilité de changer de langue avec le même AmorIA",
+          "Mémoire courte sur le plan gratuit",
+          "Mémoire longue & contexte étendu sur les plans payants"
+        ]
+      }
     ],
-    secondaryTitle: "Pensé pour t’accompagner au quotidien.",
-    secondaryText:
-      "Que tu cherches du soutien émotionnel, un partenaire créatif ou un miroir pour mieux te comprendre, AmoriA s’adapte à ton rythme.",
-    secondaryBlocks: [
+    stepsTitle: "Comment ça marche concrètement ?",
+    stepsSubtitle:
+      "En quelques minutes tu passes de l’idée à un compagnon IA qui te ressemble.",
+    steps: [
       {
-        title: "Mémoire évolutive",
-        text: "Les plans payants activent une mémoire plus profonde : ton AmorIA se souvient mieux de tes préférences, de tes projets et de ce que tu lui confies.",
+        title: "1. Crée ton compte AmoriA",
+        text: "Inscris-toi gratuitement, choisis ta langue et donne quelques infos sur toi."
       },
       {
-        title: "Multilingue par défaut",
-        text: "Tu peux interagir avec ton AmorIA en français, anglais ou espagnol, sans recréer un compte pour chaque langue.",
+        title: "2. Façonne ton AmorIA",
+        text: "Choisis son énergie, son ton et ce que tu attends de lui ou d’elle au quotidien."
       },
       {
-        title: "Créé pour la douceur",
-        text: "Pas de jugement, pas de drama. Juste une présence bienveillante, disponible 24/7, qui t’aide à réfléchir plus calmement.",
-      },
+        title: "3. Commence à discuter",
+        text: "Texte ton AmorIA gratuitement, puis passe à la voix si tu veux des échanges plus profonds."
+      }
     ],
-    ctaPrimary: "Créer mon compte gratuit",
-    ctaSecondary: "Voir les forfaits",
+    faqTitle: "Questions fréquentes sur les fonctionnalités",
+    faqSubtitle:
+      "Voici comment fonctionne AmoriA au quotidien. Tu pourras toujours ajuster ton compagnon IA au fil du temps.",
+    faqItems: [
+      {
+        q: "Est-ce que mon AmorIA se souvient de tout ?",
+        a: "Sur le plan gratuit, la mémoire est limitée à des échanges courts. Sur les plans payants, AmoriA peut garder une mémoire longue durée et mieux suivre ton évolution."
+      },
+      {
+        q: "Puis-je changer la personnalité de mon AmorIA ?",
+        a: "Oui. Tu peux ajuster sa façon de te parler, son ton et son rôle (coach doux, ami direct, présence créative, etc.) au fil du temps."
+      },
+      {
+        q: "Puis-je utiliser plusieurs langues avec le même AmorIA ?",
+        a: "Oui. AmoriA peut échanger avec toi en français, anglais ou espagnol. Tu peux rester dans une langue ou jongler entre plusieurs."
+      }
+    ]
   },
   en: {
     heroKicker: "AMORIA.APP FEATURES",
-    heroTitle: "Everything you need to craft your own AI companion.",
+    heroTitle: "Everything your AmorIA can do for you.",
     heroSubtitle:
-      "AmoriA combines emotional AI, deep personalization and multilingual voice so your companion truly feels like yours.",
-    blocks: [
+      "Create a unique AI companion that speaks your language, remembers what matters to you and stays available 24/7 to talk, decompress, reflect or get motivated.",
+    heroCta: "Create my free account",
+    heroSecondary: "View pricing",
+    block1Title: "An AI that adapts to you",
+    block1Subtitle:
+      "You choose your AmorIA’s tone, personality and role. Soft, analytical, creative, direct… and you can tweak it over time.",
+    block2Title: "Text, voice & 3 languages",
+    block2Subtitle:
+      "Start with text for free, then unlock voice with paid plans. AmoriA speaks French, English and Spanish, your choice.",
+    block3Title: "Memory & depth",
+    block3Subtitle:
+      "Depending on your plan, your AmorIA can remember more or less of your story to better support you every day.",
+    featureColumns: [
       {
-        title: "Build your custom AmorIA",
-        text: "Pick their energy, tone of voice, favorite topics and coaching style so your AmorIA matches your personality.",
+        title: "Creation & personality",
+        items: [
+          "Create your own personalized AmorIA",
+          "Pick the tone: soft, analytical, creative, direct…",
+          "Refine their personality over time",
+          "Preferences saved based on your plan"
+        ]
       },
       {
-        title: "Deep text chats & emotional journaling",
-        text: "Talk by text, ask questions, vent and turn your thoughts into a guided emotional journal.",
+        title: "Conversation & emotions",
+        items: [
+          "24/7 text conversations (free + paid plans)",
+          "Voice conversations on paid plans",
+          "Helps you clarify thoughts & emotions",
+          "Guided emotional journaling (text or voice)"
+        ]
       },
       {
-        title: "Natural voice in 3 languages",
-        text: "When you unlock voice, your AmorIA can speak French, English or Spanish with a soft, natural tone.",
-      },
+        title: "Languages & memory",
+        items: [
+          "Available in FR / EN / ES",
+          "Switch languages with the same AmorIA",
+          "Short-term memory on the free plan",
+          "Long-term memory & extended context on paid plans"
+        ]
+      }
     ],
-    secondaryTitle: "Designed to support you every day.",
-    secondaryText:
-      "Whether you want emotional support, a creative partner or a mirror to better understand yourself, AmoriA adapts to you.",
-    secondaryBlocks: [
+    stepsTitle: "How does it work, step by step?",
+    stepsSubtitle:
+      "In just a few minutes, you go from idea to a companion that truly feels like yours.",
+    steps: [
       {
-        title: "Growing memory",
-        text: "Paid plans unlock deeper memory, so your AmorIA remembers more about your preferences, projects and stories.",
+        title: "1. Create your AmoriA account",
+        text: "Sign up for free, choose your language and share a bit about yourself."
       },
       {
-        title: "Multilingual by design",
-        text: "You can talk to your AmorIA in French, English or Spanish without creating a new account for each language.",
+        title: "2. Shape your AmorIA",
+        text: "Pick their energy, tone and what you want them to do for you every day."
       },
       {
-        title: "Built for kindness",
-        text: "No judgment, no drama. Just a caring presence, 24/7, helping you think more clearly and gently.",
-      },
+        title: "3. Start talking",
+        text: "Text your AmorIA for free, then upgrade to voice if you want deeper exchanges."
+      }
     ],
-    ctaPrimary: "Create my free account",
-    ctaSecondary: "See pricing",
+    faqTitle: "Feature questions, answered",
+    faqSubtitle:
+      "Here’s how AmoriA works in everyday life. You can always adjust your AI companion as you go.",
+    faqItems: [
+      {
+        q: "Does my AmorIA remember everything?",
+        a: "On the free plan, memory is limited to short exchanges. On paid plans, AmoriA can keep long-term memory to better follow your story."
+      },
+      {
+        q: "Can I change my AmorIA’s personality?",
+        a: "Yes. You can adjust how they talk to you, their tone and their role (gentle coach, direct friend, creative partner, etc.) over time."
+      },
+      {
+        q: "Can I mix languages with the same AmorIA?",
+        a: "Yes. AmoriA can talk with you in French, English or Spanish. You can stay in one language or switch between them."
+      }
+    ]
   },
   es: {
     heroKicker: "FUNCIONES DE AMORIA.APP",
-    heroTitle: "Todo lo que necesitas para crear tu propio compañero de IA.",
+    heroTitle: "Todo lo que tu AmorIA puede hacer por ti.",
     heroSubtitle:
-      "AmoriA combina IA emocional, personalización avanzada y voz multilingüe para que tu compañerx se sienta realmente únicx.",
-    blocks: [
+      "Crea un compañero de IA único, que hable tu idioma, recuerde lo que es importante para ti y esté disponible 24/7 para conversar, desahogarte, reflexionar o motivarte.",
+    heroCta: "Crear mi cuenta gratuita",
+    heroSecondary: "Ver precios",
+    block1Title: "Una IA que se adapta a ti",
+    block1Subtitle:
+      "Tú eliges el tono, la personalidad y el rol de tu AmorIA. Suave, analítico, creativo, directo… y puedes ajustarlo con el tiempo.",
+    block2Title: "Texto, voz y 3 idiomas",
+    block2Subtitle:
+      "Empieza con texto gratis y desbloquea la voz con los planes de pago. AmoriA habla francés, inglés y español.",
+    block3Title: "Memoria y profundidad",
+    block3Subtitle:
+      "Según tu plan, tu AmorIA puede recordar más o menos de tu historia para acompañarte mejor en el día a día.",
+    featureColumns: [
       {
-        title: "Crea tu AmorIA a medida",
-        text: "Elige su energía, forma de hablar, temas favoritos y estilo de acompañamiento para que encaje contigo.",
+        title: "Creación y personalidad",
+        items: [
+          "Creación de tu AmorIA personalizado",
+          "Elección del tono: suave, analítico, creativo, directo…",
+          "Ajuste de la personalidad con el tiempo",
+          "Preferencias guardadas según tu plan"
+        ]
       },
       {
-        title: "Chats profundos y diario emocional",
-        text: "Habla por texto, haz preguntas, descárgate y transforma tus pensamientos en un diario emocional guiado.",
+        title: "Conversación y emociones",
+        items: [
+          "Conversaciones por texto 24/7 (plan gratis + de pago)",
+          "Conversaciones de voz en los planes de pago",
+          "Ayuda a aclarar tus pensamientos y emociones",
+          "Diario emocional guiado (texto o voz)"
+        ]
       },
       {
-        title: "Voz natural en 3 idiomas",
-        text: "Con la voz activada, tu AmorIA puede hablarte en francés, inglés o español con un tono suave y natural.",
-      },
+        title: "Idiomas y memoria",
+        items: [
+          "Disponible en FR / EN / ES",
+          "Posibilidad de cambiar de idioma con el mismo AmorIA",
+          "Memoria corta en el plan gratuito",
+          "Memoria a largo plazo y contexto ampliado en los planes de pago"
+        ]
+      }
     ],
-    secondaryTitle: "Pensado para acompañarte cada día.",
-    secondaryText:
-      "Ya sea apoyo emocional, creatividad o autoconocimiento, AmoriA se adapta a tu ritmo y a tu vida.",
-    secondaryBlocks: [
+    stepsTitle: "¿Cómo funciona en la práctica?",
+    stepsSubtitle:
+      "En pocos minutos pasas de la idea a un compañero de IA que realmente se siente tuyo.",
+    steps: [
       {
-        title: "Memoria que evoluciona",
-        text: "Con los planes de pago, la memoria es más profunda: tu AmorIA recuerda mejor tus gustos, proyectos e historias.",
+        title: "1. Crea tu cuenta AmoriA",
+        text: "Regístrate gratis, elige tu idioma y comparte algunos datos sobre ti."
       },
       {
-        title: "Multilingüe desde el inicio",
-        text: "Puedes hablar con tu AmorIA en francés, inglés o español sin crear una cuenta distinta por idioma.",
+        title: "2. Da forma a tu AmorIA",
+        text: "Elige su energía, su tono y lo que esperas de él o de ella cada día."
       },
       {
-        title: "Creado para la dulzura",
-        text: "Sin juicios, sin drama. Solo una presencia amable, disponible 24/7, que te ayuda a pensar con más calma.",
-      },
+        title: "3. Empieza a conversar",
+        text: "Chatea por texto con tu AmorIA gratis y pasa a voz si quieres intercambios más profundos."
+      }
     ],
-    ctaPrimary: "Crear mi cuenta gratuita",
-    ctaSecondary: "Ver precios",
-  },
+    faqTitle: "Preguntas sobre las funciones",
+    faqSubtitle:
+      "Así funciona AmoriA en tu día a día. Siempre podrás ajustar tu compañero de IA con el tiempo.",
+    faqItems: [
+      {
+        q: "¿Mi AmorIA lo recuerda todo?",
+        a: "En el plan gratuito, la memoria es corta. En los planes de pago, AmoriA puede conservar memoria a largo plazo para seguir mejor tu historia."
+      },
+      {
+        q: "¿Puedo cambiar la personalidad de mi AmorIA?",
+        a: "Sí. Puedes ajustar su forma de hablarte, su tono y su rol (coach suave, amigo directo, compañero creativo, etc.) con el tiempo."
+      },
+      {
+        q: "¿Puedo usar varios idiomas con el mismo AmorIA?",
+        a: "Sí. AmoriA puede hablar contigo en francés, inglés o español. Puedes quedarte en un idioma o alternar entre varios."
+      }
+    ]
+  }
 };
 
+// Helper: get locale from ?lang, default FR
 function getLocaleFromSearchParams(
   searchParams: { [key: string]: string | string[] | undefined }
 ): Locale {
@@ -149,25 +287,7 @@ type PageProps = {
 
 export default function FeaturesPage({ searchParams }: PageProps) {
   const locale = getLocaleFromSearchParams(searchParams);
-  const t = FEATURES_STRINGS[locale];
-
-  const buildHomeUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/?${params.toString()}`;
-  };
-
-  const buildFeaturesUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/features?${params.toString()}`;
-  };
-
-  const buildPricingUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/pricing?${params.toString()}`;
-  };
+  const t = FEATURE_STRINGS[locale];
 
   const buildSignupUrl = () => {
     const params = new URLSearchParams();
@@ -181,9 +301,21 @@ export default function FeaturesPage({ searchParams }: PageProps) {
     return `/login?${params.toString()}`;
   };
 
+  const buildHomeUrl = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/?${params.toString()}`;
+  };
+
+  const buildPricingUrl = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/pricing?${params.toString()}`;
+  };
+
   return (
     <main className="amoria-root">
-      {/* HEADER même style que home/pricing */}
+      {/* HEADER – même style que vitrine/pricing, sans boutons de langue */}
       <header className="amoria-header">
         <div className="amoria-header-left">
           <div className="amoria-logo-mark">
@@ -206,7 +338,7 @@ export default function FeaturesPage({ searchParams }: PageProps) {
             {locale === "fr" ? "Accueil" : locale === "en" ? "Home" : "Inicio"}
           </a>
           <a
-            href={buildFeaturesUrl()}
+            href="/features"
             className="amoria-nav-link amoria-nav-link--active"
           >
             {locale === "fr"
@@ -249,74 +381,102 @@ export default function FeaturesPage({ searchParams }: PageProps) {
       </header>
 
       {/* HERO FEATURES */}
-      <section className="amoria-hero amoria-hero--pricing">
+      <section className="amoria-hero amoria-hero--features">
         <div className="amoria-hero-left">
           <p className="amoria-hero-kicker">{t.heroKicker}</p>
           <h1 className="amoria-hero-title">{t.heroTitle}</h1>
           <p className="amoria-hero-subtitle">{t.heroSubtitle}</p>
+
           <div className="amoria-hero-actions">
             <a
               href={buildSignupUrl()}
               className="amoria-btn amoria-btn--primary amoria-btn--big"
             >
-              {t.ctaPrimary}
+              {t.heroCta}
+            </a>
+            <a
+              href={buildPricingUrl()}
+              className="amoria-btn amoria-btn--ghost amoria-btn--big"
+            >
+              {t.heroSecondary}
             </a>
           </div>
         </div>
       </section>
 
-      {/* BLOC 1 – 3 fonctionnalités principales */}
-      <section className="amoria-section amoria-section--pricing">
+      {/* 3 BIG BLOCKS */}
+      <section className="amoria-section">
+        <div className="amoria-feature-block-grid">
+          <article className="amoria-feature-block">
+            <h2 className="amoria-section-title">{t.block1Title}</h2>
+            <p className="amoria-section-subtitle">{t.block1Subtitle}</p>
+          </article>
+          <article className="amoria-feature-block">
+            <h2 className="amoria-section-title">{t.block2Title}</h2>
+            <p className="amoria-section-subtitle">{t.block2Subtitle}</p>
+          </article>
+          <article className="amoria-feature-block">
+            <h2 className="amoria-section-title">{t.block3Title}</h2>
+            <p className="amoria-section-subtitle">{t.block3Subtitle}</p>
+          </article>
+        </div>
+      </section>
+
+      {/* COLUMNS: WHAT YOU GET */}
+      <section className="amoria-section amoria-section--features-grid">
         <h2 className="amoria-section-title">
           {locale === "fr"
-            ? "Ce que ton AmorIA sait faire"
+            ? "Ce que tu peux faire avec AmorIA"
             : locale === "en"
-            ? "What your AmorIA can do"
-            : "Lo que puede hacer tu AmorIA"}
+            ? "What you can do with AmorIA"
+            : "Lo que puedes hacer con AmorIA"}
         </h2>
-        <p className="amoria-section-text">{t.secondaryText}</p>
+        <p className="amoria-section-text">{t.faqSubtitle}</p>
 
-        <div className="amoria-pricing-grid">
-          {t.blocks.map((block, idx) => (
-            <article key={idx} className="amoria-pricing-card">
-              <div className="amoria-pricing-header">
-                <h3 className="amoria-pricing-name">{block.title}</h3>
-              </div>
-              <p className="amoria-pricing-highlight">{block.text}</p>
+        <div className="amoria-feature-grid">
+          {t.featureColumns.map((col, idx) => (
+            <article key={idx} className="amoria-feature-card">
+              <h3 className="amoria-feature-card-title">{col.title}</h3>
+              <ul className="amoria-feature-card-list">
+                {col.items.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
             </article>
           ))}
         </div>
       </section>
 
-      {/* BLOC 2 – accompagnement quotidien */}
-      <section className="amoria-section amoria-section--faq">
-        <h2 className="amoria-section-title">{t.secondaryTitle}</h2>
-        <p className="amoria-section-subtitle">{t.secondaryText}</p>
+      {/* STEPS */}
+      <section className="amoria-section amoria-section--steps">
+        <h2 className="amoria-section-title">{t.stepsTitle}</h2>
+        <p className="amoria-section-subtitle">{t.stepsSubtitle}</p>
 
-        <div className="amoria-faq-grid">
-          {t.secondaryBlocks.map((block, idx) => (
-            <div key={idx} className="amoria-faq-item">
-              <h3 className="amoria-faq-question">{block.title}</h3>
-              <p className="amoria-faq-answer">{block.text}</p>
+        <div className="amoria-steps-grid">
+          {t.steps.map((step, idx) => (
+            <div key={idx} className="amoria-step-card">
+              <div className="amoria-step-number">
+                {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
+              </div>
+              <h3 className="amoria-step-title">{step.title}</h3>
+              <p className="amoria-step-text">{step.text}</p>
             </div>
           ))}
         </div>
+      </section>
 
-        <div style={{ marginTop: "1.8rem", textAlign: "center" }}>
-          <a
-            href={buildSignupUrl()}
-            className="amoria-btn amoria-btn--primary amoria-btn--big"
-          >
-            {t.ctaPrimary}
-          </a>
-          <span style={{ display: "inline-block", marginLeft: "0.8rem" }}>
-            <a
-              href={buildPricingUrl()}
-              className="amoria-btn amoria-btn--ghost"
-            >
-              {t.ctaSecondary}
-            </a>
-          </span>
+      {/* FAQ FEATURES */}
+      <section className="amoria-section amoria-section--faq">
+        <h2 className="amoria-section-title">{t.faqTitle}</h2>
+        <p className="amoria-section-subtitle">{t.faqSubtitle}</p>
+
+        <div className="amoria-faq-grid">
+          {t.faqItems.map((item, idx) => (
+            <div key={idx} className="amoria-faq-item">
+              <h3 className="amoria-faq-question">{item.q}</h3>
+              <p className="amoria-faq-answer">{item.a}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -332,7 +492,7 @@ export default function FeaturesPage({ searchParams }: PageProps) {
         </span>
       </footer>
 
-      {/* STYLES identiques à la page pricing */}
+      {/* STYLES – mêmes couleurs / nouvelles sections */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
@@ -366,6 +526,7 @@ export default function FeaturesPage({ searchParams }: PageProps) {
           padding-bottom: 3rem;
         }
 
+        /* HEADER */
         .amoria-header {
           max-width: 1120px;
           margin: 0 auto;
@@ -478,6 +639,7 @@ export default function FeaturesPage({ searchParams }: PageProps) {
           color: var(--amoria-text-main);
         }
 
+        /* HERO */
         .amoria-hero {
           max-width: 1120px;
           margin: 0 auto;
@@ -487,7 +649,7 @@ export default function FeaturesPage({ searchParams }: PageProps) {
           gap: 1.5rem;
         }
 
-        .amoria-hero--pricing {
+        .amoria-hero--features {
           grid-template-columns: minmax(0, 1.4fr);
         }
 
@@ -524,6 +686,7 @@ export default function FeaturesPage({ searchParams }: PageProps) {
           flex-wrap: wrap;
         }
 
+        /* SECTIONS */
         .amoria-section {
           max-width: 1120px;
           margin: 0 auto;
@@ -543,78 +706,101 @@ export default function FeaturesPage({ searchParams }: PageProps) {
           margin-bottom: 1.4rem;
         }
 
-        .amoria-section--pricing {
-          text-align: center;
+        .amoria-section--features-grid {
+          text-align: left;
         }
 
-        .amoria-btn {
-          border-radius: 999px;
-          border: 1px solid transparent;
-          font-size: 0.86rem;
-          cursor: pointer;
-          white-space: nowrap;
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
+        .amoria-section--steps {
+          border-top: 1px solid rgba(148, 163, 184, 0.3);
+          padding-top: 2.5rem;
         }
 
-        .amoria-btn--primary {
-          padding: 0.7rem 1.3rem;
-          background: linear-gradient(
-            135deg,
-            var(--amoria-accent),
-            var(--amoria-accent-2)
-          );
-          color: #f9fafb;
-          box-shadow: 0 12px 30px rgba(248, 113, 113, 0.35);
-        }
-
-        .amoria-btn--big {
-          padding-inline: 1.9rem;
-          padding-block: 0.85rem;
-          font-size: 1rem;
-        }
-
-        .amoria-btn--full {
-          width: 100%;
-        }
-
-        .amoria-pricing-grid {
+        /* FEATURE BLOCKS (3 big) */
+        .amoria-feature-block-grid {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 1.5rem;
-          margin-top: 1.5rem;
+          gap: 1.4rem;
         }
 
-        .amoria-pricing-card {
-          position: relative;
+        .amoria-feature-block {
+          background: rgba(15, 23, 42, 0.85);
+          border-radius: 1.2rem;
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          padding: 1rem 1.1rem;
+        }
+
+        /* FEATURE GRID */
+        .amoria-feature-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 1.4rem;
+          margin-top: 1.4rem;
+        }
+
+        .amoria-feature-card {
           background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
-          border-radius: 1.4rem;
+          border-radius: 1.2rem;
           border: 1px solid var(--amoria-border-subtle);
-          padding: 1.3rem 1.2rem 1.4rem;
-          text-align: left;
-          display: flex;
-          flex-direction: column;
-          gap: 0.7rem;
+          padding: 1rem 1.1rem 1.1rem;
         }
 
-        .amoria-pricing-header {
-          display: flex;
-          flex-direction: column;
-          gap: 0.2rem;
+        .amoria-feature-card-title {
+          font-size: 0.95rem;
+          font-weight: 600;
+          margin-bottom: 0.6rem;
         }
 
-        .amoria-pricing-name {
-          font-size: 1rem;
+        .amoria-feature-card-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+          font-size: 0.8rem;
+          color: var(--amoria-text-muted);
+        }
+
+        .amoria-feature-card-list li::before {
+          content: "• ";
+          color: #a5b4fc;
+        }
+
+        /* STEPS */
+        .amoria-steps-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 1.4rem;
+        }
+
+        .amoria-step-card {
+          background: rgba(15, 23, 42, 0.9);
+          border-radius: 1.2rem;
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          padding: 1rem 1.1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+        }
+
+        .amoria-step-number {
+          font-size: 0.75rem;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #a5b4fc;
+        }
+
+        .amoria-step-title {
+          font-size: 0.95rem;
           font-weight: 600;
         }
 
-        .amoria-pricing-highlight {
-          font-size: 0.82rem;
-          color: #e5e7eb;
+        .amoria-step-text {
+          font-size: 0.8rem;
+          color: var(--amoria-text-muted);
         }
 
+        /* FAQ (reuse base from pricing) */
         .amoria-section--faq {
           border-top: 1px solid rgba(148, 163, 184, 0.3);
           padding-top: 2.5rem;
@@ -643,6 +829,7 @@ export default function FeaturesPage({ searchParams }: PageProps) {
           color: var(--amoria-text-muted);
         }
 
+        /* FOOTER */
         .amoria-footer {
           max-width: 1120px;
           margin: 0 auto;
@@ -652,6 +839,7 @@ export default function FeaturesPage({ searchParams }: PageProps) {
           text-align: center;
         }
 
+        /* RESPONSIVE */
         @media (max-width: 960px) {
           .amoria-header {
             flex-wrap: wrap;
@@ -668,10 +856,9 @@ export default function FeaturesPage({ searchParams }: PageProps) {
             padding-inline: 1rem;
           }
 
-          .amoria-pricing-grid {
-            grid-template-columns: repeat(1, minmax(0, 1fr));
-          }
-
+          .amoria-feature-block-grid,
+          .amoria-feature-grid,
+          .amoria-steps-grid,
           .amoria-faq-grid {
             grid-template-columns: minmax(0, 1fr);
           }
