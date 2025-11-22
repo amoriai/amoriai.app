@@ -1,87 +1,154 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
+
+type Locale = "fr" | "en" | "es";
+
+const STRINGS: Record<
+  Locale,
+  {
+    title: string;
+    content: JSX.Element;
+    footerCopy: string;
+    footerLinks: {
+      legal: string;
+      privacy: string;
+      terms: string;
+      contact: string;
+      about: string;
+    };
+  }
+> = {
+  fr: {
+    title: "Mentions légales",
+    content: (
+      <>
+        <p>Ces informations concernent l’utilisation du site AmoriA.app.</p>
+        <p>Éditeur : AmoriA.app — Canada</p>
+        <p>Contact : contactamoriai@gmail.com</p>
+      </>
+    ),
+    footerCopy: "© 2025 AmoriA.app",
+    footerLinks: {
+      legal: "Mentions légales",
+      privacy: "Confidentialité",
+      terms: "Conditions d’utilisation",
+      contact: "Contact",
+      about: "À propos",
+    },
+  },
+
+  en: {
+    title: "Legal Notice",
+    content: (
+      <>
+        <p>These details concern the use of the AmoriA.app website.</p>
+        <p>Publisher: AmoriA.app — Canada</p>
+        <p>Contact: contactamoriai@gmail.com</p>
+      </>
+    ),
+    footerCopy: "© 2025 AmoriA.app",
+    footerLinks: {
+      legal: "Legal notice",
+      privacy: "Privacy Policy",
+      terms: "Terms of Use",
+      contact: "Contact",
+      about: "About",
+    },
+  },
+
+  es: {
+    title: "Aviso legal",
+    content: (
+      <>
+        <p>Esta información concierne el uso del sitio AmoriA.app.</p>
+        <p>Editor: AmoriA.app — Canadá</p>
+        <p>Contacto: contactamoriai@gmail.com</p>
+      </>
+    ),
+    footerCopy: "© 2025 AmoriA.app",
+    footerLinks: {
+      legal: "Aviso legal",
+      privacy: "Privacidad",
+      terms: "Condiciones de uso",
+      contact: "Contacto",
+      about: "Acerca de",
+    },
+  },
+};
+
 export default function LegalPage() {
+  const params = useSearchParams();
+  const lang = (params.get("lang") as Locale) || "fr";
+  const t = STRINGS[lang];
+
+  const withLang = (path: string) => `${path}?lang=${lang}`;
+
   return (
-    <main style={{ padding: "2rem", maxWidth: "800px", margin: "0 auto" }}>
-      <h1 style={{ fontSize: "1.8rem", marginBottom: "1rem" }}>
-        Mentions légales
-      </h1>
+    <main className="amoria-root">
 
-      <p>
-        Les présentes informations concernent l’utilisation du site et de
-        l’application AmorIA.app.
-      </p>
+      {/* HEADER IDENTIQUE À TA VITRINE */}
+      <header className="amoria-header">
+        <div className="amoria-header-left">
+          <img
+            src="/AmorIA_logo_transparent.png"
+            alt="Logo AmorIA.app"
+            className="amoria-logo-full"
+          />
+          <div className="amoria-logo-text">
+            <div className="amoria-logo-title">AmoriA.app</div>
+            <div className="amoria-logo-tagline">
+              Partenaire IA bienveillant·e • FR / EN / ES
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <h2 style={{ marginTop: "2rem" }}>Éditeur du site</h2>
-      <p>
-        <strong>AmorIA.app</strong><br />
-        Les Entreprises Kema inc.<br />
-        Canada
-      </p>
+      {/* CONTENU */}
+      <section className="amoria-section">
+        <h1 className="amoria-section-title">{t.title}</h1>
+        <div className="amoria-legal-content">{t.content}</div>
+      </section>
 
-      <h2 style={{ marginTop: "2rem" }}>Responsable de la publication</h2>
-      <p>Les Entreprises Kema inc.</p>
+      {/* FOOTER IDENTIQUE */}
+      <footer className="amoria-footer">
+        <div className="amoria-footer-top">
+          <span>{t.footerCopy}</span>
+        </div>
 
-      <h2 style={{ marginTop: "2rem" }}>Contact</h2>
-      <p>
-        Pour toute question :<br />
-        <strong>contactamoriai@gmail.com</strong>
-      </p>
+        <div className="amoria-footer-links">
+          <a href={withLang("/legal")}>{t.footerLinks.legal}</a>
+          <a href={withLang("/legal/privacy")}>{t.footerLinks.privacy}</a>
+          <a href={withLang("/legal/terms")}>{t.footerLinks.terms}</a>
+          <a href={withLang("/contact")}>{t.footerLinks.contact}</a>
+          <a href={withLang("/about")}>{t.footerLinks.about}</a>
+        </div>
+      </footer>
 
-      <h2 style={{ marginTop: "2rem" }}>Hébergement</h2>
-      <p>
-        <strong>Vercel Inc.</strong><br />
-        440 N Barranca Ave #4133<br />
-        Covina, CA 91723<br />
-        États-Unis<br />
-        <a href="https://vercel.com" style={{ color: "#9ecbff" }}>
-          https://vercel.com
-        </a>
-      </p>
-
-      <h2 style={{ marginTop: "2rem" }}>Données personnelles</h2>
-      <p>
-        AmorIA.app recueille uniquement les données nécessaires au fonctionnement
-        du service : création de compte, préférences linguistiques, IA créée par
-        l’utilisateur et communications internes.  
-        Aucune donnée n’est vendue ou partagée à des tiers.
-      </p>
-
-      <p>
-        Le détail complet est disponible dans notre{" "}
-        <a href="/legal/privacy" style={{ color: "#9ecbff" }}>
-          Politique de confidentialité
-        </a>.
-      </p>
-
-      <h2 style={{ marginTop: "2rem" }}>Limitation de responsabilité</h2>
-      <p>
-        AmorIA.app est un service de divertissement et de soutien émotionnel
-        léger.  
-        Les réponses générées par l’IA ne constituent en aucun cas un avis
-        médical, psychologique ou professionnel.  
-        Pour tout problème urgent, il est recommandé de contacter les services
-        d’urgence locaux.
-      </p>
-
-      <h2 style={{ marginTop: "2rem" }}>Propriété intellectuelle</h2>
-      <p>
-        L’ensemble du contenu (textes, interface, éléments graphiques, vidéos,
-        IA et contenus générés) est protégé par les lois canadiennes et
-        internationales.  
-        Toute reproduction non autorisée est interdite.
-      </p>
-
-      <h2 style={{ marginTop: "2rem" }}>Modifications</h2>
-      <p>
-        AmorIA.app se réserve le droit de modifier les présentes mentions
-        légales à tout moment.  
-        La version en vigueur est celle affichée sur cette page.
-      </p>
-
-      <p style={{ marginTop: "2rem", opacity: 0.6 }}>
-        © {new Date().getFullYear()} AmorIA.app – Tous droits réservés.
-      </p>
+      <style jsx global>{`
+        .amoria-section {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 2rem 1.5rem;
+        }
+        .amoria-section-title {
+          font-size: 1.7rem;
+          margin-bottom: 1rem;
+        }
+        .amoria-legal-content {
+          font-size: 1rem;
+          color: #d1d5db;
+          line-height: 1.7;
+        }
+        .amoria-footer-links a {
+          margin-right: 1rem;
+          color: #9ca3af;
+          text-decoration: none;
+        }
+        .amoria-footer-links a:hover {
+          color: white;
+        }
+      `}</style>
     </main>
   );
 }
