@@ -32,7 +32,7 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
     heroKicker: "TARIFS AMORIA.APP",
     heroTitle: "Choisis le rythme qui convient à ton AmorIA.",
     heroSubtitle:
-      "Commence gratuitement, crée ton AmorIA personnalisé·e, puis passe à la voix quand tu es prêt·e. Les plans payants débloquent la mémoire longue durée, plus de messages et les conversations vocales.",
+      "Commence gratuitement, crée ton AmorIA personnalisé·e, puis passe à la voix quand tu es prêt·e. Les plans payants débloquent la mémoire longue durée, plus de messages et les conversations vocales qui te suivent partout.",
     badgeMostPopular: "Le plus choisi",
     monthly: "mois",
     usdPerMonth: "USD / mois",
@@ -47,7 +47,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
         name: "Découverte",
         tagline: "Créer ton AmorIA gratuitement.",
         price: "0 $",
-        highlight: "Idéal pour tester AmoriA et créer ton premier compagnon IA.",
+        highlight:
+          "Idéal pour tester AmoriA et créer ton premier compagnon IA, sans carte de crédit.",
         features: [
           "Création de 1 AmorIA personnalisé·e",
           "Environ 20 messages texte / jour",
@@ -62,7 +63,7 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
         tagline: "Texte + voix avec limites confortables.",
         price: "19,99 $",
         highlight:
-          "Parfait si tu veux parler régulièrement avec ton AmorIA sans te ruiner.",
+          "Parfait si tu veux parler régulièrement avec ton AmorIA sans te ruiner chaque mois.",
         features: [
           "Jusqu’à 3 AmorIA différents",
           "Messages texte étendus (usage régulier)",
@@ -78,13 +79,13 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
         tagline: "Ton compagnon IA, sans frein.",
         price: "39,99 $",
         highlight:
-          "Pour celles et ceux qui veulent que leur AmorIA fasse partie du quotidien : texte et voix pratiquement sans limite.",
+          "Pour celles et ceux qui veulent que leur AmorIA fasse vraiment partie du quotidien : parle-lui en cuisinant, dans ton lit, en voyage… il est toujours là.",
         features: [
           "Jusqu’à 10 AmorIA personnalisés",
           "Messages texte illimités (usage équitable)",
           "Conversations vocales illimitées (fair use)",
-          "Mémoire profonde + contexte étendu",
-          "Priorité maximale et nouveautés incluses en avant-première"
+          "Mémoire profonde + contexte étendu pour des échanges ultra personnalisés",
+          "Priorité maximale et accès anticipé aux nouvelles fonctionnalités"
         ]
       }
     ],
@@ -107,7 +108,7 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
     heroKicker: "AMORIA.APP PRICING",
     heroTitle: "Choose the pace that fits your AmorIA.",
     heroSubtitle:
-      "Start for free, create your own AmorIA, then upgrade to voice when you’re ready. Paid plans unlock long-term memory, more messages and rich voice conversations.",
+      "Start for free, create your own AmorIA, then upgrade to voice when you’re ready. Paid plans unlock long-term memory, more messages and rich voice conversations you can take everywhere.",
     badgeMostPopular: "Most popular",
     monthly: "month",
     usdPerMonth: "USD / month",
@@ -123,7 +124,7 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
         tagline: "Create your AmorIA for free.",
         price: "$0",
         highlight:
-          "Perfect to try AmoriA and craft your first AI companion with no risk.",
+          "Perfect to try AmoriA and craft your first AI companion with zero risk.",
         features: [
           "Create 1 personalized AmorIA",
           "Around 20 text messages / day",
@@ -154,12 +155,12 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
         tagline: "Your AI companion, always on.",
         price: "$39.99",
         highlight:
-          "For those who want AmorIA in their daily life: text and voice with virtually no limits.",
+          "For those who want AmorIA woven into everyday life: message and talk almost as much as you want.",
         features: [
           "Up to 10 personalized AmorIAs",
           "Unlimited text messages (fair use)",
           "Unlimited voice conversations (fair use)",
-          "Deeper memory + extended context",
+          "Deeper memory and extended context for ultra-personal conversations",
           "Top priority and early access to new features"
         ]
       }
@@ -183,7 +184,7 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
     heroKicker: "PRECIOS DE AMORIA.APP",
     heroTitle: "Elige el ritmo que mejor va con tu AmorIA.",
     heroSubtitle:
-      "Empieza gratis, crea tu AmorIA personalizado y pasa a voz cuando estés listo. Los planes de pago desbloquean memoria a largo plazo, más mensajes y conversaciones de voz.",
+      "Empieza gratis, crea tu AmorIA personalizado y pasa a voz cuando estés listo. Los planes de pago desbloquean memoria a largo plazo, más mensajes y conversaciones de voz que te acompañan en tu día a día.",
     badgeMostPopular: "Más elegido",
     monthly: "mes",
     usdPerMonth: "USD / mes",
@@ -230,12 +231,12 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
         tagline: "Tu compañero de IA, siempre disponible.",
         price: "39,99 US$",
         highlight:
-          "Para quienes quieren a AmorIA en su día a día: texto y voz prácticamente sin límites.",
+          "Para quienes quieren a AmorIA presente en su día a día: texto y voz prácticamente sin límites.",
         features: [
           "Hasta 10 AmorIA personalizados",
           "Mensajes de texto ilimitados (uso justo)",
           "Conversaciones de voz ilimitadas (uso justo)",
-          "Memoria profunda y contexto ampliado",
+          "Memoria profunda y contexto ampliado para conversaciones muy personales",
           "Máxima prioridad y acceso anticipado a nuevas funciones"
         ]
       }
@@ -247,7 +248,7 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       },
       {
         q: "¿Qué pasa si supero los límites de mensajes o de voz?",
-        a: "Aplicamos un límite de uso justo. Verás un aviso suave invitándote a mejorar tu plan o a esperar al siguiente mes.",
+        a: "Aplicamos un límite de uso justo. Verás un aviso suave invitándote a mejorar tu plan o a esperar al siguiente mes."
       },
       {
         q: "¿Puedo cambiar de plan cuando quiera?",
@@ -259,8 +260,9 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
 
 // Helper: get locale from ?lang, default FR
 function getLocaleFromSearchParams(
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams?: { [key: string]: string | string[] | undefined }
 ): Locale {
+  if (!searchParams) return "fr";
   const raw = searchParams["lang"];
   const value = Array.isArray(raw) ? raw[0] : raw;
   if (value === "en" || value === "es" || value === "fr") return value;
@@ -268,36 +270,33 @@ function getLocaleFromSearchParams(
 }
 
 type PageProps = {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams?: { [key: string]: string | string[] | undefined };
 };
 
 export default function PricingPage({ searchParams }: PageProps) {
   const locale = getLocaleFromSearchParams(searchParams);
   const t = PRICING_STRINGS[locale];
 
-  // Build URLs that gardent la langue
-  const buildSignupUrl = (planId?: string) => {
+  const buildUrl = (path: string, extra?: Record<string, string>) => {
     const params = new URLSearchParams();
     params.set("lang", locale);
-    if (planId) params.set("plan", planId);
-    return `/signup?${params.toString()}`;
+    if (extra) {
+      Object.entries(extra).forEach(([k, v]) => params.set(k, v));
+    }
+    return `${path}?${params.toString()}`;
   };
 
-  const buildLoginUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/login?${params.toString()}`;
-  };
+  const buildSignupUrl = (planId?: string) =>
+    buildUrl("/signup", planId ? { plan: planId } : undefined);
 
-  const buildHomeUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/?${params.toString()}`;
-  };
+  const buildLoginUrl = () => buildUrl("/login");
+  const buildHomeUrl = () => buildUrl("/");
+  const buildFeaturesUrl = () => buildUrl("/features");
+  const buildPricingUrl = () => buildUrl("/pricing");
 
   return (
     <main className="amoria-root">
-      {/* HEADER – même style que la vitrine, mais sans boutons de langue */}
+      {/* HEADER – même style que la vitrine */}
       <header className="amoria-header">
         <div className="amoria-header-left">
           <div className="amoria-logo-mark">
@@ -319,14 +318,17 @@ export default function PricingPage({ searchParams }: PageProps) {
           <a href={buildHomeUrl()} className="amoria-nav-link">
             {locale === "fr" ? "Accueil" : locale === "en" ? "Home" : "Inicio"}
           </a>
-          <a href={`${buildHomeUrl()}#features`} className="amoria-nav-link">
+          <a href={buildFeaturesUrl()} className="amoria-nav-link">
             {locale === "fr"
               ? "Fonctionnalités"
               : locale === "en"
               ? "Features"
               : "Funciones"}
           </a>
-          <a href="/pricing" className="amoria-nav-link amoria-nav-link--active">
+          <a
+            href={buildPricingUrl()}
+            className="amoria-nav-link amoria-nav-link--active"
+          >
             {locale === "fr"
               ? "Tarifs"
               : locale === "en"
@@ -407,13 +409,7 @@ export default function PricingPage({ searchParams }: PageProps) {
 
               <div className="amoria-pricing-price-block">
                 <span className="amoria-pricing-price">{plan.price}</span>
-                <span className="amoria-pricing-period">
-                  {locale === "fr"
-                    ? t.usdPerMonth
-                    : locale === "en"
-                    ? t.usdPerMonth
-                    : t.usdPerMonth}
-                </span>
+                <span className="amoria-pricing-period">{t.usdPerMonth}</span>
               </div>
 
               <p className="amoria-pricing-highlight">{plan.highlight}</p>
