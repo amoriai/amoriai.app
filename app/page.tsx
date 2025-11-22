@@ -373,22 +373,26 @@ export default function HomePage() {
           <span>{t.footerCopy}</span>
         </div>
         <div className="amoria-footer-links">
-          <a href={withLang("/legal")} className="amoria-footer-link">
-            {t.footerLinks.legal}
-          </a>
-          <a href={withLang("/privacy")} className="amoria-footer-link">
-            {t.footerLinks.privacy}
-          </a>
-          <a href={withLang("/terms")} className="amoria-footer-link">
-            {t.footerLinks.terms}
-          </a>
-          <a href={withLang("/contact")} className="amoria-footer-link">
-            {t.footerLinks.contact}
-          </a>
-          <a href={withLang("/about")} className="amoria-footer-link">
-            {t.footerLinks.about}
-          </a>
-        </div>
+  <a href={withLang("/legal")} className="amoria-footer-link">
+    {t.footerLinks.legal}
+  </a>
+
+  <a href={withLang("/legal/privacy")} className="amoria-footer-link">
+    {t.footerLinks.privacy}
+  </a>
+
+  <a href={withLang("/legal/terms")} className="amoria-footer-link">
+    {t.footerLinks.terms}
+  </a>
+
+  <a href={withLang("/contact")} className="amoria-footer-link">
+    {t.footerLinks.contact}
+  </a>
+
+  <a href={withLang("/about")} className="amoria-footer-link">
+    {t.footerLinks.about}
+  </a>
+</div>
       </footer>
 
       {/* STYLES */}
