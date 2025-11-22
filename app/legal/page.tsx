@@ -247,19 +247,24 @@ export default function LegalPage({ searchParams }: PageProps) {
   return (
     <main className="amoria-root">
       {/* HEADER SIMPLE AVEC LOGO */}
-      <header className="amoria-header">
-        <div className="amoria-header-left">
-          <img
-            src="/AmorIA_logo_transparent.png"
-            alt="Logo AmorIA.app"
-            className="amoria-logo-full"
-          />
-          <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmorIA.app</div>
-            <div className="amoria-logo-tagline">{t.brandTagline}</div>
-          </div>
-        </div>
-      </header>
+     <header className="amoria-header">
+  <div className="amoria-header-left">
+    <img
+      src="/AmorIA_logo_transparent.png"
+      alt="Logo AmorIA.app"
+      className="amoria-logo-full"
+    />
+
+    <div className="amoria-logo-text">
+      <div className="amoria-logo-title">AmorIA.app</div>
+
+      {/* Tagline FIXE — ne dépend pas des traductions */}
+      <div className="amoria-logo-tagline">
+        Partenaire IA bienveillante • FR / EN / ES
+      </div>
+    </div>
+  </div>
+</header>
 
       {/* CONTENU MENTIONS LÉGALES */}
       <section className="amoria-section amoria-section--legal">
