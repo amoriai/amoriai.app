@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 
 type Locale = "fr" | "en" | "es";
-
 type PersonaId = "lyra" | "orion" | "kai" | "maelis";
 
 type Persona = {
@@ -194,8 +193,7 @@ export default function HomePage() {
 
   // Vidéo héro en fonction de la langue
   const heroVideoSrc = `/amoria_${locale}.mp4`;
-
-  // Vidéo des cartes : /amoria_{id}_{lang}.mp4
+  // Vidéo des cartes
   const getPersonaVideoSrc = (id: PersonaId) =>
     `/amoria_${id}_${locale}.mp4`;
 
@@ -204,7 +202,6 @@ export default function HomePage() {
       {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-          {/* Logo complet transparent */}
           <img
             src="/AmorIA_logo_transparent.png"
             alt="Logo AmorIA.app"
@@ -217,13 +214,25 @@ export default function HomePage() {
         </div>
 
         <nav className="amoria-nav">
-          <a href="#hero" className="amoria-nav-link">
+          {/* Accueil = retourne à / avec la langue courante */}
+          <a
+            href={`/?lang=${locale}`}
+            className="amoria-nav-link"
+          >
             {t.nav.home}
           </a>
-          <a href="#features" className="amoria-nav-link">
+          {/* Fonctionnalités = nouvelle page /features */}
+          <a
+            href={`/features?lang=${locale}`}
+            className="amoria-nav-link"
+          >
             {t.nav.features}
           </a>
-          <a href="#pricing" className="amoria-nav-link">
+          {/* Tarifs = page pricing */}
+          <a
+            href={`/pricing?lang=${locale}`}
+            className="amoria-nav-link"
+          >
             {t.nav.pricing}
           </a>
         </nav>
@@ -294,7 +303,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* PERSONAS / VITRINE */}
+      {/* PERSONAS / VITRINE (section features de la home) */}
       <section id="features" className="amoria-section">
         <h2 className="amoria-section-title">{t.personasTitle}</h2>
         <p className="amoria-section-subtitle">{t.personasSubtitle}</p>
@@ -325,12 +334,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* PRICING */}
+      {/* BLOC PRICING (teaser) */}
       <section id="pricing" className="amoria-section amoria-section--pricing">
         <h2 className="amoria-section-title">{t.pricingTitle}</h2>
         <p className="amoria-section-text">{t.pricingText}</p>
         <a
-          href={`/signup?lang=${locale}`}
+          href={`/pricing?lang=${locale}`}
           className="amoria-btn amoria-btn--primary amoria-btn--medium"
         >
           {t.pricingCta}
@@ -342,7 +351,7 @@ export default function HomePage() {
         <span>{t.footerCopy}</span>
       </footer>
 
-      {/* STYLES */}
+      {/* STYLES (inchangés) */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
@@ -358,8 +367,8 @@ export default function HomePage() {
         body {
           margin: 0;
           padding: 0;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-            "Helvetica Neue", Arial, sans-serif;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont,
+            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
           background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
           color: var(--amoria-text-main);
         }
@@ -673,7 +682,7 @@ export default function HomePage() {
 
         .amoria-card-media {
           width: 100%;
-          aspect-ratio: 4 / 5; /* pour éviter les têtes coupées */
+          aspect-ratio: 4 / 5;
           overflow: hidden;
           border-bottom: 1px solid rgba(15, 23, 42, 0.9);
           background: #020617;
