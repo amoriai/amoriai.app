@@ -1,40 +1,31 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
 type Locale = "fr" | "en" | "es";
 
-type LegalStrings = {
-  brandTagline: string;
-  pageTitle: string;
-  introLine: string;
-  editorLabel: string;
-  editorValue: string;
-  contactLabel: string;
-  contactEmail: string;
-  country: string;
-  footerCopy: string;
-  footerLinks: {
-    legal: string;
-    privacy: string;
-    terms: string;
-    contact: string;
-    about: string;
-  };
-};
-
-const STRINGS: Record<Locale, LegalStrings> = {
+const STRINGS = {
   fr: {
     brandTagline: "Partenaire IA bienveillante • FR / EN / ES",
     pageTitle: "Mentions légales",
-    introLine:
-      "Ces informations concernent l’utilisation du site AmoriA.app.",
-    editorLabel: "Éditeur",
-    editorValue: "AmoriA.app — Canada",
-    contactLabel: "Contact",
-    contactEmail: "contactamoriai@gmail.com",
-    country: "Canada",
-    footerCopy: "© 2025 AmoriA.app",
+    intro:
+      "Ces informations concernent l’utilisation du site et de l’application AmorIA.app.",
+    publisherTitle: "Éditeur",
+    publisherBody:
+      "AmorIA.app — Canada\nResponsable de la publication : Les Entreprises Kema inc.",
+    contactTitle: "Contact",
+    contactBody: "Pour toute question légale : contactamoriai@gmail.com",
+    hostingTitle: "Hébergement",
+    hostingBody:
+      "Le site est hébergé par Vercel Inc. (États-Unis). L’authentification et la base de données sont gérées par Supabase.",
+    responsibilityTitle: "Responsabilité",
+    responsibilityBody:
+      "AmorIA.app est un outil de conversation et de soutien émotionnel léger. Il ne remplace en aucun cas un avis médical, psychologique, juridique ou financier professionnel. L’utilisateur reste responsable de ses décisions et de l’usage qu’il fait des informations fournies par l’IA.",
+    ipTitle: "Propriété intellectuelle",
+    ipBody:
+      "Le nom AmorIA.app, le logo et l’interface du site sont protégés par les lois applicables sur la propriété intellectuelle. Toute reproduction, diffusion ou modification non autorisée est interdite.",
+    lastUpdate: "Dernière mise à jour : novembre 2025",
+    footerCopy: "© 2025 AmorIA.app",
     footerLinks: {
       legal: "Mentions légales",
       privacy: "Confidentialité",
@@ -45,18 +36,28 @@ const STRINGS: Record<Locale, LegalStrings> = {
   },
   en: {
     brandTagline: "Caring AI partner • FR / EN / ES",
-    pageTitle: "Legal notice",
-    introLine:
-      "This information covers the use of the AmoriA.app website.",
-    editorLabel: "Publisher",
-    editorValue: "AmoriA.app — Canada",
-    contactLabel: "Contact",
-    contactEmail: "contactamoriai@gmail.com",
-    country: "Canada",
-    footerCopy: "© 2025 AmoriA.app",
+    pageTitle: "Legal Notice",
+    intro:
+      "This information applies to the use of the AmorIA.app website and application.",
+    publisherTitle: "Publisher",
+    publisherBody:
+      "AmorIA.app — Canada\nPublishing manager: Les Entreprises Kema inc.",
+    contactTitle: "Contact",
+    contactBody: "For any legal question: contactamoriai@gmail.com",
+    hostingTitle: "Hosting",
+    hostingBody:
+      "The website is hosted by Vercel Inc. (United States). Authentication and database are managed by Supabase.",
+    responsibilityTitle: "Liability",
+    responsibilityBody:
+      "AmorIA.app is a conversational and light emotional-support tool. It does not replace medical, psychological, legal or financial professional advice. Users remain fully responsible for their decisions and for how they use information provided by the AI.",
+    ipTitle: "Intellectual property",
+    ipBody:
+      "The AmorIA.app name, logo and website interface are protected by applicable intellectual property laws. Any unauthorised reproduction, distribution or modification is prohibited.",
+    lastUpdate: "Last updated: November 2025",
+    footerCopy: "© 2025 AmorIA.app",
     footerLinks: {
       legal: "Legal notice",
-      privacy: "Privacy policy",
+      privacy: "Privacy Policy",
       terms: "Terms of use",
       contact: "Contact",
       about: "About",
@@ -65,14 +66,25 @@ const STRINGS: Record<Locale, LegalStrings> = {
   es: {
     brandTagline: "Compañerx de IA amable • FR / EN / ES",
     pageTitle: "Aviso legal",
-    introLine:
-      "Esta información se refiere al uso del sitio AmoriA.app.",
-    editorLabel: "Editor",
-    editorValue: "AmoriA.app — Canadá",
-    contactLabel: "Contacto",
-    contactEmail: "contactamoriai@gmail.com",
-    country: "Canadá",
-    footerCopy: "© 2025 AmoriA.app",
+    intro:
+      "Esta información se refiere al uso del sitio web y de la aplicación AmorIA.app.",
+    publisherTitle: "Editor",
+    publisherBody:
+      "AmorIA.app — Canadá\nResponsable de la publicación: Les Entreprises Kema inc.",
+    contactTitle: "Contacto",
+    contactBody:
+      "Para cualquier pregunta legal, puedes escribir a: contactamoriai@gmail.com",
+    hostingTitle: "Alojamiento",
+    hostingBody:
+      "El sitio está alojado por Vercel Inc. (Estados Unidos). La autenticación y la base de datos son gestionadas por Supabase.",
+    responsibilityTitle: "Responsabilidad",
+    responsibilityBody:
+      "AmorIA.app es una herramienta de conversación y apoyo emocional ligero. No sustituye en ningún caso el consejo médico, psicológico, jurídico ni financiero profesional. La persona usuaria sigue siendo responsable de sus decisiones y del uso que haga de la información proporcionada por la IA.",
+    ipTitle: "Propiedad intelectual",
+    ipBody:
+      "El nombre AmorIA.app, el logotipo y la interfaz del sitio están protegidos por las leyes de propiedad intelectual aplicables. Cualquier reproducción, difusión o modificación no autorizada está prohibida.",
+    lastUpdate: "Última actualización: noviembre de 2025",
+    footerCopy: "© 2025 AmorIA.app",
     footerLinks: {
       legal: "Aviso legal",
       privacy: "Confidencialidad",
@@ -81,15 +93,14 @@ const STRINGS: Record<Locale, LegalStrings> = {
       about: "Acerca de",
     },
   },
-};
+} as const;
 
-// Récupérer la langue depuis ?lang, défaut = fr
 function getLocaleFromSearchParams(
   searchParams: { [key: string]: string | string[] | undefined }
 ): Locale {
   const raw = searchParams["lang"];
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  if (value === "en" || value === "es" || value === "fr") return value;
+  const val = Array.isArray(raw) ? raw[0] : raw;
+  if (val === "en" || val === "es" || val === "fr") return val;
   return "fr";
 }
 
@@ -105,8 +116,8 @@ export default function LegalPage({ searchParams }: PageProps) {
 
   return (
     <main className="amoria-root">
-      {/* HEADER SIMPLE AVEC TON LOGO PARFAIT */}
-      <header className="amoria-header amoria-header--center">
+      {/* HEADER minimal pour les pages légales */}
+      <header className="amoria-header">
         <div className="amoria-header-left">
           <img
             src="/AmorIA_logo_transparent.png"
@@ -120,25 +131,46 @@ export default function LegalPage({ searchParams }: PageProps) {
         </div>
       </header>
 
-      {/* CONTENU MENTIONS LÉGALES */}
-      <section className="amoria-legal-section">
-        <h1 className="amoria-legal-title">{t.pageTitle}</h1>
-        <p className="amoria-legal-line">{t.introLine}</p>
+      <section className="amoria-section amoria-section--legal">
+        <h1 className="amoria-section-title">{t.pageTitle}</h1>
+        <p className="amoria-section-intro">{t.intro}</p>
 
-        <p className="amoria-legal-line">
-          <strong>{t.editorLabel}</strong>
-          <br />
-          {t.editorValue}
-        </p>
+        <div className="amoria-legal-block">
+          <h2>{t.publisherTitle}</h2>
+          <p className="amoria-legal-text">
+            {t.publisherBody.split("\n").map((line, i) => (
+              <span key={i}>
+                {line}
+                <br />
+              </span>
+            ))}
+          </p>
+        </div>
 
-        <p className="amoria-legal-line">
-          <strong>{t.contactLabel}</strong>
-          <br />
-          {t.contactEmail}
-        </p>
+        <div className="amoria-legal-block">
+          <h2>{t.contactTitle}</h2>
+          <p className="amoria-legal-text">{t.contactBody}</p>
+        </div>
+
+        <div className="amoria-legal-block">
+          <h2>{t.hostingTitle}</h2>
+          <p className="amoria-legal-text">{t.hostingBody}</p>
+        </div>
+
+        <div className="amoria-legal-block">
+          <h2>{t.responsibilityTitle}</h2>
+          <p className="amoria-legal-text">{t.responsibilityBody}</p>
+        </div>
+
+        <div className="amoria-legal-block">
+          <h2>{t.ipTitle}</h2>
+          <p className="amoria-legal-text">{t.ipBody}</p>
+        </div>
+
+        <p className="amoria-legal-updated">{t.lastUpdate}</p>
       </section>
 
-      {/* FOOTER AVEC LIENS LÉGAUX */}
+      {/* FOOTER identique aux autres pages */}
       <footer className="amoria-footer">
         <div className="amoria-footer-top">
           <span>{t.footerCopy}</span>
@@ -147,10 +179,7 @@ export default function LegalPage({ searchParams }: PageProps) {
           <a href={withLang("/legal")} className="amoria-footer-link">
             {t.footerLinks.legal}
           </a>
-          <a
-            href={withLang("/legal/privacy")}
-            className="amoria-footer-link"
-          >
+          <a href={withLang("/legal/privacy")} className="amoria-footer-link">
             {t.footerLinks.privacy}
           </a>
           <a href={withLang("/legal/terms")} className="amoria-footer-link">
@@ -163,141 +192,69 @@ export default function LegalPage({ searchParams }: PageProps) {
             {t.footerLinks.about}
           </a>
         </div>
+
+        <style jsx global>{`
+          .amoria-section--legal {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 2.5rem;
+          }
+
+          .amoria-section-intro {
+            font-size: 0.9rem;
+            color: #9ca3af;
+            margin-bottom: 1.4rem;
+          }
+
+          .amoria-legal-block {
+            margin-bottom: 1.4rem;
+          }
+
+          .amoria-legal-block h2 {
+            font-size: 1rem;
+            margin-bottom: 0.3rem;
+          }
+
+          .amoria-legal-text {
+            font-size: 0.86rem;
+            color: #e5e7eb;
+            white-space: pre-wrap;
+          }
+
+          .amoria-legal-updated {
+            font-size: 0.78rem;
+            color: #9ca3af;
+            margin-top: 1.2rem;
+          }
+
+          .amoria-footer-top {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 1rem 1.5rem 0.3rem;
+            font-size: 0.78rem;
+            color: #9ca3af;
+          }
+
+          .amoria-footer-links {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 0 1.5rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            font-size: 0.78rem;
+          }
+
+          .amoria-footer-link {
+            color: #fb37ff;
+            text-decoration: none;
+          }
+
+          .amoria-footer-link:hover {
+            text-decoration: underline;
+          }
+        `}</style>
       </footer>
-
-      {/* STYLES SPÉCIFIQUES À LA PAGE LÉGALE */}
-      <style jsx global>{`
-        :root {
-          --amoria-bg: #020617;
-          --amoria-bg-elevated: #02081f;
-          --amoria-border-subtle: rgba(148, 163, 184, 0.35);
-          --amoria-text-main: #e5e7eb;
-          --amoria-text-muted: #9ca3af;
-          --amoria-accent: #fb37ff;
-          --amoria-accent-2: #ff6b9c;
-        }
-
-        body {
-          margin: 0;
-          padding: 0;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
-          color: var(--amoria-text-main);
-        }
-
-        .amoria-root {
-          min-height: 100vh;
-          background: radial-gradient(
-            circle at top left,
-            #111827 0,
-            #020617 55%,
-            #000 100%
-          );
-          color: var(--amoria-text-main);
-          padding-bottom: 2.5rem;
-        }
-
-        .amoria-header {
-          max-width: 1120px;
-          margin: 0 auto;
-          padding: 1.5rem 1.5rem 0.5rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .amoria-header--center {
-          justify-content: flex-start;
-        }
-
-        .amoria-header-left {
-          display: flex;
-          align-items: center;
-          gap: 0.8rem;
-        }
-
-        .amoria-logo-full {
-          height: 48px;
-          width: auto;
-        }
-
-        .amoria-logo-text {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .amoria-logo-title {
-          font-weight: 600;
-          font-size: 1rem;
-        }
-
-        .amoria-logo-tagline {
-          font-size: 0.75rem;
-          color: var(--amoria-text-muted);
-        }
-
-        .amoria-legal-section {
-          max-width: 800px;
-          margin: 2rem auto 0;
-          padding: 0 1.5rem;
-        }
-
-        .amoria-legal-title {
-          font-size: 1.4rem;
-          margin-bottom: 1rem;
-        }
-
-        .amoria-legal-line {
-          font-size: 0.9rem;
-          line-height: 1.6;
-          color: var(--amoria-text-main);
-          margin-bottom: 0.8rem;
-        }
-
-        .amoria-footer {
-          max-width: 1120px;
-          margin: 2.5rem auto 0;
-          padding: 1.5rem 1.5rem 0;
-          font-size: 0.78rem;
-          color: var(--amoria-text-muted);
-          border-top: 1px solid rgba(148, 163, 184, 0.35);
-        }
-
-        .amoria-footer-top {
-          margin-bottom: 0.6rem;
-        }
-
-        .amoria-footer-links {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.75rem;
-        }
-
-        .amoria-footer-link {
-          text-decoration: none;
-          color: #f472b6;
-          font-size: 0.8rem;
-        }
-
-        .amoria-footer-link:hover {
-          text-decoration: underline;
-        }
-
-        @media (max-width: 640px) {
-          .amoria-header {
-            padding-inline: 1rem;
-          }
-
-          .amoria-legal-section {
-            padding-inline: 1rem;
-          }
-
-          .amoria-footer {
-            padding-inline: 1rem;
-          }
-        }
-      `}</style>
     </main>
   );
 }
