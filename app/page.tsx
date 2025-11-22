@@ -33,6 +33,13 @@ const STRINGS: Record<
     pricingCta: string;
     videoCaption: string;
     footerCopy: string;
+    footerLinks: {
+      legal: string;
+      privacy: string;
+      terms: string;
+      contact: string;
+      about: string;
+    };
   }
 > = {
   fr: {
@@ -84,6 +91,13 @@ const STRINGS: Record<
     pricingCta: "Découvrir les abonnements",
     videoCaption: "AmoriA est disponible en français, anglais et espagnol.",
     footerCopy: "© 2025 AmoriA.app",
+    footerLinks: {
+      legal: "Mentions légales",
+      privacy: "Politique de confidentialité",
+      terms: "Conditions d’utilisation",
+      contact: "Contact",
+      about: "À propos",
+    },
   },
   en: {
     brandTagline: "Caring AI partner • FR / EN / ES",
@@ -134,6 +148,13 @@ const STRINGS: Record<
     pricingCta: "See plans & pricing",
     videoCaption: "AmoriA is available in French, English and Spanish.",
     footerCopy: "© 2025 AmoriA.app",
+    footerLinks: {
+      legal: "Legal",
+      privacy: "Privacy policy",
+      terms: "Terms of use",
+      contact: "Contact",
+      about: "About",
+    },
   },
   es: {
     brandTagline: "Compañerx de IA amable • FR / EN / ES",
@@ -184,6 +205,13 @@ const STRINGS: Record<
     pricingCta: "Ver planes y precios",
     videoCaption: "AmoriA está disponible en francés, inglés y español.",
     footerCopy: "© 2025 AmoriA.app",
+    footerLinks: {
+      legal: "Aviso legal",
+      privacy: "Política de privacidad",
+      terms: "Términos de uso",
+      contact: "Contacto",
+      about: "Acerca de",
+    },
   },
 };
 
@@ -193,15 +221,20 @@ export default function HomePage() {
 
   // Vidéo héro en fonction de la langue
   const heroVideoSrc = `/amoria_${locale}.mp4`;
-  // Vidéo des cartes
+
+  // Vidéo des cartes : /amoria_{id}_{lang}.mp4
   const getPersonaVideoSrc = (id: PersonaId) =>
     `/amoria_${id}_${locale}.mp4`;
+
+  // Helpers pour garder la langue dans les liens
+  const withLang = (path: string) => `${path}?lang=${locale}`;
 
   return (
     <main className="amoria-root">
       {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
+          {/* Logo complet transparent */}
           <img
             src="/AmorIA_logo_transparent.png"
             alt="Logo AmorIA.app"
@@ -214,25 +247,13 @@ export default function HomePage() {
         </div>
 
         <nav className="amoria-nav">
-          {/* Accueil = retourne à / avec la langue courante */}
-          <a
-            href={`/?lang=${locale}`}
-            className="amoria-nav-link"
-          >
+          <a href="#hero" className="amoria-nav-link">
             {t.nav.home}
           </a>
-          {/* Fonctionnalités = nouvelle page /features */}
-          <a
-            href={`/features?lang=${locale}`}
-            className="amoria-nav-link"
-          >
+          <a href={withLang("/features")} className="amoria-nav-link">
             {t.nav.features}
           </a>
-          {/* Tarifs = page pricing */}
-          <a
-            href={`/pricing?lang=${locale}`}
-            className="amoria-nav-link"
-          >
+          <a href={withLang("/pricing")} className="amoria-nav-link">
             {t.nav.pricing}
           </a>
         </nav>
@@ -255,14 +276,14 @@ export default function HomePage() {
           </div>
 
           <a
-            href={`/login?lang=${locale}`}
+            href={withLang("/login")}
             className="amoria-nav-btn amoria-nav-btn--ghost"
           >
             {t.navLogin}
           </a>
 
           <a
-            href={`/signup?lang=${locale}`}
+            href={withLang("/signup")}
             className="amoria-nav-btn amoria-nav-btn--primary"
           >
             {t.navSignup}
@@ -279,7 +300,7 @@ export default function HomePage() {
 
           <div className="amoria-hero-actions">
             <a
-              href={`/signup?lang=${locale}`}
+              href={withLang("/signup")}
               className="amoria-btn amoria-btn--primary amoria-btn--big"
             >
               {t.heroPrimary}
@@ -303,7 +324,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* PERSONAS / VITRINE (section features de la home) */}
+      {/* PERSONAS / VITRINE */}
       <section id="features" className="amoria-section">
         <h2 className="amoria-section-title">{t.personasTitle}</h2>
         <p className="amoria-section-subtitle">{t.personasSubtitle}</p>
@@ -323,7 +344,7 @@ export default function HomePage() {
                 <h3 className="amoria-card-title">{persona.title}</h3>
                 <p className="amoria-card-text">{persona.description}</p>
                 <a
-                  href={`/signup?lang=${locale}`}
+                  href={withLang("/signup")}
                   className="amoria-btn amoria-btn--ghost amoria-btn--full"
                 >
                   {t.choosePersona}
@@ -334,24 +355,43 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* BLOC PRICING (teaser) */}
+      {/* PRICING TEASER */}
       <section id="pricing" className="amoria-section amoria-section--pricing">
         <h2 className="amoria-section-title">{t.pricingTitle}</h2>
         <p className="amoria-section-text">{t.pricingText}</p>
         <a
-          href={`/pricing?lang=${locale}`}
+          href={withLang("/pricing")}
           className="amoria-btn amoria-btn--primary amoria-btn--medium"
         >
           {t.pricingCta}
         </a>
       </section>
 
-      {/* FOOTER */}
+      {/* FOOTER AVEC LIENS LÉGAUX */}
       <footer className="amoria-footer">
-        <span>{t.footerCopy}</span>
+        <div className="amoria-footer-top">
+          <span>{t.footerCopy}</span>
+        </div>
+        <div className="amoria-footer-links">
+          <a href={withLang("/legal")} className="amoria-footer-link">
+            {t.footerLinks.legal}
+          </a>
+          <a href={withLang("/privacy")} className="amoria-footer-link">
+            {t.footerLinks.privacy}
+          </a>
+          <a href={withLang("/terms")} className="amoria-footer-link">
+            {t.footerLinks.terms}
+          </a>
+          <a href={withLang("/contact")} className="amoria-footer-link">
+            {t.footerLinks.contact}
+          </a>
+          <a href={withLang("/about")} className="amoria-footer-link">
+            {t.footerLinks.about}
+          </a>
+        </div>
       </footer>
 
-      {/* STYLES (inchangés) */}
+      {/* STYLES */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
@@ -682,7 +722,7 @@ export default function HomePage() {
 
         .amoria-card-media {
           width: 100%;
-          aspect-ratio: 4 / 5;
+          aspect-ratio: 4 / 5; /* évite les têtes coupées */
           overflow: hidden;
           border-bottom: 1px solid rgba(15, 23, 42, 0.9);
           background: #020617;
@@ -722,6 +762,28 @@ export default function HomePage() {
           font-size: 0.78rem;
           color: var(--amoria-text-muted);
           text-align: center;
+        }
+
+        .amoria-footer-top {
+          margin-bottom: 0.4rem;
+        }
+
+        .amoria-footer-links {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 0.8rem;
+        }
+
+        .amoria-footer-link {
+          color: var(--amoria-text-muted);
+          text-decoration: none;
+          font-size: 0.78rem;
+        }
+
+        .amoria-footer-link:hover {
+          color: #e5e7eb;
+          text-decoration: underline;
         }
 
         /* RESPONSIVE */
