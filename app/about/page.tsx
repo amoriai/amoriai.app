@@ -57,7 +57,7 @@ const ABOUT_STRINGS: Record<Locale, AboutCopy> = {
       "AmoriA is not just another chatbot — it's an emotional companion designed to help you think, process, and feel less alone.",
     block1Title: "Why AmoriA exists",
     block1Text:
-      "Life is fast and chaotic. We don’t always have someone who can listen without judgment. AmoriA was created to be a stable, caring presence.",
+      "Life is fast and chaotic. We don’t always have someone who can listen without judgment. AmoriA was born to be a stable, caring presence.",
     block2Title: "Multilingual & nuanced",
     block2Text:
       "Available in French, English and Spanish. Designed for deep thinkers who enjoy reflecting, journaling and understanding themselves.",
@@ -97,7 +97,7 @@ const ABOUT_STRINGS: Record<Locale, AboutCopy> = {
       { title: "Amabilidad", text: "Respuestas honestas pero suaves." },
       {
         title: "Claridad",
-        text: "Preguntas que ayudan a organizar tus pensamientos.",
+        text: "Preguntas que ayudan a ordenar tus pensamientos.",
       },
       {
         title: "Respeto",
@@ -155,7 +155,7 @@ export default function AboutPage({ searchParams }: PageProps) {
               ? "Features"
               : "Funciones"}
           </a>
-          <a href={url("/pricing")} className="amoria-nav-link}>
+          <a href={url("/pricing")} className="amoria-nav-link">
             {locale === "fr"
               ? "Tarifs"
               : locale === "en"
@@ -165,10 +165,21 @@ export default function AboutPage({ searchParams }: PageProps) {
         </nav>
 
         <div className="amoria-nav-right">
-          <a href={url("/login")} className="amoria-nav-btn amoria-nav-btn--ghost">
-            {locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión"}
+          <a
+            href={url("/login")}
+            className="amoria-nav-btn amoria-nav-btn--ghost"
+          >
+            {locale === "fr"
+              ? "Me connecter"
+              : locale === "en"
+              ? "Log in"
+              : "Iniciar sesión"}
           </a>
-          <a href={url("/signup")} className="amoria-nav-btn amoria-nav-btn--primary">
+
+          <a
+            href={url("/signup")}
+            className="amoria-nav-btn amoria-nav-btn--primary"
+          >
             {locale === "fr"
               ? "Créer mon compte gratuit"
               : locale === "en"
@@ -178,14 +189,12 @@ export default function AboutPage({ searchParams }: PageProps) {
         </div>
       </header>
 
-      {/* HERO */}
       <section className="amoria-hero">
         <p className="amoria-hero-kicker">{t.heroKicker}</p>
         <h1 className="amoria-hero-title">{t.heroTitle}</h1>
         <p className="amoria-hero-subtitle">{t.heroSubtitle}</p>
       </section>
 
-      {/* TEXT BLOCKS */}
       <section className="amoria-section">
         <div className="amoria-about-grid">
           <article className="amoria-about-card">
@@ -205,7 +214,6 @@ export default function AboutPage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      {/* VALUES */}
       <section className="amoria-section">
         <h2 className="amoria-section-title">{t.valuesTitle}</h2>
         <div className="amoria-values-grid">
@@ -221,11 +229,6 @@ export default function AboutPage({ searchParams }: PageProps) {
       <footer className="amoria-footer">
         © 2025 AmoriA.app — IA bienveillante multilingue
       </footer>
-
-      {/* STYLES */}
-      <style jsx global>{`
-        /* (les mêmes styles que pricing/vitrine — tout safe et testé) */
-      `}</style>
     </main>
   );
 }
