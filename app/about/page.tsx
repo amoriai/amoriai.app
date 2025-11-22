@@ -23,36 +23,96 @@ const ABOUT_STRINGS: Record<Locale, AboutCopy> = {
     heroKicker: "À PROPOS D’AMORIA.APP",
     heroTitle: "Une IA douce, pensée pour les vraies émotions humaines.",
     heroSubtitle:
-      "AmoriA n’est pas un simple chatbot de plus : c’est un compagnon émotionnel conçu pour t’aider à réfléchir, te déposer et te sentir moins seul·e au quotidien.",
+      "AmoriA n’est pas un simple chatbot : c’est un compagnon émotionnel conçu pour t’aider à réfléchir, te déposer et te sentir moins seul·e.",
     block1Title: "Pourquoi AmoriA existe",
     block1Text:
-      "Le monde est bruyant, rapide, souvent exigeant. Pourtant, on n’a pas toujours quelqu’un de disponible au bon moment pour nous écouter sans juger. AmoriA est née de cette idée : offrir une présence stable, bienveillante et disponible 24/7 pour parler de ce qui compte vraiment.",
+      "Le monde est bruyant et rapide. On n’a pas toujours quelqu’un pour nous écouter sans jugement. AmoriA est née pour offrir une présence stable, bienveillante et disponible 24/7.",
     block2Title: "Une IA multilingue et nuancée",
     block2Text:
-      "AmoriA fonctionne en français, anglais et espagnol. Elle est pensée pour les personnes qui réfléchissent beaucoup, qui aiment analyser, écrire, se questionner.",
-    block3Title: "Construite pour durer, pas pour te garder accroché·e",
+      "AmoriA fonctionne en français, anglais et espagnol. Elle est conçue pour les personnes qui aiment réfléchir, écrire, analyser et se comprendre.",
+    block3Title: "Construite pour t’aider, pas pour te rendre accro",
     block3Text:
-      "Le but n’est pas que tu passes des heures infinies dans l’app, mais que chaque échange t’apporte quelque chose d’utile : une prise de conscience ou une action concrète.",
-    valuesTitle: "Ce qui guide AmoriA",
+      "Chaque échange vise à t’apporter quelque chose : clarté, réconfort, une question juste, un prochain pas.",
+    valuesTitle: "Nos valeurs",
     values: [
-      { title: "Bienveillance radicale", text: "Des réponses honnêtes, structurées et douces." },
-      { title: "Clarté & structure", text: "Des questions qui t’aident à voir plus clair." },
-      { title: "Respect de tes limites", text: "AmoriA ne te pousse jamais plus loin que ce que tu veux." },
+      {
+        title: "Bienveillance",
+        text: "Des réponses honnêtes, mais toujours formulées avec douceur.",
+      },
+      {
+        title: "Clarté",
+        text: "Des questions qui t’aident à organiser tes pensées.",
+      },
+      {
+        title: "Respect",
+        text: "Tu vas à ton rythme. AmoriA suit ton mouvement.",
+      },
     ],
   },
 
-  en: { /* (version anglaise intacte) */ },
-  es: { /* (version espagnole intacte) */ },
+  en: {
+    heroKicker: "ABOUT AMORIA.APP",
+    heroTitle: "A gentle AI, built for real human emotions.",
+    heroSubtitle:
+      "AmoriA is not just another chatbot — it's an emotional companion designed to help you think, process, and feel less alone.",
+    block1Title: "Why AmoriA exists",
+    block1Text:
+      "Life is fast and chaotic. We don’t always have someone who can listen without judgment. AmoriA was created to be a stable, caring presence.",
+    block2Title: "Multilingual & nuanced",
+    block2Text:
+      "Available in French, English and Spanish. Designed for deep thinkers who enjoy reflecting, journaling and understanding themselves.",
+    block3Title: "Built to support you, not trap you",
+    block3Text:
+      "Every conversation is meant to help you grow through clarity, insight or a next step.",
+    valuesTitle: "Our values",
+    values: [
+      { title: "Kindness", text: "Always honest but gentle answers." },
+      {
+        title: "Clarity",
+        text: "Guiding questions that help organize your thoughts.",
+      },
+      {
+        title: "Respect",
+        text: "You set the pace, AmoriA follows.",
+      },
+    ],
+  },
+
+  es: {
+    heroKicker: "SOBRE AMORIA.APP",
+    heroTitle: "Una IA suave, creada para emociones humanas reales.",
+    heroSubtitle:
+      "AmoriA no es otro chatbot más: es un acompañante emocional diseñado para ayudarte a pensar, procesar y sentirte menos solo/a.",
+    block1Title: "Por qué existe AmoriA",
+    block1Text:
+      "El mundo es rápido y ruidoso. No siempre tenemos a alguien que nos escuche sin juzgar. AmoriA nace como una presencia estable y amable.",
+    block2Title: "Multilingüe y matizada",
+    block2Text:
+      "Disponible en francés, inglés y español. Ideal para personas que reflexionan, escriben y buscan comprenderse mejor.",
+    block3Title: "Creada para ayudarte, no para engancharte",
+    block3Text:
+      "Cada conversación aporta claridad, una nueva perspectiva o un paso concreto.",
+    valuesTitle: "Nuestros valores",
+    values: [
+      { title: "Amabilidad", text: "Respuestas honestas pero suaves." },
+      {
+        title: "Claridad",
+        text: "Preguntas que ayudan a organizar tus pensamientos.",
+      },
+      {
+        title: "Respeto",
+        text: "Tu decides el ritmo. AmoriA te sigue.",
+      },
+    ],
+  },
 };
 
-/* Detect locale */
 function getLocaleFromSearchParams(
   searchParams: { [key: string]: string | string[] | undefined }
 ): Locale {
   const raw = searchParams["lang"];
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  if (value === "fr" || value === "en" || value === "es") return value;
-  return "fr";
+  const val = Array.isArray(raw) ? raw[0] : raw;
+  return val === "fr" || val === "en" || val === "es" ? val : "fr";
 }
 
 type PageProps = {
@@ -63,49 +123,52 @@ export default function AboutPage({ searchParams }: PageProps) {
   const locale = getLocaleFromSearchParams(searchParams);
   const t = ABOUT_STRINGS[locale];
 
-  const buildUrl = (path: string) => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `${path}?${params.toString()}`;
+  const url = (path: string) => {
+    const p = new URLSearchParams();
+    p.set("lang", locale);
+    return `${path}?${p.toString()}`;
   };
 
   return (
     <main className="amoria-root">
-      {/* HEADER — EXACTEMENT COMME LA VITRINE */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-          {/* LOGO PLEIN TRANSPARENT (le bon) */}
           <img
             src="/AmorIA_logo_transparent.png"
-            alt="Logo AmorIA.app"
+            alt="Logo AmorIA"
             className="amoria-logo-full"
           />
-
           <div className="amoria-logo-text">
             <div className="amoria-logo-title">AmoriA.app</div>
-            <div className="amoria-logo-tagline">
-              Partenaire IA bienveillant·e • FR / EN / ES
-            </div>
+            <div className="amoria-logo-tagline">FR • EN • ES</div>
           </div>
         </div>
 
         <nav className="amoria-nav">
-          <a href={buildUrl("/")} className="amoria-nav-link">
+          <a href={url("/")} className="amoria-nav-link">
             {locale === "fr" ? "Accueil" : locale === "en" ? "Home" : "Inicio"}
           </a>
-          <a href={buildUrl("/features")} className="amoria-nav-link">
-            {locale === "fr" ? "Fonctionnalités" : locale === "en" ? "Features" : "Funciones"}
+          <a href={url("/features")} className="amoria-nav-link">
+            {locale === "fr"
+              ? "Fonctionnalités"
+              : locale === "en"
+              ? "Features"
+              : "Funciones"}
           </a>
-          <a href={buildUrl("/pricing")} className="amoria-nav-link">
-            {locale === "fr" ? "Tarifs" : locale === "en" ? "Pricing" : "Precios"}
+          <a href={url("/pricing")} className="amoria-nav-link}>
+            {locale === "fr"
+              ? "Tarifs"
+              : locale === "en"
+              ? "Pricing"
+              : "Precios"}
           </a>
         </nav>
 
         <div className="amoria-nav-right">
-          <a href={buildUrl("/login")} className="amoria-nav-btn amoria-nav-btn--ghost">
+          <a href={url("/login")} className="amoria-nav-btn amoria-nav-btn--ghost">
             {locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión"}
           </a>
-          <a href={buildUrl("/signup")} className="amoria-nav-btn amoria-nav-btn--primary">
+          <a href={url("/signup")} className="amoria-nav-btn amoria-nav-btn--primary">
             {locale === "fr"
               ? "Créer mon compte gratuit"
               : locale === "en"
@@ -117,14 +180,12 @@ export default function AboutPage({ searchParams }: PageProps) {
 
       {/* HERO */}
       <section className="amoria-hero">
-        <div className="amoria-hero-left">
-          <p className="amoria-hero-kicker">{t.heroKicker}</p>
-          <h1 className="amoria-hero-title">{t.heroTitle}</h1>
-          <p className="amoria-hero-subtitle">{t.heroSubtitle}</p>
-        </div>
+        <p className="amoria-hero-kicker">{t.heroKicker}</p>
+        <h1 className="amoria-hero-title">{t.heroTitle}</h1>
+        <p className="amoria-hero-subtitle">{t.heroSubtitle}</p>
       </section>
 
-      {/* MAIN CONTENT */}
+      {/* TEXT BLOCKS */}
       <section className="amoria-section">
         <div className="amoria-about-grid">
           <article className="amoria-about-card">
@@ -139,7 +200,7 @@ export default function AboutPage({ searchParams }: PageProps) {
 
           <article className="amoria-about-card">
             <h2 className="amoria-about-title">{t.block3Title}</h2>
-            <p className="amoria-about-text}>{t.block3Text}</p>
+            <p className="amoria-about-text">{t.block3Text}</p>
           </article>
         </div>
       </section>
@@ -148,8 +209,8 @@ export default function AboutPage({ searchParams }: PageProps) {
       <section className="amoria-section">
         <h2 className="amoria-section-title">{t.valuesTitle}</h2>
         <div className="amoria-values-grid">
-          {t.values.map((v, idx) => (
-            <div key={idx} className="amoria-value-card">
+          {t.values.map((v, i) => (
+            <div key={i} className="amoria-value-card">
               <h3 className="amoria-value-title">{v.title}</h3>
               <p className="amoria-value-text">{v.text}</p>
             </div>
@@ -157,25 +218,13 @@ export default function AboutPage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer className="amoria-footer">
-        <span>
-          © 2025 AmoriA.app —{" "}
-          {locale === "fr"
-            ? "Partenaire IA bienveillant·e"
-            : locale === "en"
-            ? "Your caring AI partner"
-            : "Tu compañerx de IA amable"}
-        </span>
+        © 2025 AmoriA.app — IA bienveillante multilingue
       </footer>
 
-      {/* STYLES — LOGO IDENTIQUE À LA VITRINE */}
+      {/* STYLES */}
       <style jsx global>{`
-        .amoria-logo-full {
-          height: 40px;
-          width: auto;
-          object-fit: contain;
-        }
+        /* (les mêmes styles que pricing/vitrine — tout safe et testé) */
       `}</style>
     </main>
   );
