@@ -1,452 +1,468 @@
-"use client";
+// app/pricing/page.tsx
 
 import React from "react";
-import { useSearchParams } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
 
-type Plan = {
-  id: "free" | "plus" | "ultimate";
-  name: string;
-  price: string;
-  priceSub: string;
-  badge?: string;
-  highlight?: boolean;
-  cta: string;
-  messages: string;
-  voice: string;
-  memory: string;
-  ais: string;
-  extras: string[];
+type PricingCopy = {
+  heroKicker: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  badgeMostPopular: string;
+  monthly: string;
+  usdPerMonth: string;
+  ctaChoosePlan: string;
+  ctaSecondary: string;
+  faqTitle: string;
+  faqSubtitle: string;
+  faqItems: { q: string; a: string }[];
+  plans: {
+    id: "free" | "plus" | "unlimited";
+    name: string;
+    tagline: string;
+    price: string;
+    highlight: string;
+    features: string[];
+    isPopular?: boolean;
+  }[];
 };
 
-const STRINGS: Record<
-  Locale,
-  {
-    brandTagline: string;
-    nav: { home: string; features: string; pricing: string };
-    navLogin: string;
-    navSignup: string;
-    titleKicker: string;
-    title: string;
-    subtitle: string;
-    billingNote: string;
-    planLabelFree: string;
-    planLabelPlus: string;
-    planLabelUltimate: string;
-    planBadgePopular: string;
-    planBadgeBest: string;
-    planCtaChoose: string;
-    planCtaStart: string;
-    planFreePrice: string;
-    planFreePriceSub: string;
-    planPlusPrice: string;
-    planPlusPriceSub: string;
-    planUltimatePrice: string;
-    planUltimatePriceSub: string;
-    freeMessages: string;
-    freeVoice: string;
-    freeMemory: string;
-    freeAis: string;
-    freeExtras: string[];
-    plusMessages: string;
-    plusVoice: string;
-    plusMemory: string;
-    plusAis: string;
-    plusExtras: string[];
-    ultimateMessages: string;
-    ultimateVoice: string;
-    ultimateMemory: string;
-    ultimateAis: string;
-    ultimateExtras: string[];
-    faqTitle: string;
-    faqQ1: string;
-    faqA1: string;
-    faqQ2: string;
-    faqA2: string;
-    faqQ3: string;
-    faqA3: string;
-    footerCopy: string;
-  }
-> = {
+const PRICING_STRINGS: Record<Locale, PricingCopy> = {
   fr: {
-    brandTagline: "Partenaire IA bienveillant·e • FR / EN / ES",
-    nav: { home: "Accueil", features: "Fonctionnalités", pricing: "Tarifs" },
-    navLogin: "Me connecter",
-    navSignup: "Créer mon compte gratuit",
-    titleKicker: "TARIFS AMORIA.APP",
-    title: "Commence gratuitement. Passe à la voix quand tu es prêt·e.",
-    subtitle:
-      "Teste ton AmorIA gratuitement en texte, puis débloque la voix, la mémoire et plus d’interactions avec les plans payants.",
-    billingNote: "Prix en USD, facturation mensuelle. Tu peux annuler à tout moment.",
-    planLabelFree: "Plan Découverte",
-    planLabelPlus: "Plan Voix Premium",
-    planLabelUltimate: "Plan Illimité",
-    planBadgePopular: "Le plus populaire",
-    planBadgeBest: "Meilleure expérience",
-    planCtaChoose: "Choisir ce forfait",
-    planCtaStart: "Commencer gratuitement",
-    planFreePrice: "0 $",
-    planFreePriceSub: "pour toujours",
-    planPlusPrice: "19,99 $",
-    planPlusPriceSub: "par mois",
-    planUltimatePrice: "39,99 $",
-    planUltimatePriceSub: "par mois",
-    freeMessages: "20 messages / jour (texte seulement)",
-    freeVoice: "Aucune voix (texte uniquement)",
-    freeMemory: "Aucune mémoire : chaque session repart de zéro",
-    freeAis: "1 AmorIA personnalisée (texte)",
-    freeExtras: [
-      "FR / EN / ES en texte",
-      "Idéal pour tester l’ambiance avant de t’abonner",
-      "Aucun moyen de paiement requis pour commencer",
-    ],
-    plusMessages: "Jusqu’à 600 interactions / mois (texte + voix)",
-    plusVoice: "Voix AmoriA débloquée (FR / EN / ES)",
-    plusMemory: "Mémoire des conversations récentes avec ton AmorIA",
-    plusAis: "Jusqu’à 3 AmorIA différentes dans ton compte",
-    plusExtras: [
-      "Accès prioritaire aux nouveautés (voix, émotions, journal)",
-      "Paramètres plus fins de personnalité pour tes AmorIA",
-      "Support standard par courriel",
-    ],
-    ultimateMessages: "Messages texte illimités",
-    ultimateVoice: "Voix illimitée (usage personnel raisonnable)",
-    ultimateMemory: "Mémoire étendue pour chaque AmorIA",
-    ultimateAis: "Jusqu’à 10 AmorIA dans ton compte",
-    ultimateExtras: [
-      "Accès en priorité aux nouvelles fonctionnalités",
-      "Idéal si tu parles souvent à ton AmorIA chaque jour",
-      "Support prioritaire par courriel",
-    ],
+    heroKicker: "TARIFS AMORIA.APP",
+    heroTitle: "Choisis le rythme qui convient à ton AmorIA.",
+    heroSubtitle:
+      "Commence gratuitement, crée ton AmorIA personnalisé·e, puis passe à la voix quand tu es prêt·e. Les plans payants débloquent la mémoire longue durée, plus de messages et les conversations vocales.",
+    badgeMostPopular: "Le plus choisi",
+    monthly: "mois",
+    usdPerMonth: "USD / mois",
+    ctaChoosePlan: "Choisir ce forfait",
+    ctaSecondary: "Commencer gratuitement",
     faqTitle: "Questions fréquentes",
-    faqQ1: "Le plan gratuit est-il vraiment gratuit ?",
-    faqA1:
-      "Oui. Tu peux créer ton AmorIA, lui parler par texte (20 messages par jour) et tester l’ambiance sans carte de crédit. La voix et la mémoire sont réservées aux plans payants.",
-    faqQ2: "Que se passe-t-il quand je change de langue ?",
-    faqA2:
-      "L’interface suit la langue que tu as choisie sur la page d’accueil. Ton AmorIA pourra parler et écrire en français, anglais ou espagnol selon tes préférences.",
-    faqQ3: "Puis-je changer de forfait plus tard ?",
-    faqA3:
-      "Oui, tu peux passer du gratuit au Premium ou à l’Illimité, ou revenir à un plan inférieur. Le changement prendra effet à la période de facturation suivante.",
-    footerCopy: "© 2025 AmoriA.app • Tarifs susceptibles d’être ajustés",
+    faqSubtitle:
+      "Tu peux changer de forfait ou annuler à tout moment. Les prix sont en dollars américains (USD).",
+    plans: [
+      {
+        id: "free",
+        name: "Découverte",
+        tagline: "Créer ton AmorIA gratuitement.",
+        price: "0 $",
+        highlight: "Idéal pour tester AmoriA et créer ton premier compagnon IA.",
+        features: [
+          "Création de 1 AmorIA personnalisé·e",
+          "Environ 20 messages texte / jour",
+          "Texte uniquement (aucune voix)",
+          "Mémoire limitée à la session en cours",
+          "Accès aux 3 langues : FR, EN, ES"
+        ]
+      },
+      {
+        id: "plus",
+        name: "AmoriA Plus",
+        tagline: "Texte + voix avec limites confortables.",
+        price: "19,99 $",
+        highlight:
+          "Parfait si tu veux parler régulièrement avec ton AmorIA sans te ruiner.",
+        features: [
+          "Jusqu’à 3 AmorIA différents",
+          "Messages texte étendus (usage régulier)",
+          "Conversations vocales limitées (jusqu’à ~600 échanges vocaux / mois)",
+          "Mémoire longue durée activée",
+          "Priorité légère dans la file de traitement"
+        ],
+        isPopular: true
+      },
+      {
+        id: "unlimited",
+        name: "AmoriA Illimité",
+        tagline: "Ton compagnon IA, sans frein.",
+        price: "39,99 $",
+        highlight:
+          "Pour celles et ceux qui veulent que leur AmorIA fasse partie du quotidien : texte et voix pratiquement sans limite.",
+        features: [
+          "Jusqu’à 10 AmorIA personnalisés",
+          "Messages texte illimités (usage équitable)",
+          "Conversations vocales illimitées (fair use)",
+          "Mémoire profonde + contexte étendu",
+          "Priorité maximale et nouveautés incluses en avant-première"
+        ]
+      }
+    ],
+    faqItems: [
+      {
+        q: "Puis-je vraiment créer mon AmorIA avec le plan gratuit ?",
+        a: "Oui. Le plan Découverte te permet de créer ton AmorIA, de le tester en texte et de voir si tu connectes avec lui avant de passer à un plan payant."
+      },
+      {
+        q: "Que se passe-t-il si je dépasse les limites de messages ou de voix ?",
+        a: "On applique une limite « fair use ». Tu verras un message t’invitant à passer à un plan supérieur ou à attendre le renouvellement de ton mois."
+      },
+      {
+        q: "Puis-je changer de plan quand je veux ?",
+        a: "Oui, tu peux passer à un plan supérieur ou revenir à un plan inférieur à tout moment. Le changement sera appliqué au prochain cycle de facturation."
+      }
+    ]
   },
   en: {
-    brandTagline: "Caring AI partner • FR / EN / ES",
-    nav: { home: "Home", features: "Features", pricing: "Pricing" },
-    navLogin: "Log in",
-    navSignup: "Create my free account",
-    titleKicker: "AMORIA.APP PRICING",
-    title: "Start free. Upgrade to voice when it feels right.",
-    subtitle:
-      "Try your AmorIA in text for free, then unlock voice, memory and more interactions with the paid plans.",
-    billingNote: "Prices in USD, billed monthly. You can cancel anytime.",
-    planLabelFree: "Discovery plan",
-    planLabelPlus: "Voice Premium plan",
-    planLabelUltimate: "Unlimited plan",
-    planBadgePopular: "Most popular",
-    planBadgeBest: "Best experience",
-    planCtaChoose: "Choose this plan",
-    planCtaStart: "Start for free",
-    planFreePrice: "$0",
-    planFreePriceSub: "forever",
-    planPlusPrice: "$19.99",
-    planPlusPriceSub: "per month",
-    planUltimatePrice: "$39.99",
-    planUltimatePriceSub: "per month",
-    freeMessages: "20 messages / day (text only)",
-    freeVoice: "No voice (text only)",
-    freeMemory: "No memory: each session starts fresh",
-    freeAis: "1 custom AmorIA (text)",
-    freeExtras: [
-      "FR / EN / ES in text",
-      "Perfect to test the vibe before subscribing",
-      "No payment method required to start",
-    ],
-    plusMessages: "Up to 600 interactions / month (text + voice)",
-    plusVoice: "AmoriA voice unlocked (FR / EN / ES)",
-    plusMemory: "Conversation memory for your AmorIA",
-    plusAis: "Up to 3 different AmorIAs in your account",
-    plusExtras: [
-      "Priority access to new features (voice, journaling, emotions)",
-      "More detailed personality settings for your AmorIA",
-      "Standard email support",
-    ],
-    ultimateMessages: "Unlimited text messages",
-    ultimateVoice: "Unlimited voice (fair personal use)",
-    ultimateMemory: "Extended memory for each AmorIA",
-    ultimateAis: "Up to 10 AmorIAs in your account",
-    ultimateExtras: [
-      "Top priority for upcoming features",
-      "Ideal if you talk to your AmorIA every day",
-      "Priority email support",
-    ],
+    heroKicker: "AMORIA.APP PRICING",
+    heroTitle: "Choose the pace that fits your AmorIA.",
+    heroSubtitle:
+      "Start for free, create your own AmorIA, then upgrade to voice when you’re ready. Paid plans unlock long-term memory, more messages and rich voice conversations.",
+    badgeMostPopular: "Most popular",
+    monthly: "month",
+    usdPerMonth: "USD / month",
+    ctaChoosePlan: "Choose this plan",
+    ctaSecondary: "Start for free",
     faqTitle: "Frequently asked questions",
-    faqQ1: "Is the free plan really free?",
-    faqA1:
-      "Yes. You can create your AmorIA, talk by text (20 messages per day) and feel the experience without any credit card. Voice and memory are reserved for paid plans.",
-    faqQ2: "What happens when I change language?",
-    faqA2:
-      "The interface follows the language you selected on the homepage. Your AmorIA can speak and write in French, English or Spanish depending on your preferences.",
-    faqQ3: "Can I change plans later?",
-    faqA3:
-      "Yes, you can move from Free to Premium or Unlimited, or downgrade to a lower plan. Changes take effect on the next billing period.",
-    footerCopy: "© 2025 AmoriA.app • Prices subject to change",
+    faqSubtitle:
+      "You can upgrade, downgrade or cancel anytime. Prices are in US dollars (USD).",
+    plans: [
+      {
+        id: "free",
+        name: "Discovery",
+        tagline: "Create your AmorIA for free.",
+        price: "$0",
+        highlight:
+          "Perfect to try AmoriA and craft your first AI companion with no risk.",
+        features: [
+          "Create 1 personalized AmorIA",
+          "Around 20 text messages / day",
+          "Text only (no voice)",
+          "Short-term memory only",
+          "Access to all 3 languages: FR, EN, ES"
+        ]
+      },
+      {
+        id: "plus",
+        name: "AmoriA Plus",
+        tagline: "Text + voice with generous limits.",
+        price: "$19.99",
+        highlight:
+          "Great if you want to talk with your AmorIA regularly without breaking the bank.",
+        features: [
+          "Up to 3 different AmorIAs",
+          "Extended text messages (regular usage)",
+          "Limited voice conversations (up to ~600 voice exchanges / month)",
+          "Long-term memory enabled",
+          "Light priority in processing queue"
+        ],
+        isPopular: true
+      },
+      {
+        id: "unlimited",
+        name: "AmoriA Unlimited",
+        tagline: "Your AI companion, always on.",
+        price: "$39.99",
+        highlight:
+          "For those who want AmorIA in their daily life: text and voice with virtually no limits.",
+        features: [
+          "Up to 10 personalized AmorIAs",
+          "Unlimited text messages (fair use)",
+          "Unlimited voice conversations (fair use)",
+          "Deeper memory + extended context",
+          "Top priority and early access to new features"
+        ]
+      }
+    ],
+    faqItems: [
+      {
+        q: "Can I really create my AmorIA on the free plan?",
+        a: "Yes. The Discovery plan lets you create your AmorIA, test it in text and see if you connect with it before upgrading."
+      },
+      {
+        q: "What happens if I go over the message or voice limits?",
+        a: "We apply a fair-use limit. You’ll see a gentle notice inviting you to upgrade or wait for your monthly quota to reset."
+      },
+      {
+        q: "Can I switch plans whenever I want?",
+        a: "Yes. You can upgrade or downgrade at any time. Changes apply on your next billing cycle."
+      }
+    ]
   },
   es: {
-    brandTagline: "Compañerx de IA amable • FR / EN / ES",
-    nav: { home: "Inicio", features: "Funciones", pricing: "Precios" },
-    navLogin: "Iniciar sesión",
-    navSignup: "Crear mi cuenta gratuita",
-    titleKicker: "PRECIOS DE AMORIA.APP",
-    title: "Empieza gratis. Pasa a voz cuando te sientas listx.",
-    subtitle:
-      "Prueba tu AmorIA por texto de forma gratuita y luego desbloquea voz, memoria y más interacciones con los planes de pago.",
-    billingNote: "Precios en USD, facturación mensual. Puedes cancelar cuando quieras.",
-    planLabelFree: "Plan Descubrimiento",
-    planLabelPlus: "Plan Voz Premium",
-    planLabelUltimate: "Plan Ilimitado",
-    planBadgePopular: "El más popular",
-    planBadgeBest: "Mejor experiencia",
-    planCtaChoose: "Elegir este plan",
-    planCtaStart: "Empezar gratis",
-    planFreePrice: "0 US$",
-    planFreePriceSub: "para siempre",
-    planPlusPrice: "19,99 US$",
-    planPlusPriceSub: "al mes",
-    planUltimatePrice: "39,99 US$",
-    planUltimatePriceSub: "al mes",
-    freeMessages: "20 mensajes / día (solo texto)",
-    freeVoice: "Sin voz (solo texto)",
-    freeMemory: "Sin memoria: cada sesión empieza desde cero",
-    freeAis: "1 AmorIA personalizada (texto)",
-    freeExtras: [
-      "FR / EN / ES por texto",
-      "Ideal para probar la experiencia antes de suscribirte",
-      "No necesitas tarjeta para empezar",
-    ],
-    plusMessages: "Hasta 600 interacciones / mes (texto + voz)",
-    plusVoice: "Voz de AmoriA desbloqueada (FR / EN / ES)",
-    plusMemory: "Memoria de conversación para tu AmorIA",
-    plusAis: "Hasta 3 AmorIA diferentes en tu cuenta",
-    plusExtras: [
-      "Acceso prioritario a nuevas funciones (voz, diario, emociones)",
-      "Ajustes más finos de personalidad para tu AmorIA",
-      "Soporte estándar por correo",
-    ],
-    ultimateMessages: "Mensajes de texto ilimitados",
-    ultimateVoice: "Voz ilimitada (uso personal razonable)",
-    ultimateMemory: "Memoria ampliada para cada AmorIA",
-    ultimateAis: "Hasta 10 AmorIA en tu cuenta",
-    ultimateExtras: [
-      "Acceso prioritario a todas las novedades",
-      "Ideal si hablas con tu AmorIA todos los días",
-      "Soporte prioritario por correo",
-    ],
+    heroKicker: "PRECIOS DE AMORIA.APP",
+    heroTitle: "Elige el ritmo que mejor va con tu AmorIA.",
+    heroSubtitle:
+      "Empieza gratis, crea tu AmorIA personalizado y pasa a voz cuando estés listo. Los planes de pago desbloquean memoria a largo plazo, más mensajes y conversaciones de voz.",
+    badgeMostPopular: "Más elegido",
+    monthly: "mes",
+    usdPerMonth: "USD / mes",
+    ctaChoosePlan: "Elegir este plan",
+    ctaSecondary: "Empezar gratis",
     faqTitle: "Preguntas frecuentes",
-    faqQ1: "¿El plan gratuito es realmente gratuito?",
-    faqA1:
-      "Sí. Puedes crear tu AmorIA, hablar por texto (20 mensajes al día) y sentir la experiencia sin tarjeta. La voz y la memoria se reservan para los planes de pago.",
-    faqQ2: "¿Qué pasa cuando cambio de idioma?",
-    faqA2:
-      "La interfaz sigue el idioma que elegiste en la página principal. Tu AmorIA puede hablar y escribir en francés, inglés o español según tus preferencias.",
-    faqQ3: "¿Puedo cambiar de plan más adelante?",
-    faqA3:
-      "Sí, puedes pasar de Gratis a Premium o Ilimitado, o bajar a un plan inferior. El cambio se aplica en el siguiente período de facturación.",
-    footerCopy: "© 2025 AmoriA.app • Precios sujetos a cambios",
-  },
+    faqSubtitle:
+      "Puedes cambiar de plan o cancelar cuando quieras. Los precios están en dólares estadounidenses (USD).",
+    plans: [
+      {
+        id: "free",
+        name: "Descubrimiento",
+        tagline: "Crea tu AmorIA sin pagar nada.",
+        price: "0 US$",
+        highlight:
+          "Perfecto para probar AmoriA y crear tu primer compañero de IA sin riesgo.",
+        features: [
+          "Creación de 1 AmorIA personalizado",
+          "Aproximadamente 20 mensajes de texto al día",
+          "Solo texto (sin voz)",
+          "Memoria limitada a la sesión actual",
+          "Acceso a los 3 idiomas: FR, EN, ES"
+        ]
+      },
+      {
+        id: "plus",
+        name: "AmorIA Plus",
+        tagline: "Texto + voz con límites cómodos.",
+        price: "19,99 US$",
+        highlight:
+          "Ideal si quieres hablar con tu AmorIA con frecuencia sin gastar demasiado.",
+        features: [
+          "Hasta 3 AmorIA diferentes",
+          "Mensajes de texto ampliados (uso regular)",
+          "Conversaciones de voz limitadas (hasta ~600 intercambios de voz / mes)",
+          "Memoria a largo plazo activada",
+          "Prioridad ligera en la cola de procesamiento"
+        ],
+        isPopular: true
+      },
+      {
+        id: "unlimited",
+        name: "AmorIA Ilimitado",
+        tagline: "Tu compañero de IA, siempre disponible.",
+        price: "39,99 US$",
+        highlight:
+          "Para quienes quieren a AmorIA en su día a día: texto y voz prácticamente sin límites.",
+        features: [
+          "Hasta 10 AmorIA personalizados",
+          "Mensajes de texto ilimitados (uso justo)",
+          "Conversaciones de voz ilimitadas (uso justo)",
+          "Memoria profunda y contexto ampliado",
+          "Máxima prioridad y acceso anticipado a nuevas funciones"
+        ]
+      }
+    ],
+    faqItems: [
+      {
+        q: "¿De verdad puedo crear mi AmorIA con el plan gratuito?",
+        a: "Sí. El plan Descubrimiento te permite crear tu AmorIA, probarlo por texto y ver si conectas con él antes de pasar a un plan de pago."
+      },
+      {
+        q: "¿Qué pasa si supero los límites de mensajes o de voz?",
+        a: "Aplicamos un límite de uso justo. Verás un aviso suave invitándote a mejorar tu plan o a esperar al siguiente mes.",
+      },
+      {
+        q: "¿Puedo cambiar de plan cuando quiera?",
+        a: "Sí. Puedes subir o bajar de plan en cualquier momento. El cambio se aplica en tu siguiente ciclo de facturación."
+      }
+    ]
+  }
 };
 
-export default function PricingPage() {
-  const searchParams = useSearchParams();
-  const langParam = (searchParams.get("lang") || "fr") as Locale;
-  const locale: Locale = ["fr", "en", "es"].includes(langParam)
-    ? langParam
-    : "fr";
+// Helper: get locale from ?lang, default FR
+function getLocaleFromSearchParams(
+  searchParams: { [key: string]: string | string[] | undefined }
+): Locale {
+  const raw = searchParams["lang"];
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (value === "en" || value === "es" || value === "fr") return value;
+  return "fr";
+}
 
-  const t = STRINGS[locale];
+type PageProps = {
+  searchParams: { [key: string]: string | string[] | undefined };
+};
 
-  const plans: Plan[] = [
-    {
-      id: "free",
-      name: t.planLabelFree,
-      price: t.planFreePrice,
-      priceSub: t.planFreePriceSub,
-      cta: t.planCtaStart,
-      messages: t.freeMessages,
-      voice: t.freeVoice,
-      memory: t.freeMemory,
-      ais: t.freeAis,
-      extras: t.freeExtras,
-    },
-    {
-      id: "plus",
-      name: t.planLabelPlus,
-      price: t.planPlusPrice,
-      priceSub: t.planPlusPriceSub,
-      badge: t.planBadgePopular,
-      highlight: true,
-      cta: t.planCtaChoose,
-      messages: t.plusMessages,
-      voice: t.plusVoice,
-      memory: t.plusMemory,
-      ais: t.plusAis,
-      extras: t.plusExtras,
-    },
-    {
-      id: "ultimate",
-      name: t.planLabelUltimate,
-      price: t.planUltimatePrice,
-      priceSub: t.planUltimatePriceSub,
-      badge: t.planBadgeBest,
-      cta: t.planCtaChoose,
-      messages: t.ultimateMessages,
-      voice: t.ultimateVoice,
-      memory: t.ultimateMemory,
-      ais: t.ultimateAis,
-      extras: t.ultimateExtras,
-    },
-  ];
+export default function PricingPage({ searchParams }: PageProps) {
+  const locale = getLocaleFromSearchParams(searchParams);
+  const t = PRICING_STRINGS[locale];
 
-  const buildUrl = (path: string) => {
-    const prefix = path.startsWith("/") ? path : `/${path}`;
-    return `${prefix}?lang=${locale}`;
+  // Build URLs that gardent la langue
+  const buildSignupUrl = (planId?: string) => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    if (planId) params.set("plan", planId);
+    return `/signup?${params.toString()}`;
+  };
+
+  const buildLoginUrl = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/login?${params.toString()}`;
+  };
+
+  const buildHomeUrl = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/?${params.toString()}`;
   };
 
   return (
     <main className="amoria-root">
-      {/* HEADER (même style que la vitrine, sans bouton de langue) */}
+      {/* HEADER – même style que la vitrine, mais sans boutons de langue */}
       <header className="amoria-header">
         <div className="amoria-header-left">
           <div className="amoria-logo-mark">
             <img
               src="/AmorIA_logo_transparent.png"
-              alt="AmorIA.app logo"
+              alt="Logo AmorIA.app"
               className="amoria-logo-img"
             />
           </div>
-
           <div className="amoria-logo-text">
             <div className="amoria-logo-title">AmoriA.app</div>
-            <div className="amoria-logo-tagline">{t.brandTagline}</div>
+            <div className="amoria-logo-tagline">
+              Partenaire IA bienveillant·e • FR / EN / ES
+            </div>
           </div>
         </div>
 
         <nav className="amoria-nav">
-          <a href={buildUrl("")} className="amoria-nav-link">
-            {t.nav.home}
+          <a href={buildHomeUrl()} className="amoria-nav-link">
+            {locale === "fr" ? "Accueil" : locale === "en" ? "Home" : "Inicio"}
           </a>
-          <a href={buildUrl("#features")} className="amoria-nav-link">
-            {t.nav.features}
+          <a href={`${buildHomeUrl()}#features`} className="amoria-nav-link">
+            {locale === "fr"
+              ? "Fonctionnalités"
+              : locale === "en"
+              ? "Features"
+              : "Funciones"}
           </a>
-          <a href={buildUrl("pricing")} className="amoria-nav-link amoria-nav-link--active">
-            {t.nav.pricing}
+          <a href="/pricing" className="amoria-nav-link amoria-nav-link--active">
+            {locale === "fr"
+              ? "Tarifs"
+              : locale === "en"
+              ? "Pricing"
+              : "Precios"}
           </a>
         </nav>
 
         <div className="amoria-nav-right">
           <a
-            href={buildUrl("login")}
+            href={buildLoginUrl()}
             className="amoria-nav-btn amoria-nav-btn--ghost"
           >
-            {t.navLogin}
+            {locale === "fr"
+              ? "Me connecter"
+              : locale === "en"
+              ? "Log in"
+              : "Iniciar sesión"}
           </a>
-
           <a
-            href={buildUrl("signup")}
+            href={buildSignupUrl()}
             className="amoria-nav-btn amoria-nav-btn--primary"
           >
-            {t.navSignup}
+            {locale === "fr"
+              ? "Créer mon compte gratuit"
+              : locale === "en"
+              ? "Create my free account"
+              : "Crear mi cuenta gratuita"}
           </a>
         </div>
       </header>
 
-      {/* PRICING HERO */}
-      <section className="amoria-pricing-hero">
-        <p className="amoria-hero-kicker">{t.titleKicker}</p>
-        <h1 className="amoria-pricing-title">{t.title}</h1>
-        <p className="amoria-pricing-subtitle">{t.subtitle}</p>
-        <p className="amoria-pricing-note">{t.billingNote}</p>
+      {/* HERO PRICING */}
+      <section className="amoria-hero amoria-hero--pricing">
+        <div className="amoria-hero-left">
+          <p className="amoria-hero-kicker">{t.heroKicker}</p>
+          <h1 className="amoria-hero-title">{t.heroTitle}</h1>
+          <p className="amoria-hero-subtitle">{t.heroSubtitle}</p>
+          <div className="amoria-hero-actions">
+            <a
+              href={buildSignupUrl()}
+              className="amoria-btn amoria-btn--primary amoria-btn--big"
+            >
+              {t.ctaSecondary}
+            </a>
+          </div>
+        </div>
       </section>
 
-      {/* PLANS GRID */}
-      <section className="amoria-pricing-section">
-        <div className="amoria-plan-grid">
-          {plans.map((plan) => (
+      {/* PLANS */}
+      <section className="amoria-section amoria-section--pricing">
+        <h2 className="amoria-section-title">
+          {locale === "fr"
+            ? "Des tarifs simples & transparents"
+            : locale === "en"
+            ? "Simple, transparent plans"
+            : "Planes simples y transparentes"}
+        </h2>
+        <p className="amoria-section-text">{t.faqSubtitle}</p>
+
+        <div className="amoria-pricing-grid">
+          {t.plans.map((plan) => (
             <article
               key={plan.id}
               className={
-                "amoria-plan-card" +
-                (plan.highlight ? " amoria-plan-card--highlight" : "")
+                "amoria-pricing-card" +
+                (plan.isPopular ? " amoria-pricing-card--popular" : "")
               }
             >
-              {plan.badge && (
-                <div className="amoria-plan-badge">{plan.badge}</div>
+              {plan.isPopular && (
+                <div className="amoria-pricing-badge">{t.badgeMostPopular}</div>
               )}
 
-              <h2 className="amoria-plan-name">{plan.name}</h2>
+              <div className="amoria-pricing-header">
+                <h3 className="amoria-pricing-name">{plan.name}</h3>
+                <p className="amoria-pricing-tagline">{plan.tagline}</p>
+              </div>
 
-              <div className="amoria-plan-price-row">
-                <span className="amoria-plan-price">{plan.price}</span>
-                <span className="amoria-plan-price-sub">
-                  {plan.priceSub}
+              <div className="amoria-pricing-price-block">
+                <span className="amoria-pricing-price">{plan.price}</span>
+                <span className="amoria-pricing-period">
+                  {locale === "fr"
+                    ? t.usdPerMonth
+                    : locale === "en"
+                    ? t.usdPerMonth
+                    : t.usdPerMonth}
                 </span>
               </div>
 
-              <ul className="amoria-plan-main-list">
-                <li>{plan.messages}</li>
-                <li>{plan.voice}</li>
-                <li>{plan.memory}</li>
-                <li>{plan.ais}</li>
-              </ul>
+              <p className="amoria-pricing-highlight">{plan.highlight}</p>
 
-              <ul className="amoria-plan-extra-list">
-                {plan.extras.map((item, idx) => (
-                  <li key={idx}>{item}</li>
+              <ul className="amoria-pricing-features">
+                {plan.features.map((feature, idx) => (
+                  <li key={idx}>{feature}</li>
                 ))}
               </ul>
 
               <a
-                href={buildUrl(`signup?plan=${plan.id}`)}
-                className={
-                  "amoria-btn amoria-btn--full " +
-                  (plan.highlight
-                    ? "amoria-btn--primary"
-                    : "amoria-btn--ghost")
-                }
+                href={buildSignupUrl(plan.id)}
+                className="amoria-btn amoria-btn--primary amoria-btn--full"
               >
-                {plan.id === "free" ? t.planCtaStart : t.planCtaChoose}
+                {t.ctaChoosePlan}
               </a>
             </article>
           ))}
         </div>
       </section>
 
-      {/* FAQ SIMPLIFIÉE */}
-      <section className="amoria-faq-section">
+      {/* FAQ */}
+      <section className="amoria-section amoria-section--faq">
         <h2 className="amoria-section-title">{t.faqTitle}</h2>
+        <p className="amoria-section-subtitle">{t.faqSubtitle}</p>
+
         <div className="amoria-faq-grid">
-          <div className="amoria-faq-item">
-            <h3>{t.faqQ1}</h3>
-            <p>{t.faqA1}</p>
-          </div>
-          <div className="amoria-faq-item">
-            <h3>{t.faqQ2}</h3>
-            <p>{t.faqA2}</p>
-          </div>
-          <div className="amoria-faq-item">
-            <h3>{t.faqQ3}</h3>
-            <p>{t.faqA3}</p>
-          </div>
+          {t.faqItems.map((item, idx) => (
+            <div key={idx} className="amoria-faq-item">
+              <h3 className="amoria-faq-question">{item.q}</h3>
+              <p className="amoria-faq-answer">{item.a}</p>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* FOOTER */}
       <footer className="amoria-footer">
-        <span>{t.footerCopy}</span>
+        <span>
+          © 2025 AmoriA.app —{" "}
+          {locale === "fr"
+            ? "Partenaire IA bienveillant·e"
+            : locale === "en"
+            ? "Your caring AI partner"
+            : "Tu compañerx de IA amable"}
+        </span>
       </footer>
 
-      {/* STYLES */}
+      {/* STYLES – mêmes couleurs/structure que la vitrine */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
@@ -464,12 +480,7 @@ export default function PricingPage() {
           padding: 0;
           font-family: system-ui, -apple-system, BlinkMacSystemFont,
             "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-          background: radial-gradient(
-            circle at top,
-            #020617 0,
-            #020617 40%,
-            #000 100%
-          );
+          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
           color: var(--amoria-text-main);
         }
 
@@ -558,14 +569,10 @@ export default function PricingPage() {
           border-bottom: 1px solid transparent;
         }
 
-        .amoria-nav-link:hover {
-          color: #f9fafb;
-          border-color: rgba(148, 163, 184, 0.7);
-        }
-
+        .amoria-nav-link:hover,
         .amoria-nav-link--active {
           color: #f9fafb;
-          border-color: rgba(251, 55, 255, 0.8);
+          border-color: rgba(148, 163, 184, 0.7);
         }
 
         .amoria-nav-right {
@@ -602,11 +609,24 @@ export default function PricingPage() {
           color: var(--amoria-text-main);
         }
 
-        /* PRICING HERO */
-        .amoria-pricing-hero {
+        /* HERO */
+        .amoria-hero {
           max-width: 1120px;
           margin: 0 auto;
-          padding: 1.5rem 1.5rem 1.75rem;
+          padding: 1.5rem 1.5rem 0.5rem;
+          display: grid;
+          grid-template-columns: minmax(0, 1.4fr);
+          gap: 1.5rem;
+        }
+
+        .amoria-hero--pricing {
+          grid-template-columns: minmax(0, 1.4fr);
+        }
+
+        .amoria-hero-left {
+          display: flex;
+          flex-direction: column;
+          gap: 0.9rem;
         }
 
         .amoria-hero-kicker {
@@ -616,116 +636,48 @@ export default function PricingPage() {
           color: #a5b4fc;
         }
 
-        .amoria-pricing-title {
-          margin-top: 0.5rem;
+        .amoria-hero-title {
           font-size: clamp(1.9rem, 3vw, 2.3rem);
-          line-height: 1.15;
+          line-height: 1.1;
           font-weight: 700;
         }
 
-        .amoria-pricing-subtitle {
-          margin-top: 0.5rem;
-          font-size: 0.9rem;
+        .amoria-hero-subtitle {
+          font-size: 0.92rem;
+          line-height: 1.6;
           color: var(--amoria-text-muted);
-          max-width: 34rem;
+          max-width: 38rem;
         }
 
-        .amoria-pricing-note {
-          margin-top: 0.5rem;
-          font-size: 0.8rem;
-          color: var(--amoria-text-muted);
+        .amoria-hero-actions {
+          margin-top: 0.6rem;
+          display: flex;
+          gap: 0.8rem;
+          flex-wrap: wrap;
         }
 
-        /* PLAN GRID */
-        .amoria-pricing-section {
+        /* SECTIONS */
+        .amoria-section {
           max-width: 1120px;
           margin: 0 auto;
           padding: 0 1.5rem 2.5rem;
         }
 
-        .amoria-plan-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 1.4rem;
+        .amoria-section-title {
+          font-size: 1.25rem;
+          margin-bottom: 0.5rem;
         }
 
-        .amoria-plan-card {
-          background: radial-gradient(
-            circle at top,
-            #020617,
-            #020617 40%,
-            #000 100%
-          );
-          border-radius: 1.2rem;
-          border: 1px solid var(--amoria-border-subtle);
-          padding: 1rem 1rem 1.2rem;
-          display: flex;
-          flex-direction: column;
-          position: relative;
-          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.8);
-        }
-
-        .amoria-plan-card--highlight {
-          border-color: var(--amoria-accent);
-          box-shadow: 0 24px 60px rgba(251, 55, 255, 0.35);
-          transform: translateY(-4px);
-        }
-
-        .amoria-plan-badge {
-          position: absolute;
-          top: 0.85rem;
-          right: 1rem;
-          font-size: 0.7rem;
-          padding: 0.15rem 0.6rem;
-          border-radius: 999px;
-          background: var(--amoria-accent-soft);
-          color: #f9fafb;
-          border: 1px solid rgba(251, 55, 255, 0.7);
-        }
-
-        .amoria-plan-name {
-          font-size: 1rem;
-          margin-bottom: 0.4rem;
-        }
-
-        .amoria-plan-price-row {
-          display: flex;
-          align-items: baseline;
-          gap: 0.25rem;
-          margin-bottom: 0.6rem;
-        }
-
-        .amoria-plan-price {
-          font-size: 1.5rem;
-          font-weight: 700;
-        }
-
-        .amoria-plan-price-sub {
-          font-size: 0.8rem;
+        .amoria-section-subtitle,
+        .amoria-section-text {
+          font-size: 0.9rem;
           color: var(--amoria-text-muted);
+          max-width: 40rem;
+          margin-bottom: 1.4rem;
         }
 
-        .amoria-plan-main-list,
-        .amoria-plan-extra-list {
-          list-style: none;
-          margin: 0;
-          padding: 0;
-        }
-
-        .amoria-plan-main-list li {
-          font-size: 0.82rem;
-          margin-bottom: 0.35rem;
-        }
-
-        .amoria-plan-extra-list {
-          margin-top: 0.6rem;
-          margin-bottom: 0.9rem;
-        }
-
-        .amoria-plan-extra-list li {
-          font-size: 0.78rem;
-          color: var(--amoria-text-muted);
-          margin-bottom: 0.3rem;
+        .amoria-section--pricing {
+          text-align: center;
         }
 
         /* BUTTONS */
@@ -739,10 +691,10 @@ export default function PricingPage() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          padding: 0.7rem 1.2rem;
         }
 
         .amoria-btn--primary {
+          padding: 0.7rem 1.3rem;
           background: linear-gradient(
             135deg,
             var(--amoria-accent),
@@ -752,43 +704,133 @@ export default function PricingPage() {
           box-shadow: 0 12px 30px rgba(248, 113, 113, 0.35);
         }
 
-        .amoria-btn--ghost {
-          border-color: rgba(148, 163, 184, 0.45);
-          background: rgba(15, 23, 42, 0.9);
-          color: var(--amoria-text-main);
+        .amoria-btn--big {
+          padding-inline: 1.9rem;
+          padding-block: 0.85rem;
+          font-size: 1rem;
         }
 
         .amoria-btn--full {
           width: 100%;
         }
 
-        /* FAQ */
-        .amoria-faq-section {
-          max-width: 1120px;
-          margin: 0 auto;
-          padding: 0 1.5rem 2.5rem;
+        /* PRICING GRID */
+        .amoria-pricing-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 1.5rem;
+          margin-top: 1.5rem;
         }
 
-        .amoria-section-title {
-          font-size: 1.25rem;
-          margin-bottom: 0.8rem;
+        .amoria-pricing-card {
+          position: relative;
+          background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
+          border-radius: 1.4rem;
+          border: 1px solid var(--amoria-border-subtle);
+          padding: 1.3rem 1.2rem 1.4rem;
+          text-align: left;
+          display: flex;
+          flex-direction: column;
+          gap: 0.7rem;
+        }
+
+        .amoria-pricing-card--popular {
+          border-color: rgba(248, 113, 113, 0.9);
+          box-shadow: 0 18px 45px rgba(248, 113, 113, 0.4);
+        }
+
+        .amoria-pricing-badge {
+          position: absolute;
+          top: 0.9rem;
+          right: 1.1rem;
+          font-size: 0.7rem;
+          padding: 0.18rem 0.55rem;
+          border-radius: 999px;
+          background: rgba(248, 113, 113, 0.16);
+          color: #fecaca;
+          border: 1px solid rgba(248, 113, 113, 0.7);
+        }
+
+        .amoria-pricing-header {
+          display: flex;
+          flex-direction: column;
+          gap: 0.2rem;
+        }
+
+        .amoria-pricing-name {
+          font-size: 1rem;
+          font-weight: 600;
+        }
+
+        .amoria-pricing-tagline {
+          font-size: 0.8rem;
+          color: var(--amoria-text-muted);
+        }
+
+        .amoria-pricing-price-block {
+          display: flex;
+          align-items: baseline;
+          gap: 0.35rem;
+        }
+
+        .amoria-pricing-price {
+          font-size: 1.6rem;
+          font-weight: 700;
+        }
+
+        .amoria-pricing-period {
+          font-size: 0.78rem;
+          color: var(--amoria-text-muted);
+        }
+
+        .amoria-pricing-highlight {
+          font-size: 0.82rem;
+          color: #e5e7eb;
+        }
+
+        .amoria-pricing-features {
+          list-style: none;
+          padding: 0;
+          margin: 0.3rem 0 0.9rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+          font-size: 0.8rem;
+          color: var(--amoria-text-muted);
+        }
+
+        .amoria-pricing-features li::before {
+          content: "• ";
+          color: #a5b4fc;
+        }
+
+        /* FAQ */
+        .amoria-section--faq {
+          border-top: 1px solid rgba(148, 163, 184, 0.3);
+          padding-top: 2.5rem;
         }
 
         .amoria-faq-grid {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 1.2rem;
+          gap: 1.4rem;
         }
 
-        .amoria-faq-item h3 {
-          font-size: 0.95rem;
-          margin-bottom: 0.3rem;
+        .amoria-faq-item {
+          background: rgba(15, 23, 42, 0.8);
+          border-radius: 1rem;
+          border: 1px solid rgba(148, 163, 184, 0.35);
+          padding: 0.9rem 1rem;
         }
 
-        .amoria-faq-item p {
+        .amoria-faq-question {
+          font-size: 0.9rem;
+          margin-bottom: 0.4rem;
+        }
+
+        .amoria-faq-answer {
           font-size: 0.8rem;
           color: var(--amoria-text-muted);
-          line-height: 1.5;
         }
 
         /* FOOTER */
@@ -813,16 +855,13 @@ export default function PricingPage() {
             display: none;
           }
 
-          .amoria-pricing-hero {
+          .amoria-hero,
+          .amoria-section {
             padding-inline: 1rem;
           }
 
-          .amoria-pricing-section {
-            padding-inline: 1rem;
-          }
-
-          .amoria-plan-grid {
-            grid-template-columns: minmax(0, 1fr);
+          .amoria-pricing-grid {
+            grid-template-columns: repeat(1, minmax(0, 1fr));
           }
 
           .amoria-faq-grid {
@@ -831,14 +870,6 @@ export default function PricingPage() {
         }
 
         @media (max-width: 640px) {
-          .amoria-header {
-            padding-inline: 1rem;
-          }
-
-          .amoria-footer {
-            padding-inline: 1rem;
-          }
-
           .amoria-nav-right a.amoria-nav-btn--ghost {
             display: none;
           }
