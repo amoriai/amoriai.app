@@ -54,8 +54,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Environ 20 messages texte / jour",
           "Texte uniquement (aucune voix)",
           "Mémoire limitée à la session en cours",
-          "Accès aux 3 langues : FR, EN, ES"
-        ]
+          "Accès aux 3 langues : FR, EN, ES",
+        ],
       },
       {
         id: "plus",
@@ -69,9 +69,9 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Messages texte étendus (usage régulier)",
           "Conversations vocales limitées (jusqu’à ~600 échanges vocaux / mois)",
           "Mémoire longue durée activée",
-          "Priorité légère dans la file de traitement"
+          "Priorité légère dans la file de traitement",
         ],
-        isPopular: true
+        isPopular: true,
       },
       {
         id: "unlimited",
@@ -85,24 +85,24 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Messages texte illimités (usage équitable)",
           "Conversations vocales illimitées (fair use)",
           "Mémoire profonde + contexte étendu pour des échanges ultra personnalisés",
-          "Priorité maximale et accès anticipé aux nouvelles fonctionnalités"
-        ]
-      }
+          "Priorité maximale et accès anticipé aux nouvelles fonctionnalités",
+        ],
+      },
     ],
     faqItems: [
       {
         q: "Puis-je vraiment créer mon AmorIA avec le plan gratuit ?",
-        a: "Oui. Le plan Découverte te permet de créer ton AmorIA, de le tester en texte et de voir si tu connectes avec lui avant de passer à un plan payant."
+        a: "Oui. Le plan Découverte te permet de créer ton AmorIA, de le tester en texte et de voir si tu connectes avec lui avant de passer à un plan payant.",
       },
       {
         q: "Que se passe-t-il si je dépasse les limites de messages ou de voix ?",
-        a: "On applique une limite « fair use ». Tu verras un message t’invitant à passer à un plan supérieur ou à attendre le renouvellement de ton mois."
+        a: "On applique une limite « fair use ». Tu verras un message t’invitant à passer à un plan supérieur ou à attendre le renouvellement de ton mois.",
       },
       {
         q: "Puis-je changer de plan quand je veux ?",
-        a: "Oui, tu peux passer à un plan supérieur ou revenir à un plan inférieur à tout moment. Le changement sera appliqué au prochain cycle de facturation."
-      }
-    ]
+        a: "Oui, tu peux passer à un plan supérieur ou revenir à un plan inférieur à tout moment. Le changement sera appliqué au prochain cycle de facturation.",
+      },
+    ],
   },
   en: {
     heroKicker: "AMORIA.APP PRICING",
@@ -130,8 +130,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Around 20 text messages / day",
           "Text only (no voice)",
           "Short-term memory only",
-          "Access to all 3 languages: FR, EN, ES"
-        ]
+          "Access to all 3 languages: FR, EN, ES",
+        ],
       },
       {
         id: "plus",
@@ -145,9 +145,9 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Extended text messages (regular usage)",
           "Limited voice conversations (up to ~600 voice exchanges / month)",
           "Long-term memory enabled",
-          "Light priority in processing queue"
+          "Light priority in processing queue",
         ],
-        isPopular: true
+        isPopular: true,
       },
       {
         id: "unlimited",
@@ -161,24 +161,24 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Unlimited text messages (fair use)",
           "Unlimited voice conversations (fair use)",
           "Deeper memory and extended context for ultra-personal conversations",
-          "Top priority and early access to new features"
-        ]
-      }
+          "Top priority and early access to new features",
+        ],
+      },
     ],
     faqItems: [
       {
         q: "Can I really create my AmorIA on the free plan?",
-        a: "Yes. The Discovery plan lets you create your AmorIA, test it in text and see if you connect with it before upgrading."
+        a: "Yes. The Discovery plan lets you create your AmorIA, test it in text and see if you connect with it before upgrading.",
       },
       {
         q: "What happens if I go over the message or voice limits?",
-        a: "We apply a fair-use limit. You’ll see a gentle notice inviting you to upgrade or wait for your monthly quota to reset."
+        a: "We apply a fair-use limit. You’ll see a gentle notice inviting you to upgrade or wait for your monthly quota to reset.",
       },
       {
         q: "Can I switch plans whenever I want?",
-        a: "Yes. You can upgrade or downgrade at any time. Changes apply on your next billing cycle."
-      }
-    ]
+        a: "Yes. You can upgrade or downgrade at any time. Changes apply on your next billing cycle.",
+      },
+    ],
   },
   es: {
     heroKicker: "PRECIOS DE AMORIA.APP",
@@ -206,8 +206,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Aproximadamente 20 mensajes de texto al día",
           "Solo texto (sin voz)",
           "Memoria limitada a la sesión actual",
-          "Acceso a los 3 idiomas: FR, EN, ES"
-        ]
+          "Acceso a los 3 idiomas: FR, EN, ES",
+        ],
       },
       {
         id: "plus",
@@ -221,9 +221,9 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Mensajes de texto ampliados (uso regular)",
           "Conversaciones de voz limitadas (hasta ~600 intercambios de voz / mes)",
           "Memoria a largo plazo activada",
-          "Prioridad ligera en la cola de procesamiento"
+          "Prioridad ligera en la cola de procesamiento",
         ],
-        isPopular: true
+        isPopular: true,
       },
       {
         id: "unlimited",
@@ -237,25 +237,25 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Mensajes de texto ilimitados (uso justo)",
           "Conversaciones de voz ilimitadas (uso justo)",
           "Memoria profunda y contexto ampliado para conversaciones muy personales",
-          "Máxima prioridad y acceso anticipado a nuevas funciones"
-        ]
-      }
+          "Máxima prioridad y acceso anticipado a nuevas funciones",
+        ],
+      },
     ],
     faqItems: [
       {
         q: "¿De verdad puedo crear mi AmorIA con el plan gratuito?",
-        a: "Sí. El plan Descubrimiento te permite crear tu AmorIA, probarlo por texto y ver si conectas con él antes de pasar a un plan de pago."
+        a: "Sí. El plan Descubrimiento te permite crear tu AmorIA, probarlo por texto y ver si conectas con él antes de pasar a un plan de pago.",
       },
       {
         q: "¿Qué pasa si supero los límites de mensajes o de voz?",
-        a: "Aplicamos un límite de uso justo. Verás un aviso suave invitándote a mejorar tu plan o a esperar al siguiente mes."
+        a: "Aplicamos un límite de uso justo. Verás un aviso suave invitándote a mejorar tu plan o a esperar al siguiente mes.",
       },
       {
         q: "¿Puedo cambiar de plan cuando quiera?",
-        a: "Sí. Puedes subir o bajar de plan en cualquier momento. El cambio se aplica en tu siguiente ciclo de facturación."
-      }
-    ]
-  }
+        a: "Sí. Puedes subir o bajar de plan en cualquier momento. El cambio se aplica en tu siguiente ciclo de facturación.",
+      },
+    ],
+  },
 };
 
 // Helper: get locale from ?lang, default FR
@@ -296,18 +296,16 @@ export default function PricingPage({ searchParams }: PageProps) {
 
   return (
     <main className="amoria-root">
-      {/* HEADER – même style que la vitrine */}
+      {/* HEADER – avec le bon logo PNG */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-          <div className="amoria-logo-mark">
-            <img
-              src="/AmorIA_logo_transparent.png"
-              alt="Logo AmorIA.app"
-              className="amoria-logo-img"
-            />
-          </div>
+          <img
+            src="/AmorIA_logo_transparent.png"
+            alt="Logo AmorIA.app"
+            className="amoria-logo-img"
+          />
           <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmoriA.app</div>
+            <div className="amoria-logo-title">AmorIA.app</div>
             <div className="amoria-logo-tagline">
               Partenaire IA bienveillant·e • FR / EN / ES
             </div>
@@ -449,7 +447,7 @@ export default function PricingPage({ searchParams }: PageProps) {
       {/* FOOTER */}
       <footer className="amoria-footer">
         <span>
-          © 2025 AmoriA.app —{" "}
+          © 2025 AmorIA.app —{" "}
           {locale === "fr"
             ? "Partenaire IA bienveillant·e"
             : locale === "en"
@@ -458,7 +456,7 @@ export default function PricingPage({ searchParams }: PageProps) {
         </span>
       </footer>
 
-      {/* STYLES – mêmes couleurs/structure que la vitrine */}
+      {/* STYLES */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
@@ -519,20 +517,9 @@ export default function PricingPage({ searchParams }: PageProps) {
           gap: 0.6rem;
         }
 
-        .amoria-logo-mark {
-          width: 32px;
-          height: 32px;
-          border-radius: 999px;
-          background: radial-gradient(circle at 30% 0, #fde68a, #f97316);
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
         .amoria-logo-img {
-          width: 110%;
-          height: 110%;
+          width: 40px;
+          height: 40px;
           object-fit: contain;
         }
 
