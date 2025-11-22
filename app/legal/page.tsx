@@ -4,154 +4,53 @@ import React from "react";
 
 type Locale = "fr" | "en" | "es";
 
-type Section = {
-  title: string;
-  paragraphs: string[];
-};
-
 type LegalCopy = {
   heroKicker: string;
   heroTitle: string;
   heroSubtitle: string;
-  sections: Section[];
+  publisherTitle: string;
+  publisherBody: string;
+  contactTitle: string;
+  contactBody: string;
 };
 
 const LEGAL_STRINGS: Record<Locale, LegalCopy> = {
   fr: {
     heroKicker: "MENTIONS LÉGALES",
-    heroTitle: "Informations légales du site et de l’application AmorIA.app.",
+    heroTitle: "Informations légales d’AmorIA.app",
     heroSubtitle:
-      "Ces mentions légales présentent l’éditeur, le responsable de la publication et les informations de contact pour AmorIA.app.",
-    sections: [
-      {
-        title: "1. Éditeur du service",
-        paragraphs: [
-          "AmorIA.app est exploité sous la marque « AmorIA.app ».",
-          "Pays : Canada",
-          "Responsable de la publication : Les Entreprises Kema inc.",
-          "Contact principal : contactamoriai@gmail.com"
-        ]
-      },
-      {
-        title: "2. Objet du service",
-        paragraphs: [
-          "AmorIA.app propose des compagnons IA bienveillants pour discuter, réfléchir, journaliser et t’accompagner au quotidien.",
-          "Le service ne remplace pas un avis médical, psychologique, juridique ou financier professionnel. Pour toute situation grave ou urgente, il est important de consulter un professionnel qualifié ou d’appeler les services d’urgence de ton pays."
-        ]
-      },
-      {
-        title: "3. Propriété intellectuelle",
-        paragraphs: [
-          "L’ensemble des éléments présents sur AmorIA.app (nom, logo, design, textes générés par l’IA, interface, code et éléments graphiques) est protégé par les lois en vigueur sur la propriété intellectuelle.",
-          "Toute reproduction, diffusion ou modification substantielle non autorisée peut constituer une violation de ces droits."
-        ]
-      },
-      {
-        title: "4. Données personnelles et confidentialité",
-        paragraphs: [
-          "Le traitement des données personnelles collectées via AmorIA.app est décrit dans la Politique de confidentialité.",
-          "Cette politique est disponible à l’adresse : /legal/privacy (en français, anglais et espagnol)."
-        ]
-      },
-      {
-        title: "5. Contact",
-        paragraphs: [
-          "Pour toute question relative aux mentions légales, à la sécurité ou à un éventuel signalement de contenu, tu peux nous joindre à :",
-          "• contactamoriai@gmail.com"
-        ]
-      }
-    ]
+      "Ces informations concernent l’utilisation du site et de l’application AmorIA.app.",
+    publisherTitle: "Éditeur",
+    publisherBody:
+      "AmorIA.app — Canada\nResponsable de la publication : Les Entreprises Kema inc.",
+    contactTitle: "Contact",
+    contactBody:
+      "Pour toute question légale concernant AmorIA.app :\n• contactamoriai@gmail.com",
   },
   en: {
     heroKicker: "LEGAL NOTICE",
-    heroTitle: "Legal information for the AmorIA.app website and app.",
+    heroTitle: "Legal information for AmorIA.app",
     heroSubtitle:
-      "This page describes the publisher, publication manager and contact information for AmorIA.app.",
-    sections: [
-      {
-        title: "1. Service publisher",
-        paragraphs: [
-          "AmorIA.app is operated under the “AmorIA.app” brand.",
-          "Country: Canada",
-          "Publication manager: Les Entreprises Kema inc.",
-          "Primary contact: contactamoriai@gmail.com"
-        ]
-      },
-      {
-        title: "2. Purpose of the service",
-        paragraphs: [
-          "AmorIA.app offers caring AI companions for conversation, reflection, journaling and everyday support.",
-          "The service does not replace professional medical, psychological, legal or financial advice. For any serious or urgent situation, you should contact a qualified professional or your local emergency services."
-        ]
-      },
-      {
-        title: "3. Intellectual property",
-        paragraphs: [
-          "All elements of AmorIA.app (name, logo, design, AI-generated copy, interface, code and graphic assets) are protected by applicable intellectual property laws.",
-          "Any substantial reproduction, distribution or modification without permission may constitute an infringement."
-        ]
-      },
-      {
-        title: "4. Personal data and privacy",
-        paragraphs: [
-          "Processing of personal data collected through AmorIA.app is described in the Privacy Policy.",
-          "The policy is available at: /legal/privacy (in French, English and Spanish)."
-        ]
-      },
-      {
-        title: "5. Contact",
-        paragraphs: [
-          "For any question regarding this legal notice, security issues or content reports, you can contact us at:",
-          "• contactamoriai@gmail.com"
-        ]
-      }
-    ]
+      "These details relate to the use of the AmorIA.app website and application.",
+    publisherTitle: "Publisher",
+    publisherBody:
+      "AmorIA.app — Canada\nPublication manager: Les Entreprises Kema inc.",
+    contactTitle: "Contact",
+    contactBody:
+      "For any legal question about AmorIA.app:\n• contactamoriai@gmail.com",
   },
   es: {
     heroKicker: "AVISO LEGAL",
-    heroTitle: "Información legal del sitio web y la aplicación AmorIA.app.",
+    heroTitle: "Información legal de AmorIA.app",
     heroSubtitle:
-      "Esta página describe el editor, el responsable de la publicación y los datos de contacto de AmorIA.app.",
-    sections: [
-      {
-        title: "1. Editor del servicio",
-        paragraphs: [
-          "AmorIA.app se explota bajo la marca « AmorIA.app ».",
-          "País: Canadá",
-          "Responsable de la publicación: Les Entreprises Kema inc.",
-          "Contacto principal: contactamoriai@gmail.com"
-        ]
-      },
-      {
-        title: "2. Objeto del servicio",
-        paragraphs: [
-          "AmorIA.app ofrece compañeros de IA amables para conversar, reflexionar, escribir diarios y acompañarte en el día a día.",
-          "El servicio no sustituye el asesoramiento médico, psicológico, jurídico o financiero profesional. Para cualquier situación grave o urgente, debes dirigirte a un profesional cualificado o a los servicios de emergencia de tu país."
-        ]
-      },
-      {
-        title: "3. Propiedad intelectual",
-        paragraphs: [
-          "Todos los elementos de AmorIA.app (nombre, logo, diseño, textos generados por IA, interfaz, código y elementos gráficos) están protegidos por la normativa aplicable en materia de propiedad intelectual.",
-          "Cualquier reproducción, difusión o modificación sustancial no autorizada puede constituir una infracción."
-        ]
-      },
-      {
-        title: "4. Datos personales y privacidad",
-        paragraphs: [
-          "El tratamiento de los datos personales recogidos a través de AmorIA.app se describe en la Política de privacidad.",
-          "Esta política está disponible en: /legal/privacy (en francés, inglés y español)."
-        ]
-      },
-      {
-        title: "5. Contacto",
-        paragraphs: [
-          "Para cualquier pregunta sobre este aviso legal, la seguridad o para informar contenido, puedes escribirnos a:",
-          "• contactamoriai@gmail.com"
-        ]
-      }
-    ]
-  }
+      "Esta información se refiere al uso del sitio web y la aplicación AmorIA.app.",
+    publisherTitle: "Editor",
+    publisherBody:
+      "AmorIA.app — Canadá\nResponsable de la publicación: Les Entreprises Kema inc.",
+    contactTitle: "Contacto",
+    contactBody:
+      "Para cualquier pregunta legal sobre AmorIA.app:\n• contactamoriai@gmail.com",
+  },
 };
 
 function getLocaleFromSearchParams(
@@ -171,10 +70,34 @@ export default function LegalPage({ searchParams }: PageProps) {
   const locale = getLocaleFromSearchParams(searchParams);
   const t = LEGAL_STRINGS[locale];
 
-  const buildUrl = (path: string) => {
+  const buildHomeUrl = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
-    return `${path}?${params.toString()}`;
+    return `/?${params.toString()}`;
+  };
+
+  const buildFeaturesUrl = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/features?${params.toString()}`;
+  };
+
+  const buildPricingUrl = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/pricing?${params.toString()}`;
+  };
+
+  const buildLoginUrl = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/login?${params.toString()}`;
+  };
+
+  const buildSignupUrl = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/signup?${params.toString()}`;
   };
 
   const navHome =
@@ -202,7 +125,7 @@ export default function LegalPage({ searchParams }: PageProps) {
 
   return (
     <main className="amoria-root">
-      {/* HEADER */}
+      {/* HEADER (même logo que la vitrine) */}
       <header className="amoria-header">
         <div className="amoria-header-left">
           <img
@@ -210,6 +133,7 @@ export default function LegalPage({ searchParams }: PageProps) {
             alt="Logo AmorIA.app"
             className="amoria-logo-full"
           />
+
           <div className="amoria-logo-text">
             <div className="amoria-logo-title">AmorIA.app</div>
             <div className="amoria-logo-tagline">
@@ -219,33 +143,33 @@ export default function LegalPage({ searchParams }: PageProps) {
         </div>
 
         <nav className="amoria-nav">
-          <a href={buildUrl("/")} className="amoria-nav-link">
+          <a href={buildHomeUrl()} className="amoria-nav-link">
             {navHome}
           </a>
-          <a href={buildUrl("/features")} className="amoria-nav-link">
+          <a href={buildFeaturesUrl()} className="amoria-nav-link">
             {navFeatures}
           </a>
-          <a href={buildUrl("/pricing")} className="amoria-nav-link">
+          <a href={buildPricingUrl()} className="amoria-nav-link">
             {navPricing}
           </a>
           <span className="amoria-nav-link amoria-nav-link--active">
             {locale === "fr"
               ? "Mentions légales"
               : locale === "en"
-              ? "Legal"
+              ? "Legal notice"
               : "Aviso legal"}
           </span>
         </nav>
 
         <div className="amoria-nav-right">
           <a
-            href={buildUrl("/login")}
+            href={buildLoginUrl()}
             className="amoria-nav-btn amoria-nav-btn--ghost"
           >
             {loginLabel}
           </a>
           <a
-            href={buildUrl("/signup")}
+            href={buildSignupUrl()}
             className="amoria-nav-btn amoria-nav-btn--primary"
           >
             {signupLabel}
@@ -265,16 +189,15 @@ export default function LegalPage({ searchParams }: PageProps) {
       {/* CONTENT */}
       <section className="amoria-section amoria-section--legal">
         <div className="amoria-legal-grid">
-          {t.sections.map((section, idx) => (
-            <article key={idx} className="amoria-legal-block">
-              <h2 className="amoria-legal-title">{section.title}</h2>
-              {section.paragraphs.map((p, i) => (
-                <p key={i} className="amoria-legal-text">
-                  {p}
-                </p>
-              ))}
-            </article>
-          ))}
+          <article className="amoria-legal-block">
+            <h2 className="amoria-legal-title">{t.publisherTitle}</h2>
+            <p className="amoria-legal-text">{t.publisherBody}</p>
+          </article>
+
+          <article className="amoria-legal-block">
+            <h2 className="amoria-legal-title">{t.contactTitle}</h2>
+            <p className="amoria-legal-text">{t.contactBody}</p>
+          </article>
         </div>
       </section>
 
@@ -290,7 +213,7 @@ export default function LegalPage({ searchParams }: PageProps) {
         </span>
       </footer>
 
-      {/* STYLES identiques aux autres pages légales */}
+      {/* STYLES communs */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
@@ -348,6 +271,11 @@ export default function LegalPage({ searchParams }: PageProps) {
           display: flex;
           align-items: center;
           gap: 0.6rem;
+        }
+
+        .amoria-logo-full {
+          height: 40px;
+          width: auto;
         }
 
         .amoria-logo-text {
