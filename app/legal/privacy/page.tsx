@@ -378,19 +378,24 @@ export default function PrivacyPage({ searchParams }: PageProps) {
   return (
     <main className="amoria-root">
       {/* HEADER */}
-       <header className="amoria-header">
-        <div className="amoria-header-left">
-          {/* Logo complet transparent */}
-          <img
-            src="/AmorIA_logo_transparent.png"
-            alt="Logo AmorIA.app"
-            className="amoria-logo-full"
-          />
-          <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmoriA.app</div>
-            <div className="amoria-logo-tagline">{t.brandTagline}</div>
-          </div>
-        </div>
+      <header className="amoria-header">
+  <div className="amoria-header-left">
+    <img
+      src="/AmorIA_logo_transparent.png"
+      alt="Logo AmorIA.app"
+      className="amoria-logo-full"
+    />
+
+    <div className="amoria-logo-text">
+      <div className="amoria-logo-title">AmorIA.app</div>
+
+      {/* Tagline FIXE — ne dépend pas des traductions */}
+      <div className="amoria-logo-tagline">
+        Partenaire IA bienveillante • FR / EN / ES
+      </div>
+    </div>
+  </div>
+</header>
 
         <nav className="amoria-nav">
           <a href={buildHomeUrl()} className="amoria-nav-link">
