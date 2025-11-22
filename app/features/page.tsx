@@ -11,11 +11,6 @@ type Persona = {
   description: string;
 };
 
-type CoreFeature = {
-  title: string;
-  text: string;
-};
-
 type FeatureCopy = {
   brandTagline: string;
   nav: { home: string; features: string; pricing: string };
@@ -27,9 +22,6 @@ type FeatureCopy = {
   heroPrimary: string;
   heroSupport: string;
   langNote: string;
-  coreFeaturesTitle: string;
-  coreFeaturesSubtitle: string;
-  coreFeatures: CoreFeature[];
   personasTitle: string;
   personasSubtitle: string;
   personas: Persona[];
@@ -38,10 +30,6 @@ type FeatureCopy = {
   footerCopy: string;
   ctaSeePricing: string;
 };
-
-// ⚠️ IMPORTANT : mets ici EXACTEMENT le même src que sur ta page des tarifs / vitrine.
-// Exemple : "/amoria_logo_full.png" ou autre, selon ton projet.
-const LOGO_SRC = "/AmorIA_logo_transparent.png";
 
 const STRINGS: Record<Locale, FeatureCopy> = {
   fr: {
@@ -57,23 +45,6 @@ const STRINGS: Record<Locale, FeatureCopy> = {
     heroSupport:
       "AmoriA est pensée pour les échanges profonds, les journaux émotionnels et le coaching doux du quotidien.",
     langNote: "Disponible en français, anglais et espagnol.",
-    coreFeaturesTitle: "Ce que ton AmorIA sait faire pour toi",
-    coreFeaturesSubtitle:
-      "Derrière chaque avatar vitrine, il y a un moteur conçu pour t’aider à mieux te comprendre, te calmer et avancer, un petit pas à la fois.",
-    coreFeatures: [
-      {
-        title: "Conversations profondes, sans jugement",
-        text: "Parle de ce que tu n’oses pas toujours dire aux autres : fatigue mentale, surcharge, doutes, peurs, relations. AmoriA garde le fil et te répond avec douceur."
-      },
-      {
-        title: "Journal émotionnel guidé",
-        text: "Transforme tes échanges en journal intime : AmoriA te pose des questions, t’aide à clarifier ce que tu ressens et à voir les patterns qui reviennent."
-      },
-      {
-        title: "Texte + voix, mémoire émotionnelle",
-        text: "Commence en texte, passe à la voix quand tu es prêt·e. Ton AmorIA se souvient de ce qui compte pour toi (dans les plans payants) et adapte son ton à ton énergie du moment."
-      }
-    ],
     personasTitle: "Tes 4 AmorIA vitrines, prêtes à bouger pour toi",
     personasSubtitle:
       "Regarde comment chaque AmorIA s’anime en vidéo. Quand tu crées ton compte gratuit, tu peux ensuite personnaliser entièrement ton propre AmorIA (nom, ton, style d’échanges…).",
@@ -122,23 +93,6 @@ const STRINGS: Record<Locale, FeatureCopy> = {
     heroSupport:
       "Designed for deep conversations, emotional journaling and soft everyday coaching.",
     langNote: "Available in French, English and Spanish.",
-    coreFeaturesTitle: "What your AmorIA can actually do for you",
-    coreFeaturesSubtitle:
-      "Behind each showcase avatar, there’s a brain built to help you process, calm down and move forward, one small step at a time.",
-    coreFeatures: [
-      {
-        title: "Deep, non-judgmental conversations",
-        text: "Talk about what you don’t always share with others: mental overload, doubts, fears, relationships. AmoriA remembers the thread and responds gently."
-      },
-      {
-        title: "Guided emotional journaling",
-        text: "Turn your chats into a private journal: AmoriA asks questions, helps you clarify what you feel and see the patterns that keep coming back."
-      },
-      {
-        title: "Text + voice, with emotional memory",
-        text: "Start in text, switch to voice when you’re ready. In paid plans, your AmorIA remembers what matters to you and adapts its tone to your energy."
-      }
-    ],
     personasTitle: "4 showcase AmorIAs that move and talk for you",
     personasSubtitle:
       "See how each AmorIA comes to life in video. Once you create your free account, you can fully customize your own AmorIA (name, tone, style of conversations…).",
@@ -187,23 +141,6 @@ const STRINGS: Record<Locale, FeatureCopy> = {
     heroSupport:
       "Pensada para conversaciones profundas, diarios emocionales y acompañamiento suave en el día a día.",
     langNote: "Disponible en francés, inglés y español.",
-    coreFeaturesTitle: "Lo que tu AmorIA puede hacer por ti",
-    coreFeaturesSubtitle:
-      "Detrás de cada avatar vitrina hay un motor creado para ayudarte a procesar, calmarte y avanzar, paso a paso.",
-    coreFeatures: [
-      {
-        title: "Conversaciones profundas y sin juicio",
-        text: "Habla de lo que no siempre compartes con los demás: cansancio mental, dudas, miedos, relaciones. AmoriA sigue el hilo y te responde con suavidad."
-      },
-      {
-        title: "Diario emocional guiado",
-        text: "Convierte tus intercambios en un diario íntimo: AmoriA te hace preguntas, te ayuda a aclarar lo que sientes y a ver los patrones que se repiten."
-      },
-      {
-        title: "Texto + voz, con memoria emocional",
-        text: "Empieza por texto y pasa a la voz cuando estés listx. En los planes de pago, tu AmorIA recuerda lo que es importante para ti y adapta su tono a tu energía."
-      }
-    ],
     personasTitle: "Tus 4 AmorIA vitrina listos para moverse",
     personasSubtitle:
       "Mira cómo cada AmorIA cobra vida en video. Cuando crees tu cuenta gratuita, podrás personalizar por completo tu propio AmorIA (nombre, tono, estilo de conversación…).",
@@ -296,12 +233,13 @@ export default function FeaturesPage({ searchParams }: PageProps) {
 
   return (
     <main className="amoria-root">
-      {/* HEADER – même style que pricing, avec nav complète */}
+      {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
           <div className="amoria-logo-mark">
+            {/* ICI : ton vrai logo PNG transparent */}
             <img
-              src={LOGO_SRC}
+              src="/AmorIA_logo_transparent.png"
               alt="Logo AmorIA.app"
               className="amoria-logo-img"
             />
@@ -376,21 +314,6 @@ export default function FeaturesPage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      {/* NOUVELLE SECTION : fonctionnalités principales */}
-      <section className="amoria-section">
-        <h2 className="amoria-section-title">{t.coreFeaturesTitle}</h2>
-        <p className="amoria-section-subtitle">{t.coreFeaturesSubtitle}</p>
-
-        <div className="amoria-core-grid">
-          {t.coreFeatures.map((f, idx) => (
-            <article key={idx} className="amoria-core-card">
-              <h3 className="amoria-core-title">{f.title}</h3>
-              <p className="amoria-core-text">{f.text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
       {/* PERSONAS / VITRINE */}
       <section id="features" className="amoria-section">
         <h2 className="amoria-section-title">{t.personasTitle}</h2>
@@ -451,7 +374,7 @@ export default function FeaturesPage({ searchParams }: PageProps) {
         <span>{t.footerCopy}</span>
       </footer>
 
-      {/* STYLES – même base visuelle que la vitrine/pricing */}
+      {/* STYLES */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
@@ -512,21 +435,23 @@ export default function FeaturesPage({ searchParams }: PageProps) {
           gap: 0.6rem;
         }
 
+        /* ICI on enlève le dégradé orange pour laisser le PNG faire le job */
         .amoria-logo-mark {
-          width: 32px;
-          height: 32px;
+          width: 40px;
+          height: 40px;
           border-radius: 999px;
-          background: radial-gradient(circle at 30% 0, #fde68a, #f97316);
           overflow: hidden;
           display: flex;
           align-items: center;
           justify-content: center;
+          background: transparent;
         }
 
         .amoria-logo-img {
-          width: 110%;
-          height: 110%;
+          width: 100%;
+          height: 100%;
           object-fit: contain;
+          display: block;
         }
 
         .amoria-logo-text {
@@ -757,32 +682,7 @@ export default function FeaturesPage({ searchParams }: PageProps) {
           margin: 0 auto 1.3rem;
         }
 
-        /* CORE FEATURES GRID */
-        .amoria-core-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 1.3rem;
-        }
-
-        .amoria-core-card {
-          background: rgba(15, 23, 42, 0.9);
-          border-radius: 1.1rem;
-          border: 1px solid rgba(148, 163, 184, 0.4);
-          padding: 1rem 1rem 1.1rem;
-        }
-
-        .amoria-core-title {
-          font-size: 0.95rem;
-          margin-bottom: 0.35rem;
-        }
-
-        .amoria-core-text {
-          font-size: 0.84rem;
-          color: var(--amoria-text-muted);
-          line-height: 1.55;
-        }
-
-        /* PERSONA CARDS */
+        /* CARDS */
         .amoria-card-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -864,10 +764,6 @@ export default function FeaturesPage({ searchParams }: PageProps) {
             order: -1;
           }
 
-          .amoria-core-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-
           .amoria-card-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
@@ -881,10 +777,6 @@ export default function FeaturesPage({ searchParams }: PageProps) {
           .amoria-hero,
           .amoria-section {
             padding-inline: 1rem;
-          }
-
-          .amoria-core-grid {
-            grid-template-columns: minmax(0, 1fr);
           }
 
           .amoria-card-grid {
