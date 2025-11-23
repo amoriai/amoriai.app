@@ -314,7 +314,7 @@ export default function CreateAIPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Langue lue depuis ?lang= pour rester alignée avec le reste du site
+  // Langue depuis ?lang=
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -323,7 +323,7 @@ export default function CreateAIPage() {
         setLocale(lang);
       }
     } catch {
-      // on ignore
+      // ignore
     }
   }, []);
 
@@ -351,7 +351,6 @@ export default function CreateAIPage() {
     e.preventDefault();
     setError(null);
 
-    // petite sécurité au cas où on arrive ici sans choix complet
     if (!category) {
       setError(t.errorCategory);
       return;
@@ -368,7 +367,6 @@ export default function CreateAIPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // ⚠️ ICI on envoie à l’API ce qui sert à créer la ligne dans user_amoria
           category,
           personalityId,
           name,
@@ -390,7 +388,6 @@ export default function CreateAIPage() {
         return;
       }
 
-      // Si tout est ok, tu peux rediriger vers /my-ai (qui lira user_amoria)
       const params = new URLSearchParams();
       params.set("lang", locale);
       window.location.href = `/my-ai?${params.toString()}`;
@@ -670,7 +667,6 @@ export default function CreateAIPage() {
         </aside>
       </section>
 
-      {/* Styles */}
       <style jsx global>{`
         body {
           margin: 0;
@@ -742,12 +738,7 @@ export default function CreateAIPage() {
           width: 100%;
           max-width: 360px;
           margin-left: auto;
-          background: radial-gradient(
-            circle at top,
-            #020617,
-            #020617 40%,
-            #020617
-          );
+          background: radial-gradient(circle at top, #020617, #020617 40%, #020617);
           border-radius: 1.4rem;
           padding: 1.4rem 1.3rem;
           border: 1px solid rgba(148, 163, 184, 0.35);
@@ -788,12 +779,7 @@ export default function CreateAIPage() {
         }
 
         .amoria-step-dot--active {
-          background: linear-gradient(
-            135deg,
-            #fb37ff,
-            #ff6b9c,
-            #f97316
-          );
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
         }
 
         .amoria-step-dot--done {
@@ -821,12 +807,7 @@ export default function CreateAIPage() {
           text-align: left;
           border-radius: 1rem;
           border: 1px solid rgba(148, 163, 184, 0.5);
-          background: radial-gradient(
-            circle at top,
-            #020617,
-            #020617 50%,
-            #000
-          );
+          background: radial-gradient(circle at top, #020617, #020617 50%, #000);
           padding: 0.85rem 0.95rem;
           cursor: pointer;
         }
@@ -931,12 +912,7 @@ export default function CreateAIPage() {
         }
 
         .amoria-btn--primary {
-          background: linear-gradient(
-            135deg,
-            #fb37ff,
-            #ff6b9c,
-            #f97316
-          );
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
           box-shadow: 0 14px 34px rgba(248, 113, 113, 0.45);
         }
