@@ -3,27 +3,25 @@
 import React, { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
+// --- TYPES ---
 type Locale = "fr" | "en" | "es";
 
 type AmoriaRow = {
   id: string;
   user_id: string;
   name: string;
-  persona_type: string;
-  main_language: string;
+  persona_type: string;      // ex: "woman" / "man" / "androgynous" / "50plus"
+  main_language: string;     // "fr" | "en" | "es"
   avatar_image_url: string | null;
   accent_color: string | null;
-  system_prompt: string;
+  system_prompt: string;     // ton texte de personnalité / mission
   voice_id: string | null;
   is_archived: boolean;
   created_at: string;
   updated_at: string;
-  // si tu as ajouté ces colonnes plus tard, elles restent optionnelles
-  goal?: string | null;
-  category?: string | null;
-  personality_id?: string | null;
 };
 
+// --- TRADUCTIONS ---
 const STRINGS: Record<
   Locale,
   {
@@ -33,75 +31,104 @@ const STRINGS: Record<
     nameLabel: string;
     goalLabel: string;
     categoryLabel: string;
-    languageLabel: string;
     personalityLabel: string;
     noAvatar: string;
     loading: string;
     error: string;
     chatCta: string;
-    createAnotherCta: string;
+    createFirstCta: string;
   }
 > = {
   fr: {
     backHome: "← Retour à l’accueil",
     title: "Ton AmorIA est prête ✨",
     subtitle:
-      "Voici ton IA personnelle. Tu peux déjà accéder à sa fiche et commencer à chatter avec elle.",
+      "Voici ton IA personnelle. Ensuite tu pourras chatter avec elle, activer la voix et personnaliser son style.",
     nameLabel: "Prénom",
-    goalLabel: "Mission principale",
+    goalLabel: "Mission principale (résumé)",
     categoryLabel: "Type d’IA",
-    languageLabel: "Langue principale",
-    personalityLabel: "Personnalité / style",
+    personalityLabel: "Personnalité / tonalité",
     noAvatar: "Aucun avatar disponible pour le moment.",
     loading: "Chargement...",
     error:
-      "Impossible de charger ton AmorIA. Crée-en une depuis /create-ia.",
-    chatCta: "Chatter avec ton AmorIA",
-    createAnotherCta: "Créer une autre AmorIA",
+      "Impossible de charger ton AmorIA. Crée-en d’abord une depuis la page de création.",
+    chatCta: "Chatter avec cette IA",
+    createFirstCta: "Créer ma première AmorIA",
   },
   en: {
     backHome: "← Back to home",
     title: "Your AmorIA is ready ✨",
     subtitle:
-      "Here is your personal AI. You can already access its profile and start chatting with it.",
+      "Here is your personal AI. Next, you’ll be able to chat with it, enable voice and customize its style.",
     nameLabel: "Name",
-    goalLabel: "Main mission",
+    goalLabel: "Main mission (summary)",
     categoryLabel: "AI type",
-    languageLabel: "Main language",
-    personalityLabel: "Personality / style",
+    personalityLabel: "Personality / tone",
     noAvatar: "No avatar available yet.",
     loading: "Loading...",
     error:
-      "We couldn’t load your AmorIA. Create one from /create-ia.",
-    chatCta: "Chat with your AmorIA",
-    createAnotherCta: "Create another AmorIA",
+      "We couldn’t load your AmorIA. Please create one first from the creation page.",
+    chatCta: "Chat with this AI",
+    createFirstCta: "Create my first AmorIA",
   },
   es: {
     backHome: "← Volver al inicio",
     title: "Tu AmorIA está lista ✨",
     subtitle:
-      "Aquí está tu IA personal. Ya puedes ver su ficha y empezar a chatear con ella.",
+      "Aquí está tu IA personal. Luego podrás chatear con ella, activar la voz y personalizar su estilo.",
     nameLabel: "Nombre",
-    goalLabel: "Misión principal",
+    goalLabel: "Misión principal (resumen)",
     categoryLabel: "Tipo de IA",
-    languageLabel: "Idioma principal",
-    personalityLabel: "Personalidad / estilo",
+    personalityLabel: "Personalidad / tono",
     noAvatar: "No hay avatar disponible por ahora.",
     loading: "Cargando...",
     error:
-      "No pudimos cargar tu AmorIA. Crea una desde /create-ia.",
-    chatCta: "Chatear con tu AmorIA",
-    createAnotherCta: "Crear otra AmorIA",
+      "No pudimos cargar tu AmorIA. Crea una primero desde la página de creación.",
+    chatCta: "Chatear con esta IA",
+    createFirstCta: "Crear mi primera AmorIA",
   },
 };
 
+// --- PETITE FONCTION UTILITAIRE POUR AFFICHER LE TYPE D’IA ---
+function formatPersonaType(persona: string, locale: Locale): string {
+  switch (persona) {
+    case "woman":
+      return locale === "fr"
+        ? "IA féminine"
+        : locale === "en"
+        ? "Feminine AI"
+        : "IA femenina";
+    case "man":
+      return locale === "fr"
+        ? "IA masculine"
+        : locale === "en"
+        ? "Masculine AI"
+        : "IA masculina";
+    case "androgynous":
+      return locale === "fr"
+        ? "IA androgyne / non genrée"
+        : locale === "en"
+        ? "Androgynous / non-gendered AI"
+        : "IA andrógina / sin género";
+    case "50plus":
+      return locale === "fr"
+        ? "Profil 50+"
+        : locale === "en"
+        ? "50+ profile"
+        : "Perfil 50+";
+    default:
+      return persona;
+  }
+}
+
+// --- PAGE ---
 export default function MyAIPage() {
   const [locale, setLocale] = useState<Locale>("fr");
   const [loading, setLoading] = useState(true);
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Lire la langue depuis ?lang=
+  // 1) Lire la langue depuis ?lang=
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -109,12 +136,14 @@ export default function MyAIPage() {
       if (lang === "fr" || lang === "en" || lang === "es") {
         setLocale(lang);
       }
-    } catch {}
+    } catch {
+      // on ignore
+    }
   }, []);
 
   const t = STRINGS[locale];
 
-  // Charger Supabase et récupérer l’IA
+  // 2) Charger Supabase + récupérer la dernière IA de l’utilisateur connecté
   useEffect(() => {
     const loadAI = async () => {
       try {
@@ -123,15 +152,17 @@ export default function MyAIPage() {
           process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
         );
 
-        const { data: authData } = await supabase.auth.getUser();
-        const user = authData.user;
-
-        if (!user) {
+        // Qui est connecté ?
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError || !authData?.user) {
           setError(t.error);
           setLoading(false);
           return;
         }
 
+        const user = authData.user;
+
+        // Dernière IA créée (ou la seule) pour cet utilisateur
         const { data, error } = await supabase
           .from("user_amoria")
           .select("*")
@@ -147,7 +178,7 @@ export default function MyAIPage() {
         }
 
         setAi(data as AmoriaRow);
-      } catch (err) {
+      } catch (e) {
         setError(t.error);
       } finally {
         setLoading(false);
@@ -155,7 +186,10 @@ export default function MyAIPage() {
     };
 
     loadAI();
-  }, [t.error]);
+    // on relance si la langue change pour mettre à jour les messages d’erreur
+  }, [locale, t.error]);
+
+  // --- ÉTATS INTERMÉDIAIRES ---
 
   if (loading) {
     return (
@@ -169,7 +203,12 @@ export default function MyAIPage() {
             justify-content: center;
             background: radial-gradient(circle at top, #020617, #000);
             color: #e5e7eb;
-            font-family: system-ui;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont,
+              "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+          }
+          .amoria-loading {
+            font-size: 1rem;
+            color: #e5e7eb;
           }
         `}</style>
       </main>
@@ -177,14 +216,21 @@ export default function MyAIPage() {
   }
 
   if (error || !ai) {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    const createUrl = `/create-ia?${params.toString()}`;
+
     return (
       <main className="amoria-ai-root">
-        <header className="amoria-ai-header">
+        <div className="amoria-ai-empty">
           <a href="/" className="amoria-back">
             {t.backHome}
           </a>
-        </header>
-        <p className="amoria-error">{t.error}</p>
+          <p className="amoria-error">{t.error}</p>
+          <a href={createUrl} className="amoria-btn amoria-btn--primary">
+            {t.createFirstCta}
+          </a>
+        </div>
 
         <style jsx>{`
           .amoria-ai-root {
@@ -192,36 +238,49 @@ export default function MyAIPage() {
             padding: 1.5rem;
             background: radial-gradient(circle at top, #020617, #000);
             color: #e5e7eb;
-            font-family: system-ui;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont,
+              "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
           }
-          .amoria-ai-header {
-            margin-bottom: 1.5rem;
+          .amoria-ai-empty {
+            max-width: 480px;
+            margin: 5rem auto 0;
+            text-align: center;
           }
           .amoria-back {
             font-size: 0.8rem;
             color: #9ca3af;
             text-decoration: none;
           }
-          .amoria-back:hover {
-            color: #e5e7eb;
-          }
           .amoria-error {
-            text-align: center;
-            margin-top: 3rem;
+            margin: 1.2rem 0;
+            font-size: 0.95rem;
+          }
+          .amoria-btn {
+            border-radius: 999px;
+            border: 1px solid transparent;
+            padding: 0.6rem 1.4rem;
+            font-size: 0.86rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .amoria-btn--primary {
+            background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
+            color: #f9fafb;
+            box-shadow: 0 14px 34px rgba(248, 113, 113, 0.45);
           }
         `}</style>
       </main>
     );
   }
 
-  const params = new URLSearchParams();
-  params.set("lang", locale);
-  params.set("amoriaId", ai.id);
-  const chatUrl = `/chat?${params.toString()}`;
-
-  const createParams = new URLSearchParams();
-  createParams.set("lang", locale);
-  const createUrl = `/create-ia?${createParams.toString()}`;
+  // URL pour le futur chat : /chat?iaId=...&lang=...
+  const chatParams = new URLSearchParams();
+  chatParams.set("iaId", ai.id);
+  chatParams.set("lang", locale);
+  const chatUrl = `/chat?${chatParams.toString()}`;
 
   return (
     <main className="amoria-ai-root">
@@ -239,55 +298,42 @@ export default function MyAIPage() {
           {ai.avatar_image_url ? (
             <img
               src={ai.avatar_image_url}
-              alt="avatar"
+              alt="Avatar AmorIA"
               className="amoria-avatar-img"
             />
           ) : (
-            <div className="amoria-avatar-placeholder">
-              {t.noAvatar}
-            </div>
+            <div className="amoria-avatar-placeholder">{t.noAvatar}</div>
           )}
         </div>
 
         <div className="amoria-ai-info">
           <div className="amoria-info-row">
-            <span>{t.nameLabel}</span>
+            <span className="amoria-label">{t.nameLabel}</span>
             <strong>{ai.name}</strong>
           </div>
 
           <div className="amoria-info-row">
-            <span>{t.categoryLabel}</span>
-            <strong>{ai.persona_type}</strong>
+            <span className="amoria-label">{t.categoryLabel}</span>
+            <strong>{formatPersonaType(ai.persona_type, locale)}</strong>
           </div>
 
-          <div className="amoria-info-row">
-            <span>{t.languageLabel}</span>
-            <strong>{ai.main_language}</strong>
+          <div className="amoria-info-row amoria-info-row--column">
+            <span className="amoria-label">{t.personalityLabel}</span>
+            <span className="amoria-value">
+              {ai.system_prompt.slice(0, 120)}…
+            </span>
           </div>
 
-          <div className="amoria-info-row">
-            <span>{t.personalityLabel}</span>
-            <strong>
-              {ai.personality_id
-                ? ai.personality_id
-                : ai.system_prompt.slice(0, 60) + "..."}
-            </strong>
+          <div className="amoria-info-row amoria-info-row--column">
+            <span className="amoria-label">{t.goalLabel}</span>
+            <span className="amoria-value">{ai.system_prompt}</span>
           </div>
-
-          {ai.goal && (
-            <div className="amoria-info-row">
-              <span>{t.goalLabel}</span>
-              <strong>{ai.goal}</strong>
-            </div>
-          )}
         </div>
 
+        {/* BOUTON POUR BRANCHER LA PAGE DE CHAT */}
         <div className="amoria-ai-actions">
           <a href={chatUrl} className="amoria-btn amoria-btn--primary">
             {t.chatCta}
-          </a>
-          <a href={createUrl} className="amoria-btn amoria-btn--ghost">
-            {t.createAnotherCta}
           </a>
         </div>
       </section>
@@ -298,10 +344,11 @@ export default function MyAIPage() {
           padding: 1.5rem;
           background: radial-gradient(circle at top, #020617, #000);
           color: #e5e7eb;
-          font-family: system-ui;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont,
+            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
         }
         .amoria-ai-header {
-          max-width: 640px;
+          max-width: 700px;
           margin: 0 auto 1.5rem;
         }
         .amoria-back {
@@ -309,29 +356,26 @@ export default function MyAIPage() {
           color: #9ca3af;
           text-decoration: none;
         }
-        .amoria-back:hover {
-          color: #e5e7eb;
-        }
         .amoria-ai-card {
           background: #0f172a;
           border-radius: 1.2rem;
-          max-width: 640px;
+          max-width: 700px;
           margin: 0 auto;
-          padding: 1.6rem 1.7rem;
+          padding: 1.7rem 1.6rem 1.5rem;
           border: 1px solid rgba(148, 163, 184, 0.4);
           box-shadow: 0 24px 60px rgba(15, 23, 42, 0.85);
         }
         .amoria-ai-title {
-          font-size: 1.4rem;
+          font-size: 1.5rem;
           margin-bottom: 0.3rem;
         }
         .amoria-ai-subtitle {
           font-size: 0.9rem;
           color: #9ca3af;
-          margin-bottom: 1rem;
+          margin-bottom: 1.2rem;
         }
         .amoria-ai-avatar {
-          margin: 1rem 0 1.3rem;
+          margin: 0.5rem 0 1.2rem;
           display: flex;
           justify-content: center;
         }
@@ -340,6 +384,7 @@ export default function MyAIPage() {
           height: 130px;
           border-radius: 999px;
           object-fit: cover;
+          border: 2px solid rgba(251, 55, 255, 0.6);
         }
         .amoria-avatar-placeholder {
           width: 130px;
@@ -355,30 +400,39 @@ export default function MyAIPage() {
           padding: 1rem;
         }
         .amoria-ai-info {
-          margin-top: 0.5rem;
-          margin-bottom: 1.2rem;
+          margin-top: 0.4rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.7rem;
         }
         .amoria-info-row {
           display: flex;
           justify-content: space-between;
-          gap: 0.8rem;
-          margin-bottom: 0.6rem;
+          gap: 0.7rem;
+          font-size: 0.9rem;
+        }
+        .amoria-info-row--column {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .amoria-label {
+          font-size: 0.78rem;
+          color: #9ca3af;
+        }
+        .amoria-value {
           font-size: 0.9rem;
         }
         .amoria-ai-actions {
+          margin-top: 1.4rem;
           display: flex;
-          gap: 0.8rem;
           justify-content: flex-end;
-          margin-top: 1rem;
-          flex-wrap: wrap;
         }
         .amoria-btn {
           border-radius: 999px;
           border: 1px solid transparent;
+          padding: 0.6rem 1.4rem;
           font-size: 0.86rem;
           cursor: pointer;
-          white-space: nowrap;
-          padding: 0.55rem 1.3rem;
           text-decoration: none;
           display: inline-flex;
           align-items: center;
@@ -389,16 +443,14 @@ export default function MyAIPage() {
           color: #f9fafb;
           box-shadow: 0 14px 34px rgba(248, 113, 113, 0.45);
         }
-        .amoria-btn--ghost {
-          background: transparent;
-          color: #e5e7eb;
-          border-color: rgba(148, 163, 184, 0.6);
-        }
-        .amoria-error,
-        .amoria-loading {
-          text-align: center;
-          margin-top: 3rem;
-          font-size: 1rem;
+
+        @media (max-width: 640px) {
+          .amoria-ai-root {
+            padding-inline: 1rem;
+          }
+          .amoria-ai-card {
+            padding-inline: 1.2rem;
+          }
         }
       `}</style>
     </main>
