@@ -1,59 +1,72 @@
+// app/api/create-ia/route.ts
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+
+type CreateIARequest = {
+  userId: string;          // id Supabase de l'utilisateur
+  name: string;            // nom de l’AmorIA (ex : “Lyra perso”)
+  personaType: string;     // ex : "feminine", "masculine", "androgynous"
+  mainLanguage: string;    // "fr" | "en" | "es"
+  avatarImageUrl?: string;
+  accentColor?: string;
+  systemPrompt: string;    // texte de personnalité
+  voiceId?: string;
+};
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { user_id } = body;
+    const body = (await req.json()) as Partial<CreateIARequest>;
 
-    if (!user_id) {
+    const {
+      userId,
+      name,
+      personaType,
+      mainLanguage,
+      avatarImageUrl,
+      accentColor,
+      systemPrompt,
+      voiceId,
+    } = body;
+
+    // 🔒 Vérification minimale
+    if (!userId || !name || !personaType || !mainLanguage || !systemPrompt) {
       return NextResponse.json(
-        { error: "user_id manquant" },
+        { error: "Champs obligatoires manquants." },
         { status: 400 }
       );
     }
 
-    // Supabase client (server-side)
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    // 30 IA préconfigurées
-    const templates = Array.from({ length: 30 }).map((_, i) => ({
-      user_id,
-      name: `AmorIA ${i + 1}`,
-      persona_type: "custom",
-      main_language: "fr",
-      avatar_image_url: `/avatars/default_${(i % 6) + 1}.png`,
-      accent_color: ["#ff6b9c", "#6b6bff", "#ffb347", "#8affc1", "#b55bff", "#ffc1e3"][i % 6],
-      system_prompt: `Tu es une version personnalisée d’AmorIA numéro ${i + 1}.`,
-      voice_id: null,
-      is_archived: false,
-    }));
-
-    // Insertion groupée dans Supabase
-    const { error } = await supabase
+    // 💾 Insertion dans la table user_amoria
+    const { data, error } = await supabaseAdmin
       .from("user_amoria")
-      .insert(templates);
+      .insert({
+        user_id: userId,
+        name,
+        persona_type: personaType,
+        main_language: mainLanguage,
+        avatar_image_url: avatarImageUrl ?? null,
+        accent_color: accentColor ?? null,
+        system_prompt: systemPrompt,
+        voice_id: voiceId ?? null,
+      })
+      .select()
+      .single();
 
     if (error) {
-      console.error(error);
+      console.error("Supabase insert error:", error);
       return NextResponse.json(
-        { error: "Erreur Supabase", details: error },
+        { error: "Erreur lors de la création de l’AmorIA." },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "30 IA créées avec succès",
-    });
+    // ✅ On renvoie l’AmorIA créée
+    return NextResponse.json({ ia: data }, { status: 201 });
   } catch (err) {
-    console.error(err);
+    console.error("create-ia route error:", err);
     return NextResponse.json(
-      { error: "Erreur serveur" },
-      { status: 500 }
+      { error: "Requête invalide." },
+      { status: 400 }
     );
   }
 }
