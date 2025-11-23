@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, FormEvent } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
 type CategoryId = "woman" | "man" | "androgynous" | "50plus";
@@ -102,15 +103,14 @@ const STRINGS: Record<
     submit: "Terminer et accéder à mon compte",
     submitting: "Création en cours…",
     errorCategory: "Choisis d’abord un type d’IA pour continuer.",
-    errorPersonality:
-      "Choisis au moins une personnalité pour continuer.",
+    errorPersonality: "Choisis au moins une personnalité pour continuer.",
     previewTitle: "Aperçu rapide de ton AmorIA",
     previewCategory: "Type d’IA",
     previewPersonality: "Personnalité principale",
     previewGoal: "Mission principale",
     previewNameLabel: "Prénom choisi",
     doneMessage:
-      "Ton AmorIA est créée (démo). Dans la vraie version, on te redirigera ici vers ta page personnelle avec son visuel final.",
+      "Ton AmorIA est créée. Tu es redirigé·e vers ton espace personnel.",
   },
   en: {
     backHome: "← Back to home",
@@ -170,7 +170,7 @@ const STRINGS: Record<
     previewGoal: "Main mission",
     previewNameLabel: "Chosen name",
     doneMessage:
-      "Your AmorIA has been created (demo). In the real version you’ll be redirected here to your personal page with the final visual.",
+      "Your AmorIA has been created. You’re being redirected to your personal space.",
   },
   es: {
     backHome: "← Volver al inicio",
@@ -230,32 +230,122 @@ const STRINGS: Record<
     previewGoal: "Misión principal",
     previewNameLabel: "Nombre elegido",
     doneMessage:
-      "Tu AmorIA ha sido creada (demo). En la versión real se te redirigirá aquí a tu página personal con el visual final.",
+      "Tu AmorIA ha sido creada. Estás siendo redirigidx a tu espacio personal.",
   },
 };
 
 const PERSONALITIES: Record<CategoryId, PersonalityDef[]> = {
   woman: [
-    { id: "soft_support", label: "Douce & rassurante", short: "Idéale pour parler de tout sans jugement." },
-    { id: "creative", label: "Créative & intuitive", short: "Parfaite pour brainstormer et imaginer des projets." },
-    { id: "coach", label: "Coach de vie", short: "Te pousse doucement à passer à l’action." },
+    {
+      id: "soft_support",
+      label: "Douce & rassurante",
+      short: "Idéale pour parler de tout sans jugement.",
+    },
+    {
+      id: "creative",
+      label: "Créative & intuitive",
+      short: "Parfaite pour brainstormer et imaginer des projets.",
+    },
+    {
+      id: "coach",
+      label: "Coach de vie",
+      short: "Te pousse doucement à passer à l’action.",
+    },
   ],
   man: [
-    { id: "friend", label: "Ami bienveillant", short: "Présent, calme, bon confident." },
-    { id: "strategist", label: "Stratège", short: "Très logique, aide à prendre des décisions." },
-    { id: "charismatic", label: "Charismatique", short: "Plus séducteur, sûr de lui, énergique." },
+    {
+      id: "friend",
+      label: "Ami bienveillant",
+      short: "Présent, calme, bon confident.",
+    },
+    {
+      id: "strategist",
+      label: "Stratège",
+      short: "Très logique, aide à prendre des décisions.",
+    },
+    {
+      id: "charismatic",
+      label: "Charismatique",
+      short: "Plus séducteur, sûr de lui, énergique.",
+    },
   ],
   androgynous: [
-    { id: "neutral_friend", label: "Présence neutre", short: "Ni homme ni femme, très empathique et fluide." },
-    { id: "mindset", label: "Coach mindset", short: "Focus confiance, clarté mentale et sérénité." },
-    { id: "deep", label: "Profond & introspectif", short: "Parle beaucoup de sens, valeurs, identité." },
+    {
+      id: "neutral_friend",
+      label: "Présence neutre",
+      short: "Ni homme ni femme, très empathique et fluide.",
+    },
+    {
+      id: "mindset",
+      label: "Coach mindset",
+      short: "Focus confiance, clarté mentale et sérénité.",
+    },
+    {
+      id: "deep",
+      label: "Profond & introspectif",
+      short: "Parle beaucoup de sens, valeurs, identité.",
+    },
   ],
   "50plus": [
-    { id: "mentor", label: "Mentor expérimenté", short: "Beaucoup de vécu, conseils posés et réalistes." },
-    { id: "warm_sage", label: "Sage chaleureux", short: "Écoute, douceur, humour discret." },
-    { id: "pro", label: "Profil très pro", short: "Idéal pour parler carrière, business et organisation." },
+    {
+      id: "mentor",
+      label: "Mentor expérimenté",
+      short: "Beaucoup de vécu, conseils posés et réalistes.",
+    },
+    {
+      id: "warm_sage",
+      label: "Sage chaleureux",
+      short: "Écoute, douceur, humour discret.",
+    },
+    {
+      id: "pro",
+      label: "Profil très pro",
+      short: "Idéal pour parler carrière, business et organisation.",
+    },
   ],
 };
+
+function getAccentColor(category: CategoryId | null): string {
+  if (category === "woman") return "#fb37ff";
+  if (category === "man") return "#38bdf8";
+  if (category === "androgynous") return "#a855f7";
+  if (category === "50plus") return "#f97316";
+  return "#fb37ff";
+}
+
+function buildSystemPrompt(
+  locale: Locale,
+  name: string,
+  category: CategoryId | null,
+  personalityLabel?: string | null,
+  goal?: string
+): string {
+  const safeName = name || "AmorIA";
+  const role =
+    personalityLabel ||
+    (locale === "fr"
+      ? "compagnon·ne virtuel·le"
+      : locale === "en"
+      ? "virtual companion"
+      : "compañerx virtual");
+
+  const mission =
+    goal && goal.trim().length > 0
+      ? goal.trim()
+      : locale === "fr"
+      ? "accompagner l’utilisateur dans son quotidien avec bienveillance."
+      : locale === "en"
+      ? "support the user gently in their everyday life."
+      : "acompañar al usuario con amabilidad en su día a día.";
+
+  if (locale === "fr") {
+    return `Tu es ${safeName}, une IA ${role}. Tu t’adresses à l’utilisateur en le tutoyant, avec douceur, empathie et réalisme. Ta mission principale est la suivante : ${mission} Réponds de façon claire, concrète et sans jugement.`;
+  }
+  if (locale === "en") {
+    return `You are ${safeName}, an AI ${role}. You talk to the user in a warm, caring and realistic tone. Your main mission is: ${mission} Answer clearly, concretely and without judgment.`;
+  }
+  return `Eres ${safeName}, una IA ${role}. Hablas al usuario con un tono cálido, amable y realista. Tu misión principal es: ${mission} Responde de forma clara, concreta y sin juicios.`;
+}
 
 export default function CreateAIPage() {
   const [locale, setLocale] = useState<Locale>("fr");
@@ -267,7 +357,7 @@ export default function CreateAIPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Langue lue depuis ?lang= pour rester cohérent avec la page principale
+  // Récupère la langue depuis ?lang=
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -276,7 +366,7 @@ export default function CreateAIPage() {
         setLocale(lang);
       }
     } catch {
-      // on ignore en cas d’erreur
+      // ignore
     }
   }, []);
 
@@ -300,20 +390,6 @@ export default function CreateAIPage() {
     setStep(3);
   };
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
-
-    // Ici plus tard : appel à Supabase / API pour sauvegarder AmorIA
-    // puis redirection vers la page perso, par exemple /app/dashboard
-    setTimeout(() => {
-      alert(t.doneMessage);
-      // Exemple de redirection — à adapter quand ta page perso sera prête :
-      window.location.href = "/app"; // ou "/dashboard"
-    }, 800);
-  };
-
   const activePersonalities: PersonalityDef[] =
     category ? PERSONALITIES[category] : [];
 
@@ -321,6 +397,90 @@ export default function CreateAIPage() {
     category && personalityId
       ? activePersonalities.find((p) => p.id === personalityId) ?? null
       : null;
+
+  // 👉 ici on appelle Supabase + l’API /api/create-ia
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!category || !personalityId) {
+      setError(t.errorCategory);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // 1) récupérer l’utilisateur connecté depuis Supabase
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        setError(
+          locale === "fr"
+            ? "Tu dois être connecté·e pour créer ton AmorIA."
+            : locale === "en"
+            ? "You need to be logged in to create your AmorIA."
+            : "Necesitas estar conectadx para crear tu AmorIA."
+        );
+        return;
+      }
+
+      const accentColor = getAccentColor(category);
+      const systemPrompt = buildSystemPrompt(
+        locale,
+        name,
+        category,
+        selectedPersonality?.label,
+        goal
+      );
+
+      // 2) appel à l’API interne
+      const res = await fetch("/api/create-ia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          name,
+          personaType: category, // "woman" | "man" | ...
+          mainLanguage: locale, // "fr" | "en" | "es"
+          avatarImageUrl: "", // tu ajouteras plus tard l’URL de l’avatar généré
+          accentColor,
+          systemPrompt,
+          voiceId: null, // à brancher plus tard sur ton provider de voix
+        }),
+      });
+
+      if (!res.ok) {
+        console.error("Create-ia failed", await res.text());
+        setError(
+          locale === "fr"
+            ? "Impossible de créer ton AmorIA pour le moment. Réessaie dans quelques instants."
+            : locale === "en"
+            ? "We couldn't create your AmorIA right now. Please try again in a moment."
+            : "No se pudo crear tu AmorIA por ahora. Inténtalo de nuevo en unos instantes."
+        );
+        return;
+      }
+
+      // Succès : on peut rediriger vers la page perso
+      alert(t.doneMessage);
+      // choisis la route que tu veux pour ton interface perso
+      window.location.href = "/my-ai";
+    } catch (err) {
+      console.error(err);
+      setError(
+        locale === "fr"
+          ? "Une erreur inattendue est survenue."
+          : locale === "en"
+          ? "An unexpected error occurred."
+          : "Ocurrió un error inesperado."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <main className="amoria-create-root">
@@ -331,18 +491,13 @@ export default function CreateAIPage() {
           </a>
           <span className="amoria-create-lang-note">{t.langNote}</span>
         </div>
-        {/* plus de boutons FR / EN / ES ici */}
       </header>
 
       <section className="amoria-create-main">
         <div className="amoria-create-left">
-          <p className="amoria-step-label">
-            {t.stepLabel(step, 3)}
-          </p>
+          <p className="amoria-step-label">{t.stepLabel(step, 3)}</p>
           <h1 className="amoria-create-title">{t.wizardTitle}</h1>
-          <p className="amoria-create-subtitle">
-            {t.wizardSubtitle}
-          </p>
+          <p className="amoria-create-subtitle">{t.wizardSubtitle}</p>
 
           <div className="amoria-steps-indicator">
             {[1, 2, 3].map((s) => (
@@ -362,12 +517,8 @@ export default function CreateAIPage() {
 
           {step === 1 && (
             <div>
-              <h2 className="amoria-step-title">
-                {t.steps.oneTitle}
-              </h2>
-              <p className="amoria-step-subtitle">
-                {t.steps.oneSubtitle}
-              </p>
+              <h2 className="amoria-step-title">{t.steps.oneTitle}</h2>
+              <p className="amoria-step-subtitle">{t.steps.oneSubtitle}</p>
 
               <div className="amoria-category-grid">
                 {(
@@ -388,9 +539,7 @@ export default function CreateAIPage() {
                         (isActive ? " amoria-category-card--active" : "")
                       }
                     >
-                      <div className="amoria-category-pill">
-                        {def.name}
-                      </div>
+                      <div className="amoria-category-pill">{def.name}</div>
                       <p className="amoria-category-desc">
                         {def.description}
                       </p>
@@ -407,7 +556,11 @@ export default function CreateAIPage() {
                   className="amoria-btn amoria-btn--primary"
                   onClick={handleNextFromStep1}
                 >
-                  {locale === "fr" ? "Continuer" : locale === "en" ? "Continue" : "Continuar"}
+                  {locale === "fr"
+                    ? "Continuer"
+                    : locale === "en"
+                    ? "Continue"
+                    : "Continuar"}
                 </button>
               </div>
             </div>
@@ -415,12 +568,8 @@ export default function CreateAIPage() {
 
           {step === 2 && (
             <div>
-              <h2 className="amoria-step-title">
-                {t.steps.twoTitle}
-              </h2>
-              <p className="amoria-step-subtitle">
-                {t.steps.twoSubtitle}
-              </p>
+              <h2 className="amoria-step-title">{t.steps.twoTitle}</h2>
+              <p className="amoria-step-subtitle">{t.steps.twoSubtitle}</p>
 
               <p className="amoria-personality-note">
                 {t.personalitiesNote}
@@ -436,9 +585,7 @@ export default function CreateAIPage() {
                       onClick={() => setPersonalityId(p.id)}
                       className={
                         "amoria-personality-card" +
-                        (isSelected
-                          ? " amoria-personality-card--active"
-                          : "")
+                        (isSelected ? " amoria-personality-card--active" : "")
                       }
                     >
                       <div className="amoria-personality-label">
@@ -474,7 +621,11 @@ export default function CreateAIPage() {
                   className="amoria-btn amoria-btn--primary"
                   onClick={handleNextFromStep2}
                 >
-                  {locale === "fr" ? "Continuer" : locale === "en" ? "Continue" : "Continuar"}
+                  {locale === "fr"
+                    ? "Continuer"
+                    : locale === "en"
+                    ? "Continue"
+                    : "Continuar"}
                 </button>
               </div>
             </div>
@@ -482,16 +633,10 @@ export default function CreateAIPage() {
 
           {step === 3 && (
             <form onSubmit={handleSubmit}>
-              <h2 className="amoria-step-title">
-                {t.steps.threeTitle}
-              </h2>
-              <p className="amoria-step-subtitle">
-                {t.steps.threeSubtitle}
-              </p>
+              <h2 className="amoria-step-title">{t.steps.threeTitle}</h2>
+              <p className="amoria-step-subtitle">{t.steps.threeSubtitle}</p>
 
-              <label className="amoria-form-label">
-                {t.nameLabel}
-              </label>
+              <label className="amoria-form-label">{t.nameLabel}</label>
               <input
                 type="text"
                 value={name}
@@ -510,6 +655,8 @@ export default function CreateAIPage() {
                 placeholder={t.goalPlaceholder}
                 className="amoria-textarea"
               />
+
+              {error && <p className="amoria-error">{error}</p>}
 
               <div className="amoria-step-actions">
                 <button
@@ -538,12 +685,10 @@ export default function CreateAIPage() {
           )}
         </div>
 
-        {/* Colonne de droite : aperçu sans montrer tes vraies images */}
+        {/* Colonne de droite : aperçu sans montrer les vraies images IA */}
         <aside className="amoria-create-right">
           <div className="amoria-preview-card">
-            <h3 className="amoria-preview-title">
-              {t.previewTitle}
-            </h3>
+            <h3 className="amoria-preview-title">{t.previewTitle}</h3>
 
             <div className="amoria-preview-row">
               <span className="amoria-preview-label">
@@ -559,9 +704,7 @@ export default function CreateAIPage() {
                 {t.previewPersonality}
               </span>
               <span className="amoria-preview-value">
-                {selectedPersonality
-                  ? selectedPersonality.label
-                  : "…"}
+                {selectedPersonality ? selectedPersonality.label : "…"}
               </span>
             </div>
 
@@ -602,7 +745,6 @@ export default function CreateAIPage() {
         </aside>
       </section>
 
-      {/* Styles */}
       <style jsx global>{`
         body {
           margin: 0;
@@ -674,7 +816,12 @@ export default function CreateAIPage() {
           width: 100%;
           max-width: 360px;
           margin-left: auto;
-          background: radial-gradient(circle at top, #020617, #020617 40%, #020617);
+          background: radial-gradient(
+            circle at top,
+            #020617,
+            #020617 40%,
+            #020617
+          );
           border-radius: 1.4rem;
           padding: 1.4rem 1.3rem;
           border: 1px solid rgba(148, 163, 184, 0.35);
@@ -906,7 +1053,11 @@ export default function CreateAIPage() {
           width: 56px;
           height: 56px;
           border-radius: 999px;
-          background: radial-gradient(circle at 30% 20%, #f9a8d4, #1f2937 70%);
+          background: radial-gradient(
+            circle at 30% 20%,
+            #f9a8d4,
+            #1f2937 70%
+          );
           opacity: 0.8;
         }
 
@@ -952,4 +1103,3 @@ export default function CreateAIPage() {
     </main>
   );
 }
-
