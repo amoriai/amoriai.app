@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, FormEvent } from "react";
-import { supabase } from "@/lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
 type CategoryId = "woman" | "man" | "androgynous" | "50plus";
@@ -44,12 +43,12 @@ const STRINGS: Record<
     submitting: string;
     errorCategory: string;
     errorPersonality: string;
+    errorGeneric: string;
     previewTitle: string;
     previewCategory: string;
     previewPersonality: string;
     previewGoal: string;
     previewNameLabel: string;
-    doneMessage: string;
   }
 > = {
   fr: {
@@ -104,13 +103,13 @@ const STRINGS: Record<
     submitting: "Création en cours…",
     errorCategory: "Choisis d’abord un type d’IA pour continuer.",
     errorPersonality: "Choisis au moins une personnalité pour continuer.",
+    errorGeneric:
+      "Impossible de créer ton AmorIA pour le moment. Réessaie dans quelques instants.",
     previewTitle: "Aperçu rapide de ton AmorIA",
     previewCategory: "Type d’IA",
     previewPersonality: "Personnalité principale",
     previewGoal: "Mission principale",
     previewNameLabel: "Prénom choisi",
-    doneMessage:
-      "Ton AmorIA est créée. Tu es redirigé·e vers ton espace personnel.",
   },
   en: {
     backHome: "← Back to home",
@@ -164,13 +163,13 @@ const STRINGS: Record<
     submitting: "Creating your AmorIA…",
     errorCategory: "Please choose a type of AI first.",
     errorPersonality: "Please choose at least one personality.",
+    errorGeneric:
+      "We couldn’t create your AmorIA right now. Please try again in a moment.",
     previewTitle: "Quick preview of your AmorIA",
     previewCategory: "AI type",
     previewPersonality: "Main personality",
     previewGoal: "Main mission",
     previewNameLabel: "Chosen name",
-    doneMessage:
-      "Your AmorIA has been created. You’re being redirected to your personal space.",
   },
   es: {
     backHome: "← Volver al inicio",
@@ -224,13 +223,13 @@ const STRINGS: Record<
     submitting: "Creando tu AmorIA…",
     errorCategory: "Primero elige un tipo de IA.",
     errorPersonality: "Elige al menos una personalidad.",
+    errorGeneric:
+      "No hemos podido crear tu AmorIA ahora. Vuelve a intentarlo en unos instantes.",
     previewTitle: "Vista rápida de tu AmorIA",
     previewCategory: "Tipo de IA",
     previewPersonality: "Personalidad principal",
     previewGoal: "Misión principal",
     previewNameLabel: "Nombre elegido",
-    doneMessage:
-      "Tu AmorIA ha sido creada. Estás siendo redirigidx a tu espacio personal.",
   },
 };
 
@@ -305,48 +304,6 @@ const PERSONALITIES: Record<CategoryId, PersonalityDef[]> = {
   ],
 };
 
-function getAccentColor(category: CategoryId | null): string {
-  if (category === "woman") return "#fb37ff";
-  if (category === "man") return "#38bdf8";
-  if (category === "androgynous") return "#a855f7";
-  if (category === "50plus") return "#f97316";
-  return "#fb37ff";
-}
-
-function buildSystemPrompt(
-  locale: Locale,
-  name: string,
-  category: CategoryId | null,
-  personalityLabel?: string | null,
-  goal?: string
-): string {
-  const safeName = name || "AmorIA";
-  const role =
-    personalityLabel ||
-    (locale === "fr"
-      ? "compagnon·ne virtuel·le"
-      : locale === "en"
-      ? "virtual companion"
-      : "compañerx virtual");
-
-  const mission =
-    goal && goal.trim().length > 0
-      ? goal.trim()
-      : locale === "fr"
-      ? "accompagner l’utilisateur dans son quotidien avec bienveillance."
-      : locale === "en"
-      ? "support the user gently in their everyday life."
-      : "acompañar al usuario con amabilidad en su día a día.";
-
-  if (locale === "fr") {
-    return `Tu es ${safeName}, une IA ${role}. Tu t’adresses à l’utilisateur en le tutoyant, avec douceur, empathie et réalisme. Ta mission principale est la suivante : ${mission} Réponds de façon claire, concrète et sans jugement.`;
-  }
-  if (locale === "en") {
-    return `You are ${safeName}, an AI ${role}. You talk to the user in a warm, caring and realistic tone. Your main mission is: ${mission} Answer clearly, concretely and without judgment.`;
-  }
-  return `Eres ${safeName}, una IA ${role}. Hablas al usuario con un tono cálido, amable y realista. Tu misión principal es: ${mission} Responde de forma clara, concreta y sin juicios.`;
-}
-
 export default function CreateAIPage() {
   const [locale, setLocale] = useState<Locale>("fr");
   const [step, setStep] = useState<number>(1);
@@ -357,7 +314,7 @@ export default function CreateAIPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Récupère la langue depuis ?lang=
+  // Langue lue depuis ?lang= pour rester alignée avec le reste du site
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -366,7 +323,7 @@ export default function CreateAIPage() {
         setLocale(lang);
       }
     } catch {
-      // ignore
+      // on ignore
     }
   }, []);
 
@@ -390,6 +347,59 @@ export default function CreateAIPage() {
     setStep(3);
   };
 
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    // petite sécurité au cas où on arrive ici sans choix complet
+    if (!category) {
+      setError(t.errorCategory);
+      return;
+    }
+    if (!personalityId) {
+      setError(t.errorPersonality);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch("/api/create-ia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          // ⚠️ ICI on envoie à l’API ce qui sert à créer la ligne dans user_amoria
+          category,
+          personalityId,
+          name,
+          goal,
+          locale,
+        }),
+      });
+
+      if (!res.ok) {
+        let msg: string | undefined;
+        try {
+          const data = await res.json();
+          msg = data?.error;
+        } catch {
+          // ignore
+        }
+        setError(msg || t.errorGeneric);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Si tout est ok, tu peux rediriger vers /my-ai (qui lira user_amoria)
+      const params = new URLSearchParams();
+      params.set("lang", locale);
+      window.location.href = `/my-ai?${params.toString()}`;
+    } catch {
+      setError(t.errorGeneric);
+      setIsSubmitting(false);
+    }
+  };
+
   const activePersonalities: PersonalityDef[] =
     category ? PERSONALITIES[category] : [];
 
@@ -397,90 +407,6 @@ export default function CreateAIPage() {
     category && personalityId
       ? activePersonalities.find((p) => p.id === personalityId) ?? null
       : null;
-
-  // 👉 ici on appelle Supabase + l’API /api/create-ia
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!category || !personalityId) {
-      setError(t.errorCategory);
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      // 1) récupérer l’utilisateur connecté depuis Supabase
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        setError(
-          locale === "fr"
-            ? "Tu dois être connecté·e pour créer ton AmorIA."
-            : locale === "en"
-            ? "You need to be logged in to create your AmorIA."
-            : "Necesitas estar conectadx para crear tu AmorIA."
-        );
-        return;
-      }
-
-      const accentColor = getAccentColor(category);
-      const systemPrompt = buildSystemPrompt(
-        locale,
-        name,
-        category,
-        selectedPersonality?.label,
-        goal
-      );
-
-      // 2) appel à l’API interne
-      const res = await fetch("/api/create-ia", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user.id,
-          name,
-          personaType: category, // "woman" | "man" | ...
-          mainLanguage: locale, // "fr" | "en" | "es"
-          avatarImageUrl: "", // tu ajouteras plus tard l’URL de l’avatar généré
-          accentColor,
-          systemPrompt,
-          voiceId: null, // à brancher plus tard sur ton provider de voix
-        }),
-      });
-
-      if (!res.ok) {
-        console.error("Create-ia failed", await res.text());
-        setError(
-          locale === "fr"
-            ? "Impossible de créer ton AmorIA pour le moment. Réessaie dans quelques instants."
-            : locale === "en"
-            ? "We couldn't create your AmorIA right now. Please try again in a moment."
-            : "No se pudo crear tu AmorIA por ahora. Inténtalo de nuevo en unos instantes."
-        );
-        return;
-      }
-
-      // Succès : on peut rediriger vers la page perso
-      alert(t.doneMessage);
-      // choisis la route que tu veux pour ton interface perso
-      window.location.href = "/my-ai";
-    } catch (err) {
-      console.error(err);
-      setError(
-        locale === "fr"
-          ? "Une erreur inattendue est survenue."
-          : locale === "en"
-          ? "An unexpected error occurred."
-          : "Ocurrió un error inesperado."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <main className="amoria-create-root">
@@ -533,6 +459,7 @@ export default function CreateAIPage() {
                       onClick={() => {
                         setCategory(cat);
                         setPersonalityId(null);
+                        setError(null);
                       }}
                       className={
                         "amoria-category-card" +
@@ -582,7 +509,10 @@ export default function CreateAIPage() {
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => setPersonalityId(p.id)}
+                      onClick={() => {
+                        setPersonalityId(p.id);
+                        setError(null);
+                      }}
                       className={
                         "amoria-personality-card" +
                         (isSelected ? " amoria-personality-card--active" : "")
@@ -591,9 +521,7 @@ export default function CreateAIPage() {
                       <div className="amoria-personality-label">
                         {p.label}
                       </div>
-                      <p className="amoria-personality-short">
-                        {p.short}
-                      </p>
+                      <p className="amoria-personality-short">{p.short}</p>
                     </button>
                   );
                 })}
@@ -685,7 +613,6 @@ export default function CreateAIPage() {
           )}
         </div>
 
-        {/* Colonne de droite : aperçu sans montrer les vraies images IA */}
         <aside className="amoria-create-right">
           <div className="amoria-preview-card">
             <h3 className="amoria-preview-title">{t.previewTitle}</h3>
@@ -709,9 +636,7 @@ export default function CreateAIPage() {
             </div>
 
             <div className="amoria-preview-row amoria-preview-row--column">
-              <span className="amoria-preview-label">
-                {t.previewGoal}
-              </span>
+              <span className="amoria-preview-label">{t.previewGoal}</span>
               <span className="amoria-preview-value">
                 {goal ||
                   (locale === "fr"
@@ -745,6 +670,7 @@ export default function CreateAIPage() {
         </aside>
       </section>
 
+      {/* Styles */}
       <style jsx global>{`
         body {
           margin: 0;
@@ -862,7 +788,12 @@ export default function CreateAIPage() {
         }
 
         .amoria-step-dot--active {
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
+          background: linear-gradient(
+            135deg,
+            #fb37ff,
+            #ff6b9c,
+            #f97316
+          );
         }
 
         .amoria-step-dot--done {
@@ -890,7 +821,12 @@ export default function CreateAIPage() {
           text-align: left;
           border-radius: 1rem;
           border: 1px solid rgba(148, 163, 184, 0.5);
-          background: radial-gradient(circle at top, #020617, #020617 50%, #000);
+          background: radial-gradient(
+            circle at top,
+            #020617,
+            #020617 50%,
+            #000
+          );
           padding: 0.85rem 0.95rem;
           cursor: pointer;
         }
@@ -995,7 +931,12 @@ export default function CreateAIPage() {
         }
 
         .amoria-btn--primary {
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
+          background: linear-gradient(
+            135deg,
+            #fb37ff,
+            #ff6b9c,
+            #f97316
+          );
           color: #f9fafb;
           box-shadow: 0 14px 34px rgba(248, 113, 113, 0.45);
         }
