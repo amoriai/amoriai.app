@@ -17,7 +17,7 @@ type PricingCopy = {
   faqSubtitle: string;
   faqItems: { q: string; a: string }[];
   plans: {
-    id: "free" | "plus" | "unlimited";
+    id: "free" | "chat" | "plus" | "unlimited";
     name: string;
     tagline: string;
     price: string;
@@ -54,6 +54,21 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Environ 20 messages texte / jour",
           "Texte uniquement (aucune voix)",
           "Mémoire limitée à la session en cours",
+          "Accès aux 3 langues : FR, EN, ES",
+        ],
+      },
+      {
+        id: "chat",
+        name: "AmorIA Chat",
+        tagline: "Texte tous les jours, sans voix.",
+        price: "9,99 $",
+        highlight:
+          "Pour discuter chaque jour avec ton AmorIA en texte, avec une vraie mémoire, mais sans appels vocaux.",
+        features: [
+          "Jusqu’à 2 AmorIA différents",
+          "Messages texte étendus (usage quotidien)",
+          "Texte uniquement (aucune voix)",
+          "Mémoire longue durée activée",
           "Accès aux 3 langues : FR, EN, ES",
         ],
       },
@@ -134,6 +149,21 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
         ],
       },
       {
+        id: "chat",
+        name: "AmorIA Chat",
+        tagline: "Daily text, no voice.",
+        price: "$9.99",
+        highlight:
+          "Ideal if you mainly want to chat by text with real long-term memory, without paying for voice minutes.",
+        features: [
+          "Up to 2 different AmorIAs",
+          "Extended text messages (daily usage)",
+          "Text only (no voice calls)",
+          "Long-term memory enabled",
+          "Access to all 3 languages: FR, EN, ES",
+        ],
+      },
+      {
         id: "plus",
         name: "AmoriA Plus",
         tagline: "Text + voice with generous limits.",
@@ -206,6 +236,21 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Aproximadamente 20 mensajes de texto al día",
           "Solo texto (sin voz)",
           "Memoria limitada a la sesión actual",
+          "Acceso a los 3 idiomas: FR, EN, ES",
+        ],
+      },
+      {
+        id: "chat",
+        name: "AmorIA Chat",
+        tagline: "Texto diario, sin voz.",
+        price: "9,99 US$",
+        highlight:
+          "Ideal si quieres chatear cada día por texto con memoria real, sin pagar por minutos de voz.",
+        features: [
+          "Hasta 2 AmorIA diferentes",
+          "Mensajes de texto ampliados (uso diario)",
+          "Solo texto (sin llamadas de voz)",
+          "Memoria a largo plazo activada",
           "Acceso a los 3 idiomas: FR, EN, ES",
         ],
       },
@@ -296,7 +341,7 @@ export default function PricingPage({ searchParams }: PageProps) {
 
   return (
     <main className="amoria-root">
-      {/* HEADER – avec le bon logo PNG */}
+      {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
           <img
@@ -490,7 +535,6 @@ export default function PricingPage({ searchParams }: PageProps) {
           padding-bottom: 3rem;
         }
 
-        /* HEADER */
         .amoria-header {
           max-width: 1120px;
           margin: 0 auto;
@@ -592,7 +636,6 @@ export default function PricingPage({ searchParams }: PageProps) {
           color: var(--amoria-text-main);
         }
 
-        /* HERO */
         .amoria-hero {
           max-width: 1120px;
           margin: 0 auto;
@@ -639,7 +682,6 @@ export default function PricingPage({ searchParams }: PageProps) {
           flex-wrap: wrap;
         }
 
-        /* SECTIONS */
         .amoria-section {
           max-width: 1120px;
           margin: 0 auto;
@@ -663,7 +705,6 @@ export default function PricingPage({ searchParams }: PageProps) {
           text-align: center;
         }
 
-        /* BUTTONS */
         .amoria-btn {
           border-radius: 999px;
           border: 1px solid transparent;
@@ -697,7 +738,6 @@ export default function PricingPage({ searchParams }: PageProps) {
           width: 100%;
         }
 
-        /* PRICING GRID */
         .amoria-pricing-grid {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -787,7 +827,6 @@ export default function PricingPage({ searchParams }: PageProps) {
           color: #a5b4fc;
         }
 
-        /* FAQ */
         .amoria-section--faq {
           border-top: 1px solid rgba(148, 163, 184, 0.3);
           padding-top: 2.5rem;
@@ -816,7 +855,6 @@ export default function PricingPage({ searchParams }: PageProps) {
           color: var(--amoria-text-muted);
         }
 
-        /* FOOTER */
         .amoria-footer {
           max-width: 1120px;
           margin: 0 auto;
@@ -826,7 +864,6 @@ export default function PricingPage({ searchParams }: PageProps) {
           text-align: center;
         }
 
-        /* RESPONSIVE */
         @media (max-width: 960px) {
           .amoria-header {
             flex-wrap: wrap;
