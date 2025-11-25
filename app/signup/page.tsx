@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, FormEvent } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
@@ -9,18 +9,26 @@ type Locale = "fr" | "en" | "es";
 const SUPPORTED_PLANS = ["free", "chat", "plus", "unlimited"] as const;
 type PlanId = (typeof SUPPORTED_PLANS)[number];
 
+type PageProps = {
+  searchParams?: { [key: string]: string | string[] | undefined };
+};
+
 function getLocaleFromSearchParams(
-  searchParams: URLSearchParams | null
+  searchParams?: { [key: string]: string | string[] | undefined }
 ): Locale {
-  const value = searchParams?.get("lang");
+  if (!searchParams) return "fr";
+  const raw = searchParams["lang"];
+  const value = Array.isArray(raw) ? raw[0] : raw;
   if (value === "en" || value === "es" || value === "fr") return value;
   return "fr";
 }
 
 function getPlanFromSearchParams(
-  searchParams: URLSearchParams | null
+  searchParams?: { [key: string]: string | string[] | undefined }
 ): PlanId {
-  const value = searchParams?.get("plan");
+  if (!searchParams) return "free";
+  const raw = searchParams["plan"];
+  const value = Array.isArray(raw) ? raw[0] : raw;
   if (
     value === "free" ||
     value === "chat" ||
@@ -32,10 +40,8 @@ function getPlanFromSearchParams(
   return "free";
 }
 
-export default function SignupPage() {
-  const searchParams = useSearchParams();
+export default function SignupPage({ searchParams }: PageProps) {
   const router = useRouter();
-
   const locale = getLocaleFromSearchParams(searchParams);
   const selectedPlan = getPlanFromSearchParams(searchParams);
 
@@ -180,7 +186,7 @@ export default function SignupPage() {
 
       setLoadingEmail(false);
 
-      // Redirection simple vers le tableau de bord (à adapter à ton routing)
+      // Rediriger après inscription (à adapter)
       // router.push("/app");
     } catch (err: any) {
       console.error(err);
