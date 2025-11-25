@@ -1,99 +1,254 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
+type PricingPlan = {
+  id: string;
+  name: string;
+  price: number | null;          // 0, 9, 19, 39 (pour .99$ on gère dans l’affichage)
+  ai_limit: number | null;
+  message_limit: number | null;
+  stripe_price_id: string | null;
+  has_voice: boolean | null;
+  voice_limit: number | null;
+};
+
 export default function SubscriptionPage() {
-  const [plans, setPlans] = useState<any[]>([]);
+  const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
 
+  // Charger les plans depuis Supabase
   useEffect(() => {
-    async function loadPlans() {
+    const loadPlans = async () => {
+      setError(null);
+      setLoading(true);
+
       const { data, error } = await supabase
         .from("pricing_plans")
         .select("*")
         .order("price", { ascending: true });
 
       if (error) {
-        setError(error.message);
-      } else {
-        setPlans(data || []);
+        console.error(error);
+        setError("Impossible de charger les forfaits. Réessaie plus tard.");
+      } else if (data) {
+        setPlans(data as PricingPlan[]);
       }
+
       setLoading(false);
-    }
+    };
 
     loadPlans();
   }, []);
 
-  const goToCheckout = async (priceId: string) => {
-    const res = await fetch("/api/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ priceId }),
-    });
+  const handleSubscribe = async (plan: PricingPlan) => {
+    if (!plan.stripe_price_id) {
+      alert("Ce forfait n’est pas encore configuré avec Stripe.");
+      return;
+    }
 
-    const data = await res.json();
+    try {
+      setLoadingPlanId(plan.id);
 
-    if (data?.url) {
-      window.location.href = data.url;
-    } else {
-      alert("Erreur : impossible d’ouvrir Stripe.");
+      const res = await fetch("/api/subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          priceId: plan.stripe_price_id,
+        }),
+      });
+
+      if (!res.ok) {
+        const body = await res.text();
+        console.error(body);
+        alert("Erreur lors de la création de la session de paiement.");
+        return;
+      }
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url; // redirection vers Stripe Checkout
+      } else {
+        alert("Réponse inattendue de l’API de paiement.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Une erreur est survenue. Réessaie plus tard.");
+    } finally {
+      setLoadingPlanId(null);
     }
   };
 
-  if (loading) return <p>Chargement…</p>;
-  if (error) return <p>Erreur : {error}</p>;
-
   return (
-    <main style={{ padding: "30px", maxWidth: "700px", margin: "0 auto" }}>
-      <h1>Choisir un forfait</h1>
-      <p>Sélectionne ton abonnement AmorIA</p>
+    <main
+      style={{
+        padding: "3rem 1.5rem",
+        maxWidth: "960px",
+        margin: "0 auto",
+      }}
+    >
+      <h1
+        style={{
+          fontSize: "2.2rem",
+          fontWeight: 700,
+          marginBottom: "1rem",
+          textAlign: "center",
+        }}
+      >
+        Choisis ton forfait AmorIA
+      </h1>
 
-      <div style={{ marginTop: "30px" }}>
-        {plans.map((plan) => (
-          <div
-            key={plan.id}
-            style={{
-              border: "1px solid #444",
-              padding: "20px",
-              marginBottom: "20px",
-              borderRadius: "12px",
-            }}
-          >
-            <h2>{plan.name}</h2>
-            <p>
-              <strong>{plan.price} $ / mois</strong>
-            </p>
+      <p
+        style={{
+          textAlign: "center",
+          maxWidth: "640px",
+          margin: "0 auto 2.5rem",
+          opacity: 0.8,
+        }}
+      >
+        Tous les forfaits utilisent la même IA de base. Tu payes en fonction de
+        la quantité de messages, du nombre d’AmorIA personnalisés et de la voix.
+      </p>
 
-            <ul style={{ marginTop: "10px" }}>
-              <li>Chat : {plan.message_limit ?? "∞"} messages</li>
-              <li>IA : {plan.ai_limit ?? "∞"} IA personnalisées</li>
-              <li>
-                Voix :{" "}
-                {plan.has_voice
-                  ? `${plan.voice_limit ?? "∞"} minutes`
-                  : "Non inclus"}
-              </li>
-            </ul>
+      {loading && <p style={{ textAlign: "center" }}>Chargement des forfaits…</p>}
+      {error && (
+        <p style={{ textAlign: "center", color: "#e11d48", marginBottom: "1rem" }}>
+          {error}
+        </p>
+      )}
 
-            <button
-              style={{
-                marginTop: "15px",
-                padding: "10px 18px",
-                borderRadius: "8px",
-                background: "#ff4fb8",
-                color: "white",
-                border: "none",
-                cursor: "pointer",
-              }}
-              onClick={() => goToCheckout(plan.stripe_price_id)}
-            >
-              Choisir ce forfait
-            </button>
-          </div>
-        ))}
-      </div>
+      {!loading && !error && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+            gap: "1.5rem",
+          }}
+        >
+          {plans.map((plan) => {
+            const priceLabel =
+              plan.price === 0
+                ? "Gratuit"
+                : `${plan.price?.toString() ?? "?"},99 $ US / mois`;
+
+            const isFree = plan.price === 0;
+
+            const hasVoice = !!plan.has_voice;
+            const voiceText = hasVoice
+              ? plan.voice_limit && plan.voice_limit > 0
+                ? `Conversations vocales limitées (~${plan.voice_limit} échanges / mois)`
+                : "Conversations vocales incluses (usage équitable)"
+              : "Pas de voix dans ce forfait";
+
+            const messagesText =
+              plan.message_limit && plan.message_limit >= 10000
+                ? "Messages texte illimités (usage équitable)"
+                : plan.message_limit
+                ? `${plan.message_limit} messages texte / mois`
+                : "Messages texte (limite non définie)";
+
+            const aisText =
+              plan.ai_limit && plan.ai_limit > 0
+                ? `Jusqu’à ${plan.ai_limit} AmorIA personnalisés`
+                : "1 AmorIA personnalisé";
+
+            return (
+              <div
+                key={plan.id}
+                style={{
+                  borderRadius: "18px",
+                  padding: "1.75rem 1.5rem",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  boxShadow:
+                    "0 18px 45px rgba(15, 23, 42, 0.45)",
+                  background:
+                    "radial-gradient(circle at top left, rgba(236,72,153,0.13), transparent 55%), radial-gradient(circle at bottom right, rgba(59,130,246,0.16), #020617)",
+                  color: "white",
+                  backdropFilter: "blur(20px)",
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: "1.4rem",
+                    fontWeight: 700,
+                    marginBottom: "0.6rem",
+                  }}
+                >
+                  {plan.name}
+                </h2>
+
+                <p
+                  style={{
+                    fontSize: "1.6rem",
+                    fontWeight: 700,
+                    marginBottom: "0.25rem",
+                  }}
+                >
+                  {priceLabel}
+                </p>
+
+                {!isFree && (
+                  <p
+                    style={{
+                      fontSize: "0.9rem",
+                      opacity: 0.7,
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    Facturé mensuellement, résiliable en tout temps.
+                  </p>
+                )}
+
+                <ul
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    margin: "0 0 1.5rem",
+                    fontSize: "0.95rem",
+                  }}
+                >
+                  <li style={{ marginBottom: "0.4rem" }}>• {aisText}</li>
+                  <li style={{ marginBottom: "0.4rem" }}>• {messagesText}</li>
+                  <li style={{ marginBottom: "0.4rem" }}>• {voiceText}</li>
+                </ul>
+
+                <button
+                  onClick={() => !isFree && handleSubscribe(plan)}
+                  disabled={loadingPlanId === plan.id || (!plan.stripe_price_id && !isFree)}
+                  style={{
+                    width: "100%",
+                    borderRadius: "999px",
+                    border: "none",
+                    padding: "0.75rem 1rem",
+                    fontWeight: 600,
+                    cursor: isFree ? "default" : "pointer",
+                    fontSize: "0.95rem",
+                    background: isFree
+                      ? "rgba(148, 163, 184, 0.2)"
+                      : "linear-gradient(90deg, #ec4899, #6366f1)",
+                    color: "white",
+                    opacity:
+                      loadingPlanId === plan.id || (!plan.stripe_price_id && !isFree)
+                        ? 0.7
+                        : 1,
+                  }}
+                >
+                  {isFree
+                    ? "Inclus avec ton compte"
+                    : loadingPlanId === plan.id
+                    ? "Redirection vers Stripe…"
+                    : "Choisir ce forfait"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </main>
   );
 }
