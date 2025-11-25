@@ -44,7 +44,6 @@ export default function CreateAmoriaPage() {
   const t = TEXTS[locale];
 
   const handleStart = () => {
-    // plus tard : router.push("/app/chat" ou autre)
     router.push("/");
   };
 
