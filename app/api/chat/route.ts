@@ -1,21 +1,20 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-// import { Database } from "@/types/supabase"; // si tu as généré les types, tu peux typer ici
 
-// Limites par plan (texte uniquement ici)
+// Limites de messages texte par mois selon le plan
 const PLAN_LIMITS = {
-  free: { maxText: 200, maxVoice: 0, maxAis: 1 },
-  chat: { maxText: 400, maxVoice: 0, maxAis: 2 },
-  plus: { maxText: 600, maxVoice: 100, maxAis: 10 },
-  unlimited: { maxText: 10000, maxVoice: 300, maxAis: 30 },
+  free: { maxText: 200 },
+  chat: { maxText: 400 },
+  plus: { maxText: 600 },
+  unlimited: { maxText: 10000 },
 } as const;
 
 type PlanId = keyof typeof PLAN_LIMITS;
 
 export async function POST(req: Request) {
   try {
-    // 1) Récupérer l'utilisateur connecté via Supabase
+    // 1) Récupérer l’utilisateur connecté via Supabase (auth)
     const supabase = createRouteHandlerClient({ cookies });
 
     const {
@@ -30,11 +29,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2) Charger le profil (plan + compteur texte)
+    // 2) Charger le profil Amoria lié à cet utilisateur
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("plan_id, text_used_this_month")
-      .eq("id", user.id)
+      .from("user_amoria")
+      .select("id, plan_id, credits")
+      .eq("user_id", user.id)
       .single();
 
     if (profileError || !profile) {
@@ -48,8 +47,8 @@ export async function POST(req: Request) {
     const planId = (profile.plan_id || "free") as PlanId;
     const plan = PLAN_LIMITS[planId] ?? PLAN_LIMITS.free;
 
-    // 3) Vérifier la limite de messages texte pour ce plan
-    if (profile.text_used_this_month >= plan.maxText) {
+    // 3) Vérifier la limite de messages texte
+    if ((profile.credits ?? 0) >= plan.maxText) {
       return NextResponse.json(
         {
           error: "text_quota_reached",
@@ -62,7 +61,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4) Lire le body (message + systemPrompt)
+    // 4) Lire le body (message + éventuel systemPrompt)
     const body = await req.json();
     const { message, systemPrompt } = body as {
       message: string;
@@ -92,7 +91,7 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5.1-mini", // modèle pas cher
+        model: "gpt-5.1-mini",
         input: message,
         system: systemPrompt || "Tu es une IA de compagnie bienveillante.",
       }),
@@ -111,26 +110,25 @@ export async function POST(req: Request) {
     const text =
       data?.output?.[0]?.content?.[0]?.text ?? "Je ne sais pas.";
 
-    // 6) Incrémenter le compteur de messages texte
-    const newCount = (profile.text_used_this_month || 0) + 1;
+    // 6) Incrémenter le compteur de messages (credits)
+    const newCredits = (profile.credits ?? 0) + 1;
 
     const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ text_used_this_month: newCount })
-      .eq("id", user.id);
+      .from("user_amoria")
+      .update({ credits: newCredits })
+      .eq("id", profile.id);
 
     if (updateError) {
-      console.error("Error updating text_used_this_month:", updateError);
-      // On retourne quand même la réponse à l'utilisateur,
-      // mais on logue l'erreur serveur.
+      console.error("Error updating credits:", updateError);
+      // On continue quand même à renvoyer la réponse à l’utilisateur
     }
 
     // 7) Réponse finale au frontend
     return NextResponse.json({
       reply: text,
       planId,
-      text_used_this_month: newCount,
-      text_remaining: plan.maxText - newCount,
+      credits_used: newCredits,
+      credits_remaining: plan.maxText - newCredits,
     });
   } catch (e) {
     console.error(e);
