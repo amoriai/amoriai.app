@@ -1,22 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import React, { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
-type PlanId = "free" | "chat" | "plus" | "unlimited";
+type PlanId = "chat" | "plus" | "unlimited" | "free";
 
-function getLocale(searchParams: URLSearchParams): Locale {
-  const raw = searchParams.get("lang");
+function getLocale(sp: URLSearchParams): Locale {
+  const raw = sp.get("lang");
   if (raw === "en" || raw === "es" || raw === "fr") return raw;
   return "fr";
 }
 
-function getPlan(searchParams: URLSearchParams): PlanId {
-  const raw = searchParams.get("plan");
-  if (raw === "chat" || raw === "plus" || raw === "unlimited" || raw === "free") {
-    return raw;
-  }
+function getPlan(sp: URLSearchParams): PlanId {
+  const raw = sp.get("plan");
+  if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
   return "free";
 }
 
@@ -25,181 +23,100 @@ const LABELS: Record<
   {
     title: string;
     subtitle: string;
-    payButton: string;
-    backButton: string;
+    payNow: string;
     freeInfo: string;
+    backHome: string;
+    error: string;
   }
 > = {
   fr: {
     title: "Finaliser ton abonnement",
     subtitle:
-      "Complète ton paiement sécurisé avec Stripe pour activer ton forfait AmorIA.",
-    payButton: "Procéder au paiement sécurisé",
-    backButton: "Revenir aux forfaits",
+      "Tu vas être redirigé vers Stripe pour sécuriser ton paiement. Une fois terminé, tu reviendras automatiquement sur AmorIA.app.",
+    payNow: "Passer au paiement sécurisé",
     freeInfo:
-      "Tu as choisi le forfait Découverte gratuit. Aucun paiement n’est requis.",
+      "Ce plan est gratuit. Aucun paiement n’est nécessaire. Tu peux directement commencer avec ton AmorIA.",
+    backHome: "Retour à l’accueil",
+    error:
+      "Une erreur est survenue pendant la création de la session de paiement. Réessaie dans quelques instants.",
   },
   en: {
     title: "Complete your subscription",
     subtitle:
-      "Finish your secure payment with Stripe to activate your AmorIA plan.",
-    payButton: "Proceed to secure payment",
-    backButton: "Back to pricing",
+      "You will be redirected to Stripe for secure payment. Once done, you’ll come back automatically to AmorIA.app.",
+    payNow: "Go to secure payment",
     freeInfo:
-      "You selected the free Discovery plan. No payment is required.",
+      "This plan is free. No payment is required. You can start with your AmorIA right away.",
+    backHome: "Back to home",
+    error:
+      "An error occurred while creating the payment session. Please try again in a moment.",
   },
   es: {
-    title: "Finalizar tu suscripción",
+    title: "Finaliza tu suscripción",
     subtitle:
-      "Completa tu pago seguro con Stripe para activar tu plan AmorIA.",
-    payButton: "Ir al pago seguro",
-    backButton: "Volver a los planes",
+      "Serás redirigido a Stripe para realizar el pago de forma segura. Después volverás automáticamente a AmorIA.app.",
+    payNow: "Ir al pago seguro",
     freeInfo:
-      "Elegiste el plan Descubrimiento gratuito. No se requiere pago.",
+      "Este plan es gratis. No necesitas pagar. Puedes empezar con tu AmorIA ahora mismo.",
+    backHome: "Volver al inicio",
+    error:
+      "Se produjo un error al crear la sesión de pago. Inténtalo de nuevo en unos instantes.",
   },
 };
 
-const PLAN_TEXT: Record<
-  Locale,
-  Record<PlanId, { name: string; description: string }>
-> = {
-  fr: {
-    free: {
-      name: "Découverte (gratuit)",
-      description:
-        "Création de 1 AmorIA, 200 messages texte / mois, accès FR / EN / ES.",
-    },
-    chat: {
-      name: "AmorIA Chat – 9,99 $ / mois",
-      description:
-        "Jusqu’à 2 AmoriA, 400 messages texte / mois, mémoire longue durée.",
-    },
-    plus: {
-      name: "AmorIA Plus – 19,99 $ / mois",
-      description:
-        "Jusqu’à 3 AmoriA, plus de messages, options avancées de personnalisation.",
-    },
-    unlimited: {
-      name: "AmorIA Illimité – 39,99 $ / mois",
-      description:
-        "AmoriA illimités, messages généreux, priorité et nouvelles fonctions.",
-    },
-  },
-  en: {
-    free: {
-      name: "Discovery (free)",
-      description:
-        "Create 1 AmorIA, 200 text messages / month, FR / EN / ES access.",
-    },
-    chat: {
-      name: "AmorIA Chat – $9.99 / month",
-      description:
-        "Up to 2 AmorIA, 400 text messages / month, long-term memory.",
-    },
-    plus: {
-      name: "AmorIA Plus – $19.99 / month",
-      description:
-        "Up to 3 AmorIA, more messages, advanced customization.",
-    },
-    unlimited: {
-      name: "AmorIA Unlimited – $39.99 / month",
-      description:
-        "Unlimited AmorIA, generous messages, priority and new features.",
-    },
-  },
-  es: {
-    free: {
-      name: "Descubrimiento (gratis)",
-      description:
-        "Crea 1 AmorIA, 200 mensajes de texto / mes, acceso FR / EN / ES.",
-    },
-    chat: {
-      name: "AmorIA Chat – 9,99 $ / mes",
-      description:
-        "Hasta 2 AmorIA, 400 mensajes / mes, memoria a largo plazo.",
-    },
-    plus: {
-      name: "AmorIA Plus – 19,99 $ / mes",
-      description:
-        "Hasta 3 AmorIA, más mensajes, personalización avanzada.",
-    },
-    unlimited: {
-      name: "AmorIA Ilimitado – 39,99 $ / mes",
-      description:
-        "AmorIA ilimitados, muchos mensajes, prioridad y nuevas funciones.",
-    },
-  },
+const PLAN_NAMES: Record<PlanId, string> = {
+  free: "Découverte (gratuit)",
+  chat: "AmorIA Chat – 9,99 $ / mois",
+  plus: "AmorIA Plus – 19,99 $ / mois",
+  unlimited: "AmorIA Illimité – 39,99 $ / mois",
 };
 
-export default function PaymentPage() {
-  const router = useRouter();
+function InnerPaymentPage() {
   const searchParams = useSearchParams();
-
-  // Sécurité : si pour une raison X searchParams est null → on renvoie vers /tarifs
-  if (!searchParams) {
-    if (typeof window !== "undefined") {
-      router.replace("/pricing");
-    }
-    return null;
-  }
+  if (!searchParams) return null;
 
   const locale = getLocale(searchParams);
   const plan = getPlan(searchParams);
 
   const t = LABELS[locale];
-  const planText = PLAN_TEXT[locale][plan];
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handlePay = async () => {
     setError(null);
-    setLoading(true);
 
+    if (plan === "free") {
+      // Pas de paiement pour le gratuit → on peut juste renvoyer à l’accueil
+      window.location.href = "/";
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ plan }), // on envoie juste le planId
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
       });
 
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Checkout error");
+        throw new Error("Checkout API error");
       }
 
       const data = await res.json();
-
-      // Stripe renvoie une URL de session : on y envoie l’utilisateur
-      if (data.url) {
+      if (data?.url) {
         window.location.href = data.url;
       } else {
-        throw new Error("Missing Stripe URL.");
+        throw new Error("Missing Stripe URL");
       }
-    } catch (e: any) {
-      setError(e.message || "Erreur de paiement.");
+    } catch (e) {
+      console.error(e);
+      setError(t.error);
       setLoading(false);
     }
   };
 
-  const handleBack = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    router.push(`/pricing?${params.toString()}`);
-  };
-
-  // Si c’est le plan gratuit et qu’on arrive ici par erreur → on envoie vers create-amoria
-  if (plan === "free") {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams();
-      params.set("lang", locale);
-      params.set("plan", "free");
-      router.replace(`/create-amoria?${params.toString()}`);
-    }
-    return null;
-  }
+  const titlePlan = PLAN_NAMES[plan];
 
   return (
     <main className="amoria-root amoria-auth-root">
@@ -218,40 +135,48 @@ export default function PaymentPage() {
           </div>
 
           <div className="amoria-auth-plan-badge">
-            {planText.name}
+            {titlePlan}
           </div>
-          <p
-            style={{
-              fontSize: "0.85rem",
-              color: "#e5e7eb",
-              marginBottom: "0.9rem",
-            }}
-          >
-            {planText.description}
-          </p>
 
-          {error && <p className="amoria-auth-error">{error}</p>}
+          {plan === "free" && (
+            <>
+              <p className="amoria-auth-subtitle" style={{ marginBottom: "1rem" }}>
+                {t.freeInfo}
+              </p>
+              <button
+                type="button"
+                onClick={() => (window.location.href = "/")}
+                className="amoria-auth-submit"
+              >
+                {t.backHome}
+              </button>
+            </>
+          )}
 
-          <button
-            type="button"
-            onClick={handlePay}
-            disabled={loading}
-            className="amoria-auth-submit"
-          >
-            {loading ? "…" : t.payButton}
-          </button>
+          {plan !== "free" && (
+            <>
+              {error && <p className="amoria-auth-error">{error}</p>}
 
-          <button
-            type="button"
-            onClick={handleBack}
-            disabled={loading}
-            className="amoria-auth-google"
-            style={{ marginTop: "0.7rem" }}
-          >
-            {t.backButton}
-          </button>
+              <button
+                type="button"
+                onClick={handlePay}
+                disabled={loading}
+                className="amoria-auth-submit"
+              >
+                {loading ? "…" : t.payNow}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </main>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={null}>
+      <InnerPaymentPage />
+    </Suspense>
   );
 }
