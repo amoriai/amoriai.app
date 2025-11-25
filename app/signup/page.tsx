@@ -1,24 +1,24 @@
 "use client";
 
 import React, { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-function getLocaleFromSearchParams(): Locale {
-  if (typeof window === "undefined") return "fr";
-  const searchParams = new URLSearchParams(window.location.search);
-  const raw = searchParams.get("lang");
+function getLocaleFromSearchParams(
+  searchParams: URLSearchParams | null
+): Locale {
+  const raw = searchParams?.get("lang");
   if (raw === "en" || raw === "es" || raw === "fr") return raw;
   return "fr";
 }
 
-function getSelectedPlan(): PlanId {
-  if (typeof window === "undefined") return "free";
-  const searchParams = new URLSearchParams(window.location.search);
-  const raw = searchParams.get("plan");
+function getSelectedPlan(
+  searchParams: URLSearchParams | null
+): PlanId {
+  const raw = searchParams?.get("plan");
   if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
   return "free";
 }
@@ -105,7 +105,7 @@ const STRINGS: Record<
     emailLabel: "Adresse courriel",
     passwordLabel: "Mot de passe",
     passwordHint: "Minimum 6 caractères.",
-    submit: "Créer mon compte et passer au paiement",
+    submit: "Créer mon compte",
     or: "ou",
     google: "Continuer avec Google",
     loginLink: "Me connecter",
@@ -118,7 +118,7 @@ const STRINGS: Record<
     emailLabel: "Email address",
     passwordLabel: "Password",
     passwordHint: "Minimum 6 characters.",
-    submit: "Create my account and go to payment",
+    submit: "Create my account",
     or: "or",
     google: "Continue with Google",
     loginLink: "Log in",
@@ -131,7 +131,7 @@ const STRINGS: Record<
     emailLabel: "Correo electrónico",
     passwordLabel: "Contraseña",
     passwordHint: "Mínimo 6 caracteres.",
-    submit: "Crear mi cuenta e ir al pago",
+    submit: "Crear mi cuenta",
     or: "o",
     google: "Continuar con Google",
     loginLink: "Iniciar sesión",
@@ -140,12 +140,18 @@ const STRINGS: Record<
 };
 
 export default function SignupPage() {
-  const locale = getLocaleFromSearchParams();
-  const selectedPlan = getSelectedPlan();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const locale = getLocaleFromSearchParams(
+    searchParams ?? null
+  );
+  const selectedPlan = getSelectedPlan(
+    searchParams ?? null
+  );
+
   const planLabel = PLAN_LABELS[locale][selectedPlan];
   const t = STRINGS[locale];
-
-  const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -164,7 +170,8 @@ export default function SignupPage() {
       password,
       options: {
         data: {
-          initial_plan: selectedPlan, // pour que tu le retrouves côté serveur
+          initial_plan: selectedPlan,
+          locale,
         },
       },
     });
@@ -176,11 +183,18 @@ export default function SignupPage() {
       return;
     }
 
-    // ✅ Redirection directe vers la page de paiement
+    // 🔁 Redirection après création de compte
     const params = new URLSearchParams();
     params.set("plan", selectedPlan);
     params.set("lang", locale);
-    router.push(`/payment?${params.toString()}`);
+
+    if (selectedPlan === "free") {
+      // Pas de paiement pour le plan gratuit → on va créer l’AmorIA
+      router.push(`/create-amoria?${params.toString()}`);
+    } else {
+      // Plan payant → on va vers la page de paiement (Stripe)
+      router.push(`/payment?${params.toString()}`);
+    }
   };
 
   const handleGoogle = async () => {
@@ -190,11 +204,17 @@ export default function SignupPage() {
     const origin =
       typeof window !== "undefined" ? window.location.origin : "";
 
+    const params = new URLSearchParams();
+    params.set("plan", selectedPlan);
+    params.set("lang", locale);
+
+    const target =
+      selectedPlan === "free" ? "create-amoria" : "payment";
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        // ✅ Quand Google a fini → retour direct sur /payment
-        redirectTo: `${origin}/payment?plan=${selectedPlan}&lang=${locale}`,
+        redirectTo: `${origin}/${target}?${params.toString()}`,
       },
     });
 
