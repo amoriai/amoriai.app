@@ -1,24 +1,25 @@
 "use client";
 
 import React, { useState, FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-function getLocaleFromSearchParams(
-  searchParams: URLSearchParams | null
-): Locale {
-  const raw = searchParams?.get("lang");
+// Helpers pour lire l’URL côté client
+function getLocaleFromUrl(): Locale {
+  if (typeof window === "undefined") return "fr";
+  const searchParams = new URLSearchParams(window.location.search);
+  const raw = searchParams.get("lang");
   if (raw === "en" || raw === "es" || raw === "fr") return raw;
   return "fr";
 }
 
-function getSelectedPlan(
-  searchParams: URLSearchParams | null
-): PlanId {
-  const raw = searchParams?.get("plan");
+function getSelectedPlanFromUrl(): PlanId {
+  if (typeof window === "undefined") return "free";
+  const searchParams = new URLSearchParams(window.location.search);
+  const raw = searchParams.get("plan");
   if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
   return "free";
 }
@@ -141,14 +142,9 @@ const STRINGS: Record<
 
 export default function SignupPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const locale = getLocaleFromSearchParams(
-    searchParams ?? null
-  );
-  const selectedPlan = getSelectedPlan(
-    searchParams ?? null
-  );
+  const locale = getLocaleFromUrl();
+  const selectedPlan = getSelectedPlanFromUrl();
 
   const planLabel = PLAN_LABELS[locale][selectedPlan];
   const t = STRINGS[locale];
@@ -183,16 +179,13 @@ export default function SignupPage() {
       return;
     }
 
-    // 🔁 Redirection après création de compte
     const params = new URLSearchParams();
     params.set("plan", selectedPlan);
     params.set("lang", locale);
 
     if (selectedPlan === "free") {
-      // Pas de paiement pour le plan gratuit → on va créer l’AmorIA
       router.push(`/create-amoria?${params.toString()}`);
     } else {
-      // Plan payant → on va vers la page de paiement (Stripe)
       router.push(`/payment?${params.toString()}`);
     }
   };
