@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
@@ -27,7 +27,7 @@ const TEXTS: Record<
       "Your account is ready. Now choose the name, personality and style of your AI companion.",
     button: "Start creation",
   },
-  es: {
+    es: {
     title: "Crea tu primer AmorIA",
     subtitle:
       "Tu cuenta está lista. Ahora elige el nombre, la personalidad y el estilo de tu compañero IA.",
@@ -35,15 +35,18 @@ const TEXTS: Record<
   },
 };
 
-export default function CreateAmoriaPage() {
+function InnerCreateAmoriaPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   if (!searchParams) return null;
+
   const locale = getLocale(searchParams);
   const t = TEXTS[locale];
 
   const handleStart = () => {
+    // Pour l’instant on te renvoie vers l’accueil.
+    // Plus tard tu pourras faire /dashboard ou /amoria/new
     router.push("/");
   };
 
@@ -73,5 +76,13 @@ export default function CreateAmoriaPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function CreateAmoriaPage() {
+  return (
+    <Suspense fallback={null}>
+      <InnerCreateAmoriaPage />
+    </Suspense>
   );
 }
