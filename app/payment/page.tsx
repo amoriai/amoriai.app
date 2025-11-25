@@ -1,381 +1,257 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-// 🔎 Lis les paramètres de l’URL, avec sécurité côté serveur
-function getLocaleFromSearchParams(): Locale {
-  if (typeof window === "undefined") return "fr";
-  const searchParams = new URLSearchParams(window.location.search);
+function getLocale(searchParams: URLSearchParams): Locale {
   const raw = searchParams.get("lang");
   if (raw === "en" || raw === "es" || raw === "fr") return raw;
   return "fr";
 }
 
-function getSelectedPlan(): PlanId {
-  if (typeof window === "undefined") return "free";
-  const searchParams = new URLSearchParams(window.location.search);
+function getPlan(searchParams: URLSearchParams): PlanId {
   const raw = searchParams.get("plan");
-  if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
+  if (raw === "chat" || raw === "plus" || raw === "unlimited" || raw === "free") {
+    return raw;
+  }
   return "free";
 }
 
-// 🏷️ Texte par plan
-const PLAN_TEXT: Record<
-  Locale,
-  Record<
-    PlanId,
-    {
-      title: string;
-      description: string;
-      priceLabel: string;
-      cta: string;
-    }
-  >
-> = {
-  fr: {
-    free: {
-      title: "Forfait Découverte (gratuit)",
-      description:
-        "Tu peux commencer avec AmorIA gratuitement, puis passer à un forfait payant plus tard.",
-      priceLabel: "0 $ / mois",
-      cta: "Continuer gratuitement",
-    },
-    chat: {
-      title: "AmorIA Chat",
-      description:
-        "Messages texte illimités avec ton compagnon IA, sans voix. Idéal pour discuter chaque jour.",
-      priceLabel: "9,99 $ / mois",
-      cta: "Procéder au paiement",
-    },
-    plus: {
-      title: "AmorIA Plus",
-      description:
-        "Messages texte + voix, plus de mémoire et des fonctionnalités avancées.",
-      priceLabel: "19,99 $ / mois",
-      cta: "Procéder au paiement",
-    },
-    unlimited: {
-      title: "AmorIA Illimité",
-      description:
-        "Usage intensif d’AmorIA : texte + voix, mémoire longue durée et accès prioritaire.",
-      priceLabel: "39,99 $ / mois",
-      cta: "Procéder au paiement",
-    },
-  },
-  en: {
-    free: {
-      title: "Discovery plan (free)",
-      description:
-        "Start using AmorIA for free and upgrade to a paid plan later.",
-      priceLabel: "$0 / month",
-      cta: "Continue for free",
-    },
-    chat: {
-      title: "AmorIA Chat",
-      description:
-        "Unlimited text messages with your AI companion, no voice. Perfect for daily chatting.",
-      priceLabel: "$9.99 / month",
-      cta: "Proceed to payment",
-    },
-    plus: {
-      title: "AmorIA Plus",
-      description:
-        "Text + voice, more memory and advanced features for deeper conversations.",
-      priceLabel: "$19.99 / month",
-      cta: "Proceed to payment",
-    },
-    unlimited: {
-      title: "AmorIA Unlimited",
-      description:
-        "Intensive AmorIA usage: text + voice, long-term memory and priority access.",
-      priceLabel: "$39.99 / month",
-      cta: "Proceed to payment",
-    },
-  },
-  es: {
-    free: {
-      title: "Plan Descubrimiento (gratis)",
-      description:
-        "Empieza con AmorIA gratis y pasa a un plan de pago más adelante.",
-      priceLabel: "0 $ / mes",
-      cta: "Continuar gratis",
-    },
-    chat: {
-      title: "AmorIA Chat",
-      description:
-        "Mensajes de texto ilimitados con tu compañero IA, sin voz. Ideal para charlar cada día.",
-      priceLabel: "9,99 $ / mes",
-      cta: "Ir al pago",
-    },
-    plus: {
-      title: "AmorIA Plus",
-      description:
-        "Texto + voz, más memoria y funciones avanzadas para conversaciones profundas.",
-      priceLabel: "19,99 $ / mes",
-      cta: "Ir al pago",
-    },
-    unlimited: {
-      title: "AmorIA Ilimitado",
-      description:
-        "Uso intensivo de AmorIA: texto + voz, memoria a largo plazo y acceso prioritario.",
-      priceLabel: "39,99 $ / mes",
-      cta: "Ir al pago",
-    },
-  },
-};
-
-const STRINGS: Record<
+const LABELS: Record<
   Locale,
   {
-    pageTitle: string;
-    pageSubtitle: string;
-    backToPricing: string;
-    processing: string;
-    errorGeneric: string;
+    title: string;
+    subtitle: string;
+    payButton: string;
+    backButton: string;
+    freeInfo: string;
   }
 > = {
   fr: {
-    pageTitle: "Confirmer ton abonnement",
-    pageSubtitle:
-      "Vérifie ton forfait puis procède au paiement sécurisé avec Stripe.",
-    backToPricing: "Retour aux forfaits",
-    processing: "Traitement en cours…",
-    errorGeneric:
-      "Une erreur est survenue pendant la préparation du paiement. Réessaie plus tard.",
+    title: "Finaliser ton abonnement",
+    subtitle:
+      "Complète ton paiement sécurisé avec Stripe pour activer ton forfait AmorIA.",
+    payButton: "Procéder au paiement sécurisé",
+    backButton: "Revenir aux forfaits",
+    freeInfo:
+      "Tu as choisi le forfait Découverte gratuit. Aucun paiement n’est requis.",
   },
   en: {
-    pageTitle: "Confirm your subscription",
-    pageSubtitle:
-      "Check your plan and proceed to secure payment with Stripe.",
-    backToPricing: "Back to pricing",
-    processing: "Processing…",
-    errorGeneric:
-      "Something went wrong while preparing your payment. Please try again later.",
+    title: "Complete your subscription",
+    subtitle:
+      "Finish your secure payment with Stripe to activate your AmorIA plan.",
+    payButton: "Proceed to secure payment",
+    backButton: "Back to pricing",
+    freeInfo:
+      "You selected the free Discovery plan. No payment is required.",
   },
   es: {
-    pageTitle: "Confirmar tu suscripción",
-    pageSubtitle:
-      "Verifica tu plan y procede al pago seguro con Stripe.",
-    backToPricing: "Volver a los planes",
-    processing: "Procesando…",
-    errorGeneric:
-      "Ha ocurrido un error al preparar el pago. Inténtalo de nuevo más tarde.",
+    title: "Finalizar tu suscripción",
+    subtitle:
+      "Completa tu pago seguro con Stripe para activar tu plan AmorIA.",
+    payButton: "Ir al pago seguro",
+    backButton: "Volver a los planes",
+    freeInfo:
+      "Elegiste el plan Descubrimiento gratuito. No se requiere pago.",
+  },
+};
+
+const PLAN_TEXT: Record<
+  Locale,
+  Record<PlanId, { name: string; description: string }>
+> = {
+  fr: {
+    free: {
+      name: "Découverte (gratuit)",
+      description:
+        "Création de 1 AmorIA, 200 messages texte / mois, accès FR / EN / ES.",
+    },
+    chat: {
+      name: "AmorIA Chat – 9,99 $ / mois",
+      description:
+        "Jusqu’à 2 AmoriA, 400 messages texte / mois, mémoire longue durée.",
+    },
+    plus: {
+      name: "AmorIA Plus – 19,99 $ / mois",
+      description:
+        "Jusqu’à 3 AmoriA, plus de messages, options avancées de personnalisation.",
+    },
+    unlimited: {
+      name: "AmorIA Illimité – 39,99 $ / mois",
+      description:
+        "AmoriA illimités, messages généreux, priorité et nouvelles fonctions.",
+    },
+  },
+  en: {
+    free: {
+      name: "Discovery (free)",
+      description:
+        "Create 1 AmorIA, 200 text messages / month, FR / EN / ES access.",
+    },
+    chat: {
+      name: "AmorIA Chat – $9.99 / month",
+      description:
+        "Up to 2 AmorIA, 400 text messages / month, long-term memory.",
+    },
+    plus: {
+      name: "AmorIA Plus – $19.99 / month",
+      description:
+        "Up to 3 AmorIA, more messages, advanced customization.",
+    },
+    unlimited: {
+      name: "AmorIA Unlimited – $39.99 / month",
+      description:
+        "Unlimited AmorIA, generous messages, priority and new features.",
+    },
+  },
+  es: {
+    free: {
+      name: "Descubrimiento (gratis)",
+      description:
+        "Crea 1 AmorIA, 200 mensajes de texto / mes, acceso FR / EN / ES.",
+    },
+    chat: {
+      name: "AmorIA Chat – 9,99 $ / mes",
+      description:
+        "Hasta 2 AmorIA, 400 mensajes / mes, memoria a largo plazo.",
+    },
+    plus: {
+      name: "AmorIA Plus – 19,99 $ / mes",
+      description:
+        "Hasta 3 AmorIA, más mensajes, personalización avanzada.",
+    },
+    unlimited: {
+      name: "AmorIA Ilimitado – 39,99 $ / mes",
+      description:
+        "AmorIA ilimitados, muchos mensajes, prioridad y nuevas funciones.",
+    },
   },
 };
 
 export default function PaymentPage() {
-  const locale = getLocaleFromSearchParams();
-  const plan = getSelectedPlan();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Sécurité : si pour une raison X searchParams est null → on renvoie vers /tarifs
+  if (!searchParams) {
+    if (typeof window !== "undefined") {
+      router.replace("/pricing");
+    }
+    return null;
+  }
+
+  const locale = getLocale(searchParams);
+  const plan = getPlan(searchParams);
+
+  const t = LABELS[locale];
+  const planText = PLAN_TEXT[locale][plan];
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const texts = STRINGS[locale];
-  const planText = PLAN_TEXT[locale][plan];
-
-  const handleConfirm = async () => {
+  const handlePay = async () => {
     setError(null);
-
-    // 🎁 Plan gratuit : pas de Stripe → on renvoie vers l’accueil (tu pourras changer plus tard)
-    if (plan === "free") {
-      router.push("/?lang=" + locale);
-      return;
-    }
+    setLoading(true);
 
     try {
-      setLoading(true);
-
       const res = await fetch("/api/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: plan, lang: locale }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ plan }), // on envoie juste le planId
       });
 
       if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        console.error("Checkout error:", body);
-        throw new Error("Checkout failed");
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Checkout error");
       }
 
       const data = await res.json();
 
-      if (data?.url) {
-        // 🔁 Redirection vers Stripe Checkout
+      // Stripe renvoie une URL de session : on y envoie l’utilisateur
+      if (data.url) {
         window.location.href = data.url;
       } else {
-        throw new Error("Missing checkout URL");
+        throw new Error("Missing Stripe URL.");
       }
-    } catch (e) {
-      console.error(e);
-      setError(texts.errorGeneric);
+    } catch (e: any) {
+      setError(e.message || "Erreur de paiement.");
       setLoading(false);
     }
   };
 
   const handleBack = () => {
-    router.push("/?lang=" + locale);
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    router.push(`/pricing?${params.toString()}`);
   };
 
-  return (
-    <main className="amoria-payment-root">
-      <div className="amoria-payment-card">
-        <header className="amoria-payment-header">
-          <img
-            src="/AmorIA_logo_transparent.png"
-            alt="Logo AmorIA"
-            className="amoria-payment-logo"
-          />
-          <div>
-            <h1>{texts.pageTitle}</h1>
-            <p>{texts.pageSubtitle}</p>
-          </div>
-        </header>
+  // Si c’est le plan gratuit et qu’on arrive ici par erreur → on envoie vers create-amoria
+  if (plan === "free") {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams();
+      params.set("lang", locale);
+      params.set("plan", "free");
+      router.replace(`/create-amoria?${params.toString()}`);
+    }
+    return null;
+  }
 
-        <section className="amoria-payment-plan">
-          <h2>{planText.title}</h2>
-          <p className="amoria-payment-price">{planText.priceLabel}</p>
-          <p className="amoria-payment-description">
+  return (
+    <main className="amoria-root amoria-auth-root">
+      <div className="amoria-auth-wrapper">
+        <div className="amoria-auth-card">
+          <div className="amoria-auth-header">
+            <img
+              src="/AmorIA_logo_transparent.png"
+              alt="Logo AmorIA"
+              className="amoria-auth-logo"
+            />
+            <div>
+              <h1 className="amoria-auth-title">{t.title}</h1>
+              <p className="amoria-auth-subtitle">{t.subtitle}</p>
+            </div>
+          </div>
+
+          <div className="amoria-auth-plan-badge">
+            {planText.name}
+          </div>
+          <p
+            style={{
+              fontSize: "0.85rem",
+              color: "#e5e7eb",
+              marginBottom: "0.9rem",
+            }}
+          >
             {planText.description}
           </p>
-        </section>
 
-        {error && <p className="amoria-payment-error">{error}</p>}
+          {error && <p className="amoria-auth-error">{error}</p>}
 
-        <div className="amoria-payment-actions">
           <button
             type="button"
-            className="amoria-payment-secondary"
-            onClick={handleBack}
+            onClick={handlePay}
             disabled={loading}
+            className="amoria-auth-submit"
           >
-            {texts.backToPricing}
+            {loading ? "…" : t.payButton}
           </button>
 
           <button
             type="button"
-            className="amoria-payment-primary"
-            onClick={handleConfirm}
+            onClick={handleBack}
             disabled={loading}
+            className="amoria-auth-google"
+            style={{ marginTop: "0.7rem" }}
           >
-            {loading ? texts.processing : planText.cta}
+            {t.backButton}
           </button>
         </div>
       </div>
-
-      <style jsx global>{`
-        .amoria-payment-root {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 1.5rem;
-        }
-
-        .amoria-payment-card {
-          max-width: 540px;
-          width: 100%;
-          border-radius: 1.5rem;
-          border: 1px solid rgba(148, 163, 184, 0.4);
-          padding: 1.8rem 1.7rem 1.6rem;
-          background: radial-gradient(
-            circle at top,
-            #020617,
-            #020617 40%,
-            #000 100%
-          );
-          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
-        }
-
-        .amoria-payment-header {
-          display: flex;
-          gap: 0.9rem;
-          align-items: center;
-          margin-bottom: 1.4rem;
-        }
-
-        .amoria-payment-logo {
-          width: 52px;
-          height: 52px;
-          object-fit: contain;
-        }
-
-        .amoria-payment-header h1 {
-          margin: 0 0 0.2rem;
-          font-size: 1.25rem;
-        }
-
-        .amoria-payment-header p {
-          margin: 0;
-          font-size: 0.85rem;
-          color: #9ca3af;
-        }
-
-        .amoria-payment-plan h2 {
-          margin: 0 0 0.3rem;
-          font-size: 1.05rem;
-        }
-
-        .amoria-payment-price {
-          margin: 0 0 0.3rem;
-          font-size: 0.95rem;
-          font-weight: 600;
-          color: #f9fafb;
-        }
-
-        .amoria-payment-description {
-          margin: 0 0 1rem;
-          font-size: 0.88rem;
-          color: #cbd5f5;
-        }
-
-        .amoria-payment-error {
-          margin: 0 0 0.8rem;
-          padding: 0.55rem 0.7rem;
-          border-radius: 0.6rem;
-          background: rgba(248, 113, 113, 0.12);
-          color: #fecaca;
-          font-size: 0.78rem;
-        }
-
-        .amoria-payment-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 0.6rem;
-        }
-
-        .amoria-payment-secondary {
-          border-radius: 999px;
-          padding: 0.6rem 1.1rem;
-          border: 1px solid rgba(148, 163, 184, 0.7);
-          background: transparent;
-          color: #e5e7eb;
-          font-size: 0.86rem;
-          cursor: pointer;
-        }
-
-        .amoria-payment-primary {
-          border-radius: 999px;
-          padding: 0.6rem 1.2rem;
-          border: none;
-          font-size: 0.9rem;
-          cursor: pointer;
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c);
-          color: #f9fafb;
-          box-shadow: 0 12px 30px rgba(248, 113, 113, 0.35);
-        }
-
-        @media (max-width: 640px) {
-          .amoria-payment-card {
-            padding-inline: 1.1rem;
-          }
-        }
-      `}</style>
     </main>
   );
 }
-
