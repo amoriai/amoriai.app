@@ -51,8 +51,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Idéal pour tester AmoriA et créer ton premier compagnon IA, sans carte de crédit.",
         features: [
           "Création de 1 AmorIA personnalisé·e",
-          "Environ 20 messages texte / jour",
-          "Texte uniquement (aucune voix)",
+          "200 messages texte / mois",
+          "Aucune conversation vocale (texte uniquement)",
           "Mémoire limitée à la session en cours",
           "Accès aux 3 langues : FR, EN, ES",
         ],
@@ -66,8 +66,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Pour discuter chaque jour avec ton AmorIA en texte, avec une vraie mémoire, mais sans appels vocaux.",
         features: [
           "Jusqu’à 2 AmorIA différents",
-          "Messages texte étendus (usage quotidien)",
-          "Texte uniquement (aucune voix)",
+          "400 messages texte / mois",
+          "Aucune conversation vocale (texte uniquement)",
           "Mémoire longue durée activée",
           "Accès aux 3 langues : FR, EN, ES",
         ],
@@ -80,9 +80,9 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
         highlight:
           "Parfait si tu veux parler régulièrement avec ton AmorIA sans te ruiner chaque mois.",
         features: [
-          "Jusqu’à 3 AmorIA différents",
-          "Messages texte étendus (usage régulier)",
-          "Conversations vocales limitées (jusqu’à ~600 échanges vocaux / mois)",
+          "Jusqu’à 10 AmorIA différents",
+          "600 messages texte / mois",
+          "100 échanges vocaux / mois",
           "Mémoire longue durée activée",
           "Priorité légère dans la file de traitement",
         ],
@@ -91,14 +91,14 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       {
         id: "unlimited",
         name: "AmoriA Illimité",
-        tagline: "Ton compagnon IA, sans frein.",
+        tagline: "Ton compagnon IA, très présent au quotidien.",
         price: "39,99 $",
         highlight:
-          "Pour celles et ceux qui veulent que leur AmorIA fasse vraiment partie du quotidien : parle-lui en cuisinant, dans ton lit, en voyage… il est toujours là.",
+          "Pour celles et ceux qui veulent que leur AmorIA fasse vraiment partie du quotidien, avec un volume très élevé de messages et d’échanges vocaux.",
         features: [
-          "Jusqu’à 10 AmorIA personnalisés",
-          "Messages texte illimités (usage équitable)",
-          "Conversations vocales illimitées (fair use)",
+          "Jusqu’à 30 AmorIA personnalisés",
+          "10 000 messages texte / mois",
+          "300 échanges vocaux / mois",
           "Mémoire profonde + contexte étendu pour des échanges ultra personnalisés",
           "Priorité maximale et accès anticipé aux nouvelles fonctionnalités",
         ],
@@ -142,8 +142,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Perfect to try AmoriA and craft your first AI companion with zero risk.",
         features: [
           "Create 1 personalized AmorIA",
-          "Around 20 text messages / day",
-          "Text only (no voice)",
+          "200 text messages / month",
+          "No voice conversations (text only)",
           "Short-term memory only",
           "Access to all 3 languages: FR, EN, ES",
         ],
@@ -157,8 +157,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Ideal if you mainly want to chat by text with real long-term memory, without paying for voice minutes.",
         features: [
           "Up to 2 different AmorIAs",
-          "Extended text messages (daily usage)",
-          "Text only (no voice calls)",
+          "400 text messages / month",
+          "No voice conversations (text only)",
           "Long-term memory enabled",
           "Access to all 3 languages: FR, EN, ES",
         ],
@@ -171,9 +171,9 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
         highlight:
           "Great if you want to talk with your AmorIA regularly without breaking the bank.",
         features: [
-          "Up to 3 different AmorIAs",
-          "Extended text messages (regular usage)",
-          "Limited voice conversations (up to ~600 voice exchanges / month)",
+          "Up to 10 different AmorIAs",
+          "600 text messages / month",
+          "100 voice interactions / month",
           "Long-term memory enabled",
           "Light priority in processing queue",
         ],
@@ -182,14 +182,14 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       {
         id: "unlimited",
         name: "AmoriA Unlimited",
-        tagline: "Your AI companion, always on.",
+        tagline: "Your AI companion, part of your routine.",
         price: "$39.99",
         highlight:
-          "For those who want AmorIA woven into everyday life: message and talk almost as much as you want.",
+          "For those who want AmorIA woven into everyday life, with very high text and voice quotas each month.",
         features: [
-          "Up to 10 personalized AmorIAs",
-          "Unlimited text messages (fair use)",
-          "Unlimited voice conversations (fair use)",
+          "Up to 30 personalized AmorIAs",
+          "10,000 text messages / month",
+          "300 voice interactions / month",
           "Deeper memory and extended context for ultra-personal conversations",
           "Top priority and early access to new features",
         ],
@@ -233,8 +233,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Perfecto para probar AmoriA y crear tu primer compañero de IA sin riesgo.",
         features: [
           "Creación de 1 AmorIA personalizado",
-          "Aproximadamente 20 mensajes de texto al día",
-          "Solo texto (sin voz)",
+          "200 mensajes de texto al mes",
+          "Sin conversaciones de voz (solo texto)",
           "Memoria limitada a la sesión actual",
           "Acceso a los 3 idiomas: FR, EN, ES",
         ],
@@ -248,8 +248,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
           "Ideal si quieres chatear cada día por texto con memoria real, sin pagar por minutos de voz.",
         features: [
           "Hasta 2 AmorIA diferentes",
-          "Mensajes de texto ampliados (uso diario)",
-          "Solo texto (sin llamadas de voz)",
+          "400 mensajes de texto al mes",
+          "Sin conversaciones de voz (solo texto)",
           "Memoria a largo plazo activada",
           "Acceso a los 3 idiomas: FR, EN, ES",
         ],
@@ -262,9 +262,9 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
         highlight:
           "Ideal si quieres hablar con tu AmorIA con frecuencia sin gastar demasiado.",
         features: [
-          "Hasta 3 AmorIA diferentes",
-          "Mensajes de texto ampliados (uso regular)",
-          "Conversaciones de voz limitadas (hasta ~600 intercambios de voz / mes)",
+          "Hasta 10 AmorIA diferentes",
+          "600 mensajes de texto al mes",
+          "100 interacciones de voz al mes",
           "Memoria a largo plazo activada",
           "Prioridad ligera en la cola de procesamiento",
         ],
@@ -273,14 +273,14 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       {
         id: "unlimited",
         name: "AmorIA Ilimitado",
-        tagline: "Tu compañero de IA, siempre disponible.",
+        tagline: "Tu compañero de IA, muy presente en tu día a día.",
         price: "39,99 US$",
         highlight:
-          "Para quienes quieren a AmorIA presente en su día a día: texto y voz prácticamente sin límites.",
+          "Para quienes quieren a AmorIA presente en su rutina, con un volumen muy alto de mensajes y voz cada mes.",
         features: [
-          "Hasta 10 AmorIA personalizados",
-          "Mensajes de texto ilimitados (uso justo)",
-          "Conversaciones de voz ilimitadas (uso justo)",
+          "Hasta 30 AmorIA personalizados",
+          "10 000 mensajes de texto al mes",
+          "300 interacciones de voz al mes",
           "Memoria profunda y contexto ampliado para conversaciones muy personales",
           "Máxima prioridad y acceso anticipado a nuevas funciones",
         ],
