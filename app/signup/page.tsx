@@ -1,21 +1,23 @@
 "use client";
 
 import React, { useState, FormEvent } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-function getLocaleFromSearchParams(
-  searchParams: URLSearchParams
-): Locale {
+function getLocaleFromSearchParams(): Locale {
+  if (typeof window === "undefined") return "fr";
+  const searchParams = new URLSearchParams(window.location.search);
   const raw = searchParams.get("lang");
   if (raw === "en" || raw === "es" || raw === "fr") return raw;
   return "fr";
 }
 
-function getSelectedPlan(searchParams: URLSearchParams): PlanId {
+function getSelectedPlan(): PlanId {
+  if (typeof window === "undefined") return "free";
+  const searchParams = new URLSearchParams(window.location.search);
   const raw = searchParams.get("plan");
   if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
   return "free";
@@ -94,7 +96,6 @@ const STRINGS: Record<
     google: string;
     loginLink: string;
     already: string;
-    infoConfirm: string;
   }
 > = {
   fr: {
@@ -104,13 +105,11 @@ const STRINGS: Record<
     emailLabel: "Adresse courriel",
     passwordLabel: "Mot de passe",
     passwordHint: "Minimum 6 caractères.",
-    submit: "Créer mon compte",
+    submit: "Créer mon compte et passer au paiement",
     or: "ou",
     google: "Continuer avec Google",
     loginLink: "Me connecter",
     already: "Tu as déjà un compte ?",
-    infoConfirm:
-      "Compte créé. Vérifie ta boîte courriel pour confirmer ton adresse.",
   },
   en: {
     title: "Create your AmorIA account",
@@ -119,13 +118,11 @@ const STRINGS: Record<
     emailLabel: "Email address",
     passwordLabel: "Password",
     passwordHint: "Minimum 6 characters.",
-    submit: "Create my account",
+    submit: "Create my account and go to payment",
     or: "or",
     google: "Continue with Google",
     loginLink: "Log in",
     already: "Already have an account?",
-    infoConfirm:
-      "Account created. Check your inbox to confirm your email address.",
   },
   es: {
     title: "Crear mi cuenta AmorIA",
@@ -134,22 +131,17 @@ const STRINGS: Record<
     emailLabel: "Correo electrónico",
     passwordLabel: "Contraseña",
     passwordHint: "Mínimo 6 caracteres.",
-    submit: "Crear mi cuenta",
+    submit: "Crear mi cuenta e ir al pago",
     or: "o",
     google: "Continuar con Google",
     loginLink: "Iniciar sesión",
     already: "¿Ya tienes una cuenta?",
-    infoConfirm:
-      "Cuenta creada. Revisa tu correo para confirmar tu dirección.",
   },
 };
 
 export default function SignupPage() {
-  const searchParams = typeof window !== "undefined"
-    ? new URLSearchParams(window.location.search)
-    : new URLSearchParams();
-  const locale = getLocaleFromSearchParams(searchParams);
-  const selectedPlan = getSelectedPlan(searchParams);
+  const locale = getLocaleFromSearchParams();
+  const selectedPlan = getSelectedPlan();
   const planLabel = PLAN_LABELS[locale][selectedPlan];
   const t = STRINGS[locale];
 
@@ -161,21 +153,18 @@ export default function SignupPage() {
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    setInfo(null);
     setLoadingEmail(true);
 
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        // On garde le plan choisi dans les métadonnées
         data: {
-          initial_plan: selectedPlan,
+          initial_plan: selectedPlan, // pour que tu le retrouves côté serveur
         },
       },
     });
@@ -187,12 +176,15 @@ export default function SignupPage() {
       return;
     }
 
-    setInfo(t.infoConfirm);
+    // ✅ Redirection directe vers la page de paiement
+    const params = new URLSearchParams();
+    params.set("plan", selectedPlan);
+    params.set("lang", locale);
+    router.push(`/payment?${params.toString()}`);
   };
 
   const handleGoogle = async () => {
     setError(null);
-    setInfo(null);
     setLoadingGoogle(true);
 
     const origin =
@@ -201,12 +193,8 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${origin}/auth/callback`,
-        queryParams: {
-          // on propage le plan dans l’URL de retour
-          plan: selectedPlan,
-          lang: locale,
-        },
+        // ✅ Quand Google a fini → retour direct sur /payment
+        redirectTo: `${origin}/payment?plan=${selectedPlan}&lang=${locale}`,
       },
     });
 
@@ -245,9 +233,8 @@ export default function SignupPage() {
             {planLabel.badge}
           </div>
 
-          {/* Messages */}
+          {/* Message d’erreur */}
           {error && <p className="amoria-auth-error">{error}</p>}
-          {info && <p className="amoria-auth-info">{info}</p>}
 
           {/* Formulaire */}
           <form onSubmit={handleSubmit} className="amoria-auth-form">
@@ -306,18 +293,14 @@ export default function SignupPage() {
           {/* Lien connexion */}
           <p className="amoria-auth-footer">
             {t.already}{" "}
-            <button
-              type="button"
-              className="amoria-auth-link"
-              onClick={() => router.push(buildLoginUrl())}
-            >
+            <a href={buildLoginUrl()} className="amoria-auth-link">
               {t.loginLink}
-            </button>
+            </a>
           </p>
         </div>
       </div>
 
-      {/* Styles spécifiques signup */}
+      {/* Styles */}
       <style jsx global>{`
         .amoria-auth-root {
           display: flex;
@@ -386,15 +369,6 @@ export default function SignupPage() {
           border-radius: 0.6rem;
           background: rgba(248, 113, 113, 0.12);
           color: #fecaca;
-          font-size: 0.78rem;
-        }
-
-        .amoria-auth-info {
-          margin: 0 0 0.5rem;
-          padding: 0.5rem 0.7rem;
-          border-radius: 0.6rem;
-          background: rgba(34, 197, 94, 0.12);
-          color: #bbf7d0;
           font-size: 0.78rem;
         }
 
@@ -478,12 +452,6 @@ export default function SignupPage() {
         }
 
         .amoria-auth-link {
-          border: none;
-          background: none;
-          padding: 0;
-          margin: 0;
-          font-size: 0.8rem;
-          cursor: pointer;
           color: #c4b5fd;
           text-decoration: underline;
         }
