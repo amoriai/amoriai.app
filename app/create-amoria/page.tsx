@@ -1,22 +1,32 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-function getLocale(sp: URLSearchParams | null): Locale {
-  const raw = sp?.get("lang");
-  if (raw === "en" || raw === "es" || raw === "fr") return raw;
-  return "fr";
-}
+function parseParamsFromUrl(): { locale: Locale; plan: PlanId } {
+  if (typeof window === "undefined") {
+    return { locale: "fr", plan: "free" };
+  }
 
-function getSelectedPlan(sp: URLSearchParams | null): PlanId {
-  const raw = sp?.get("plan");
-  if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
-  return "free";
+  const sp = new URLSearchParams(window.location.search);
+  const rawLang = sp.get("lang");
+  const rawPlan = sp.get("plan");
+
+  let locale: Locale = "fr";
+  if (rawLang === "en" || rawLang === "es" || rawLang === "fr") {
+    locale = rawLang;
+  }
+
+  let plan: PlanId = "free";
+  if (rawPlan === "chat" || rawPlan === "plus" || rawPlan === "unlimited") {
+    plan = rawPlan;
+  }
+
+  return { locale, plan };
 }
 
 const STRINGS: Record<
@@ -25,7 +35,6 @@ const STRINGS: Record<
     title: string;
     subtitle: string;
     loading: string;
-    notLoggedIn: string;
     ctaBackHome: string;
   }
 > = {
@@ -34,8 +43,6 @@ const STRINGS: Record<
     subtitle:
       "Ton compte est créé. Tu pourras personnaliser ton compagnon IA, choisir sa personnalité et sa langue principale.",
     loading: "Chargement de ton compte…",
-    notLoggedIn:
-      "Tu n’es pas connecté·e. Retour à la page d’inscription pour continuer.",
     ctaBackHome: "Retour à l’accueil",
   },
   en: {
@@ -43,8 +50,6 @@ const STRINGS: Record<
     subtitle:
       "Your account is created. You can now personalize your AI companion, choose personality and main language.",
     loading: "Loading your account…",
-    notLoggedIn:
-      "You are not logged in. Going back to the signup page to continue.",
     ctaBackHome: "Back to home",
   },
   es: {
@@ -52,40 +57,49 @@ const STRINGS: Record<
     subtitle:
       "Tu cuenta está creada. Ahora podrás personalizar tu compañero IA, elegir su personalidad y su idioma principal.",
     loading: "Cargando tu cuenta…",
-    notLoggedIn:
-      "No has iniciado sesión. Volvemos a la página de registro para continuar.",
     ctaBackHome: "Volver al inicio",
   },
 };
 
 export default function CreateAmoriaPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const locale = getLocale(searchParams ?? null);
-  const plan = getSelectedPlan(searchParams ?? null);
-  const t = STRINGS[locale];
-
+  const [locale, setLocale] = useState<Locale>("fr");
+  const [plan, setPlan] = useState<PlanId>("free");
+  const [paramsReady, setParamsReady] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
 
+  // 1) On lit les paramètres de l’URL côté client
   useEffect(() => {
-    // On vérifie si l’utilisateur est connecté
+    const { locale, plan } = parseParamsFromUrl();
+    setLocale(locale);
+    setPlan(plan);
+    setParamsReady(true);
+  }, []);
+
+  // 2) Quand les paramètres sont prêts → on vérifie la session
+  useEffect(() => {
+    if (!paramsReady) return;
+
     (async () => {
       const { data } = await supabase.auth.getSession();
 
       if (!data.session) {
-        const params = new URLSearchParams();
-        params.set("plan", plan);
-        params.set("lang", locale);
-        router.replace(`/signup?${params.toString()}`);
+        const p = new URLSearchParams();
+        p.set("plan", plan);
+        p.set("lang", locale);
+        router.replace(`/signup?${p.toString()}`);
         return;
       }
 
       setCheckingSession(false);
     })();
-  }, [router, locale, plan]);
+  }, [paramsReady, router, locale, plan]);
 
-  if (checkingSession) {
+  const t = STRINGS[locale];
+
+  // Loader tant qu’on n’a pas l’URL + la session
+  if (!paramsReady || checkingSession) {
     return (
       <main className="amoria-root amoria-auth-root">
         <div className="amoria-auth-wrapper">
@@ -115,8 +129,8 @@ export default function CreateAmoriaPage() {
 
           <p className="amoria-auth-subtitle">
             (Ici on mettra plus tard le vrai formulaire de création
-            d’AmorIA — pour l’instant, le plus important est que la
-            page fonctionne et ne te renvoie plus à l’accueil.)
+            d’AmorIA. Pour l’instant, on vérifie juste que la page
+            fonctionne et ne renvoie plus à l’accueil.)
           </p>
 
           <button
