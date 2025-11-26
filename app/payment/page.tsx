@@ -1,14 +1,12 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-export const runtime = "edge";
-
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
+// Titres des forfaits par langue
 const PLAN_TITLES: Record<Locale, Record<PlanId, string>> = {
   fr: {
     free: "Découverte (gratuit)",
@@ -30,6 +28,7 @@ const PLAN_TITLES: Record<Locale, Record<PlanId, string>> = {
   },
 };
 
+// Prix affichés (visuel seulement)
 const PLAN_PRICES: Record<Locale, Record<PlanId, string>> = {
   fr: {
     free: "0 $ / mois",
@@ -51,6 +50,7 @@ const PLAN_PRICES: Record<Locale, Record<PlanId, string>> = {
   },
 };
 
+// Textes multilingues
 const COPY: Record<
   Locale,
   {
@@ -107,7 +107,6 @@ function normalizePlan(raw: string | null): PlanId {
   if (raw === "chat" || raw === "plus" || raw === "unlimited" || raw === "free") {
     return raw;
   }
-  // Si le paramètre manque, on considère le plan gratuit
   return "free";
 }
 
@@ -125,7 +124,7 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔹 Redirection automatique si le plan est gratuit (pas de Stripe)
+  // Si quelqu’un arrive ici avec le plan gratuit → on saute Stripe
   useEffect(() => {
     if (plan === "free") {
       const params = new URLSearchParams();
@@ -135,19 +134,15 @@ export default function PaymentPage() {
     }
   }, [plan, locale, router]);
 
-  // Si on est sur le plan gratuit, on ne montre rien (on laisse la redirection se faire)
-  if (plan === "free") {
-    return null;
-  }
-
   const handleCheckout = async () => {
     setError(null);
     setLoading(true);
+
     try {
-      const res = await fetch(`/api/checkout?lang=${locale}`, {
+      const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }), // "chat" | "plus" | "unlimited"
+        body: JSON.stringify({ plan }),
       });
 
       if (!res.ok) {
@@ -155,13 +150,13 @@ export default function PaymentPage() {
       }
 
       const data = await res.json();
-
       if (data?.url) {
         window.location.href = data.url;
       } else {
         throw new Error(t.errorGeneric);
       }
     } catch (err: any) {
+      console.error(err);
       setError(err?.message || t.errorGeneric);
       setLoading(false);
     }
@@ -172,6 +167,11 @@ export default function PaymentPage() {
     params.set("lang", locale);
     router.push(`/pricing?${params.toString()}`);
   };
+
+  // Si plan=free, on ne rend rien (redirigé dans useEffect)
+  if (plan === "free") {
+    return null;
+  }
 
   return (
     <main className="amoria-root amoria-payment-root">
@@ -204,7 +204,6 @@ export default function PaymentPage() {
           <section className="amoria-payment-included">
             <p className="amoria-payment-included-label">{t.included}</p>
             <ul>
-              {/* Texte FR pour l’instant, tu pourras le traduire si tu veux */}
               <li>Accès 24/7 à AmorIA par texte</li>
               <li>Volume de messages adapté à un usage quotidien (fair use)</li>
               <li>Historique de conversation sauvegardé</li>
@@ -260,6 +259,7 @@ export default function PaymentPage() {
           border: 1px solid rgba(148, 163, 184, 0.4);
           padding: 1.8rem 1.7rem 1.6rem;
           box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+          color: #e5e7eb;
         }
 
         .amoria-payment-header {
