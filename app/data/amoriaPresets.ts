@@ -62,8 +62,7 @@ export const AMORIA_PRESETS = [
     avatarUrl: "/amoria-m-intellectuel.png",
   },
 
-  ✅✅✅ CORRECTION ICI ✅✅✅
-  {
+    {
     id: "m_passionne",
     name: "AmorIA Passionné",
     avatarUrl: "/amoria-m-passionne.png",
