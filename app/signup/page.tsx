@@ -163,7 +163,20 @@ export default function SignupPage() {
     setError(null);
     setLoadingEmail(true);
 
-    // 1) création du compte Supabase
+    const origin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "https://amoriai.app";
+
+    const params = new URLSearchParams();
+    params.set("plan", selectedPlan);
+    params.set("lang", locale);
+
+    const redirectTo =
+      selectedPlan === "free"
+        ? `${origin}/create-amoria?${params.toString()}`
+        : `${origin}/payment?${params.toString()}`;
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -172,6 +185,7 @@ export default function SignupPage() {
           initial_plan: selectedPlan,
           locale,
         },
+        emailRedirectTo: redirectTo,
       },
     });
 
@@ -182,30 +196,7 @@ export default function SignupPage() {
       return;
     }
 
-    // 2) on essaie de créer / mettre à jour la ligne dans user_amoria
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        await supabase.from("user_amoria").upsert({
-          id: user.id,                     // ← doit être le même uuid que auth.users
-          plan: selectedPlan,
-          payment_status:
-            selectedPlan === "free" ? "active" : "pending",
-        });
-      }
-    } catch (e) {
-      // on ne bloque pas l’utilisateur si ça plante
-      console.error("upsert user_amoria failed", e);
-    }
-
-    // 3) redirection selon le plan
-    const params = new URLSearchParams();
-    params.set("plan", selectedPlan);
-    params.set("lang", locale);
-
+    // Navigation immédiate dans l’onglet actuel
     if (selectedPlan === "free") {
       router.push(`/create-amoria?${params.toString()}`);
     } else {
@@ -218,7 +209,9 @@ export default function SignupPage() {
     setLoadingGoogle(true);
 
     const origin =
-      typeof window !== "undefined" ? window.location.origin : "";
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "https://amoriai.app";
 
     const params = new URLSearchParams();
     params.set("plan", selectedPlan);
@@ -264,9 +257,7 @@ export default function SignupPage() {
           </div>
 
           {/* Badge plan */}
-          <div className="amoria-auth-plan-badge">
-            {planLabel.badge}
-          </div>
+          <div className="amoria-auth-plan-badge">{planLabel.badge}</div>
 
           {/* Message d’erreur */}
           {error && <p className="amoria-auth-error">{error}</p>}
