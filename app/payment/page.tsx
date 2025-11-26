@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
@@ -107,7 +107,7 @@ function normalizePlan(raw: string | null): PlanId {
   if (raw === "chat" || raw === "plus" || raw === "unlimited" || raw === "free") {
     return raw;
   }
-  // S’il manque le paramètre, on tombe sur le plan gratuit
+  // Si le paramètre manque, on considère le plan gratuit
   return "free";
 }
 
@@ -125,13 +125,18 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Si quelqu’un arrive ici avec le plan gratuit, on n’envoie PAS vers Stripe :
-  // on l’envoie directement à la création d’AmorIA.
-  if (typeof window !== "undefined" && plan === "free") {
-    const params = new URLSearchParams();
-    params.set("plan", plan);
-    params.set("lang", locale);
-    router.replace(`/create-amoria?${params.toString()}`);
+  // 🔹 Redirection automatique si le plan est gratuit (pas de Stripe)
+  useEffect(() => {
+    if (plan === "free") {
+      const params = new URLSearchParams();
+      params.set("plan", plan);
+      params.set("lang", locale);
+      router.replace(`/create-amoria?${params.toString()}`);
+    }
+  }, [plan, locale, router]);
+
+  // Si on est sur le plan gratuit, on ne montre rien (on laisse la redirection se faire)
+  if (plan === "free") {
     return null;
   }
 
@@ -139,10 +144,10 @@ export default function PaymentPage() {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/checkout", {
+      const res = await fetch(`/api/checkout?lang=${locale}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan }), // "chat" | "plus" | "unlimited"
       });
 
       if (!res.ok) {
@@ -199,7 +204,8 @@ export default function PaymentPage() {
           <section className="amoria-payment-included">
             <p className="amoria-payment-included-label">{t.included}</p>
             <ul>
-              <li>Accès 24/7 à AmorIA</li>
+              {/* Texte FR pour l’instant, tu pourras le traduire si tu veux */}
+              <li>Accès 24/7 à AmorIA par texte</li>
               <li>Volume de messages adapté à un usage quotidien (fair use)</li>
               <li>Historique de conversation sauvegardé</li>
               <li>Support par courriel en cas de question technique</li>
