@@ -1,54 +1,101 @@
 "use client";
 
-import React, { Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
+type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-function getLocale(sp: URLSearchParams): Locale {
-  const raw = sp.get("lang");
+function getLocale(sp: URLSearchParams | null): Locale {
+  const raw = sp?.get("lang");
   if (raw === "en" || raw === "es" || raw === "fr") return raw;
   return "fr";
 }
 
-const TEXTS: Record<
+function getSelectedPlan(sp: URLSearchParams | null): PlanId {
+  const raw = sp?.get("plan");
+  if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
+  return "free";
+}
+
+const STRINGS: Record<
   Locale,
-  { title: string; subtitle: string; button: string }
+  {
+    title: string;
+    subtitle: string;
+    loading: string;
+    notLoggedIn: string;
+    ctaBackHome: string;
+  }
 > = {
   fr: {
-    title: "Créer ton premier AmorIA",
+    title: "Créons ton premier AmorIA 💛",
     subtitle:
-      "Ton compte est créé. Choisis maintenant le prénom, la personnalité et le style de ton compagnon IA.",
-    button: "Commencer la création",
+      "Ton compte est créé. Tu pourras personnaliser ton compagnon IA, choisir sa personnalité et sa langue principale.",
+    loading: "Chargement de ton compte…",
+    notLoggedIn:
+      "Tu n’es pas connecté·e. Retour à la page d’inscription pour continuer.",
+    ctaBackHome: "Retour à l’accueil",
   },
   en: {
-    title: "Create your first AmorIA",
+    title: "Let’s create your first AmorIA 💛",
     subtitle:
-      "Your account is ready. Now choose the name, personality and style of your AI companion.",
-    button: "Start creation",
+      "Your account is created. You can now personalize your AI companion, choose personality and main language.",
+    loading: "Loading your account…",
+    notLoggedIn:
+      "You are not logged in. Going back to the signup page to continue.",
+    ctaBackHome: "Back to home",
   },
-    es: {
-    title: "Crea tu primer AmorIA",
+  es: {
+    title: "Vamos a crear tu primer AmorIA 💛",
     subtitle:
-      "Tu cuenta está lista. Ahora elige el nombre, la personalidad y el estilo de tu compañero IA.",
-    button: "Empezar la creación",
+      "Tu cuenta está creada. Ahora podrás personalizar tu compañero IA, elegir su personalidad y su idioma principal.",
+    loading: "Cargando tu cuenta…",
+    notLoggedIn:
+      "No has iniciado sesión. Volvemos a la página de registro para continuar.",
+    ctaBackHome: "Volver al inicio",
   },
 };
 
-function InnerCreateAmoriaPage() {
+export default function CreateAmoriaPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  if (!searchParams) return null;
+  const locale = getLocale(searchParams ?? null);
+  const plan = getSelectedPlan(searchParams ?? null);
+  const t = STRINGS[locale];
 
-  const locale = getLocale(searchParams);
-  const t = TEXTS[locale];
+  const [checkingSession, setCheckingSession] = useState(true);
 
-  const handleStart = () => {
-    // Pour l’instant on te renvoie vers l’accueil.
-    // Plus tard tu pourras faire /dashboard ou /amoria/new
-    router.push("/");
-  };
+  useEffect(() => {
+    // On vérifie si l’utilisateur est connecté
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+
+      if (!data.session) {
+        const params = new URLSearchParams();
+        params.set("plan", plan);
+        params.set("lang", locale);
+        router.replace(`/signup?${params.toString()}`);
+        return;
+      }
+
+      setCheckingSession(false);
+    })();
+  }, [router, locale, plan]);
+
+  if (checkingSession) {
+    return (
+      <main className="amoria-root amoria-auth-root">
+        <div className="amoria-auth-wrapper">
+          <div className="amoria-auth-card">
+            <p className="amoria-auth-subtitle">{t.loading}</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="amoria-root amoria-auth-root">
@@ -66,23 +113,21 @@ function InnerCreateAmoriaPage() {
             </div>
           </div>
 
+          <p className="amoria-auth-subtitle">
+            (Ici on mettra plus tard le vrai formulaire de création
+            d’AmorIA — pour l’instant, le plus important est que la
+            page fonctionne et ne te renvoie plus à l’accueil.)
+          </p>
+
           <button
-            type="button"
-            onClick={handleStart}
             className="amoria-auth-submit"
+            type="button"
+            onClick={() => router.push("/")}
           >
-            {t.button}
+            {t.ctaBackHome}
           </button>
         </div>
       </div>
     </main>
-  );
-}
-
-export default function CreateAmoriaPage() {
-  return (
-    <Suspense fallback={null}>
-      <InnerCreateAmoriaPage />
-    </Suspense>
   );
 }
