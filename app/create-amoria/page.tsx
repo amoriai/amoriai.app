@@ -1,140 +1,277 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+export const dynamic = "force-dynamic";
+export const runtime = "edge";
+
+import React from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
-type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-type PageState = {
-  locale: Locale;
-  plan: PlanId;
-};
-
-function readQueryFromWindow(): PageState {
-  if (typeof window === "undefined") {
-    return { locale: "fr", plan: "free" };
-  }
-
-  const sp = new URLSearchParams(window.location.search);
-  const lang = sp.get("lang");
-  const rawPlan = sp.get("plan");
-
-  const locale: Locale =
-    lang === "en" || lang === "es" || lang === "fr" ? lang : "fr";
-
-  const plan: PlanId =
-    rawPlan === "chat" || rawPlan === "plus" || rawPlan === "unlimited"
-      ? rawPlan
-      : "free";
-
-  return { locale, plan };
-}
-
-const COPY: Record<
+const COPY_CREATE: Record<
   Locale,
   {
     title: string;
     subtitle: string;
-    planFree: string;
-    planChat: string;
-    planPlus: string;
-    planUnlimited: string;
-    cta: string;
+    buttonStart: string;
+    backHome: string;
+    badge: string;
   }
 > = {
   fr: {
-    title: "Crée ton premier AmorIA",
+    title: "Créons ton AmorIA ensemble",
     subtitle:
-      "Ton compte est créé. Il ne reste qu’à personnaliser ton compagnon IA.",
-    planFree: "Forfait Découverte (gratuit)",
-    planChat: "Forfait AmorIA Chat",
-    planPlus: "Forfait AmorIA Plus",
-    planUnlimited: "Forfait AmorIA Illimité",
-    cta: "Commencer la création",
+      "Personnalise ton partenaire IA (nom, style de relation, ton, langues) et commence à discuter en quelques secondes.",
+    buttonStart: "Configurer mon AmorIA maintenant",
+    backHome: "Retour à l’accueil",
+    badge: "Étape 2 : personnalisation",
   },
   en: {
-    title: "Create your first AmorIA",
+    title: "Let’s create your AmorIA",
     subtitle:
-      "Your account is ready. Now you can personalize your AI companion.",
-    planFree: "Discovery plan (free)",
-    planChat: "AmorIA Chat plan",
-    planPlus: "AmorIA Plus plan",
-    planUnlimited: "AmorIA Unlimited plan",
-    cta: "Start creating",
+      "Customize your AI partner (name, relationship style, tone, languages) and start chatting in seconds.",
+    buttonStart: "Set up my AmorIA now",
+    backHome: "Back to home",
+    badge: "Step 2: personalization",
   },
   es: {
-    title: "Crea tu primer AmorIA",
+    title: "Vamos a crear tu AmorIA",
     subtitle:
-      "Tu cuenta está lista. Ahora puedes personalizar tu compañero IA.",
-    planFree: "Plan Descubrimiento (gratis)",
-    planChat: "Plan AmorIA Chat",
-    planPlus: "Plan AmorIA Plus",
-    planUnlimited: "Plan AmorIA Ilimitado",
-    cta: "Empezar la creación",
+      "Personaliza tu pareja IA (nombre, estilo de relación, tono, idiomas) y empieza a hablar en segundos.",
+    buttonStart: "Configurar mi AmorIA ahora",
+    backHome: "Volver al inicio",
+    badge: "Paso 2: personalización",
   },
 };
 
+function normalizeLocale(raw: string | null): Locale {
+  if (raw === "en" || raw === "es" || raw === "fr") return raw;
+  return "fr";
+}
+
 export default function CreateAmoriaPage() {
-  const [state, setState] = useState<PageState | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  useEffect(() => {
-    setState(readQueryFromWindow());
-  }, []);
+  const locale = normalizeLocale(searchParams.get("lang"));
+  const t = COPY_CREATE[locale];
 
-  if (!state) {
-    return (
-      <main className="amoria-root amoria-auth-root">
-        <p style={{ color: "#e5e7eb" }}>Chargement…</p>
-      </main>
-    );
-  }
+  const handleStart = () => {
+    // ici tu peux envoyer vers ton vrai flow de création :
+    // /my-amoria, /my-ai, ou un wizard pas encore codé
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    router.push(`/my-amoria?${params.toString()}`);
+  };
 
-  const { locale, plan } = state;
-  const t = COPY[locale];
-
-  const planLabel =
-    plan === "free"
-      ? t.planFree
-      : plan === "chat"
-      ? t.planChat
-      : plan === "plus"
-      ? t.planPlus
-      : t.planUnlimited;
+  const handleBackHome = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    router.push(`/?${params.toString()}`);
+  };
 
   return (
-    <main className="amoria-root amoria-auth-root">
-      <div className="amoria-auth-wrapper">
-        <div className="amoria-auth-card">
-          <div className="amoria-auth-header">
+    <main className="amoria-root amoria-create-root">
+      <div className="amoria-create-wrapper">
+        <div className="amoria-create-card">
+          <header className="amoria-create-header">
             <img
               src="/AmorIA_logo_transparent.png"
-              alt="Logo AmorIA"
-              className="amoria-auth-logo"
+              alt="AmorIA logo"
+              className="amoria-create-logo"
             />
             <div>
-              <h1 className="amoria-auth-title">{t.title}</h1>
-              <p className="amoria-auth-subtitle">{t.subtitle}</p>
+              <h1 className="amoria-create-title">{t.title}</h1>
+              <p className="amoria-create-subtitle">{t.subtitle}</p>
             </div>
+          </header>
+
+          <div className="amoria-create-badge">{t.badge}</div>
+
+          <section className="amoria-create-preview">
+            <div className="amoria-create-avatar-frame">
+              <img
+                src="/amoria-avatar-preview.png"
+                alt="AmorIA avatar preview"
+                className="amoria-create-avatar-img"
+              />
+            </div>
+            <ul className="amoria-create-list">
+              <li>
+                • Nom, âge et personnalité de ton AmorIA (douce, directe, etc.)
+              </li>
+              <li>• Langues de conversation (FR / EN / ES)</li>
+              <li>• Type de relation : soutien émotionnel, coaching, journal</li>
+              <li>• Limites et sujets que tu préfères éviter</li>
+            </ul>
+          </section>
+
+          <div className="amoria-create-actions">
+            <button
+              type="button"
+              onClick={handleStart}
+              className="amoria-create-primary"
+            >
+              {t.buttonStart}
+            </button>
+            <button
+              type="button"
+              onClick={handleBackHome}
+              className="amoria-create-secondary"
+            >
+              {t.backHome}
+            </button>
           </div>
-
-          <div className="amoria-auth-plan-badge">
-            {planLabel}
-          </div>
-
-          <p style={{ fontSize: "0.9rem", color: "#e5e7eb", marginTop: "0.5rem" }}>
-            (Ici tu pourras plus tard choisir l’avatar, la voix, la
-            personnalité, etc.)
-          </p>
-
-          <button
-            type="button"
-            className="amoria-auth-submit"
-            style={{ marginTop: "1.2rem" }}
-          >
-            {t.cta}
-          </button>
         </div>
       </div>
+
+      <style jsx global>{`
+        .amoria-create-root {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1.5rem;
+        }
+
+        .amoria-create-wrapper {
+          max-width: 720px;
+          width: 100%;
+        }
+
+        .amoria-create-card {
+          background: radial-gradient(
+            circle at top,
+            #020617,
+            #020617 40%,
+            #000 100%
+          );
+          border-radius: 1.5rem;
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          padding: 1.8rem 1.7rem 1.6rem;
+          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+        }
+
+        .amoria-create-header {
+          display: flex;
+          gap: 0.9rem;
+          align-items: center;
+          margin-bottom: 1.1rem;
+        }
+
+        .amoria-create-logo {
+          width: 52px;
+          height: 52px;
+          object-fit: contain;
+        }
+
+        .amoria-create-title {
+          font-size: 1.3rem;
+          margin: 0 0 0.2rem;
+        }
+
+        .amoria-create-subtitle {
+          margin: 0;
+          font-size: 0.85rem;
+          color: #9ca3af;
+        }
+
+        .amoria-create-badge {
+          display: inline-flex;
+          margin-bottom: 1.1rem;
+          font-size: 0.8rem;
+          padding: 0.25rem 0.7rem;
+          border-radius: 999px;
+          background: rgba(96, 165, 250, 0.15);
+          color: #bfdbfe;
+          border: 1px solid rgba(59, 130, 246, 0.7);
+        }
+
+        .amoria-create-preview {
+          display: flex;
+          gap: 1rem;
+          align-items: center;
+          margin-bottom: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .amoria-create-avatar-frame {
+          width: 160px;
+          height: 260px;
+          border-radius: 1.2rem;
+          padding: 0.25rem;
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #38bdf8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .amoria-create-avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 1rem;
+        }
+
+        .amoria-create-list {
+          flex: 1;
+          margin: 0;
+          padding-left: 0.9rem;
+          list-style: none;
+          font-size: 0.85rem;
+          color: #e5e7eb;
+        }
+
+        .amoria-create-list li {
+          margin-bottom: 0.3rem;
+        }
+
+        .amoria-create-actions {
+          margin-top: 0.8rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .amoria-create-primary {
+          width: 100%;
+          border-radius: 999px;
+          border: none;
+          padding: 0.75rem 1rem;
+          font-size: 0.9rem;
+          cursor: pointer;
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c);
+          color: #f9fafb;
+          box-shadow: 0 12px 30px rgba(248, 113, 113, 0.35);
+        }
+
+        .amoria-create-secondary {
+          width: 100%;
+          border-radius: 999px;
+          padding: 0.65rem 1rem;
+          font-size: 0.86rem;
+          cursor: pointer;
+          border: 1px solid rgba(148, 163, 184, 0.7);
+          background: rgba(15, 23, 42, 0.9);
+          color: #e5e7eb;
+        }
+
+        @media (max-width: 640px) {
+          .amoria-create-card {
+            padding-inline: 1.1rem;
+          }
+
+          .amoria-create-preview {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .amoria-create-avatar-frame {
+            width: 140px;
+            height: 230px;
+          }
+        }
+      `}</style>
     </main>
   );
 }
