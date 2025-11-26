@@ -302,7 +302,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loadingEmail}
-              className "amoria-auth-submit"
+              className="amoria-auth-submit"
             >
               {loadingEmail ? "…" : t.submit}
             </button>
