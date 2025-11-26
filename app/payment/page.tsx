@@ -1,21 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import React, { useEffect, useState } from "react";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-function getLocale(sp: URLSearchParams | null): Locale {
-  const raw = sp?.get("lang");
-  if (raw === "en" || raw === "es" || raw === "fr") return raw;
-  return "fr";
-}
+function parseParamsFromUrl(): { locale: Locale; plan: PlanId } {
+  if (typeof window === "undefined") {
+    return { locale: "fr", plan: "free" };
+  }
 
-function getSelectedPlan(sp: URLSearchParams | null): PlanId {
-  const raw = sp?.get("plan");
-  if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
-  return "free";
+  const sp = new URLSearchParams(window.location.search);
+  const rawLang = sp.get("lang");
+  const rawPlan = sp.get("plan");
+
+  let locale: Locale = "fr";
+  if (rawLang === "en" || rawLang === "es" || rawLang === "fr") {
+    locale = rawLang;
+  }
+
+  let plan: PlanId = "free";
+  if (rawPlan === "chat" || rawPlan === "plus" || rawPlan === "unlimited") {
+    plan = rawPlan;
+  }
+
+  return { locale, plan };
 }
 
 const PLAN_LABELS: Record<
@@ -112,6 +121,7 @@ const STRINGS: Record<
     payButton: string;
     paying: string;
     errorGeneric: string;
+    loading: string;
   }
 > = {
   fr: {
@@ -122,6 +132,7 @@ const STRINGS: Record<
     paying: "Redirection vers Stripe…",
     errorGeneric:
       "Une erreur est survenue pendant la création du paiement.",
+    loading: "Préparation de la page de paiement…",
   },
   en: {
     title: "Secure payment",
@@ -131,6 +142,7 @@ const STRINGS: Record<
     paying: "Redirecting to Stripe…",
     errorGeneric:
       "An error occurred while creating the payment session.",
+    loading: "Preparing payment page…",
   },
   es: {
     title: "Pago seguro",
@@ -140,23 +152,31 @@ const STRINGS: Record<
     paying: "Redirigiendo a Stripe…",
     errorGeneric:
       "Se ha producido un error al crear la sesión de pago.",
+    loading: "Preparando la página de pago…",
   },
 };
 
 export default function PaymentPage() {
-  const searchParams = useSearchParams();
-  const locale = getLocale(searchParams ?? null);
-  const plan = getSelectedPlan(searchParams ?? null);
-
-  const t = STRINGS[locale];
-  const planInfo = PLAN_LABELS[locale][plan];
+  const [locale, setLocale] = useState<Locale>("fr");
+  const [plan, setPlan] = useState<PlanId>("free");
+  const [paramsReady, setParamsReady] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // 1) Lire les paramètres de l’URL côté client
+  useEffect(() => {
+    const { locale, plan } = parseParamsFromUrl();
+    setLocale(locale);
+    setPlan(plan);
+    setParamsReady(true);
+  }, []);
+
+  const t = STRINGS[locale];
+  const planInfo = PLAN_LABELS[locale][plan];
+
   const handleCheckout = async () => {
     if (plan === "free") {
-      // Normalement on ne paie pas pour le plan gratuit
       return;
     }
 
@@ -180,14 +200,25 @@ export default function PaymentPage() {
         throw new Error("Missing Stripe URL in response");
       }
 
-      // On envoie vers Stripe
       window.location.href = data.url as string;
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       setError(t.errorGeneric);
       setLoading(false);
     }
   };
+
+  if (!paramsReady) {
+    return (
+      <main className="amoria-root amoria-auth-root">
+        <div className="amoria-auth-wrapper">
+          <div className="amoria-auth-card">
+            <p className="amoria-auth-subtitle">{t.loading}</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="amoria-root amoria-auth-root">
