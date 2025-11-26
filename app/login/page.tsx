@@ -63,6 +63,20 @@ const STRINGS: Record<
   },
 };
 
+function normalizeLocale(raw: string | null): Locale {
+  if (raw === "fr" || raw === "en" || raw === "es") return raw;
+  return "fr";
+}
+
+// URL de destination après connexion (email ou Google)
+function buildRedirectUrl(locale: Locale): string {
+  if (typeof window === "undefined") return "/";
+  // ⬇️ si ta page principale connectée s'appelle /chat, remplace "/my-amoria" par "/chat"
+  const url = new URL("/my-amoria", window.location.origin);
+  url.searchParams.set("lang", locale);
+  return url.toString();
+}
+
 export default function LoginPage() {
   const [locale, setLocale] = useState<Locale>("fr");
   const [email, setEmail] = useState("");
@@ -70,23 +84,18 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // lire ?lang= côté client (comme sur create-ai)
+  // lire ?lang= côté client
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      const lang = params.get("lang");
-      if (lang === "fr" || lang === "en" || lang === "es") {
-        setLocale(lang);
-      }
+      const lang = normalizeLocale(params.get("lang"));
+      setLocale(lang);
     } catch {
-      // on ignore
+      // on ignore, on garde "fr"
     }
   }, []);
 
   const t = STRINGS[locale];
-
-  const redirectAfterAuth = () =>
-    `${window.location.origin}/create-ai?lang=${locale}`;
 
   const handleGoogleLogin = async () => {
     try {
@@ -96,7 +105,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: redirectAfterAuth(),
+          redirectTo: buildRedirectUrl(locale),
         },
       });
 
@@ -105,7 +114,7 @@ export default function LoginPage() {
         setError(t.errorGeneric);
         setIsSubmitting(false);
       }
-      // pas besoin de rediriger ici : Supabase redirige vers redirectTo
+      // Supabase redirige automatiquement vers redirectTo si tout va bien
     } catch (e) {
       console.error(e);
       setError(t.errorGeneric);
@@ -131,7 +140,8 @@ export default function LoginPage() {
         return;
       }
 
-      window.location.href = redirectAfterAuth();
+      // redirection après login par mot de passe
+      window.location.href = buildRedirectUrl(locale);
     } catch (e) {
       console.error(e);
       setError(t.errorGeneric);
