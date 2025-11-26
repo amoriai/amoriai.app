@@ -1,122 +1,193 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
-type PlanId = "chat" | "plus" | "unlimited" | "free";
+type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-function getLocale(sp: URLSearchParams): Locale {
-  const raw = sp.get("lang");
+function getLocale(sp: URLSearchParams | null): Locale {
+  const raw = sp?.get("lang");
   if (raw === "en" || raw === "es" || raw === "fr") return raw;
   return "fr";
 }
 
-function getPlan(sp: URLSearchParams): PlanId {
-  const raw = sp.get("plan");
+function getSelectedPlan(sp: URLSearchParams | null): PlanId {
+  const raw = sp?.get("plan");
   if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
   return "free";
 }
 
-const LABELS: Record<
+const PLAN_LABELS: Record<
+  Locale,
+  Record<
+    PlanId,
+    { title: string; description: string; priceLabel: string }
+  >
+> = {
+  fr: {
+    free: {
+      title: "Découverte (gratuit)",
+      description:
+        "Tu ne devrais normalement pas arriver ici pour le plan gratuit.",
+      priceLabel: "0 $ / mois",
+    },
+    chat: {
+      title: "AmorIA Chat",
+      description:
+        "Forfait texte uniquement, sans voix. Paiement mensuel, résiliable en tout temps.",
+      priceLabel: "9,99 $ / mois",
+    },
+    plus: {
+      title: "AmorIA Plus",
+      description:
+        "Plus de messages et fonctionnalités avancées. Paiement mensuel, résiliable en tout temps.",
+      priceLabel: "19,99 $ / mois",
+    },
+    unlimited: {
+      title: "AmorIA Illimité",
+      description:
+        "Ton compagnon IA ultra présent au quotidien. Accès maximal au chat et à la voix.",
+      priceLabel: "39,99 $ / mois",
+    },
+  },
+  en: {
+    free: {
+      title: "Discovery (free)",
+      description: "You normally shouldn’t be here for the free plan.",
+      priceLabel: "$0 / month",
+    },
+    chat: {
+      title: "AmorIA Chat",
+      description:
+        "Text-only plan, no voice. Monthly billing, cancel anytime.",
+      priceLabel: "$9.99 / month",
+    },
+    plus: {
+      title: "AmorIA Plus",
+      description:
+        "More messages and advanced features. Monthly billing, cancel anytime.",
+      priceLabel: "$19.99 / month",
+    },
+    unlimited: {
+      title: "AmorIA Unlimited",
+      description:
+        "Your AI companion very present every day. Maximum access to chat and voice.",
+      priceLabel: "$39.99 / month",
+    },
+  },
+  es: {
+    free: {
+      title: "Descubrimiento (gratis)",
+      description:
+        "Normalmente no deberías llegar aquí para el plan gratuito.",
+      priceLabel: "0 $ / mes",
+    },
+    chat: {
+      title: "AmorIA Chat",
+      description:
+        "Plan solo texto, sin voz. Pago mensual, cancela cuando quieras.",
+      priceLabel: "9,99 $ / mes",
+    },
+    plus: {
+      title: "AmorIA Plus",
+      description:
+        "Más mensajes y funciones avanzadas. Pago mensual, cancela cuando quieras.",
+      priceLabel: "19,99 $ / mes",
+    },
+    unlimited: {
+      title: "AmorIA Ilimitado",
+      description:
+        "Tu compañero IA muy presente cada día. Acceso máximo al chat y a la voz.",
+      priceLabel: "39,99 $ / mes",
+    },
+  },
+};
+
+const STRINGS: Record<
   Locale,
   {
     title: string;
     subtitle: string;
-    payNow: string;
-    freeInfo: string;
-    backHome: string;
-    error: string;
+    payButton: string;
+    paying: string;
+    errorGeneric: string;
   }
 > = {
   fr: {
-    title: "Finaliser ton abonnement",
+    title: "Paiement sécurisé",
     subtitle:
-      "Tu vas être redirigé vers Stripe pour sécuriser ton paiement. Une fois terminé, tu reviendras automatiquement sur AmorIA.app.",
-    payNow: "Passer au paiement sécurisé",
-    freeInfo:
-      "Ce plan est gratuit. Aucun paiement n’est nécessaire. Tu peux directement commencer avec ton AmorIA.",
-    backHome: "Retour à l’accueil",
-    error:
-      "Une erreur est survenue pendant la création de la session de paiement. Réessaie dans quelques instants.",
+      "Tu vas être redirigé·e vers Stripe pour finaliser ton abonnement AmorIA.",
+    payButton: "Passer au paiement sécurisé",
+    paying: "Redirection vers Stripe…",
+    errorGeneric:
+      "Une erreur est survenue pendant la création du paiement.",
   },
   en: {
-    title: "Complete your subscription",
+    title: "Secure payment",
     subtitle:
-      "You will be redirected to Stripe for secure payment. Once done, you’ll come back automatically to AmorIA.app.",
-    payNow: "Go to secure payment",
-    freeInfo:
-      "This plan is free. No payment is required. You can start with your AmorIA right away.",
-    backHome: "Back to home",
-    error:
-      "An error occurred while creating the payment session. Please try again in a moment.",
+      "You will be redirected to Stripe to complete your AmorIA subscription.",
+    payButton: "Go to secure payment",
+    paying: "Redirecting to Stripe…",
+    errorGeneric:
+      "An error occurred while creating the payment session.",
   },
   es: {
-    title: "Finaliza tu suscripción",
+    title: "Pago seguro",
     subtitle:
-      "Serás redirigido a Stripe para realizar el pago de forma segura. Después volverás automáticamente a AmorIA.app.",
-    payNow: "Ir al pago seguro",
-    freeInfo:
-      "Este plan es gratis. No necesitas pagar. Puedes empezar con tu AmorIA ahora mismo.",
-    backHome: "Volver al inicio",
-    error:
-      "Se produjo un error al crear la sesión de pago. Inténtalo de nuevo en unos instantes.",
+      "Vas a ser redirigido a Stripe para finalizar tu suscripción AmorIA.",
+    payButton: "Ir al pago seguro",
+    paying: "Redirigiendo a Stripe…",
+    errorGeneric:
+      "Se ha producido un error al crear la sesión de pago.",
   },
 };
 
-const PLAN_NAMES: Record<PlanId, string> = {
-  free: "Découverte (gratuit)",
-  chat: "AmorIA Chat – 9,99 $ / mois",
-  plus: "AmorIA Plus – 19,99 $ / mois",
-  unlimited: "AmorIA Illimité – 39,99 $ / mois",
-};
-
-function InnerPaymentPage() {
+export default function PaymentPage() {
   const searchParams = useSearchParams();
-  if (!searchParams) return null;
+  const locale = getLocale(searchParams ?? null);
+  const plan = getSelectedPlan(searchParams ?? null);
 
-  const locale = getLocale(searchParams);
-  const plan = getPlan(searchParams);
+  const t = STRINGS[locale];
+  const planInfo = PLAN_LABELS[locale][plan];
 
-  const t = LABELS[locale];
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handlePay = async () => {
-    setError(null);
-
+  const handleCheckout = async () => {
     if (plan === "free") {
-      // Pas de paiement pour le gratuit → on peut juste renvoyer à l’accueil
-      window.location.href = "/";
+      // Normalement on ne paie pas pour le plan gratuit
       return;
     }
 
     setLoading(true);
+    setError(null);
+
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ planId: plan }),
       });
 
       if (!res.ok) {
-        throw new Error("Checkout API error");
+        throw new Error("Bad response from /api/checkout");
       }
 
       const data = await res.json();
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("Missing Stripe URL");
+
+      if (!data?.url) {
+        throw new Error("Missing Stripe URL in response");
       }
-    } catch (e) {
-      console.error(e);
-      setError(t.error);
+
+      // On envoie vers Stripe
+      window.location.href = data.url as string;
+    } catch (err: any) {
+      console.error(err);
+      setError(t.errorGeneric);
       setLoading(false);
     }
   };
-
-  const titlePlan = PLAN_NAMES[plan];
 
   return (
     <main className="amoria-root amoria-auth-root">
@@ -135,48 +206,36 @@ function InnerPaymentPage() {
           </div>
 
           <div className="amoria-auth-plan-badge">
-            {titlePlan}
+            {planInfo.title} • {planInfo.priceLabel}
           </div>
 
-          {plan === "free" && (
-            <>
-              <p className="amoria-auth-subtitle" style={{ marginBottom: "1rem" }}>
-                {t.freeInfo}
-              </p>
-              <button
-                type="button"
-                onClick={() => (window.location.href = "/")}
-                className="amoria-auth-submit"
-              >
-                {t.backHome}
-              </button>
-            </>
+          <p className="amoria-auth-subtitle">
+            {planInfo.description}
+          </p>
+
+          {error && (
+            <p className="amoria-auth-error" style={{ marginTop: "0.8rem" }}>
+              {error}
+            </p>
           )}
 
-          {plan !== "free" && (
-            <>
-              {error && <p className="amoria-auth-error">{error}</p>}
-
-              <button
-                type="button"
-                onClick={handlePay}
-                disabled={loading}
-                className="amoria-auth-submit"
-              >
-                {loading ? "…" : t.payNow}
-              </button>
-            </>
+          {plan === "free" ? (
+            <p className="amoria-auth-subtitle" style={{ marginTop: "1rem" }}>
+              Ce plan est gratuit : normalement, les utilisateurs y arrivent
+              directement depuis la création de compte sans passer par Stripe.
+            </p>
+          ) : (
+            <button
+              type="button"
+              className="amoria-auth-submit"
+              disabled={loading}
+              onClick={handleCheckout}
+            >
+              {loading ? t.paying : t.payButton}
+            </button>
           )}
         </div>
       </div>
     </main>
-  );
-}
-
-export default function PaymentPage() {
-  return (
-    <Suspense fallback={null}>
-      <InnerPaymentPage />
-    </Suspense>
   );
 }
