@@ -20,7 +20,9 @@ function getSelectedPlanFromUrl(): PlanId {
   if (typeof window === "undefined") return "free";
   const searchParams = new URLSearchParams(window.location.search);
   const raw = searchParams.get("plan");
-  if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
+  if (raw === "chat" || raw === "plus" || raw === "unlimited" || raw === "free") {
+    return raw;
+  }
   return "free";
 }
 
@@ -161,6 +163,7 @@ export default function SignupPage() {
     setError(null);
     setLoadingEmail(true);
 
+    // 1) création du compte Supabase
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -179,6 +182,26 @@ export default function SignupPage() {
       return;
     }
 
+    // 2) on essaie de créer / mettre à jour la ligne dans user_amoria
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        await supabase.from("user_amoria").upsert({
+          id: user.id,                     // ← doit être le même uuid que auth.users
+          plan: selectedPlan,
+          payment_status:
+            selectedPlan === "free" ? "active" : "pending",
+        });
+      }
+    } catch (e) {
+      // on ne bloque pas l’utilisateur si ça plante
+      console.error("upsert user_amoria failed", e);
+    }
+
+    // 3) redirection selon le plan
     const params = new URLSearchParams();
     params.set("plan", selectedPlan);
     params.set("lang", locale);
@@ -201,8 +224,7 @@ export default function SignupPage() {
     params.set("plan", selectedPlan);
     params.set("lang", locale);
 
-    const target =
-      selectedPlan === "free" ? "create-amoria" : "payment";
+    const target = selectedPlan === "free" ? "create-amoria" : "payment";
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -280,7 +302,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loadingEmail}
-              className="amoria-auth-submit"
+              className "amoria-auth-submit"
             >
               {loadingEmail ? "…" : t.submit}
             </button>
