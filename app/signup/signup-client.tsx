@@ -67,7 +67,7 @@ const LABELS: Record<
   es: {
     title: "Crear mi cuenta AmorIAI",
     subtitle:
-      "Regístrate para empezar con tu AmorIA. Podrás cambiar de plan más tarde.",
+      "Regístrate para empezar con tu AmorIAI. Podrás cambiar de plan más tarde.",
     emailLabel: "Correo electrónico",
     passwordLabel: "Contraseña",
     passwordHint: "Mínimo 6 caracteres.",
@@ -90,28 +90,37 @@ export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // langue & plan depuis l’URL
-  const localeParam = (searchParams.get("lang") || "fr") as Locale;
-  const planParam = (searchParams.get("plan") || "free") as PlanId;
+  // --- locale depuis l’URL, avec fallback sécurisé ---
+  const localeFromUrl = searchParams.get("lang");
+  const locale: Locale =
+    localeFromUrl === "en" || localeFromUrl === "es" || localeFromUrl === "fr"
+      ? localeFromUrl
+      : "fr";
 
-  const t = LABELS[localeParam];
+  // --- plan depuis l’URL, avec fallback sécurisé ---
+  const planFromUrl = searchParams.get("plan");
+  let initialPlan: PlanId = "free";
+  if (planFromUrl === "chat" || planFromUrl === "plus" || planFromUrl === "unlimited") {
+    initialPlan = planFromUrl;
+  }
 
+  const t = LABELS[locale];
+
+  const [plan, setPlan] = useState<PlanId>(initialPlan);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedPlanLabel = t.planNames[planParam];
+  const selectedPlanLabel = t.planNames[plan];
 
-  // 👉 Après création du compte, on décide où aller
+  // 👉 Après création du compte, on décide où aller en fonction du plan choisi
   const redirectAfterSignup = () => {
-    if (planParam === "free") {
-      // Plan gratuit → configuration directe
-      router.push(`/create-amoria?lang=${localeParam}&plan=${planParam}`);
+    if (plan === "free") {
+      router.push(`/create-amoria?lang=${locale}&plan=${plan}`);
     } else {
-      // Plan payant → page /payment qui gère Stripe
-      router.push(`/payment?lang=${localeParam}&plan=${planParam}`);
+      router.push(`/payment?lang=${locale}&plan=${plan}`);
     }
   };
 
@@ -132,8 +141,7 @@ export default function SignupClient() {
       return;
     }
 
-    // ✅ On laisse Supabase envoyer l’email de confirmation
-    // puis on envoie l’utilisateur vers la bonne page
+    // Supabase envoie l’email de confirmation
     redirectAfterSignup();
   };
 
@@ -143,9 +151,9 @@ export default function SignupClient() {
       setLoadingGoogle(true);
 
       const redirectTo =
-        planParam === "free"
-          ? `${window.location.origin}/create-amoria?lang=${localeParam}&plan=${planParam}`
-          : `${window.location.origin}/payment?lang=${localeParam}&plan=${planParam}`;
+        plan === "free"
+          ? `${window.location.origin}/create-amoria?lang=${locale}&plan=${plan}`
+          : `${window.location.origin}/payment?lang=${locale}&plan=${plan}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -168,10 +176,55 @@ export default function SignupClient() {
         <h1 className="amoria-auth-title">{t.title}</h1>
         <p className="amoria-auth-subtitle">{t.subtitle}</p>
 
-        <p className="amoria-auth-plan">
-          <span className="amoria-auth-plan-label">{t.selectedPlanPrefix}</span>{" "}
-          <span className="amoria-auth-plan-name">{selectedPlanLabel}</span>
-        </p>
+        {/* Sélecteur de plan */}
+        <div className="amoria-auth-plan-picker">
+          <p className="amoria-auth-plan-picker-label">
+            {t.selectedPlanPrefix}{" "}
+            <span className="amoria-auth-plan-name">{selectedPlanLabel}</span>
+          </p>
+          <div className="amoria-auth-plan-options">
+            <button
+              type="button"
+              className={
+                "amoria-auth-plan-option" +
+                (plan === "free" ? " amoria-auth-plan-option--active" : "")
+              }
+              onClick={() => setPlan("free")}
+            >
+              {t.planNames.free}
+            </button>
+            <button
+              type="button"
+              className={
+                "amoria-auth-plan-option" +
+                (plan === "chat" ? " amoria-auth-plan-option--active" : "")
+              }
+              onClick={() => setPlan("chat")}
+            >
+              {t.planNames.chat}
+            </button>
+            <button
+              type="button"
+              className={
+                "amoria-auth-plan-option" +
+                (plan === "plus" ? " amoria-auth-plan-option--active" : "")
+              }
+              onClick={() => setPlan("plus")}
+            >
+              {t.planNames.plus}
+            </button>
+            <button
+              type="button"
+              className={
+                "amoria-auth-plan-option" +
+                (plan === "unlimited" ? " amoria-auth-plan-option--active" : "")
+              }
+              onClick={() => setPlan("unlimited")}
+            >
+              {t.planNames.unlimited}
+            </button>
+          </div>
+        </div>
 
         <form className="amoria-auth-form" onSubmit={handleSubmit}>
           <label className="amoria-auth-label">
@@ -223,7 +276,7 @@ export default function SignupClient() {
         <p className="amoria-auth-footer">
           {t.alreadyHave}{" "}
           <a
-            href={`/login?lang=${localeParam}`}
+            href={`/login?lang=${locale}`}
             className="amoria-auth-footer-link"
           >
             {t.login}
@@ -231,7 +284,6 @@ export default function SignupClient() {
         </p>
       </div>
 
-      {/* Styles simples pour garder un look propre */}
       <style jsx global>{`
         .amoria-auth-root {
           min-height: 100vh;
@@ -241,14 +293,21 @@ export default function SignupClient() {
           background: radial-gradient(circle at top, #020617 0, #000 100%);
           color: #e5e7eb;
           padding: 1.5rem;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont,
+            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
         }
 
         .amoria-auth-card {
           width: 100%;
-          max-width: 420px;
+          max-width: 480px;
           border-radius: 1.5rem;
           padding: 1.8rem 1.9rem 2rem;
-          background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
+          background: radial-gradient(
+            circle at top,
+            #020617,
+            #020617 40%,
+            #000 100%
+          );
           border: 1px solid rgba(148, 163, 184, 0.35);
           box-shadow: 0 20px 40px rgba(15, 23, 42, 0.7);
         }
@@ -264,17 +323,48 @@ export default function SignupClient() {
           margin-bottom: 0.9rem;
         }
 
-        .amoria-auth-plan {
-          font-size: 0.8rem;
+        .amoria-auth-plan-picker {
           margin-bottom: 1.1rem;
         }
 
-        .amoria-auth-plan-label {
+        .amoria-auth-plan-picker-label {
+          font-size: 0.8rem;
+          margin-bottom: 0.45rem;
           color: #9ca3af;
         }
 
         .amoria-auth-plan-name {
           font-weight: 600;
+          color: #e5e7eb;
+        }
+
+        .amoria-auth-plan-options {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.4rem;
+        }
+
+        .amoria-auth-plan-option {
+          flex: 1 1 48%;
+          min-width: 46%;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.45);
+          padding: 0.35rem 0.8rem;
+          font-size: 0.76rem;
+          background: rgba(15, 23, 42, 0.9);
+          color: #e5e7eb;
+          cursor: pointer;
+          text-align: left;
+        }
+
+        .amoria-auth-plan-option--active {
+          border-color: #fb37ff;
+          background: radial-gradient(
+            circle at top,
+            rgba(251, 55, 255, 0.14),
+            rgba(15, 23, 42, 0.9)
+          );
+          box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.35);
         }
 
         .amoria-auth-form {
@@ -369,6 +459,12 @@ export default function SignupClient() {
         .amoria-auth-footer-link {
           color: #e5e7eb;
           text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+          .amoria-auth-plan-option {
+            flex: 1 1 100%;
+          }
         }
       `}</style>
     </main>
