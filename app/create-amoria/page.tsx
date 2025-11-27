@@ -7,10 +7,9 @@ import { supabase } from "../../lib/supabaseClient";
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-// On sépare bien les catégories 50+ homme / femme
 type PersonaType = "woman" | "man" | "woman50" | "man50" | "androgynous";
 
-// -------------------- AVATARS PAR CATÉGORIE --------------------
+// -------------------- AVATARS --------------------
 
 const AVATARS: Record<PersonaType, string[]> = {
   woman: [
@@ -179,7 +178,8 @@ const STRINGS: Record<Locale, Copy> = {
   },
 };
 
-// options de select (texte UI seulement)
+// -------------------- SELECT OPTIONS --------------------
+
 const RELATION_OPTIONS: Record<Locale, string[]> = {
   fr: [
     "Soutien émotionnel & confidences",
@@ -228,38 +228,11 @@ type CategoryOption = {
 };
 
 const CATEGORY_OPTIONS: CategoryOption[] = [
-  {
-    value: "woman",
-    label: { fr: "Femme", en: "Woman", es: "Mujer" },
-  },
-  {
-    value: "man",
-    label: { fr: "Homme", en: "Man", es: "Hombre" },
-  },
-  {
-    value: "woman50",
-    label: {
-      fr: "Femme 50+",
-      en: "Woman 50+",
-      es: "Mujer 50+",
-    },
-  },
-  {
-    value: "man50",
-    label: {
-      fr: "Homme 50+",
-      en: "Man 50+",
-      es: "Hombre 50+",
-    },
-  },
-  {
-    value: "androgynous",
-    label: {
-      fr: "Androgyne / non-binaire",
-      en: "Androgynous / non-binary",
-      es: "Andrógino / no binario",
-    },
-  },
+  { value: "woman",       label: { fr: "Femme",       en: "Woman",       es: "Mujer" } },
+  { value: "man",         label: { fr: "Homme",       en: "Man",         es: "Hombre" } },
+  { value: "woman50",     label: { fr: "Femme 50+",   en: "Woman 50+",   es: "Mujer 50+" } },
+  { value: "man50",       label: { fr: "Homme 50+",   en: "Man 50+",     es: "Hombre 50+" } },
+  { value: "androgynous", label: { fr: "Androgyne / non-binaire", en: "Androgynous / non-binary", es: "Andrógino / no binario" } },
 ];
 
 // -------------------- COMPOSANT --------------------
@@ -281,16 +254,12 @@ export default function CreateAmoriaPage() {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // nouvel état auth : on check supabase dès le chargement
-  const [authStatus, setAuthStatus] = useState<
-    "checking" | "loggedIn" | "loggedOut"
-  >("checking");
-
-  // Lire ?lang= et ?plan= côté client + vérifier l’auth
+  // Lire ?lang et ?plan dans l’URL
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const params = new URLSearchParams(window.location.search);
+
     const langParam = params.get("lang");
     if (langParam === "fr" || langParam === "en" || langParam === "es") {
       setLocale(langParam);
@@ -305,27 +274,12 @@ export default function CreateAmoriaPage() {
     ) {
       setPlan(planParam);
     }
-
-    // Vérifie si l’utilisateur est connecté
-    supabase.auth
-      .getUser()
-      .then(({ data, error }) => {
-        if (error || !data?.user) {
-          setAuthStatus("loggedOut");
-        } else {
-          setAuthStatus("loggedIn");
-        }
-      })
-      .catch(() => {
-        setAuthStatus("loggedOut");
-      });
   }, []);
 
   const t = STRINGS[locale];
   const relationOptions = RELATION_OPTIONS[locale];
   const toneOptions = TONE_OPTIONS[locale];
 
-  // changement de catégorie => nouvel avatar random de cette catégorie
   const handleCategoryChange = (value: PersonaType) => {
     setCategory(value);
     setAvatarUrl(randomAvatar(value));
@@ -360,11 +314,9 @@ export default function CreateAmoriaPage() {
     setSaving(true);
 
     try {
-      // Double check au moment du submit
       const { data: userData, error: userError } = await supabase.auth.getUser();
 
       if (userError || !userData?.user) {
-        setAuthStatus("loggedOut");
         setErrorMsg(t.notLoggedBanner);
         setSaving(false);
         return;
@@ -411,7 +363,7 @@ sans jugement, en respectant les limites de l’utilisateur.
     }
   };
 
-  const isDisabled = saving || authStatus === "checking";
+  const isDisabled = saving;
 
   return (
     <main className="amoria-create-root">
@@ -437,13 +389,6 @@ sans jugement, en respectant les limites de l’utilisateur.
               </div>
             </div>
           </header>
-
-          {/* Bannière rouge UNIQUEMENT si on sait qu'il n'y a PAS d'utilisateur */}
-          {authStatus === "loggedOut" && !errorMsg && (
-            <div className="amoria-banner amoria-banner--error">
-              {t.notLoggedBanner}
-            </div>
-          )}
 
           {errorMsg && (
             <div className="amoria-banner amoria-banner--error">
