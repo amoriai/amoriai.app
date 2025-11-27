@@ -3,7 +3,7 @@
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
@@ -54,11 +54,32 @@ export default function CreateAmoriaPage() {
   const router = useRouter();
 
   const locale = normalizeLocale(searchParams.get("lang"));
+
+  // ---- gestion du plan -------------------------------------------------
+  const rawPlan = searchParams.get("plan") ?? "free";
+
+  // on normalise pour éviter les surprises dans l’URL
+  const plan =
+    rawPlan.includes("chat") ? "chat" :
+    rawPlan.includes("plus") ? "plus" :
+    rawPlan.includes("unlimited") ? "unlimited" :
+    "free";
+
+  // 👉 si le plan N’EST PAS gratuit, on envoie direct vers /payment
+  useEffect(() => {
+    if (plan !== "free") {
+      const params = new URLSearchParams();
+      params.set("lang", locale);
+      params.set("plan", plan);
+      router.replace(`/payment?${params.toString()}`);
+    }
+  }, [plan, locale, router]);
+  // ----------------------------------------------------------------------
+
   const t = COPY_CREATE[locale];
 
   const handleStart = () => {
-    // ici tu peux envoyer vers ton vrai flow de création :
-    // /my-amoria, /my-ai, ou un wizard pas encore codé
+    // Pour l’instant : flow de création seulement pour le plan gratuit
     const params = new URLSearchParams();
     params.set("lang", locale);
     router.push(`/my-amoria?${params.toString()}`);
