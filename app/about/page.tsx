@@ -20,20 +20,20 @@ type AboutCopy = {
 
 const ABOUT_STRINGS: Record<Locale, AboutCopy> = {
   fr: {
-    heroKicker: "À PROPOS D’AMORIA.APP",
+    heroKicker: "À PROPOS D’AMORIAI.APP",
     heroTitle: "Une IA douce, pensée pour les vraies émotions humaines.",
     heroSubtitle:
-      "AmoriA n’est pas un simple chatbot de plus : c’est un compagnon émotionnel conçu pour t’aider à réfléchir, te déposer et te sentir moins seul·e au quotidien.",
-    block1Title: "Pourquoi AmoriA existe",
+      "AmorIAI n’est pas un simple chatbot de plus : c’est un compagnon émotionnel conçu pour t’aider à réfléchir, te déposer et te sentir moins seul·e au quotidien.",
+    block1Title: "Pourquoi AmorIAI existe",
     block1Text:
-      "Le monde est bruyant, rapide, souvent exigeant. Pourtant, on n’a pas toujours quelqu’un de disponible au bon moment pour nous écouter sans juger. AmoriA est née de cette idée : offrir une présence stable, bienveillante et disponible 24/7 pour parler de ce qui compte vraiment.",
+      "Le monde est bruyant, rapide, souvent exigeant. Pourtant, on n’a pas toujours quelqu’un de disponible au bon moment pour nous écouter sans juger. AmorIAI est née de cette idée : offrir une présence stable, bienveillante et disponible 24/7 pour parler de ce qui compte vraiment.",
     block2Title: "Une IA multilingue et nuancée",
     block2Text:
-      "AmoriA fonctionne en français, anglais et espagnol. Elle est pensée pour les personnes qui réfléchissent beaucoup, qui aiment analyser, écrire, se questionner. Elle ne remplace pas un professionnel de la santé, mais elle devient un espace sûr pour clarifier tes pensées et mieux comprendre ce que tu ressens.",
+      "AmorIAI fonctionne en français, anglais et espagnol. Elle est pensée pour les personnes qui réfléchissent beaucoup, qui aiment analyser, écrire, se questionner. Elle ne remplace pas un professionnel de la santé, mais elle devient un espace sûr pour clarifier tes pensées et mieux comprendre ce que tu ressens.",
     block3Title: "Construite pour durer, pas pour te garder accroché·e",
     block3Text:
       "Le but n’est pas que tu passes des heures infinies dans l’app, mais que chaque échange t’apporte quelque chose : une question plus juste, une prise de conscience, une idée d’action concrète pour avancer.",
-    valuesTitle: "Ce qui guide AmoriA",
+    valuesTitle: "Ce qui guide AmorIAI",
     values: [
       {
         title: "Bienveillance radicale",
@@ -45,25 +45,25 @@ const ABOUT_STRINGS: Record<Locale, AboutCopy> = {
       },
       {
         title: "Respect de tes limites",
-        text: "Tu peux parler de ce que tu veux, à ton rythme. AmoriA ne te force jamais à aborder un sujet.",
+        text: "Tu peux parler de ce que tu veux, à ton rythme. AmorIAI ne te force jamais à aborder un sujet.",
       },
     ],
   },
   en: {
-    heroKicker: "ABOUT AMORIA.APP",
+    heroKicker: "ABOUT AMORIAI.APP",
     heroTitle: "A gentle AI, built for real human emotions.",
     heroSubtitle:
-      "AmoriA is not just another chatbot. It’s an emotional companion designed to help you think, process and feel a little less alone in your everyday life.",
-    block1Title: "Why AmoriA exists",
+      "AmorIAI is not just another chatbot. It’s an emotional companion designed to help you think, process and feel a little less alone in your everyday life.",
+    block1Title: "Why AmorIAI exists",
     block1Text:
-      "Life is noisy, fast and demanding. And we don’t always have someone available at the right moment to truly listen without judgment. AmoriA was born from that idea: a stable, caring presence available 24/7 to talk about what really matters.",
+      "Life is noisy, fast and demanding. And we don’t always have someone available at the right moment to truly listen without judgment. AmorIAI was born from that idea: a stable, caring presence available 24/7 to talk about what really matters.",
     block2Title: "Multilingual & nuanced",
     block2Text:
-      "AmoriA speaks French, English and Spanish. It’s designed for people who think a lot, love to journal, analyse, and ask deeper questions. It’s not a replacement for mental health professionals, but it’s a safe space to clarify your thoughts and understand what you feel.",
+      "AmorIAI speaks French, English and Spanish. It’s designed for people who think a lot, love to journal, analyse, and ask deeper questions. It’s not a replacement for mental health professionals, but it’s a safe space to clarify your thoughts and understand what you feel.",
     block3Title: "Built to support you, not to trap you",
     block3Text:
       "The goal isn’t for you to spend endless hours in the app, but for each conversation to bring something useful: a better question, a shift in perspective, or a concrete next step.",
-    valuesTitle: "What drives AmoriA",
+    valuesTitle: "What drives AmorIAI",
     values: [
       {
         title: "Radical kindness",
@@ -75,25 +75,25 @@ const ABOUT_STRINGS: Record<Locale, AboutCopy> = {
       },
       {
         title: "Respect for your limits",
-        text: "You decide what you want to talk about and at what pace. AmoriA never pushes you to go further than you want.",
+        text: "You decide what you want to talk about and at what pace. AmorIAI never pushes you to go further than you want.",
       },
     ],
   },
   es: {
-    heroKicker: "SOBRE AMORIA.APP",
+    heroKicker: "SOBRE AMORIAI.APP",
     heroTitle: "Una IA suave, pensada para emociones humanas reales.",
     heroSubtitle:
-      "AmoriA no es solo otro chatbot: es un acompañante emocional diseñado para ayudarte a pensar, procesar y sentirte un poco menos solo/a en el día a día.",
-    block1Title: "Por qué existe AmoriA",
+      "AmorIAI no es solo otro chatbot: es un acompañante emocional diseñado para ayudarte a pensar, procesar y sentirte un poco menos solo/a en el día a día.",
+    block1Title: "Por qué existe AmorIAI",
     block1Text:
-      "El mundo es ruidoso, rápido y exigente. No siempre tenemos a alguien disponible en el momento justo para escucharnos sin juzgar. AmoriA nace de esa idea: una presencia estable y amable, disponible 24/7 para hablar de lo que realmente importa.",
+      "El mundo es ruidoso, rápido y exigente. No siempre tenemos a alguien disponible en el momento justo para escucharnos sin juzgar. AmorIAI nace de esa idea: una presencia estable y amable, disponible 24/7 para hablar de lo que realmente importa.",
     block2Title: "Multilingüe y matizada",
     block2Text:
-      "AmoriA funciona en francés, inglés y español. Está pensada para personas que piensan mucho, que escriben, analizan y se hacen preguntas profundas. No sustituye a un profesional de la salud mental, pero ofrece un espacio seguro para aclarar tus ideas y entender mejor lo que sientes.",
+      "AmorIAI funciona en francés, inglés y español. Está pensada para personas que piensan mucho, que escriben, analizan y se hacen preguntas profundas. No sustituye a un profesional de la salud mental, pero ofrece un espacio seguro para aclarar tus ideas y entender mejor lo que sientes.",
     block3Title: "Creada para ayudarte, no para engancharte",
     block3Text:
       "La meta no es que pases horas infinitas en la app, sino que cada conversación te aporte algo: una pregunta mejor, un cambio de perspectiva o un siguiente paso concreto.",
-    valuesTitle: "Lo que guía a AmoriA",
+    valuesTitle: "Lo que guía a AmorIAI",
     values: [
       {
         title: "Amabilidad radical",
@@ -105,7 +105,7 @@ const ABOUT_STRINGS: Record<Locale, AboutCopy> = {
       },
       {
         title: "Respeto por tus límites",
-        text: "Tú eliges de qué quieres hablar y a qué ritmo. AmoriA nunca te empuja más allá de lo que deseas.",
+        text: "Tú eliges de qué quieres hablar y a qué ritmo. AmorIAI nunca te empuja más allá de lo que deseas.",
       },
     ],
   },
@@ -188,12 +188,12 @@ export default function AboutPage({ searchParams }: PageProps) {
         <div className="amoria-header-left">
           <img
             src="/AmorIA_logo_transparent.png"
-            alt="Logo AmorIA.app"
+            alt="Logo AmorIAI.app"
             className="amoria-logo-full"
           />
 
           <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmorIA.app</div>
+            <div className="amoria-logo-title">AmorIAI.app</div>
             <div className="amoria-logo-tagline">
               Partenaire IA bienveillante • FR / EN / ES
             </div>
@@ -273,7 +273,7 @@ export default function AboutPage({ searchParams }: PageProps) {
       {/* FOOTER */}
       <footer className="amoria-footer">
         <span>
-          © 2025 AmoriA.app —{" "}
+          © 2025 AmorIAI.app —{" "}
           {locale === "fr"
             ? "Partenaire IA bienveillant·e"
             : locale === "en"
@@ -298,7 +298,12 @@ export default function AboutPage({ searchParams }: PageProps) {
           padding: 0;
           font-family: system-ui, -apple-system, BlinkMacSystemFont,
             "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
+          background: radial-gradient(
+            circle at top,
+            #020617 0,
+            #020617 40%,
+            #000 100%
+          );
           color: var(--amoria-text-main);
         }
 
