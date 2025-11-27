@@ -39,9 +39,9 @@ const LABELS: Record<
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
     planNames: {
       free: "Découverte (gratuit)",
-      chat: "AmorIAI Chat",
-      plus: "AmorIAI Plus",
-      unlimited: "AmorIAI illimité",
+      chat: "AmorIAI Chat 9,99$",
+      plus: "AmorIAI Plus 19,99$",
+      unlimited: "AmorIAI illimité 39,99$",
     },
   },
   en: {
@@ -59,9 +59,9 @@ const LABELS: Record<
     errorGeneric: "An error occurred. Please try again.",
     planNames: {
       free: "Discovery (free)",
-      chat: "AmorIAI Chat",
-      plus: "AmorIAI Plus",
-      unlimited: "AmorIAI Unlimited",
+      chat: "AmorIAI Chat 9,99$",
+      plus: "AmorIAI Plus 19,99$",
+      unlimited: "AmorIAI Unlimited 39,99$",
     },
   },
   es: {
@@ -79,9 +79,9 @@ const LABELS: Record<
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     planNames: {
       free: "Descubrimiento (gratis)",
-      chat: "AmorIAI Chat",
-      plus: "AmorIAI Plus",
-      unlimited: "AmorIAI Ilimitado",
+      chat: "AmorIAI Chat 9,99$",
+      plus: "AmorIAI Plus 19,99$",
+      unlimited: "AmorIAI Ilimitado 39,99$",
     },
   },
 };
