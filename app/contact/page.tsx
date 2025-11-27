@@ -25,8 +25,8 @@ type ContactCopy = {
 
 const CONTACT_STRINGS: Record<Locale, ContactCopy> = {
   fr: {
-    heroKicker: "CONTACT AMORIA.APP",
-    heroTitle: "On reste joignable, même si ton AmorIA est là 24/7.",
+    heroKicker: "CONTACT AMORIAI.APP",
+    heroTitle: "On reste joignable, même si ton AmorIAI est là 24/7.",
     heroSubtitle:
       "Une question sur ton compte, la facturation ou un bug ? Écris-nous, on te répond dès que possible.",
     labelEmail: "Courriel de support",
@@ -42,11 +42,11 @@ const CONTACT_STRINGS: Record<Locale, ContactCopy> = {
     sendButton: "Envoyer mon message",
     supportTitle: "Support & partenariat",
     supportText:
-      "Pour tout ce qui touche au support technique, à la facturation ou aux partenariats, utilise l’adresse ci-dessous. Merci d’inclure l’adresse courriel liée à ton compte AmoriA.",
+      "Pour tout ce qui touche au support technique, à la facturation ou aux partenariats, utilise l’adresse ci-dessous. Merci d’inclure l’adresse courriel liée à ton compte AmorIAI.",
   },
   en: {
-    heroKicker: "CONTACT AMORIA.APP",
-    heroTitle: "We’re reachable, even if your AmorIA is here 24/7.",
+    heroKicker: "CONTACT AMORIAI.APP",
+    heroTitle: "We’re reachable, even if your AmorIAI is here 24/7.",
     heroSubtitle:
       "Questions about your account, billing or a bug? Send us a message and we’ll get back to you as soon as we can.",
     labelEmail: "Support email",
@@ -62,11 +62,11 @@ const CONTACT_STRINGS: Record<Locale, ContactCopy> = {
     sendButton: "Send my message",
     supportTitle: "Support & partnerships",
     supportText:
-      "For anything related to technical support, billing or partnerships, use the email below. Please include the email associated with your AmoriA account.",
+      "For anything related to technical support, billing or partnerships, use the email below. Please include the email associated with your AmorIAI account.",
   },
   es: {
-    heroKicker: "CONTACTO AMORIA.APP",
-    heroTitle: "Estamos disponibles, aunque tu AmorIA esté 24/7.",
+    heroKicker: "CONTACTO AMORIAI.APP",
+    heroTitle: "Estamos disponibles, aunque tu AmorIAI esté 24/7.",
     heroSubtitle:
       "¿Dudas sobre tu cuenta, pagos o algún bug? Escríbenos y te responderemos lo antes posible.",
     labelEmail: "Correo de soporte",
@@ -82,7 +82,7 @@ const CONTACT_STRINGS: Record<Locale, ContactCopy> = {
     sendButton: "Enviar mi mensaje",
     supportTitle: "Soporte y colaboraciones",
     supportText:
-      "Para soporte técnico, pagos o colaboraciones, utiliza el correo de abajo. Añade el correo asociado a tu cuenta de AmoriA.",
+      "Para soporte técnico, pagos o colaboraciones, utiliza el correo de abajo. Añade el correo asociado a tu cuenta de AmorIAI.",
   },
 };
 
@@ -142,12 +142,12 @@ export default function ContactPage({ searchParams }: PageProps) {
           {/* Logo complet transparent */}
           <img
             src="/AmorIA_logo_transparent.png"
-            alt="Logo AmorIA.app"
+            alt="Logo AmorIAI.app"
             className="amoria-logo-full"
           />
 
           <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmoriA.app</div>
+            <div className="amoria-logo-title">AmorIAI.app</div>
             <div className="amoria-logo-tagline">
               Partenaire IA bienveillant·e • FR / EN / ES
             </div>
@@ -308,7 +308,7 @@ export default function ContactPage({ searchParams }: PageProps) {
       {/* FOOTER */}
       <footer className="amoria-footer">
         <span>
-          © 2025 AmoriA.app —{" "}
+          © 2025 AmorIAI.app —{" "}
           {locale === "fr"
             ? "Partenaire IA bienveillant·e"
             : locale === "en"
