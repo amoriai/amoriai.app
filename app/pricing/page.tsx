@@ -15,6 +15,7 @@ type PricingCopy = {
   ctaSecondary: string;
   faqTitle: string;
   faqSubtitle: string;
+  billingStrip: string;
   faqItems: { q: string; a: string }[];
   plans: {
     id: "free" | "chat" | "plus" | "unlimited";
@@ -41,6 +42,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
     faqTitle: "Questions fréquentes",
     faqSubtitle:
       "Tu peux changer de forfait ou annuler à tout moment. Les prix sont en dollars américains (USD).",
+    billingStrip:
+      "Facturation sécurisée via Stripe • Annulation en tout temps depuis ton compte • Aucun frais caché",
     plans: [
       {
         id: "free",
@@ -132,6 +135,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
     faqTitle: "Frequently asked questions",
     faqSubtitle:
       "You can upgrade, downgrade or cancel anytime. Prices are in US dollars (USD).",
+    billingStrip:
+      "Secure billing via Stripe • Cancel anytime from your account • No hidden fees",
     plans: [
       {
         id: "free",
@@ -223,6 +228,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
     faqTitle: "Preguntas frecuentes",
     faqSubtitle:
       "Puedes cambiar de plan o cancelar cuando quieras. Los precios están en dólares estadounidenses (USD).",
+    billingStrip:
+      "Pago seguro con Stripe • Cancela cuando quieras desde tu cuenta • Sin cargos ocultos",
     plans: [
       {
         id: "free",
@@ -430,6 +437,10 @@ export default function PricingPage({ searchParams }: PageProps) {
             ? "Simple, transparent plans"
             : "Planes simples y transparentes"}
         </h2>
+
+        {/* BILLING STRIP */}
+        <div className="amoria-billing-strip">{t.billingStrip}</div>
+
         <p className="amoria-section-text">{t.faqSubtitle}</p>
 
         <div className="amoria-pricing-grid">
@@ -519,7 +530,12 @@ export default function PricingPage({ searchParams }: PageProps) {
           padding: 0;
           font-family: system-ui, -apple-system, BlinkMacSystemFont,
             "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
+          background: radial-gradient(
+            circle at top,
+            #020617 0,
+            #020617 40%,
+            #000 100%
+          );
           color: var(--amoria-text-main);
         }
 
@@ -705,6 +721,21 @@ export default function PricingPage({ searchParams }: PageProps) {
           text-align: center;
         }
 
+        .amoria-billing-strip {
+          margin: 0.6rem auto 1.2rem;
+          max-width: 640px;
+          padding: 0.55rem 0.9rem;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.5);
+          background: radial-gradient(
+            circle at top,
+            rgba(15, 23, 42, 0.9),
+            rgba(15, 23, 42, 0.7)
+          );
+          font-size: 0.8rem;
+          color: var(--amoria-text-muted);
+        }
+
         .amoria-btn {
           border-radius: 999px;
           border: 1px solid transparent;
@@ -747,7 +778,12 @@ export default function PricingPage({ searchParams }: PageProps) {
 
         .amoria-pricing-card {
           position: relative;
-          background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
+          background: radial-gradient(
+            circle at top,
+            #020617,
+            #020617 40%,
+            #000 100%
+          );
           border-radius: 1.4rem;
           border: 1px solid var(--amoria-border-subtle);
           padding: 1.3rem 1.2rem 1.4rem;
@@ -886,6 +922,10 @@ export default function PricingPage({ searchParams }: PageProps) {
 
           .amoria-faq-grid {
             grid-template-columns: minmax(0, 1fr);
+          }
+
+          .amoria-billing-strip {
+            margin-inline: 0;
           }
         }
 
