@@ -4,10 +4,7 @@ import React, { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
-type PlanId = "free" | "chat" | "plus" | "unlimited";
 type Locale = "fr" | "en" | "es";
-
-const PLAN_IDS: PlanId[] = ["free", "chat", "plus", "unlimited"];
 
 const LABELS: Record<
   Locale,
@@ -20,75 +17,51 @@ const LABELS: Record<
     createButton: string;
     alreadyHave: string;
     login: string;
-    selectedPlanPrefix: string;
     google: string;
     errorGeneric: string;
     or: string;
-    planNames: Record<PlanId, string>;
   }
 > = {
   fr: {
     title: "Créer mon compte AmorIAI",
     subtitle:
-      "Inscris-toi pour commencer avec ton AmorIAI. Tu pourras changer de forfait plus tard.",
+      "Inscris-toi pour commencer avec ton AmorIAI. Tu choisiras ton forfait juste après.",
     emailLabel: "Adresse courriel",
     passwordLabel: "Mot de passe",
     passwordHint: "Minimum 6 caractères.",
     createButton: "Créer mon compte",
     alreadyHave: "Tu as déjà un compte ?",
     login: "Me connecter",
-    selectedPlanPrefix: "Forfait sélectionné :",
     google: "Continuer avec Google",
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
     or: "ou",
-    planNames: {
-      free: "Découverte (gratuit)",
-      chat: "AmorIAI Chat 9,99$",
-      plus: "AmorIAI Plus 19,99$",
-      unlimited: "AmorIAI illimité 39,99$",
-    },
   },
   en: {
     title: "Create my AmorIAI account",
-    subtitle:
-      "Sign up to start with your AmorIAI. You can change plan later.",
+    subtitle: "Sign up to start with your AmorIAI. You’ll pick a plan next.",
     emailLabel: "Email address",
     passwordLabel: "Password",
     passwordHint: "At least 6 characters.",
     createButton: "Create my account",
     alreadyHave: "Already have an account?",
     login: "Log in",
-    selectedPlanPrefix: "Selected plan:",
     google: "Continue with Google",
     errorGeneric: "An error occurred. Please try again.",
     or: "or",
-    planNames: {
-      free: "Discovery (free)",
-      chat: "AmorIAI Chat $9.99",
-      plus: "AmorIAI Plus $19.99",
-      unlimited: "AmorIAI Unlimited $39.99",
-    },
   },
   es: {
     title: "Crear mi cuenta AmorIAI",
     subtitle:
-      "Regístrate para empezar con tu AmorIAI. Podrás cambiar de plan más tarde.",
+      "Regístrate para empezar con tu AmorIAI. Elegirás tu plan a continuación.",
     emailLabel: "Correo electrónico",
     passwordLabel: "Contraseña",
     passwordHint: "Mínimo 6 caracteres.",
     createButton: "Crear mi cuenta",
     alreadyHave: "¿Ya tienes una cuenta?",
     login: "Iniciar sesión",
-    selectedPlanPrefix: "Plan seleccionado:",
     google: "Continuar con Google",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     or: "o",
-    planNames: {
-      free: "Descubrimiento (gratis)",
-      chat: "AmorIAI Chat 9,99$",
-      plus: "AmorIAI Plus 19,99$",
-      unlimited: "AmorIAI Ilimitado 39,99$",
-    },
   },
 };
 
@@ -96,10 +69,7 @@ export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // langue & plan proposés dans l’URL (optionnels)
   const localeParam = (searchParams.get("lang") || "fr") as Locale;
-  const initialPlan = (searchParams.get("plan") || "free") as PlanId;
-
   const t = LABELS[localeParam];
 
   const [email, setEmail] = useState("");
@@ -107,14 +77,11 @@ export default function SignupClient() {
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>(initialPlan);
 
-  // 👉 Après création du compte → TOUJOURS /pricing
+  // 👉 après création du compte : TOUJOURS la page tarifs
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
-    // on garde le plan choisi pour le pré-sélectionner sur /pricing si tu veux l’utiliser
-    params.set("plan", selectedPlan);
     router.push(`/pricing?${params.toString()}`);
   };
 
@@ -135,6 +102,7 @@ export default function SignupClient() {
       return;
     }
 
+    // Supabase envoie l’email de confirmation
     redirectAfterSignup();
   };
 
@@ -143,11 +111,7 @@ export default function SignupClient() {
       setError(null);
       setLoadingGoogle(true);
 
-      const params = new URLSearchParams();
-      params.set("lang", localeParam);
-      params.set("plan", selectedPlan);
-
-      const redirectTo = `${window.location.origin}/pricing?${params.toString()}`;
+      const redirectTo = `${window.location.origin}/pricing?lang=${localeParam}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -169,32 +133,6 @@ export default function SignupClient() {
       <div className="amoria-auth-card">
         <h1 className="amoria-auth-title">{t.title}</h1>
         <p className="amoria-auth-subtitle">{t.subtitle}</p>
-
-        <p className="amoria-auth-plan">
-          <span className="amoria-auth-plan-label">
-            {t.selectedPlanPrefix}
-          </span>{" "}
-          <span className="amoria-auth-plan-name">
-            {t.planNames[selectedPlan]}
-          </span>
-        </p>
-
-        {/* Boutons de choix de plan (uniquement visuel ici) */}
-        <div className="amoria-auth-plan-grid">
-          {PLAN_IDS.map((id) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setSelectedPlan(id)}
-              className={
-                "amoria-auth-plan-pill" +
-                (selectedPlan === id ? " amoria-auth-plan-pill--active" : "")
-              }
-            >
-              {t.planNames[id]}
-            </button>
-          ))}
-        </div>
 
         <form className="amoria-auth-form" onSubmit={handleSubmit}>
           <label className="amoria-auth-label">
@@ -289,42 +227,6 @@ export default function SignupClient() {
           font-size: 0.85rem;
           color: #9ca3af;
           margin-bottom: 0.9rem;
-        }
-
-        .amoria-auth-plan {
-          font-size: 0.8rem;
-          margin-bottom: 0.5rem;
-        }
-
-        .amoria-auth-plan-label {
-          color: #9ca3af;
-        }
-
-        .amoria-auth-plan-name {
-          font-weight: 600;
-        }
-
-        .amoria-auth-plan-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 0.5rem;
-          margin-bottom: 0.9rem;
-        }
-
-        .amoria-auth-plan-pill {
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.5);
-          padding: 0.4rem 0.6rem;
-          font-size: 0.78rem;
-          background: rgba(15, 23, 42, 0.9);
-          color: #e5e7eb;
-          cursor: pointer;
-        }
-
-        .amoria-auth-plan-pill--active {
-          border-color: #fb37ff;
-          box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.4);
-          background: radial-gradient(circle at top, #1f2937, #020617);
         }
 
         .amoria-auth-form {
