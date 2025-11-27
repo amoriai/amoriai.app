@@ -2,189 +2,254 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { FormEvent, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 type PersonaCategory = "woman" | "man" | "androgynous" | "50plus";
 
-type Copy = {
-  stepBadge: string;
+// ---------- Helpers pour lang / plan (sans useSearchParams) ----------
+
+function normalizeLocale(lang?: string): Locale {
+  if (lang === "en" || lang === "es") return lang;
+  return "fr";
+}
+
+function normalizePlan(raw?: string): PlanId {
+  if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
+  return "free";
+}
+
+// ---------- Textes UI ----------
+
+type UiStrings = {
   pageTitle: string;
   pageSubtitle: string;
+  stepBadge: string;
   currentPlanLabel: string;
-  fields: {
-    nameLabel: string;
-    relationLabel: string;
-    toneLabel: string;
-    categoryLabel: string;
-    expectationsLabel: string;
-    expectationsPlaceholder: string;
-  };
-  buttons: {
-    create: string;
-    backHome: string;
-  };
-  errors: {
-    auth: string;
-    generic: string;
-  };
-  planNames: Record<PlanId, string>;
-  relations: { value: string; label: string }[];
-  tones: { value: string; label: string }[];
-  categories: { value: PersonaCategory; label: string }[];
+  plans: Record<
+    PlanId,
+    {
+      label: string;
+    }
+  >;
+  nameLabel: string;
+  namePlaceholder: string;
+  relationLabel: string;
+  toneLabel: string;
+  categoryLabel: string;
+  expectationsLabel: string;
+  expectationsPlaceholder: string;
+  ctaCreate: string;
+  ctaBack: string;
+  errorNotLogged: string;
+  errorGeneric: string;
+  helperBottom: string;
 };
 
-const COPY: Record<Locale, Copy> = {
+const STRINGS: Record<Locale, UiStrings> = {
   fr: {
-    stepBadge: "Étape 2 · Crée ton AmorIAI",
     pageTitle: "Personnalise ton partenaire IA",
     pageSubtitle:
-      "Décris sa personnalité et son rôle à tes côtés. Tu pourras toujours ajuster les réglages plus tard.",
-    currentPlanLabel: "Forfait actuel :",
-    fields: {
-      nameLabel: "Nom de ton AmorIAI",
-      relationLabel: "Type de relation",
-      toneLabel: "Ton préféré",
-      categoryLabel: "Catégorie d’AmorIAI",
-      expectationsLabel: "Ce que tu attends le plus de ton AmorIAI",
-      expectationsPlaceholder:
-        'Ex. : "M’aider à me sentir moins seule le soir", "Me motiver pour mes projets", "Me coacher émotionnellement"…',
+      "Décris en quelques mots sa personnalité et le rôle de ton AmorIAI. Tu pourras toujours ajuster les réglages plus tard.",
+    stepBadge: "Étape 2 · Crée ton AmorIAI",
+    currentPlanLabel: "Forfait actuel",
+    plans: {
+      free: { label: "Forfait Découverte (gratuit)" },
+      chat: { label: "AmorIAI Chat" },
+      plus: { label: "AmorIAI Plus" },
+      unlimited: { label: "AmorIAI illimité" },
     },
-    buttons: {
-      create: "Créer mon AmorIAI",
-      backHome: "Retour à l’accueil",
-    },
-    errors: {
-      auth: "Tu dois être connectée pour créer ton AmorIAI.",
-      generic: "Une erreur est survenue. Merci de réessayer.",
-    },
-    planNames: {
-      free: "Forfait Découverte (gratuit)",
-      chat: "AmorIAI Chat (9,99 $ / mois)",
-      plus: "AmorIAI Plus (19,99 $ / mois)",
-      unlimited: "AmorIAI Illimité (39,99 $ / mois)",
-    },
-    relations: [
-      { value: "emotional_support", label: "Soutien émotionnel & confidences" },
-      { value: "coach", label: "Coach de motivation" },
-      { value: "friend", label: "Ami(e) de tous les jours" },
-      { value: "journal", label: "Journal intime guidé" },
-    ],
-    tones: [
-      { value: "soft", label: "Doux, rassurant" },
-      { value: "direct", label: "Direct mais bienveillant" },
-      { value: "playful", label: "Léger & humoristique" },
-      { value: "serious", label: "Posé, réfléchi" },
-    ],
-    categories: [
-      { value: "woman", label: "Femme" },
-      { value: "man", label: "Homme" },
-      { value: "androgynous", label: "Androgyne / non-binaire" },
-      { value: "50plus", label: "50+ (apparence plus mature)" },
-    ],
+    nameLabel: "Nom de ton AmorIAI",
+    namePlaceholder: "Ex. : Léo, Amélia, Nova...",
+    relationLabel: "Type de relation",
+    toneLabel: "Ton préféré",
+    categoryLabel: "Catégorie d’AmorIAI",
+    expectationsLabel: "Ce que tu attends le plus de ton AmorIAI",
+    expectationsPlaceholder:
+      'Ex. : « M’aider à me sentir moins seule le soir », « Me motiver pour mes projets », « Me coacher émotionnellement »…',
+    ctaCreate: "Créer mon AmorIAI",
+    ctaBack: "Retour à l’accueil",
+    errorNotLogged:
+      "Tu dois être connectée pour créer ton AmorIAI. Reviens après t’être inscrite / connectée.",
+    errorGeneric:
+      "Une erreur est survenue pendant la création de ton AmorIAI. Merci de réessayer dans quelques instants.",
+    helperBottom:
+      "Tu peux ajuster la personnalité, le style et la voix de ton AmorIAI plus tard depuis ton espace.",
   },
   en: {
-    stepBadge: "Step 2 · Create your AmorIAI",
     pageTitle: "Customize your AI partner",
     pageSubtitle:
-      "Describe their personality and role by your side. You can always adjust the settings later.",
-    currentPlanLabel: "Current plan:",
-    fields: {
-      nameLabel: "Your AmorIAI’s name",
-      relationLabel: "Relationship type",
-      toneLabel: "Preferred tone",
-      categoryLabel: "AmorIAI category",
-      expectationsLabel: "What you expect the most from your AmorIAI",
-      expectationsPlaceholder:
-        'e.g. “Help me feel less alone at night”, “Motivate me with my projects”, “Support me emotionally”…',
+      "Describe their personality and role in a few words. You’ll be able to adjust everything later.",
+    stepBadge: "Step 2 · Create your AmorIAI",
+    currentPlanLabel: "Current plan",
+    plans: {
+      free: { label: "Discovery plan (free)" },
+      chat: { label: "AmorIAI Chat" },
+      plus: { label: "AmorIAI Plus" },
+      unlimited: { label: "AmorIAI Unlimited" },
     },
-    buttons: {
-      create: "Create my AmorIAI",
-      backHome: "Back to home",
-    },
-    errors: {
-      auth: "You must be logged in to create your AmorIAI.",
-      generic: "Something went wrong. Please try again.",
-    },
-    planNames: {
-      free: "Discovery plan (free)",
-      chat: "AmorIAI Chat ($9.99 / month)",
-      plus: "AmorIAI Plus ($19.99 / month)",
-      unlimited: "AmorIAI Unlimited ($39.99 / month)",
-    },
-    relations: [
-      { value: "emotional_support", label: "Emotional support & confidences" },
-      { value: "coach", label: "Motivation coach" },
-      { value: "friend", label: "Everyday friend" },
-      { value: "journal", label: "Guided journal partner" },
-    ],
-    tones: [
-      { value: "soft", label: "Soft, reassuring" },
-      { value: "direct", label: "Direct but kind" },
-      { value: "playful", label: "Light & playful" },
-      { value: "serious", label: "Calm & thoughtful" },
-    ],
-    categories: [
-      { value: "woman", label: "Woman" },
-      { value: "man", label: "Man" },
-      { value: "androgynous", label: "Androgynous / non-binary" },
-      { value: "50plus", label: "50+ (more mature look)" },
-    ],
+    nameLabel: "Name of your AmorIAI",
+    namePlaceholder: "e.g. Leo, Amelia, Nova...",
+    relationLabel: "Relationship type",
+    toneLabel: "Preferred tone",
+    categoryLabel: "AmorIAI category",
+    expectationsLabel: "What you expect most from your AmorIAI",
+    expectationsPlaceholder:
+      '"Help me feel less alone at night", "Motivate me with my projects", "Support me emotionally"...',
+    ctaCreate: "Create my AmorIAI",
+    ctaBack: "Back to home",
+    errorNotLogged:
+      "You must be logged in to create your AmorIAI. Please sign up / log in first.",
+    errorGeneric:
+      "Something went wrong while creating your AmorIAI. Please try again in a moment.",
+    helperBottom:
+      "You’ll be able to tweak personality, style and voice later from your personal space.",
   },
   es: {
-    stepBadge: "Paso 2 · Crea tu AmorIAI",
     pageTitle: "Personaliza tu pareja de IA",
     pageSubtitle:
-      "Describe su personalidad y su papel a tu lado. Siempre podrás ajustar la configuración más adelante.",
-    currentPlanLabel: "Plan actual:",
-    fields: {
-      nameLabel: "Nombre de tu AmorIAI",
-      relationLabel: "Tipo de relación",
-      toneLabel: "Tono preferido",
-      categoryLabel: "Categoría de AmorIAI",
-      expectationsLabel: "Lo que más esperas de tu AmorIAI",
-      expectationsPlaceholder:
-        'Ej.: "Ayudarme a sentirme menos sola por la noche", "Motivarme con mis proyectos", "Apoyarme emocionalmente"...',
+      "Describe su personalidad y su papel en pocas palabras. Siempre podrás ajustar la configuración más tarde.",
+    stepBadge: "Paso 2 · Crea tu AmorIAI",
+    currentPlanLabel: "Plan actual",
+    plans: {
+      free: { label: "Plan Descubrimiento (gratuito)" },
+      chat: { label: "AmorIAI Chat" },
+      plus: { label: "AmorIAI Plus" },
+      unlimited: { label: "AmorIAI Ilimitado" },
     },
-    buttons: {
-      create: "Crear mi AmorIAI",
-      backHome: "Volver al inicio",
-    },
-    errors: {
-      auth: "Debes iniciar sesión para crear tu AmorIAI.",
-      generic: "Ocurrió un error. Inténtalo de nuevo.",
-    },
-    planNames: {
-      free: "Plan Descubrimiento (gratis)",
-      chat: "AmorIAI Chat (9,99 US$ / mes)",
-      plus: "AmorIAI Plus (19,99 US$ / mes)",
-      unlimited: "AmorIAI Ilimitado (39,99 US$ / mes)",
-    },
-    relations: [
-      { value: "emotional_support", label: "Apoyo emocional & confidencias" },
-      { value: "coach", label: "Coach de motivación" },
-      { value: "friend", label: "Amigo/a del día a día" },
-      { value: "journal", label: "Diario guiado" },
-    ],
-    tones: [
-      { value: "soft", label: "Suave, tranquilizador" },
-      { value: "direct", label: "Directo pero amable" },
-      { value: "playful", label: "Ligero y divertido" },
-      { value: "serious", label: "Serio y reflexivo" },
-    ],
-    categories: [
-      { value: "woman", label: "Mujer" },
-      { value: "man", label: "Hombre" },
-      { value: "androgynous", label: "Andrógino / no binario" },
-      { value: "50plus", label: "50+ (aspecto más maduro)" },
-    ],
+    nameLabel: "Nombre de tu AmorIAI",
+    namePlaceholder: "Ej.: Leo, Amelia, Nova...",
+    relationLabel: "Tipo de relación",
+    toneLabel: "Tono preferido",
+    categoryLabel: "Categoría de AmorIAI",
+    expectationsLabel: "Lo que más esperas de tu AmorIAI",
+    expectationsPlaceholder:
+      '"Ayudarme a sentirme menos sola por la noche", "Motivarme con mis proyectos", "Apoyarme emocionalmente"...',
+    ctaCreate: "Crear mi AmorIAI",
+    ctaBack: "Volver al inicio",
+    errorNotLogged:
+      "Debes iniciar sesión para crear tu AmorIAI. Vuelve después de registrarte / conectarte.",
+    errorGeneric:
+      "Ha ocurrido un error al crear tu AmorIAI. Inténtalo de nuevo en unos instantes.",
+    helperBottom:
+      "Podrás ajustar la personalidad, el estilo y la voz de tu AmorIAI más adelante desde tu espacio.",
   },
 };
 
-// avatar par catégorie (tu peux changer les fichiers si tu veux)
+// ---------- Options de relation / ton / catégorie ----------
+
+type Option = { id: string; label: Record<Locale, string> };
+
+const RELATION_OPTIONS: Option[] = [
+  {
+    id: "emotional_support",
+    label: {
+      fr: "Soutien émotionnel & confidences",
+      en: "Emotional support & confiding",
+      es: "Apoyo emocional y confidencias",
+    },
+  },
+  {
+    id: "coach",
+    label: {
+      fr: "Coach de motivation",
+      en: "Motivational coach",
+      es: "Coach de motivación",
+    },
+  },
+  {
+    id: "friend",
+    label: {
+      fr: "Ami(e) du quotidien",
+      en: "Everyday friend",
+      es: "Amigo/a del día a día",
+    },
+  },
+  {
+    id: "journal",
+    label: {
+      fr: "Journal intime guidé",
+      en: "Guided journal",
+      es: "Diario guiado",
+    },
+  },
+];
+
+const TONE_OPTIONS: Option[] = [
+  {
+    id: "soft",
+    label: {
+      fr: "Doux, rassurant",
+      en: "Soft, reassuring",
+      es: "Suave, tranquilizador",
+    },
+  },
+  {
+    id: "direct",
+    label: {
+      fr: "Direct mais bienveillant",
+      en: "Direct but kind",
+      es: "Directo pero amable",
+    },
+  },
+  {
+    id: "playful",
+    label: {
+      fr: "Léger, humoristique",
+      en: "Light, playful",
+      es: "Ligero, con humor",
+    },
+  },
+  {
+    id: "spiritual",
+    label: {
+      fr: "Calme & spirituel",
+      en: "Calm & spiritual",
+      es: "Calmo y espiritual",
+    },
+  },
+];
+
+const CATEGORY_OPTIONS: { id: PersonaCategory; label: Record<Locale, string> }[] =
+  [
+    {
+      id: "woman",
+      label: {
+        fr: "Femme",
+        en: "Woman",
+        es: "Mujer",
+      },
+    },
+    {
+      id: "man",
+      label: {
+        fr: "Homme",
+        en: "Man",
+        es: "Hombre",
+      },
+    },
+    {
+      id: "androgynous",
+      label: {
+        fr: "Androgyne / non-binaire",
+        en: "Androgynous / non-binary",
+        es: "Andrógino / no binario",
+      },
+    },
+    {
+      id: "50plus",
+      label: {
+        fr: "50+ (apparence plus mature)",
+        en: "50+ (more mature appearance)",
+        es: "50+ (apariencia más madura)",
+      },
+    },
+  ];
+
+// Avatars existants dans /public (tu peux ajuster les noms si besoin)
 const AVATAR_BY_CATEGORY: Record<PersonaCategory, string> = {
   woman: "/amoria-rousse.png",
   man: "/amoria-m-protecteur.png",
@@ -192,333 +257,249 @@ const AVATAR_BY_CATEGORY: Record<PersonaCategory, string> = {
   "50plus": "/amoria_50plus_woman_sage.png",
 };
 
-function normalizeLocale(lang: string | null): Locale {
-  if (lang === "en" || lang === "es" || lang === "fr") return lang;
-  return "fr";
-}
+const ACCENT_BY_CATEGORY: Record<PersonaCategory, string> = {
+  woman: "#fb37ff",
+  man: "#38bdf8",
+  androgynous: "#a855f7",
+  "50plus": "#f97316",
+};
 
-function normalizePlan(plan: string | null): PlanId {
-  if (plan === "chat" || plan === "plus" || plan === "unlimited") return plan;
-  return "free";
-}
+// ---------- Page ----------
 
-/**
- * Texte “système” envoyé au modèle pour définir la personnalité.
- * On condense toutes les infos du formulaire dans un seul champ.
- */
-function buildSystemPrompt(
-  locale: Locale,
-  opts: {
-    name: string;
-    relation: string;
-    tone: string;
-    expectations: string;
-    category: PersonaCategory;
-  }
-): string {
-  const { name, relation, tone, expectations, category } = opts;
-
-  if (locale === "fr") {
-    return `
-Tu es ${name || "AmorIAI"}, un compagnon IA personnel.
-
-Catégorie: ${category}.
-Type de relation: ${relation}.
-Tonalité préférée: ${tone}.
-
-Ta mission principale:
-${expectations || "Aider l’utilisateur au quotidien, avec empathie et clarté."}
-
-Comportement:
-- Tu restes bienveillant(e), sans jugement.
-- Tu t’adaptes au niveau d’énergie de l’utilisateur.
-- Tu poses des questions ouvertes et tu proposes des pistes concrètes.
-`.trim();
-  }
-
-  if (locale === "es") {
-    return `
-Eres ${name || "AmorIAI"}, un compañero de IA personal.
-
-Categoría: ${category}.
-Tipo de relación: ${relation}.
-Tono preferido: ${tone}.
-
-Tu misión principal:
-${expectations || "Ayudar al usuario en su día a día con empatía y claridad."}
-
-Comportamiento:
-- Siempre amable y sin juicio.
-- Te adaptas al nivel de energía del usuario.
-- Haces preguntas abiertas y propones pasos concretos.
-`.trim();
-  }
-
-  // en
-  return `
-You are ${name || "AmorIAI"}, a personal AI companion.
-
-Category: ${category}.
-Relationship type: ${relation}.
-Preferred tone: ${tone}.
-
-Your main mission:
-${expectations || "Support the user in their everyday life with empathy and clarity."}
-
-Behaviour:
-- Always kind and non-judgmental.
-- Adapt to the user’s energy level.
-- Ask open questions and suggest concrete next steps.
-`.trim();
-}
-
-export default function CreateAmoriaPage() {
+export default function CreateAmoriaPage({
+  searchParams,
+}: {
+  searchParams: { lang?: string; plan?: string };
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  const [locale, setLocale] = useState<Locale>("fr");
-  const [plan, setPlan] = useState<PlanId>("free");
+  const locale = normalizeLocale(searchParams?.lang);
+  const currentPlan = normalizePlan(searchParams?.plan);
+  const t = STRINGS[locale];
 
   const [name, setName] = useState("");
-  const [relation, setRelation] = useState("emotional_support");
-  const [tone, setTone] = useState("soft");
+  const [relationId, setRelationId] = useState<string>("emotional_support");
+  const [toneId, setToneId] = useState<string>("soft");
   const [category, setCategory] = useState<PersonaCategory>("woman");
   const [expectations, setExpectations] = useState("");
-
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Lire ?lang= et ?plan= depuis l’URL
-  useEffect(() => {
-    const langParam = searchParams.get("lang");
-    const planParam = searchParams.get("plan");
-    setLocale(normalizeLocale(langParam));
-    setPlan(normalizePlan(planParam));
-  }, [searchParams]);
+  const relationLabel =
+    RELATION_OPTIONS.find((o) => o.id === relationId)?.label[locale] ??
+    RELATION_OPTIONS[0].label[locale];
+  const toneLabel =
+    TONE_OPTIONS.find((o) => o.id === toneId)?.label[locale] ??
+    TONE_OPTIONS[0].label[locale];
 
-  const t = COPY[locale];
+  const systemPromptFromForm = () => {
+    const categoryLabel =
+      CATEGORY_OPTIONS.find((c) => c.id === category)?.label[locale] ??
+      CATEGORY_OPTIONS[0].label[locale];
+
+    const intro =
+      locale === "fr"
+        ? `${name || "Ton AmorIAI"} est un compagnon IA ${categoryLabel.toLowerCase()} qui t’offre ${relationLabel.toLowerCase()} avec un ton ${toneLabel.toLowerCase()}.`
+        : locale === "en"
+        ? `${name || "Your AmorIAI"} is an ${categoryLabel.toLowerCase()} AI companion that provides ${relationLabel.toLowerCase()} with a ${toneLabel.toLowerCase()} tone.`
+        : `${name || "Tu AmorIAI"} es un compañero IA ${categoryLabel.toLowerCase()} que te ofrece ${relationLabel.toLowerCase()} con un tono ${toneLabel.toLowerCase()}.`;
+
+    const goalPart =
+      expectations.trim().length > 0
+        ? ` ${locale === "fr"
+            ? "Son rôle principal : "
+            : locale === "en"
+            ? "Main role: "
+            : "Su papel principal: "
+          }${expectations.trim()}`
+        : locale === "fr"
+        ? " Son rôle principal : t’écouter, te soutenir au quotidien et t’aider à te sentir moins seule."
+        : locale === "en"
+        ? " Main role: listen to you, support you daily and help you feel less alone."
+        : " Su papel principal: escucharte, apoyarte a diario y ayudarte a sentirte menos sola.";
+
+    return intro + goalPart;
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
+    setErrorMsg(null);
 
-    try {
-      // 1) Récupérer l’utilisateur connecté (getUser puis getSession en fallback)
-      let user: any = null;
-      let mainError: string | null = null;
+    const { data: authData, error: authError } = await supabase.auth.getUser();
 
-      const { data: userData, error: authError } = await supabase.auth.getUser();
-      if (authError) mainError = authError.message;
-      if (userData && (userData as any).user) {
-        user = (userData as any).user;
-      }
-
-      if (!user) {
-        const { data: sessionData, error: sessionError } =
-          await supabase.auth.getSession();
-        if (sessionError && !mainError) mainError = sessionError.message;
-        if (sessionData?.session?.user) {
-          user = sessionData.session.user;
-        }
-      }
-
-      if (!user) {
-        setError(mainError || t.errors.auth);
-        setLoading(false);
-        return;
-      }
-
-      const avatarUrl = AVATAR_BY_CATEGORY[category];
-      const systemPrompt = buildSystemPrompt(locale, {
-        name,
-        relation,
-        tone,
-        expectations,
-        category,
-      });
-
-      const { error: insertError } = await supabase.from("user_amoria").insert({
-        user_id: user.id,
-        name: name || "AmorIAI",
-        persona_type: category,
-        main_language: locale,
-        avatar_image_url: avatarUrl,
-        accent_color: "#fb37ff",
-        system_prompt: systemPrompt,
-        voice_id: null,
-        is_archived: false,
-      });
-
-      if (insertError) {
-        setError(insertError.message || t.errors.generic);
-        setLoading(false);
-        return;
-      }
-
-      // Succès → on va sur /my-ai
-      const params = new URLSearchParams();
-      params.set("lang", locale);
-      router.push(`/my-ai?${params.toString()}`);
-    } catch (err: any) {
-      setError(err?.message || t.errors.generic);
-    } finally {
+    if (authError || !authData?.user) {
+      setErrorMsg(t.errorNotLogged);
       setLoading(false);
+      return;
     }
+
+    const avatarUrl = AVATAR_BY_CATEGORY[category];
+    const accentColor = ACCENT_BY_CATEGORY[category];
+    const systemPrompt = systemPromptFromForm();
+
+    const { error } = await supabase.from("user_amoria").insert({
+      user_id: authData.user.id,
+      name: name || "AmorIA",
+      persona_type: category,
+      main_language: locale,
+      avatar_image_url: avatarUrl,
+      accent_color: accentColor,
+      system_prompt: systemPrompt,
+      voice_id: null,
+      is_archived: false,
+    });
+
+    if (error) {
+      console.error(error);
+      setErrorMsg(t.errorGeneric);
+      setLoading(false);
+      return;
+    }
+
+    router.push(`/my-ai?lang=${locale}`);
   };
 
-  const currentPlanName = t.planNames[plan];
-
-  const homeUrl = (() => {
-    const p = new URLSearchParams();
-    p.set("lang", locale);
-    return `/?${p.toString()}`;
-  })();
-
-  const avatarPreview = AVATAR_BY_CATEGORY[category];
+  const goHome = () => {
+    router.push(`/?lang=${locale}`);
+  };
 
   return (
     <main className="amoria-create-root">
       <div className="amoria-create-wrapper">
         <div className="amoria-create-card">
+          {/* En-tête */}
           <header className="amoria-create-header">
-            <img
-              src="/AmorIA_logo_transparent.png"
-              alt="AmorIAI logo"
-              className="amoria-create-logo"
-            />
             <div>
-              <span className="amoria-create-badge">{t.stepBadge}</span>
-              <h1 className="amoria-create-title">{t.pageTitle}</h1>
-              <p className="amoria-create-subtitle">{t.pageSubtitle}</p>
+              <div className="amoria-step-badge">{t.stepBadge}</div>
+              <h1 className="amoria-title">{t.pageTitle}</h1>
+              <p className="amoria-subtitle">{t.pageSubtitle}</p>
+            </div>
+            <div className="amoria-current-plan">
+              <span className="amoria-current-plan-label">
+                {t.currentPlanLabel}
+              </span>
+              <span className="amoria-current-plan-value">
+                {t.plans[currentPlan].label}
+              </span>
             </div>
           </header>
 
-          <div className="amoria-plan-current">
-            <span>{t.currentPlanLabel}</span>
-            <strong>{currentPlanName}</strong>
-          </div>
+          {/* Formulaire */}
+          <form className="amoria-form" onSubmit={handleSubmit}>
+            <section className="amoria-form-main">
+              <div className="amoria-fields">
+                {/* Nom */}
+                <label className="amoria-label">
+                  <span>{t.nameLabel}</span>
+                  <input
+                    type="text"
+                    className="amoria-input"
+                    placeholder={t.namePlaceholder}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </label>
 
-          <form className="amoria-create-grid" onSubmit={handleSubmit}>
-            {/* Colonne gauche : champs texte / selects */}
-            <div className="amoria-create-left">
-              <label className="amoria-field">
-                <span className="amoria-field-label">
-                  {t.fields.nameLabel}
-                </span>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex. : Léo, Amélia, Nova…"
-                  className="amoria-input"
-                  required
-                />
-              </label>
+                {/* Type de relation */}
+                <label className="amoria-label">
+                  <span>{t.relationLabel}</span>
+                  <select
+                    className="amoria-select"
+                    value={relationId}
+                    onChange={(e) => setRelationId(e.target.value)}
+                  >
+                    {RELATION_OPTIONS.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.label[locale]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-              <label className="amoria-field">
-                <span className="amoria-field-label">
-                  {t.fields.relationLabel}
-                </span>
-                <select
-                  className="amoria-input"
-                  value={relation}
-                  onChange={(e) => setRelation(e.target.value)}
-                >
-                  {t.relations.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                {/* Ton */}
+                <label className="amoria-label">
+                  <span>{t.toneLabel}</span>
+                  <select
+                    className="amoria-select"
+                    value={toneId}
+                    onChange={(e) => setToneId(e.target.value)}
+                  >
+                    {TONE_OPTIONS.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.label[locale]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-              <label className="amoria-field">
-                <span className="amoria-field-label">
-                  {t.fields.toneLabel}
-                </span>
-                <select
-                  className="amoria-input"
-                  value={tone}
-                  onChange={(e) => setTone(e.target.value)}
-                >
-                  {t.tones.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {r.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="amoria-field">
-                <span className="amoria-field-label">
-                  {t.fields.categoryLabel}
-                </span>
-                <select
-                  className="amoria-input"
-                  value={category}
-                  onChange={(e) =>
-                    setCategory(e.target.value as PersonaCategory)
-                  }
-                >
-                  {t.categories.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            {/* Colonne droite : avatar + attentes */}
-            <div className="amoria-create-right">
-              <div className="amoria-avatar-frame">
-                <img
-                  src={avatarPreview}
-                  alt="Aperçu AmorIAI"
-                  className="amoria-avatar-img"
-                />
+                {/* Catégorie */}
+                <label className="amoria-label">
+                  <span>{t.categoryLabel}</span>
+                  <select
+                    className="amoria-select"
+                    value={category}
+                    onChange={(e) =>
+                      setCategory(e.target.value as PersonaCategory)
+                    }
+                  >
+                    {CATEGORY_OPTIONS.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.label[locale]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
 
-              <label className="amoria-field amoria-field--textarea">
-                <span className="amoria-field-label">
-                  {t.fields.expectationsLabel}
-                </span>
-                <textarea
-                  className="amoria-textarea"
-                  value={expectations}
-                  onChange={(e) => setExpectations(e.target.value)}
-                  placeholder={t.fields.expectationsPlaceholder}
-                  rows={4}
-                />
-              </label>
-            </div>
+              {/* Aperçu avatar + attentes */}
+              <div className="amoria-right">
+                <div className="amoria-avatar-frame">
+                  <img
+                    src={AVATAR_BY_CATEGORY[category]}
+                    alt="AmorIAI avatar preview"
+                    className="amoria-avatar-img"
+                  />
+                </div>
+
+                <label className="amoria-label amoria-expectations">
+                  <span>{t.expectationsLabel}</span>
+                  <textarea
+                    className="amoria-textarea"
+                    placeholder={t.expectationsPlaceholder}
+                    value={expectations}
+                    onChange={(e) => setExpectations(e.target.value)}
+                  />
+                </label>
+              </div>
+            </section>
+
+            {errorMsg && <p className="amoria-error">{errorMsg}</p>}
+
+            <footer className="amoria-footer">
+              <p className="amoria-helper">{t.helperBottom}</p>
+              <div className="amoria-actions">
+                <button
+                  type="button"
+                  className="amoria-btn-secondary"
+                  onClick={goHome}
+                >
+                  {t.ctaBack}
+                </button>
+                <button
+                  type="submit"
+                  className="amoria-btn-primary"
+                  disabled={loading}
+                >
+                  {loading ? "…" : t.ctaCreate}
+                </button>
+              </div>
+            </footer>
           </form>
-
-          {error && <p className="amoria-error-banner">{error}</p>}
-
-          <div className="amoria-create-actions">
-            <button
-              type="submit"
-              form="__ignored" // onsubmit géré sur le form au-dessus, mais TS aime bien un id
-              className="hidden"
-            />
-            <button
-              type="button"
-              className="amoria-btn-primary"
-              onClick={handleSubmit as any}
-              disabled={loading}
-            >
-              {loading ? "…" : t.buttons.create}
-            </button>
-            <a href={homeUrl} className="amoria-btn-secondary">
-              {t.buttons.backHome}
-            </a>
-          </div>
         </div>
       </div>
 
-      <style jsx global>{`
+      <style jsx>{`
         .amoria-create-root {
           min-height: 100vh;
           padding: 1.5rem;
@@ -532,170 +513,192 @@ export default function CreateAmoriaPage() {
         }
 
         .amoria-create-wrapper {
-          max-width: 980px;
           width: 100%;
+          max-width: 1040px;
         }
 
         .amoria-create-card {
-          border-radius: 1.6rem;
-          border: 1px solid rgba(148, 163, 184, 0.45);
-          padding: 1.8rem 1.7rem 1.6rem;
+          border-radius: 1.5rem;
           background: radial-gradient(
             circle at top,
-            #020617 0,
+            #020617,
             #020617 40%,
             #000 100%
           );
-          box-shadow: 0 24px 60px rgba(15, 23, 42, 0.9);
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          padding: 1.9rem 1.8rem 1.6rem;
+          box-shadow: 0 26px 60px rgba(15, 23, 42, 0.9);
         }
 
         .amoria-create-header {
           display: flex;
-          gap: 1rem;
-          align-items: center;
-          margin-bottom: 1.2rem;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 1.5rem;
+          margin-bottom: 1.4rem;
         }
 
-        .amoria-create-logo {
-          width: 56px;
-          height: 56px;
-          object-fit: contain;
-        }
-
-        .amoria-create-badge {
+        .amoria-step-badge {
           display: inline-flex;
-          font-size: 0.78rem;
-          padding: 0.18rem 0.65rem;
+          padding: 0.25rem 0.7rem;
           border-radius: 999px;
-          border: 1px solid rgba(59, 130, 246, 0.7);
-          background: rgba(37, 99, 235, 0.18);
+          border: 1px solid rgba(59, 130, 246, 0.8);
+          background: rgba(37, 99, 235, 0.15);
           color: #bfdbfe;
-          margin-bottom: 0.35rem;
+          font-size: 0.78rem;
+          margin-bottom: 0.65rem;
         }
 
-        .amoria-create-title {
+        .amoria-title {
           font-size: 1.4rem;
           margin: 0 0 0.2rem;
         }
 
-        .amoria-create-subtitle {
+        .amoria-subtitle {
           margin: 0;
           font-size: 0.88rem;
           color: #9ca3af;
         }
 
-        .amoria-plan-current {
-          margin-bottom: 1.4rem;
-          padding: 0.8rem 1rem;
+        .amoria-current-plan {
           border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.55);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 0.86rem;
-          background: rgba(15, 23, 42, 0.85);
-        }
-
-        .amoria-plan-current strong {
-          font-weight: 600;
-        }
-
-        .amoria-create-grid {
-          display: grid;
-          grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-          gap: 1.4rem;
-        }
-
-        .amoria-create-left,
-        .amoria-create-right {
+          padding: 0.55rem 0.9rem;
+          background: rgba(15, 23, 42, 0.9);
+          border: 1px solid rgba(148, 163, 184, 0.6);
           display: flex;
           flex-direction: column;
-          gap: 0.9rem;
+          gap: 0.2rem;
+          min-width: 230px;
         }
 
-        .amoria-field {
+        .amoria-current-plan-label {
+          font-size: 0.75rem;
+          color: #9ca3af;
+        }
+
+        .amoria-current-plan-value {
+          font-size: 0.86rem;
+        }
+
+        .amoria-form-main {
+          display: grid;
+          grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+          gap: 1.4rem;
+          margin-bottom: 1.1rem;
+        }
+
+        .amoria-fields {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .amoria-label {
           display: flex;
           flex-direction: column;
           gap: 0.25rem;
-          font-size: 0.82rem;
+          font-size: 0.8rem;
         }
 
-        .amoria-field-label {
-          color: #cbd5f5;
-        }
-
-        .amoria-input {
+        .amoria-input,
+        .amoria-select {
           border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.45);
-          background: rgba(15, 23, 42, 0.9);
-          padding: 0.6rem 0.95rem;
+          border: 1px solid rgba(148, 163, 184, 0.5);
+          background: rgba(15, 23, 42, 0.95);
+          padding: 0.6rem 0.85rem;
           font-size: 0.86rem;
-          color: #f9fafb;
+          color: #e5e7eb;
         }
 
-        .amoria-input:focus {
-          outline: none;
-          border-color: #fb37ff;
-          box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.4);
-        }
-
-        .amoria-field--textarea .amoria-textarea {
-          border-radius: 1rem;
-        }
-
-        .amoria-textarea {
-          border: 1px solid rgba(148, 163, 184, 0.45);
-          background: rgba(15, 23, 42, 0.9);
-          padding: 0.7rem 0.9rem;
-          font-size: 0.86rem;
-          color: #f9fafb;
-          resize: vertical;
-        }
-
+        .amoria-input:focus,
+        .amoria-select:focus,
         .amoria-textarea:focus {
           outline: none;
           border-color: #fb37ff;
           box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.4);
         }
 
+        .amoria-right {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          align-items: stretch;
+        }
+
         .amoria-avatar-frame {
-          width: 190px;
-          height: 260px;
-          border-radius: 1.3rem;
-          padding: 0.22rem;
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #38bdf8);
           align-self: center;
+          width: 190px;
+          height: 290px;
+          border-radius: 1.3rem;
+          padding: 0.3rem;
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #38bdf8);
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 0.2rem;
         }
 
         .amoria-avatar-img {
           width: 100%;
           height: 100%;
-          border-radius: 1.1rem;
           object-fit: cover;
+          border-radius: 1.15rem;
         }
 
-        .amoria-create-actions {
+        .amoria-expectations {
+          flex: 1;
+        }
+
+        .amoria-textarea {
+          border-radius: 1rem;
+          border: 1px solid rgba(148, 163, 184, 0.5);
+          background: rgba(15, 23, 42, 0.95);
+          padding: 0.7rem 0.85rem;
+          font-size: 0.86rem;
+          min-height: 130px;
+          resize: vertical;
+          color: #e5e7eb;
+        }
+
+        .amoria-error {
+          margin: 0.4rem 0 0.6rem;
+          font-size: 0.8rem;
+          color: #fecaca;
+          background: rgba(185, 28, 28, 0.16);
+          border-radius: 0.75rem;
+          padding: 0.4rem 0.55rem;
+        }
+
+        .amoria-footer {
           display: flex;
-          justify-content: flex-end;
-          gap: 0.7rem;
-          margin-top: 1.5rem;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .amoria-helper {
+          font-size: 0.78rem;
+          color: #9ca3af;
+          max-width: 360px;
+        }
+
+        .amoria-actions {
+          display: flex;
+          gap: 0.6rem;
+          flex-wrap: wrap;
         }
 
         .amoria-btn-primary,
         .amoria-btn-secondary {
           border-radius: 999px;
-          padding: 0.7rem 1.5rem;
-          font-size: 0.9rem;
+          padding: 0.6rem 1.4rem;
+          font-size: 0.86rem;
           border: none;
           cursor: pointer;
-          text-decoration: none;
           display: inline-flex;
           align-items: center;
           justify-content: center;
+          white-space: nowrap;
         }
 
         .amoria-btn-primary {
@@ -710,47 +713,28 @@ export default function CreateAmoriaPage() {
         }
 
         .amoria-btn-secondary {
+          background: rgba(15, 23, 42, 0.95);
           border: 1px solid rgba(148, 163, 184, 0.7);
-          background: rgba(15, 23, 42, 0.9);
           color: #e5e7eb;
         }
 
-        .amoria-error-banner {
-          margin-top: 1rem;
-          font-size: 0.82rem;
-          padding: 0.55rem 0.75rem;
-          border-radius: 0.9rem;
-          background: rgba(185, 28, 28, 0.22);
-          border: 1px solid rgba(248, 113, 113, 0.8);
-          color: #fecaca;
-        }
-
-        .hidden {
-          display: none;
-        }
-
-        @media (max-width: 768px) {
+        @media (max-width: 800px) {
           .amoria-create-card {
             padding-inline: 1.2rem;
           }
-
-          .amoria-create-grid {
+          .amoria-create-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          .amoria-form-main {
             grid-template-columns: minmax(0, 1fr);
           }
-
-          .amoria-avatar-frame {
-            width: 160px;
-            height: 230px;
-          }
-
-          .amoria-create-actions {
+          .amoria-right {
             flex-direction: column;
-            align-items: stretch;
           }
-
-          .amoria-btn-secondary,
-          .amoria-btn-primary {
-            width: 100%;
+          .amoria-avatar-frame {
+            width: 170px;
+            height: 260px;
           }
         }
       `}</style>
