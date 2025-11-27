@@ -25,9 +25,9 @@ const LABELS: Record<
   }
 > = {
   fr: {
-    title: "Créer mon compte AmorIA",
+    title: "Créer mon compte AmorIAI",
     subtitle:
-      "Inscris-toi pour commencer avec ton AmorIA. Tu pourras changer de forfait plus tard.",
+      "Inscris-toi pour commencer avec ton AmorIAI. Tu pourras changer de forfait plus tard.",
     emailLabel: "Adresse courriel",
     passwordLabel: "Mot de passe",
     passwordHint: "Minimum 6 caractères.",
@@ -39,15 +39,15 @@ const LABELS: Record<
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
     planNames: {
       free: "Découverte (gratuit)",
-      chat: "AmorIA Chat",
-      plus: "AmorIA Plus",
-      unlimited: "AmorIA illimité",
+      chat: "AmorIAI Chat",
+      plus: "AmorIAI Plus",
+      unlimited: "AmorIAI illimité",
     },
   },
   en: {
-    title: "Create my AmorIA account",
+    title: "Create my AmorIAI account",
     subtitle:
-      "Sign up to start with your AmorIA. You can change plan later.",
+      "Sign up to start with your AmorIAI. You can change plan later.",
     emailLabel: "Email address",
     passwordLabel: "Password",
     passwordHint: "At least 6 characters.",
@@ -59,13 +59,13 @@ const LABELS: Record<
     errorGeneric: "An error occurred. Please try again.",
     planNames: {
       free: "Discovery (free)",
-      chat: "AmorIA Chat",
-      plus: "AmorIA Plus",
-      unlimited: "AmorIA Unlimited",
+      chat: "AmorIAI Chat",
+      plus: "AmorIAI Plus",
+      unlimited: "AmorIAI Unlimited",
     },
   },
   es: {
-    title: "Crear mi cuenta AmorIA",
+    title: "Crear mi cuenta AmorIAI",
     subtitle:
       "Regístrate para empezar con tu AmorIA. Podrás cambiar de plan más tarde.",
     emailLabel: "Correo electrónico",
@@ -79,9 +79,9 @@ const LABELS: Record<
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     planNames: {
       free: "Descubrimiento (gratis)",
-      chat: "AmorIA Chat",
-      plus: "AmorIA Plus",
-      unlimited: "AmorIA Ilimitado",
+      chat: "AmorIAI Chat",
+      plus: "AmorIAI Plus",
+      unlimited: "AmorIAI Ilimitado",
     },
   },
 };
