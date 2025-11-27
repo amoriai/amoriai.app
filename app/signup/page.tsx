@@ -98,9 +98,10 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Lecture des query params côté client
+  // Lire les query params côté client
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const rawPlan = params.get("plan");
@@ -112,6 +113,13 @@ export default function SignupPage() {
 
   const t = COPY[locale];
   const planLabel = PLAN_LABELS[locale][plan];
+
+  const redirectAfterAuth = () => {
+    const qs = new URLSearchParams();
+    qs.set("plan", plan);
+    qs.set("lang", locale);
+    return qs.toString();
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -130,18 +138,40 @@ export default function SignupPage() {
         return;
       }
 
-      const qs = new URLSearchParams();
-      qs.set("plan", plan);
-      qs.set("lang", locale);
+      const qs = redirectAfterAuth();
 
       if (plan === "free") {
-        router.push(`/create-amoria?${qs.toString()}`);
+        router.push(`/create-amoria?${qs}`);
       } else {
-        router.push(`/payment?${qs.toString()}`);
+        router.push(`/payment?${qs}`);
       }
     } catch (err: any) {
       setError(err?.message || t.errorGeneric);
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError(null);
+    setLoadingGoogle(true);
+    try {
+      const qs = redirectAfterAuth();
+
+      const { error: supaError } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          // ⚠️ mets ici l’URL EXACTE configurée dans Supabase (ex: /auth/callback)
+          redirectTo: `${window.location.origin}/auth/callback?${qs}`,
+        },
+      });
+
+      if (supaError) {
+        setError(supaError.message || t.errorGeneric);
+      }
+    } catch (err: any) {
+      setError(err?.message || t.errorGeneric);
+    } finally {
+      setLoadingGoogle(false);
     }
   };
 
@@ -202,7 +232,7 @@ export default function SignupPage() {
             <button
               type="submit"
               className="amoria-auth-primary"
-              disabled={loading}
+              disabled={loading || loadingGoogle}
             >
               {loading ? "..." : t.createButton}
             </button>
@@ -215,9 +245,10 @@ export default function SignupPage() {
           <button
             type="button"
             className="amoria-auth-google"
-            // login Google plus tard
+            onClick={handleGoogleLogin}
+            disabled={loading || loadingGoogle}
           >
-            {t.continueGoogle}
+            {loadingGoogle ? "..." : t.continueGoogle}
           </button>
 
           <div className="amoria-auth-footer">
@@ -233,7 +264,6 @@ export default function SignupPage() {
         </div>
       </div>
 
-      {/* STYLES DE LA PAGE SIGNUP */}
       <style jsx global>{`
         .amoria-auth-root {
           min-height: 100vh;
