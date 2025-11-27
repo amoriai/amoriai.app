@@ -1,27 +1,27 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+export const dynamic = "force-dynamic";
 
-// --- TYPES ---
+import React, { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
+
 type Locale = "fr" | "en" | "es";
 
 type AmoriaRow = {
   id: string;
   user_id: string;
   name: string;
-  persona_type: string; // ex: "woman" / "man" / "androgynous" / "50plus"
-  main_language: string; // "fr" | "en" | "es"
+  persona_type: string;
+  main_language: string;
   avatar_image_url: string | null;
   accent_color: string | null;
-  system_prompt: string; // texte de personnalité / mission
+  system_prompt: string;
   voice_id: string | null;
   is_archived: boolean;
   created_at: string;
   updated_at: string;
 };
 
-// --- TRADUCTIONS ---
 const STRINGS: Record<
   Locale,
   {
@@ -43,7 +43,7 @@ const STRINGS: Record<
     backHome: "← Retour à l’accueil",
     title: "Ton AmorIAI est prête ✨",
     subtitle:
-      "Voici ton IA personnelle. Ensuite tu pourras chatter avec elle, activer la voix et personnaliser son style.",
+      "Voici ton IA personnelle. Tu peux maintenant discuter avec elle, activer la voix et ajuster son style.",
     nameLabel: "Prénom",
     goalLabel: "Mission principale (résumé)",
     categoryLabel: "Type d’IA",
@@ -59,7 +59,7 @@ const STRINGS: Record<
     backHome: "← Back to home",
     title: "Your AmorIAI is ready ✨",
     subtitle:
-      "Here is your personal AI. Next, you’ll be able to chat with it, enable voice and customize its style.",
+      "Here is your personal AI. You can now chat with it, enable voice and customize its style.",
     nameLabel: "Name",
     goalLabel: "Main mission (summary)",
     categoryLabel: "AI type",
@@ -75,7 +75,7 @@ const STRINGS: Record<
     backHome: "← Volver al inicio",
     title: "Tu AmorIAI está lista ✨",
     subtitle:
-      "Aquí está tu IA personal. Luego podrás chatear con ella, activar la voz y personalizar su estilo.",
+      "Aquí está tu IA personal. Ahora puedes chatear con ella, activar la voz y personalizar su estilo.",
     nameLabel: "Nombre",
     goalLabel: "Misión principal (resumen)",
     categoryLabel: "Tipo de IA",
@@ -89,7 +89,6 @@ const STRINGS: Record<
   },
 };
 
-// --- FORMAT DU TYPE D’IA ---
 function formatPersonaType(persona: string, locale: Locale): string {
   switch (persona) {
     case "woman":
@@ -121,39 +120,35 @@ function formatPersonaType(persona: string, locale: Locale): string {
   }
 }
 
+function normalizeLocale(raw: string | null): Locale {
+  if (raw === "en" || raw === "es" || raw === "fr") return raw;
+  return "fr";
+}
+
 export default function MyAIPage() {
   const [locale, setLocale] = useState<Locale>("fr");
   const [loading, setLoading] = useState(true);
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 1) Lire la langue depuis ?lang=
+  // Lire la langue depuis ?lang=
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const lang = params.get("lang");
-      if (lang === "fr" || lang === "en" || lang === "es") {
-        setLocale(lang);
-      }
+      setLocale(normalizeLocale(lang));
     } catch {
-      // ignore
+      // on garde "fr"
     }
   }, []);
 
   const t = STRINGS[locale];
 
-  // 2) Charger Supabase + récupérer la dernière IA de l’utilisateur connecté
+  // Charger la dernière IA de l’utilisateur connecté
   useEffect(() => {
     const loadAI = async () => {
       try {
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
-
-        // Qui est connecté ?
-        const { data: authData, error: authError } =
-          await supabase.auth.getUser();
+        const { data: authData, error: authError } = await supabase.auth.getUser();
         if (authError || !authData?.user) {
           setError(t.error);
           setLoading(false);
@@ -162,9 +157,8 @@ export default function MyAIPage() {
 
         const user = authData.user;
 
-        // Dernière IA créée pour cet utilisateur
         const { data, error } = await supabase
-          .from("user_amoria") // garde le même nom de table que tu utilises déjà
+          .from("user_amoria")
           .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
@@ -178,7 +172,7 @@ export default function MyAIPage() {
         }
 
         setAi(data as AmoriaRow);
-      } catch (e) {
+      } catch {
         setError(t.error);
       } finally {
         setLoading(false);
@@ -188,14 +182,11 @@ export default function MyAIPage() {
     loadAI();
   }, [t.error]);
 
-  // Helper pour garder le ?lang= aussi sur les liens
   const buildUrlWithLang = (path: string) => {
     const params = new URLSearchParams();
     params.set("lang", locale);
     return `${path}?${params.toString()}`;
   };
-
-  // --- ÉTATS INTERMÉDIAIRES ---
 
   if (loading) {
     return (
@@ -209,12 +200,9 @@ export default function MyAIPage() {
             justify-content: center;
             background: radial-gradient(circle at top, #020617, #000);
             color: #e5e7eb;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont,
-              "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
           }
           .amoria-loading {
             font-size: 1rem;
-            color: #e5e7eb;
           }
         `}</style>
       </main>
@@ -222,7 +210,7 @@ export default function MyAIPage() {
   }
 
   if (error || !ai) {
-    const createUrl = buildUrlWithLang("/create-ia");
+    const createUrl = buildUrlWithLang("/create-amoria");
     const homeUrl = buildUrlWithLang("/");
 
     return (
@@ -243,8 +231,6 @@ export default function MyAIPage() {
             padding: 1.5rem;
             background: radial-gradient(circle at top, #020617, #000);
             color: #e5e7eb;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont,
-              "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
           }
           .amoria-ai-empty {
             max-width: 480px;
@@ -281,7 +267,6 @@ export default function MyAIPage() {
     );
   }
 
-  // URL pour le chat : /chat?iaId=...&lang=...
   const chatParams = new URLSearchParams();
   chatParams.set("iaId", ai.id);
   chatParams.set("lang", locale);
