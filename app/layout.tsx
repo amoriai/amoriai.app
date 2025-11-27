@@ -3,8 +3,13 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata = {
-  title: "AmorIA.app",
+  title: "AmorIAI.app",
   description: "Partenaire IA bienveillant·e et multilingue.",
+  icons: {
+    icon: "/favicon.png",          // favicon principal
+    shortcut: "/favicon.png",      // pour certains navigateurs
+    apple: "/favicon.png",         // pour iPhone / iPad
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
