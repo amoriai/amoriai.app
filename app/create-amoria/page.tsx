@@ -19,26 +19,26 @@ const COPY_CREATE: Record<
   }
 > = {
   fr: {
-    title: "Créons ton AmorIA ensemble",
+    title: "Créons ton AmorIAI ensemble",
     subtitle:
       "Personnalise ton partenaire IA (nom, style de relation, ton, langues) et commence à discuter en quelques secondes.",
-    buttonStart: "Configurer mon AmorIA maintenant",
+    buttonStart: "Configurer mon AmorIAI maintenant",
     backHome: "Retour à l’accueil",
     badge: "Étape 2 : personnalisation",
   },
   en: {
-    title: "Let’s create your AmorIA",
+    title: "Let’s create your AmorIAI",
     subtitle:
       "Customize your AI partner (name, relationship style, tone, languages) and start chatting in seconds.",
-    buttonStart: "Set up my AmorIA now",
+    buttonStart: "Set up my AmorIAI now",
     backHome: "Back to home",
     badge: "Step 2: personalization",
   },
   es: {
-    title: "Vamos a crear tu AmorIA",
+    title: "Vamos a crear tu AmorIAI",
     subtitle:
       "Personaliza tu pareja IA (nombre, estilo de relación, tono, idiomas) y empieza a hablar en segundos.",
-    buttonStart: "Configurar mi AmorIA ahora",
+    buttonStart: "Configurar mi AmorIAI ahora",
     backHome: "Volver al inicio",
     badge: "Paso 2: personalización",
   },
@@ -119,7 +119,7 @@ export default function CreateAmoriaPage() {
             </div>
             <ul className="amoria-create-list">
               <li>
-                • Nom, âge et personnalité de ton AmorIA (douce, directe, etc.)
+                • Nom, âge et personnalité de ton AmorIAI (douce, directe, etc.)
               </li>
               <li>• Langues de conversation (FR / EN / ES)</li>
               <li>• Type de relation : soutien émotionnel, coaching, journal</li>
