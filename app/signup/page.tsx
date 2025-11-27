@@ -1,25 +1,15 @@
 "use client";
 
-import React, { useState, FormEvent, Suspense } from "react";
+export const dynamic = "force-dynamic";
+
+import React, { FormEvent, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-function normalizeLocale(raw: string | null): Locale {
-  if (raw === "fr" || raw === "en" || raw === "es") return raw;
-  return "fr";
-}
-
-function normalizePlan(raw: string | null): PlanId {
-  if (raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited") {
-    return raw;
-  }
-  return "free";
-}
-
-const PLAN_TITLES: Record<Locale, Record<PlanId, string>> = {
+const PLAN_LABELS: Record<Locale, Record<PlanId, string>> = {
   fr: {
     free: "Découverte (gratuit)",
     chat: "AmorIA Chat",
@@ -40,24 +30,7 @@ const PLAN_TITLES: Record<Locale, Record<PlanId, string>> = {
   },
 };
 
-const COPY: Record<
-  Locale,
-  {
-    title: string;
-    subtitle: string;
-    email: string;
-    password: string;
-    passwordHint: string;
-    selectedPlan: string;
-    submit: string;
-    or: string;
-    continueGoogle: string;
-    alreadyAccount: string;
-    login: string;
-    errorGeneric: string;
-    backHome: string;
-  }
-> = {
+const COPY = {
   fr: {
     title: "Créer mon compte AmorIA",
     subtitle:
@@ -66,14 +39,13 @@ const COPY: Record<
     password: "Mot de passe",
     passwordHint: "Minimum 6 caractères.",
     selectedPlan: "Forfait sélectionné :",
-    submit: "Créer mon compte",
+    createAccount: "Créer mon compte",
     or: "ou",
     continueGoogle: "Continuer avec Google",
-    alreadyAccount: "Tu as déjà un compte ?",
+    already: "Tu as déjà un compte ?",
     login: "Me connecter",
-    errorGeneric:
-      "Une erreur est survenue pendant la création du compte. Réessaie dans quelques instants.",
-    backHome: "Retour à l’accueil",
+    genericError:
+      "Une erreur est survenue pendant la création de ton compte. Réessaie dans quelques instants.",
   },
   en: {
     title: "Create my AmorIA account",
@@ -81,37 +53,46 @@ const COPY: Record<
       "Sign up to start with your AmorIA. You can change your plan later.",
     email: "Email address",
     password: "Password",
-    passwordHint: "At least 6 characters.",
+    passwordHint: "Minimum 6 characters.",
     selectedPlan: "Selected plan:",
-    submit: "Create my account",
+    createAccount: "Create my account",
     or: "or",
     continueGoogle: "Continue with Google",
-    alreadyAccount: "Already have an account?",
+    already: "Already have an account?",
     login: "Log in",
-    errorGeneric:
+    genericError:
       "Something went wrong while creating your account. Please try again.",
-    backHome: "Back to homepage",
   },
   es: {
     title: "Crear mi cuenta AmorIA",
     subtitle:
-      "Regístrate para empezar con tu AmorIA. Podrás cambiar de plan más adelante.",
+      "Regístrate para empezar con tu AmorIA. Podrás cambiar de plan más tarde.",
     email: "Correo electrónico",
     password: "Contraseña",
     passwordHint: "Mínimo 6 caracteres.",
     selectedPlan: "Plan seleccionado:",
-    submit: "Crear mi cuenta",
+    createAccount: "Crear mi cuenta",
     or: "o",
     continueGoogle: "Continuar con Google",
-    alreadyAccount: "¿Ya tienes cuenta?",
+    already: "¿Ya tienes una cuenta?",
     login: "Iniciar sesión",
-    errorGeneric:
-      "Se produjo un error al crear la cuenta. Inténtalo de nuevo.",
-    backHome: "Volver al inicio",
+    genericError:
+      "Ocurrió un error al crear tu cuenta. Inténtalo de nuevo.",
   },
-};
+} satisfies Record<Locale, any>;
 
-function SignupPageInner() {
+function normalizeLocale(raw: string | null): Locale {
+  if (raw === "en" || raw === "es" || raw === "fr") return raw;
+  return "fr";
+}
+
+function normalizePlan(raw: string | null): PlanId {
+  if (raw === "chat" || raw === "plus" || raw === "unlimited" || raw === "free")
+    return raw;
+  return "free";
+}
+
+export default function SignupPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -119,20 +100,13 @@ function SignupPageInner() {
   const plan = normalizePlan(searchParams.get("plan"));
 
   const t = COPY[locale];
-  const planTitle = PLAN_TITLES[locale][plan];
+  const planLabel = PLAN_LABELS[locale][plan];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const redirectParams = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    params.set("plan", plan);
-    return params.toString();
-  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -144,18 +118,25 @@ function SignupPageInner() {
       password,
     });
 
+    setLoadingEmail(false);
+
     if (error) {
-      setError(error.message || t.errorGeneric);
-      setLoadingEmail(false);
+      setError(error.message || t.genericError);
       return;
     }
 
-    const query = redirectParams();
+    // On garde la langue + le plan dans l’URL
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    params.set("plan", plan);
 
+    // 🔁 LOGIQUE IMPORTANTE
+    // - plan gratuit  => on saute Stripe → création d’AmorIA
+    // - plan payant   => on va sur la page /payment qui ouvre Stripe
     if (plan === "free") {
-      router.push(`/create-amoria?${query}`);
+      router.push(`/create-amoria?${params.toString()}`);
     } else {
-      router.push(`/payment?${query}`);
+      router.push(`/payment?${params.toString()}`);
     }
   };
 
@@ -163,126 +144,122 @@ function SignupPageInner() {
     setError(null);
     setLoadingGoogle(true);
 
-    let redirectTo: string | undefined;
-    if (typeof window !== "undefined") {
-      redirectTo = `${window.location.origin}/oauth-callback?${redirectParams()}`;
-    }
+    try {
+      const params = new URLSearchParams();
+      params.set("lang", locale);
+      params.set("plan", plan);
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: redirectTo ? { redirectTo } : undefined,
-    });
+      const redirectTo =
+        window.location.origin + `/auth/callback?${params.toString()}`;
 
-    if (error) {
-      setError(error.message || t.errorGeneric);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+        },
+      });
+
+      if (error) {
+        setError(error.message || t.genericError);
+        setLoadingGoogle(false);
+      }
+    } catch (err: any) {
+      setError(err?.message || t.genericError);
       setLoadingGoogle(false);
     }
   };
 
-  const handleBackHome = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    router.push(`/${params.toString() ? `?${params.toString()}` : ""}`);
-  };
-
-  const handleGoLogin = () => {
+  const goToLogin = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
     router.push(`/login?${params.toString()}`);
   };
 
   return (
-    <main className="amoria-root amoria-auth-root">
-      <div className="amoria-auth-wrapper">
-        <div className="amoria-auth-card">
-          <header className="amoria-auth-header">
+    <main className="amoria-root amoria-signup-root">
+      <div className="amoria-signup-wrapper">
+        <div className="amoria-signup-card">
+          <header className="amoria-signup-header">
             <img
               src="/AmorIA_logo_transparent.png"
               alt="AmorIA logo"
-              className="amoria-auth-logo"
+              className="amoria-signup-logo"
             />
             <div>
-              <h1 className="amoria-auth-title">{t.title}</h1>
-              <p className="amoria-auth-subtitle">{t.subtitle}</p>
+              <h1 className="amoria-signup-title">{t.title}</h1>
+              <p className="amoria-signup-subtitle">{t.subtitle}</p>
             </div>
           </header>
 
-          <section className="amoria-auth-plan">
-            <span className="amoria-auth-plan-label">{t.selectedPlan}</span>
-            <span className="amoria-auth-plan-value">{planTitle}</span>
+          <section className="amoria-signup-plan">
+            <p className="amoria-signup-plan-label">{t.selectedPlan}</p>
+            <p className="amoria-signup-plan-value">{planLabel}</p>
           </section>
 
-          <form className="amoria-auth-form" onSubmit={handleSubmit}>
-            <label className="amoria-auth-label">
-              {t.email}
+          <form className="amoria-signup-form" onSubmit={handleSubmit}>
+            <label className="amoria-signup-field">
+              <span>{t.email}</span>
               <input
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="amoria-auth-input"
               />
             </label>
 
-            <label className="amoria-auth-label">
-              {t.password}
+            <label className="amoria-signup-field">
+              <span>{t.password}</span>
               <input
                 type="password"
                 required
                 minLength={6}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="amoria-auth-input"
               />
-              <span className="amoria-auth-hint">{t.passwordHint}</span>
+              <small>{t.passwordHint}</small>
             </label>
 
-            {error && <p className="amoria-auth-error">{error}</p>}
+            {error && <p className="amoria-signup-error">{error}</p>}
 
             <button
               type="submit"
-              className="amoria-auth-primary"
-              disabled={loadingEmail || loadingGoogle}
+              className="amoria-signup-primary"
+              disabled={loadingEmail || !email || !password}
             >
-              {loadingEmail ? "…" : t.submit}
+              {loadingEmail ? "..." : t.createAccount}
             </button>
           </form>
 
-          <div className="amoria-auth-divider">
+          <div className="amoria-signup-separator">
             <span>{t.or}</span>
           </div>
 
           <button
             type="button"
+            className="amoria-signup-google"
             onClick={handleGoogle}
-            disabled={loadingEmail || loadingGoogle}
-            className="amoria-auth-google"
+            disabled={loadingGoogle}
           >
             {t.continueGoogle}
           </button>
 
-          <div className="amoria-auth-footer">
+          <p className="amoria-signup-footer">
+            {t.already}{" "}
             <button
               type="button"
-              onClick={handleGoLogin}
-              className="amoria-auth-link"
+              onClick={goToLogin}
+              className="amoria-signup-link"
             >
-              {t.alreadyAccount} <strong>{t.login}</strong>
+              {t.login}
             </button>
-
-            <button
-              type="button"
-              onClick={handleBackHome}
-              className="amoria-auth-back"
-            >
-              {t.backHome}
-            </button>
-          </div>
+          </p>
         </div>
       </div>
 
       <style jsx global>{`
-        .amoria-auth-root {
+        .amoria-signup-root {
           min-height: 100vh;
           display: flex;
           align-items: center;
@@ -290,116 +267,108 @@ function SignupPageInner() {
           padding: 1.5rem;
         }
 
-        .amoria-auth-wrapper {
+        .amoria-signup-wrapper {
           max-width: 480px;
           width: 100%;
         }
 
-        .amoria-auth-card {
-          background: radial-gradient(
-            circle at top,
-            #020617,
-            #020617 40%,
-            #000 100%
-          );
+        .amoria-signup-card {
+          background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
           border-radius: 1.5rem;
           border: 1px solid rgba(148, 163, 184, 0.4);
-          padding: 1.8rem 1.7rem 1.5rem;
+          padding: 1.6rem 1.5rem 1.4rem;
           box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
         }
 
-        .amoria-auth-header {
+        .amoria-signup-header {
           display: flex;
           gap: 0.9rem;
           align-items: center;
-          margin-bottom: 1.4rem;
+          margin-bottom: 1.2rem;
         }
 
-        .amoria-auth-logo {
+        .amoria-signup-logo {
           width: 52px;
           height: 52px;
           object-fit: contain;
         }
 
-        .amoria-auth-title {
-          font-size: 1.25rem;
+        .amoria-signup-title {
           margin: 0 0 0.2rem;
+          font-size: 1.2rem;
         }
 
-        .amoria-auth-subtitle {
+        .amoria-signup-subtitle {
           margin: 0;
           font-size: 0.85rem;
           color: #9ca3af;
         }
 
-        .amoria-auth-plan {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
+        .amoria-signup-plan {
           border-radius: 0.9rem;
-          padding: 0.6rem 0.9rem;
+          padding: 0.75rem 0.9rem;
           background: rgba(15, 23, 42, 0.9);
           border: 1px solid rgba(148, 163, 184, 0.6);
           margin-bottom: 1rem;
-          font-size: 0.82rem;
         }
 
-        .amoria-auth-plan-label {
+        .amoria-signup-plan-label {
+          margin: 0;
+          font-size: 0.8rem;
           color: #9ca3af;
         }
 
-        .amoria-auth-plan-value {
-          font-weight: 500;
+        .amoria-signup-plan-value {
+          margin: 0.2rem 0 0;
+          font-size: 0.95rem;
         }
 
-        .amoria-auth-form {
+        .amoria-signup-form {
           display: flex;
           flex-direction: column;
           gap: 0.7rem;
         }
 
-        .amoria-auth-label {
+        .amoria-signup-field {
           display: flex;
           flex-direction: column;
           gap: 0.25rem;
-          font-size: 0.82rem;
-        }
-
-        .amoria-auth-input {
-          border-radius: 0.7rem;
-          border: 1px solid rgba(148, 163, 184, 0.6);
-          padding: 0.55rem 0.7rem;
-          background: rgba(15, 23, 42, 0.9);
-          color: #f9fafb;
           font-size: 0.85rem;
         }
 
-        .amoria-auth-input:focus {
-          outline: none;
-          border-color: #fb37ff;
-          box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.6);
+        .amoria-signup-field span {
+          color: #e5e7eb;
         }
 
-        .amoria-auth-hint {
-          font-size: 0.72rem;
+        .amoria-signup-field input {
+          border-radius: 0.8rem;
+          border: 1px solid rgba(148, 163, 184, 0.7);
+          background: rgba(15, 23, 42, 0.9);
+          color: #f9fafb;
+          padding: 0.55rem 0.75rem;
+          font-size: 0.86rem;
+        }
+
+        .amoria-signup-field small {
+          font-size: 0.75rem;
           color: #9ca3af;
         }
 
-        .amoria-auth-error {
-          margin: 0.4rem 0 0;
-          padding: 0.5rem 0.7rem;
+        .amoria-signup-error {
+          margin: 0.35rem 0 0;
+          padding: 0.45rem 0.6rem;
           border-radius: 0.6rem;
           background: rgba(248, 113, 113, 0.12);
           color: #fecaca;
           font-size: 0.78rem;
         }
 
-        .amoria-auth-primary {
-          margin-top: 0.3rem;
+        .amoria-signup-primary {
+          margin-top: 0.4rem;
           width: 100%;
           border-radius: 999px;
           border: none;
-          padding: 0.7rem 1rem;
+          padding: 0.75rem 1rem;
           font-size: 0.9rem;
           cursor: pointer;
           background: linear-gradient(135deg, #fb37ff, #ff6b9c);
@@ -407,25 +376,19 @@ function SignupPageInner() {
           box-shadow: 0 12px 30px rgba(248, 113, 113, 0.35);
         }
 
-        .amoria-auth-divider {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0.9rem 0 0.7rem;
+        .amoria-signup-primary:disabled {
+          opacity: 0.6;
+          cursor: default;
+        }
+
+        .amoria-signup-separator {
+          margin: 0.9rem 0 0.5rem;
+          text-align: center;
           font-size: 0.78rem;
           color: #9ca3af;
         }
 
-        .amoria-auth-divider::before,
-        .amoria-auth-divider::after {
-          content: "";
-          flex: 1;
-          height: 1px;
-          background: rgba(148, 163, 184, 0.4);
-          margin: 0 0.6rem;
-        }
-
-        .amoria-auth-google {
+        .amoria-signup-google {
           width: 100%;
           border-radius: 999px;
           padding: 0.65rem 1rem;
@@ -436,38 +399,30 @@ function SignupPageInner() {
           color: #e5e7eb;
         }
 
-        .amoria-auth-footer {
-          margin-top: 0.9rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.45rem;
+        .amoria-signup-footer {
+          margin-top: 0.75rem;
+          text-align: center;
           font-size: 0.8rem;
-        }
-
-        .amoria-auth-link,
-        .amoria-auth-back {
-          border: none;
-          background: transparent;
           color: #9ca3af;
-          cursor: pointer;
-          padding: 0;
-          text-align: left;
         }
 
-        .amoria-auth-link strong {
+        .amoria-signup-link {
+          background: none;
+          border: none;
+          padding: 0;
+          margin: 0;
           color: #e5e7eb;
+          cursor: pointer;
+          font-size: 0.8rem;
+          text-decoration: underline;
+        }
+
+        @media (max-width: 640px) {
+          .amoria-signup-card {
+            padding-inline: 1.1rem;
+          }
         }
       `}</style>
     </main>
-  );
-}
-
-export default function SignupPage() {
-  return (
-    <Suspense
-      fallback={<main className="amoria-root amoria-auth-root" />}
-    >
-      <SignupPageInner />
-    </Suspense>
   );
 }
