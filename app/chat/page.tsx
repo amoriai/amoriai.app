@@ -15,7 +15,7 @@ export default function ChatPage() {
 
   // Exemple très simple : un petit système pour ton IA
   const systemPrompt =
-    "Tu es AmorIA, une IA de compagnie chaleureuse. Réponds en français simple, avec bienveillance.";
+    "Tu es AmorIAI, une IA de compagnie chaleureuse. Réponds en français simple, avec bienveillance.";
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
