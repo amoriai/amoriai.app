@@ -10,11 +10,11 @@ type AmoriaRow = {
   id: string;
   user_id: string;
   name: string;
-  persona_type: string;      // ex: "woman" / "man" / "androgynous" / "50plus"
-  main_language: string;     // "fr" | "en" | "es"
+  persona_type: string; // ex: "woman" / "man" / "androgynous" / "50plus"
+  main_language: string; // "fr" | "en" | "es"
   avatar_image_url: string | null;
   accent_color: string | null;
-  system_prompt: string;     // ton texte de personnalité / mission
+  system_prompt: string; // texte de personnalité / mission
   voice_id: string | null;
   is_archived: boolean;
   created_at: string;
@@ -41,7 +41,7 @@ const STRINGS: Record<
 > = {
   fr: {
     backHome: "← Retour à l’accueil",
-    title: "Ton AmorIA est prête ✨",
+    title: "Ton AmorIAI est prête ✨",
     subtitle:
       "Voici ton IA personnelle. Ensuite tu pourras chatter avec elle, activer la voix et personnaliser son style.",
     nameLabel: "Prénom",
@@ -51,13 +51,13 @@ const STRINGS: Record<
     noAvatar: "Aucun avatar disponible pour le moment.",
     loading: "Chargement...",
     error:
-      "Impossible de charger ton AmorIA. Crée-en d’abord une depuis la page de création.",
+      "Impossible de charger ton AmorIAI. Crée-en d’abord une depuis la page de création.",
     chatCta: "Chatter avec cette IA",
-    createFirstCta: "Créer ma première AmorIA",
+    createFirstCta: "Créer ma première AmorIAI",
   },
   en: {
     backHome: "← Back to home",
-    title: "Your AmorIA is ready ✨",
+    title: "Your AmorIAI is ready ✨",
     subtitle:
       "Here is your personal AI. Next, you’ll be able to chat with it, enable voice and customize its style.",
     nameLabel: "Name",
@@ -67,13 +67,13 @@ const STRINGS: Record<
     noAvatar: "No avatar available yet.",
     loading: "Loading...",
     error:
-      "We couldn’t load your AmorIA. Please create one first from the creation page.",
+      "We couldn’t load your AmorIAI. Please create one first from the creation page.",
     chatCta: "Chat with this AI",
-    createFirstCta: "Create my first AmorIA",
+    createFirstCta: "Create my first AmorIAI",
   },
   es: {
     backHome: "← Volver al inicio",
-    title: "Tu AmorIA está lista ✨",
+    title: "Tu AmorIAI está lista ✨",
     subtitle:
       "Aquí está tu IA personal. Luego podrás chatear con ella, activar la voz y personalizar su estilo.",
     nameLabel: "Nombre",
@@ -83,13 +83,13 @@ const STRINGS: Record<
     noAvatar: "No hay avatar disponible por ahora.",
     loading: "Cargando...",
     error:
-      "No pudimos cargar tu AmorIA. Crea una primero desde la página de creación.",
+      "No pudimos cargar tu AmorIAI. Crea una primero desde la página de creación.",
     chatCta: "Chatear con esta IA",
-    createFirstCta: "Crear mi primera AmorIA",
+    createFirstCta: "Crear mi primera AmorIAI",
   },
 };
 
-// --- PETITE FONCTION UTILITAIRE POUR AFFICHER LE TYPE D’IA ---
+// --- FORMAT DU TYPE D’IA ---
 function formatPersonaType(persona: string, locale: Locale): string {
   switch (persona) {
     case "woman":
@@ -121,7 +121,6 @@ function formatPersonaType(persona: string, locale: Locale): string {
   }
 }
 
-// --- PAGE ---
 export default function MyAIPage() {
   const [locale, setLocale] = useState<Locale>("fr");
   const [loading, setLoading] = useState(true);
@@ -137,7 +136,7 @@ export default function MyAIPage() {
         setLocale(lang);
       }
     } catch {
-      // on ignore
+      // ignore
     }
   }, []);
 
@@ -153,7 +152,8 @@ export default function MyAIPage() {
         );
 
         // Qui est connecté ?
-        const { data: authData, error: authError } = await supabase.auth.getUser();
+        const { data: authData, error: authError } =
+          await supabase.auth.getUser();
         if (authError || !authData?.user) {
           setError(t.error);
           setLoading(false);
@@ -162,9 +162,9 @@ export default function MyAIPage() {
 
         const user = authData.user;
 
-        // Dernière IA créée (ou la seule) pour cet utilisateur
+        // Dernière IA créée pour cet utilisateur
         const { data, error } = await supabase
-          .from("user_amoria")
+          .from("user_amoria") // garde le même nom de table que tu utilises déjà
           .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
@@ -186,8 +186,14 @@ export default function MyAIPage() {
     };
 
     loadAI();
-    // on relance si la langue change pour mettre à jour les messages d’erreur
-  }, [locale, t.error]);
+  }, [t.error]);
+
+  // Helper pour garder le ?lang= aussi sur les liens
+  const buildUrlWithLang = (path: string) => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `${path}?${params.toString()}`;
+  };
 
   // --- ÉTATS INTERMÉDIAIRES ---
 
@@ -216,14 +222,13 @@ export default function MyAIPage() {
   }
 
   if (error || !ai) {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    const createUrl = `/create-ia?${params.toString()}`;
+    const createUrl = buildUrlWithLang("/create-ia");
+    const homeUrl = buildUrlWithLang("/");
 
     return (
       <main className="amoria-ai-root">
         <div className="amoria-ai-empty">
-          <a href="/" className="amoria-back">
+          <a href={homeUrl} className="amoria-back">
             {t.backHome}
           </a>
           <p className="amoria-error">{t.error}</p>
@@ -276,16 +281,17 @@ export default function MyAIPage() {
     );
   }
 
-  // URL pour le futur chat : /chat?iaId=...&lang=...
+  // URL pour le chat : /chat?iaId=...&lang=...
   const chatParams = new URLSearchParams();
   chatParams.set("iaId", ai.id);
   chatParams.set("lang", locale);
   const chatUrl = `/chat?${chatParams.toString()}`;
+  const homeUrl = buildUrlWithLang("/");
 
   return (
     <main className="amoria-ai-root">
       <header className="amoria-ai-header">
-        <a href="/" className="amoria-back">
+        <a href={homeUrl} className="amoria-back">
           {t.backHome}
         </a>
       </header>
@@ -298,7 +304,7 @@ export default function MyAIPage() {
           {ai.avatar_image_url ? (
             <img
               src={ai.avatar_image_url}
-              alt="Avatar AmorIA"
+              alt="Avatar AmorIAI"
               className="amoria-avatar-img"
             />
           ) : (
@@ -330,7 +336,6 @@ export default function MyAIPage() {
           </div>
         </div>
 
-        {/* BOUTON POUR BRANCHER LA PAGE DE CHAT */}
         <div className="amoria-ai-actions">
           <a href={chatUrl} className="amoria-btn amoria-btn--primary">
             {t.chatCta}
