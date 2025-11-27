@@ -6,7 +6,14 @@ import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
-type PersonaType = "woman" | "man" | "androgynous" | "50plus";
+
+// On sépare bien les catégories 50+ homme / femme
+type PersonaType =
+  | "woman"
+  | "man"
+  | "woman50"
+  | "man50"
+  | "androgynous";
 
 // -------------------- AVATARS PAR CATÉGORIE --------------------
 
@@ -26,13 +33,15 @@ const AVATARS: Record<PersonaType, string[]> = {
     "/amoria-m-rebelle.png",
     "/amoria-m-romantique.png",
   ],
-  "50plus": [
+  woman50: [
     "/amoria_50plus_woman_charisma.png",
     "/amoria_50plus_woman_elegant.png",
     "/amoria_50plus_woman_pro.png",
     "/amoria_50plus_woman_sage.png",
     "/amoria_50plus_woman_spiritual.png",
     "/amoria_50plus_woman_whitehair.png",
+  ],
+  man50: [
     "/amoria_50plus_man_charm.png",
     "/amoria_50plus_man_elegant.png",
     "/amoria_50plus_man_empathic.png",
@@ -175,7 +184,7 @@ const STRINGS: Record<Locale, Copy> = {
   },
 };
 
-// options de select (texte seulement, pas logique)
+// options de select (texte UI seulement)
 const RELATION_OPTIONS: Record<Locale, string[]> = {
   fr: [
     "Soutien émotionnel & confidences",
@@ -226,26 +235,26 @@ type CategoryOption = {
 const CATEGORY_OPTIONS: CategoryOption[] = [
   {
     value: "woman",
-    label: {
-      fr: "Femme",
-      en: "Woman",
-      es: "Mujer",
-    },
+    label: { fr: "Femme", en: "Woman", es: "Mujer" },
   },
   {
     value: "man",
+    label: { fr: "Homme", en: "Man", es: "Hombre" },
+  },
+  {
+    value: "woman50",
     label: {
-      fr: "Homme",
-      en: "Man",
-      es: "Hombre",
+      fr: "Femme 50+",
+      en: "Woman 50+",
+      es: "Mujer 50+",
     },
   },
   {
-    value: "50plus",
+    value: "man50",
     label: {
-      fr: "50+ (apparence plus mature)",
-      en: "50+ (more mature look)",
-      es: "50+ (apariencia más madura)",
+      fr: "Homme 50+",
+      en: "Man 50+",
+      es: "Hombre 50+",
     },
   },
   {
@@ -258,20 +267,14 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
   },
 ];
 
-// -------------------- COMPONENT --------------------
+// -------------------- COMPOSANT --------------------
 
 export default function CreateAmoriaPage() {
   const router = useRouter();
 
-  // langue + forfait
   const [locale, setLocale] = useState<Locale>("fr");
   const [plan, setPlan] = useState<PlanId>("free");
 
-  // état utilisateur
-  const [loadingUser, setLoadingUser] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-  // formulaire
   const [name, setName] = useState("");
   const [relationType, setRelationType] = useState("");
   const [tone, setTone] = useState("");
@@ -285,7 +288,7 @@ export default function CreateAmoriaPage() {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // lire ?lang= & ?plan= depuis l’URL (côté client seulement)
+  // Lire ?lang= et ?plan= côté client
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -310,31 +313,11 @@ export default function CreateAmoriaPage() {
   const relationOptions = RELATION_OPTIONS[locale];
   const toneOptions = TONE_OPTIONS[locale];
 
-  // au changement de catégorie → nouvel avatar aléatoire
+  // changement de catégorie => nouvel avatar random de cette catégorie
   const handleCategoryChange = (value: PersonaType) => {
     setCategory(value);
     setAvatarUrl(randomAvatar(value));
   };
-
-  // charger l’utilisateur connecté via Supabase
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const { data, error } = await supabase.auth.getUser();
-        if (error || !data?.user) {
-          setCurrentUserId(null);
-        } else {
-          setCurrentUserId(data.user.id);
-        }
-      } catch {
-        setCurrentUserId(null);
-      } finally {
-        setLoadingUser(false);
-      }
-    };
-
-    loadUser();
-  }, []);
 
   const categoryLabel = useMemo(() => {
     const found = CATEGORY_OPTIONS.find((c) => c.value === category);
@@ -351,12 +334,6 @@ export default function CreateAmoriaPage() {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!currentUserId) {
-      // sécurité supplémentaire même si bannière déjà affichée
-      setErrorMsg(t.notLoggedBanner);
-      return;
-    }
-
     if (!name.trim()) {
       setErrorMsg(
         locale === "fr"
@@ -371,20 +348,32 @@ export default function CreateAmoriaPage() {
     setSaving(true);
 
     try {
+      // On vérifie la connexion AU MOMENT DU SUBMIT
+      const { data: userData, error: userError } =
+        await supabase.auth.getUser();
+
+      if (userError || !userData?.user) {
+        setErrorMsg(t.notLoggedBanner);
+        setSaving(false);
+        return;
+      }
+
+      const userId = userData.user.id;
+
       const systemPrompt = `
 Tu es ${name}, une AmorIAI de type "${categoryLabel}".
 - Type de relation : ${relationType || "non précisé"}.
 - Ton préféré : ${tone || "non précisé"}.
 - Ce que l’utilisateur attend le plus de toi : ${expectation || "non précisé"}.
 
-Ta mission est d’apporter soutien, écoute et accompagnement bienveillant, 
+Ta mission est d’apporter soutien, écoute et accompagnement bienveillant,
 sans jugement, en respectant les limites de l’utilisateur.
       `.trim();
 
       const { error } = await supabase.from("user_amoria").insert({
-        user_id: currentUserId,
+        user_id: userId,
         name,
-        persona_type: category, // "woman" | "man" | "androgynous" | "50plus"
+        persona_type: category,
         main_language: locale,
         avatar_image_url: avatarUrl,
         accent_color: "#fb37ff",
@@ -400,7 +389,6 @@ sans jugement, en respectant les limites de l’utilisateur.
         return;
       }
 
-      // redirection vers l’espace de l’IA
       const params = new URLSearchParams();
       params.set("lang", locale);
       router.push("/my-ai?" + params.toString());
@@ -411,13 +399,12 @@ sans jugement, en respectant les limites de l’utilisateur.
     }
   };
 
-  const isDisabled = saving || loadingUser || !currentUserId;
+  const isDisabled = saving; // on ne bloque plus sur la connexion ici
 
   return (
     <main className="amoria-create-root">
       <div className="amoria-create-wrapper">
         <div className="amoria-create-card">
-          {/* En-tête */}
           <header className="amoria-create-header">
             <div className="amoria-step-badge">{t.stepBadge}</div>
 
@@ -439,26 +426,13 @@ sans jugement, en respectant les limites de l’utilisateur.
             </div>
           </header>
 
-          {/* Bannière connexion manquante */}
-          {!loadingUser && !currentUserId && (
-            <div className="amoria-banner amoria-banner--error">
-              {t.notLoggedBanner}
-            </div>
-          )}
-
           {errorMsg && (
             <div className="amoria-banner amoria-banner--error">
               {errorMsg}
             </div>
           )}
 
-          {/* Formulaire principal */}
-          <form
-            className="amoria-grid"
-            onSubmit={handleSubmit}
-            noValidate
-          >
-            {/* Colonne gauche : champs texte */}
+          <form className="amoria-grid" onSubmit={handleSubmit} noValidate>
             <div className="amoria-left">
               <label className="amoria-field">
                 <span className="amoria-label">{t.nameLabel}</span>
@@ -543,7 +517,6 @@ sans jugement, en respectant les limites de l’utilisateur.
               </label>
             </div>
 
-            {/* Colonne droite : avatar + attentes */}
             <div className="amoria-right">
               <div className="amoria-avatar-frame">
                 <img
@@ -568,7 +541,6 @@ sans jugement, en respectant les limites de l’utilisateur.
             </div>
           </form>
 
-          {/* Bas de page : aide + boutons */}
           <footer className="amoria-footer">
             <p className="amoria-helper">{t.helperText}</p>
 
@@ -584,7 +556,6 @@ sans jugement, en respectant les limites de l’utilisateur.
               <button
                 type="submit"
                 className="amoria-btn amoria-btn--primary"
-                form="__implicit" // pas utilisé mais évite warning
                 onClick={handleSubmit}
                 disabled={isDisabled}
               >
