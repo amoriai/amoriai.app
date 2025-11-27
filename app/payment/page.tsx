@@ -1,14 +1,14 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 import React, { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-// Titres des forfaits par langue
 const PLAN_TITLES: Record<Locale, Record<PlanId, string>> = {
   fr: {
     free: "Découverte (gratuit)",
@@ -30,7 +30,6 @@ const PLAN_TITLES: Record<Locale, Record<PlanId, string>> = {
   },
 };
 
-// Prix affichés (visuel seulement)
 const PLAN_PRICES: Record<Locale, Record<PlanId, string>> = {
   fr: {
     free: "0 $ / mois",
@@ -52,7 +51,6 @@ const PLAN_PRICES: Record<Locale, Record<PlanId, string>> = {
   },
 };
 
-// Textes multilingues
 const COPY: Record<
   Locale,
   {
@@ -113,33 +111,45 @@ function normalizePlan(raw: string | null): PlanId {
 }
 
 export default function PaymentPage() {
-  const searchParams = useSearchParams();
   const router = useRouter();
 
-  const locale = normalizeLocale(searchParams.get("lang"));
-  const plan = normalizePlan(searchParams.get("plan"));
+  const [locale, setLocale] = useState<Locale>("fr");
+  const [plan, setPlan] = useState<PlanId>("free");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Lire les params de l’URL côté client
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlLocale = params.get("lang");
+    const urlPlan = params.get("plan");
+
+    setLocale(normalizeLocale(urlLocale));
+    setPlan(normalizePlan(urlPlan));
+  }, []);
 
   const t = COPY[locale];
   const planTitle = PLAN_TITLES[locale][plan];
   const planPrice = PLAN_PRICES[locale][plan];
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Si quelqu’un arrive ici avec le plan gratuit → on saute Stripe
+  // Si le plan est gratuit, on ne passe pas par Stripe
   useEffect(() => {
     if (plan === "free") {
       const params = new URLSearchParams();
-      params.set("plan", plan);
+      params.set("plan", "free");
       params.set("lang", locale);
       router.replace(`/create-amoria?${params.toString()}`);
     }
   }, [plan, locale, router]);
 
+  // Pendant la redirection du plan gratuit, on n'affiche rien
+  if (plan === "free") {
+    return null;
+  }
+
   const handleCheckout = async () => {
     setError(null);
     setLoading(true);
-
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -152,13 +162,13 @@ export default function PaymentPage() {
       }
 
       const data = await res.json();
+
       if (data?.url) {
         window.location.href = data.url;
       } else {
         throw new Error(t.errorGeneric);
       }
     } catch (err: any) {
-      console.error(err);
       setError(err?.message || t.errorGeneric);
       setLoading(false);
     }
@@ -169,11 +179,6 @@ export default function PaymentPage() {
     params.set("lang", locale);
     router.push(`/pricing?${params.toString()}`);
   };
-
-  // Si plan=free, on ne rend rien (redirigé dans useEffect)
-  if (plan === "free") {
-    return null;
-  }
 
   return (
     <main className="amoria-root amoria-payment-root">
@@ -236,6 +241,7 @@ export default function PaymentPage() {
         </div>
       </div>
 
+      {/* Styles spécifiques à la page paiement (si tu les veux inline) */}
       <style jsx global>{`
         .amoria-payment-root {
           min-height: 100vh;
@@ -261,7 +267,6 @@ export default function PaymentPage() {
           border: 1px solid rgba(148, 163, 184, 0.4);
           padding: 1.8rem 1.7rem 1.6rem;
           box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
-          color: #e5e7eb;
         }
 
         .amoria-payment-header {
