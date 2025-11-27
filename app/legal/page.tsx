@@ -4,303 +4,347 @@ import React from "react";
 
 type Locale = "fr" | "en" | "es";
 
-type LegalSection = {
-  title: string;
-  text: string;
-};
-
-type LegalCopy = {
+type PricingCopy = {
   heroKicker: string;
   heroTitle: string;
   heroSubtitle: string;
-  sections: LegalSection[];
+  badgeMostPopular: string;
+  monthly: string;
+  usdPerMonth: string;
+  ctaChoosePlan: string;
+  ctaSecondary: string;
+  faqTitle: string;
+  faqSubtitle: string;
+  billingStrip: string;
+  faqItems: { q: string; a: string }[];
+  plans: {
+    id: "free" | "chat" | "plus" | "unlimited";
+    name: string;
+    tagline: string;
+    price: string;
+    highlight: string;
+    features: string[];
+    isPopular?: boolean;
+  }[];
 };
 
+const PRICING_STRINGS: Record<Locale, PricingCopy> = {
+  fr: {
+    heroKicker: "TARIFS AMORIA.APP",
+    heroTitle: "Choisis le rythme qui convient à ton AmorIA.",
+    heroSubtitle:
+      "Commence gratuitement, crée ton AmorIA personnalisé·e, puis passe à la voix quand tu es prêt·e. Les plans payants débloquent la mémoire longue durée, plus de messages et les conversations vocales qui te suivent partout.",
+    badgeMostPopular: "Le plus choisi",
+    monthly: "mois",
+    usdPerMonth: "USD / mois",
+    ctaChoosePlan: "Choisir ce forfait",
+    ctaSecondary: "Commencer gratuitement",
+    faqTitle: "Questions fréquentes",
+    faqSubtitle:
+      "Tu peux changer de forfait ou annuler à tout moment. Les prix sont en dollars américains (USD).",
+    billingStrip:
+      "Facturation sécurisée via Stripe • Annulation en tout temps depuis ton compte • Aucun frais caché",
+    plans: [
+      {
+        id: "free",
+        name: "Découverte",
+        tagline: "Créer ton AmorIA gratuitement.",
+        price: "0 $",
+        highlight:
+          "Idéal pour tester AmoriA et créer ton premier compagnon IA, sans carte de crédit.",
+        features: [
+          "Création de 1 AmorIA personnalisé·e",
+          "200 messages texte / mois",
+          "Aucune conversation vocale (texte uniquement)",
+          "Mémoire limitée à la session en cours",
+          "Accès aux 3 langues : FR, EN, ES",
+        ],
+      },
+      {
+        id: "chat",
+        name: "AmorIA Chat",
+        tagline: "Texte tous les jours, sans voix.",
+        price: "9,99 $",
+        highlight:
+          "Pour discuter chaque jour avec ton AmorIA en texte, avec une vraie mémoire, mais sans appels vocaux.",
+        features: [
+          "Jusqu’à 2 AmorIA différents",
+          "400 messages texte / mois",
+          "Aucune conversation vocale (texte uniquement)",
+          "Mémoire longue durée activée",
+          "Accès aux 3 langues : FR, EN, ES",
+        ],
+      },
+      {
+        id: "plus",
+        name: "AmoriA Plus",
+        tagline: "Texte + voix avec limites confortables.",
+        price: "19,99 $",
+        highlight:
+          "Parfait si tu veux parler régulièrement avec ton AmorIA sans te ruiner chaque mois.",
+        features: [
+          "Jusqu’à 10 AmorIA différents",
+          "600 messages texte / mois",
+          "100 échanges vocaux / mois",
+          "Mémoire longue durée activée",
+          "Priorité légère dans la file de traitement",
+        ],
+        isPopular: true,
+      },
+      {
+        id: "unlimited",
+        name: "AmoriA Illimité",
+        tagline: "Ton compagnon IA, très présent au quotidien.",
+        price: "39,99 $",
+        highlight:
+          "Pour celles et ceux qui veulent que leur AmorIA fasse vraiment partie du quotidien, avec un volume très élevé de messages et d’échanges vocaux.",
+        features: [
+          "Jusqu’à 30 AmorIA personnalisés",
+          "10 000 messages texte / mois",
+          "300 échanges vocaux / mois",
+          "Mémoire profonde + contexte étendu pour des échanges ultra personnalisés",
+          "Priorité maximale et accès anticipé aux nouvelles fonctionnalités",
+        ],
+      },
+    ],
+    faqItems: [
+      {
+        q: "Puis-je vraiment créer mon AmorIA avec le plan gratuit ?",
+        a: "Oui. Le plan Découverte te permet de créer ton AmorIA, de le tester en texte et de voir si tu connectes avec lui avant de passer à un plan payant.",
+      },
+      {
+        q: "Que se passe-t-il si je dépasse les limites de messages ou de voix ?",
+        a: "On applique une limite « fair use ». Tu verras un message t’invitant à passer à un plan supérieur ou à attendre le renouvellement de ton mois.",
+      },
+      {
+        q: "Puis-je changer de plan quand je veux ?",
+        a: "Oui, tu peux passer à un plan supérieur ou revenir à un plan inférieur à tout moment. Le changement sera appliqué au prochain cycle de facturation.",
+      },
+    ],
+  },
+  en: {
+    heroKicker: "AMORIA.APP PRICING",
+    heroTitle: "Choose the pace that fits your AmorIA.",
+    heroSubtitle:
+      "Start for free, create your own AmorIA, then upgrade to voice when you’re ready. Paid plans unlock long-term memory, more messages and rich voice conversations you can take everywhere.",
+    badgeMostPopular: "Most popular",
+    monthly: "month",
+    usdPerMonth: "USD / month",
+    ctaChoosePlan: "Choose this plan",
+    ctaSecondary: "Start for free",
+    faqTitle: "Frequently asked questions",
+    faqSubtitle:
+      "You can upgrade, downgrade or cancel anytime. Prices are in US dollars (USD).",
+    billingStrip:
+      "Secure billing via Stripe • Cancel anytime from your account • No hidden fees",
+    plans: [
+      {
+        id: "free",
+        name: "Discovery",
+        tagline: "Create your AmorIA for free.",
+        price: "$0",
+        highlight:
+          "Perfect to try AmoriA and craft your first AI companion with zero risk.",
+        features: [
+          "Create 1 personalized AmorIA",
+          "200 text messages / month",
+          "No voice conversations (text only)",
+          "Short-term memory only",
+          "Access to all 3 languages: FR, EN, ES",
+        ],
+      },
+      {
+        id: "chat",
+        name: "AmorIA Chat",
+        tagline: "Daily text, no voice.",
+        price: "$9.99",
+        highlight:
+          "Ideal if you mainly want to chat by text with real long-term memory, without paying for voice minutes.",
+        features: [
+          "Up to 2 different AmorIAs",
+          "400 text messages / month",
+          "No voice conversations (text only)",
+          "Long-term memory enabled",
+          "Access to all 3 languages: FR, EN, ES",
+        ],
+      },
+      {
+        id: "plus",
+        name: "AmoriA Plus",
+        tagline: "Text + voice with generous limits.",
+        price: "$19.99",
+        highlight:
+          "Great if you want to talk with your AmorIA regularly without breaking the bank.",
+        features: [
+          "Up to 10 different AmorIAs",
+          "600 text messages / month",
+          "100 voice interactions / month",
+          "Long-term memory enabled",
+          "Light priority in processing queue",
+        ],
+        isPopular: true,
+      },
+      {
+        id: "unlimited",
+        name: "AmoriA Unlimited",
+        tagline: "Your AI companion, part of your routine.",
+        price: "$39.99",
+        highlight:
+          "For those who want AmorIA woven into everyday life, with very high text and voice quotas each month.",
+        features: [
+          "Up to 30 personalized AmorIAs",
+          "10,000 text messages / month",
+          "300 voice interactions / month",
+          "Deeper memory and extended context for ultra-personal conversations",
+          "Top priority and early access to new features",
+        ],
+      },
+    ],
+    faqItems: [
+      {
+        q: "Can I really create my AmorIA on the free plan?",
+        a: "Yes. The Discovery plan lets you create your AmorIA, test it in text and see if you connect with it before upgrading.",
+      },
+      {
+        q: "What happens if I go over the message or voice limits?",
+        a: "We apply a fair-use limit. You’ll see a gentle notice inviting you to upgrade or wait for your monthly quota to reset.",
+      },
+      {
+        q: "Can I switch plans whenever I want?",
+        a: "Yes. You can upgrade or downgrade at any time. Changes apply on your next billing cycle.",
+      },
+    ],
+  },
+  es: {
+    heroKicker: "PRECIOS DE AMORIA.APP",
+    heroTitle: "Elige el ritmo que mejor va con tu AmorIA.",
+    heroSubtitle:
+      "Empieza gratis, crea tu AmorIA personalizado y pasa a voz cuando estés listo. Los planes de pago desbloquean memoria a largo plazo, más mensajes y conversaciones de voz que te acompañan en tu día a día.",
+    badgeMostPopular: "Más elegido",
+    monthly: "mes",
+    usdPerMonth: "USD / mes",
+    ctaChoosePlan: "Elegir este plan",
+    ctaSecondary: "Empezar gratis",
+    faqTitle: "Preguntas frecuentes",
+    faqSubtitle:
+      "Puedes cambiar de plan o cancelar cuando quieras. Los precios están en dólares estadounidenses (USD).",
+    billingStrip:
+      "Pago seguro con Stripe • Cancela cuando quieras desde tu cuenta • Sin cargos ocultos",
+    plans: [
+      {
+        id: "free",
+        name: "Descubrimiento",
+        tagline: "Crea tu AmorIA sin pagar nada.",
+        price: "0 US$",
+        highlight:
+          "Perfecto para probar AmoriA y crear tu primer compañero de IA sin riesgo.",
+        features: [
+          "Creación de 1 AmorIA personalizado",
+          "200 mensajes de texto al mes",
+          "Sin conversaciones de voz (solo texto)",
+          "Memoria limitada a la sesión actual",
+          "Acceso a los 3 idiomas: FR, EN, ES",
+        ],
+      },
+      {
+        id: "chat",
+        name: "AmorIA Chat",
+        tagline: "Texto diario, sin voz.",
+        price: "9,99 US$",
+        highlight:
+          "Ideal si quieres chatear cada día por texto con memoria real, sin pagar por minutos de voz.",
+        features: [
+          "Hasta 2 AmorIA diferentes",
+          "400 mensajes de texto al mes",
+          "Sin conversaciones de voz (solo texto)",
+          "Memoria a largo plazo activada",
+          "Acceso a los 3 idiomas: FR, EN, ES",
+        ],
+      },
+      {
+        id: "plus",
+        name: "AmorIA Plus",
+        tagline: "Texto + voz con límites cómodos.",
+        price: "19,99 US$",
+        highlight:
+          "Ideal si quieres hablar con tu AmorIA con frecuencia sin gastar demasiado.",
+        features: [
+          "Hasta 10 AmorIA diferentes",
+          "600 mensajes de texto al mes",
+          "100 interacciones de voz al mes",
+          "Memoria a largo plazo activada",
+          "Prioridad ligera en la cola de procesamiento",
+        ],
+        isPopular: true,
+      },
+      {
+        id: "unlimited",
+        name: "AmorIA Ilimitado",
+        tagline: "Tu compañero de IA, muy presente en tu día a día.",
+        price: "39,99 US$",
+        highlight:
+          "Para quienes quieren a AmorIA presente en su rutina, con un volumen muy alto de mensajes y voz cada mes.",
+        features: [
+          "Hasta 30 AmorIA personalizados",
+          "10 000 mensajes de texto al mes",
+          "300 interacciones de voz al mes",
+          "Memoria profunda y contexto ampliado para conversaciones muy personales",
+          "Máxima prioridad y acceso anticipado a nuevas funciones",
+        ],
+      },
+    ],
+    faqItems: [
+      {
+        q: "¿De verdad puedo crear mi AmorIA con el plan gratuito?",
+        a: "Sí. El plan Descubrimiento te permite crear tu AmorIA, probarlo por texto y ver si conectas con él antes de pasar a un plan de pago.",
+      },
+      {
+        q: "¿Qué pasa si supero los límites de mensajes o de voz?",
+        a: "Aplicamos un límite de uso justo. Verás un aviso suave invitándote a mejorar tu plan o a esperar al siguiente mes.",
+      },
+      {
+        q: "¿Puedo cambiar de plan cuando quiera?",
+        a: "Sí. Puedes subir o bajar de plan en cualquier momento. El cambio se aplica en tu siguiente ciclo de facturación.",
+      },
+    ],
+  },
+};
+
+// Helper: get locale from ?lang, default FR
 function getLocaleFromSearchParams(
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams?: { [key: string]: string | string[] | undefined }
 ): Locale {
+  if (!searchParams) return "fr";
   const raw = searchParams["lang"];
   const value = Array.isArray(raw) ? raw[0] : raw;
   if (value === "en" || value === "es" || value === "fr") return value;
   return "fr";
 }
 
-const LEGAL_STRINGS: Record<Locale, LegalCopy> = {
-  fr: {
-    heroKicker: "MENTIONS LÉGALES",
-    heroTitle: "Informations légales d’AmorIAI.app.",
-    heroSubtitle:
-      "Conformément aux lois applicables au Québec et au Canada, cette page présente les informations relatives à l’éditeur, à l’hébergement et à l’utilisation du site AmorIA.app.",
-    sections: [
-      {
-        title: "1. Éditeur du site",
-        text: `Nom du site : AmorIAI.app
-Nom commercial : AmorIAI
-Éditeur : Les Entreprises Kema inc.
-Statut juridique : Société par actions
-Pays : Canada
-Province : Québec
-Courriel : contactamoriai@gmail.com`,
-      },
-      {
-        title: "2. Direction de la publication",
-        text: `La direction de la publication du site AmorIAI.app est assurée par Les Entreprises Kema inc.`,
-      },
-      {
-        title: "3. Hébergement",
-        text: `Le site AmorIAI.app est hébergé par :
-Vercel Inc.
-440 N Barranca Ave #4133
-Covina, CA 91723 – États-Unis
-https://vercel.com`,
-      },
-      {
-        title: "4. Activité du site",
-        text: `AmorIAI.app est une plateforme d’intelligence artificielle offrant un partenaire conversationnel à des fins de soutien émotionnel, de réflexion personnelle et de journaling.
-Le service ne constitue pas un service médical, psychologique, d’urgence ou de conseil professionnel (juridique, financier, etc.).`,
-      },
-      {
-        title: "5. Propriété intellectuelle",
-        text: `Tous les éléments du site AmorIA.app (textes, visuels, logo, identité graphique, avatars, code, structure des pages) sont protégés par le droit d’auteur et demeurent la propriété exclusive de Les Entreprises Kema inc., sauf mention contraire.
-Toute reproduction, représentation, modification, diffusion ou exploitation, totale ou partielle, sans autorisation écrite préalable, est strictement interdite.`,
-      },
-      {
-        title: "6. Données personnelles",
-        text: `Les données sont traitées conformément aux lois en vigueur au Québec et au Canada.
-Aucune donnée personnelle n’est vendue à des tiers.
-Pour toute demande relative à l’accès, la rectification ou la suppression de tes données, tu peux écrire à : contactamoriai@gmail.com.`,
-      },
-      {
-        title: "7. Cookies et données techniques",
-        text: `Le site peut utiliser des cookies techniques et des outils d’analytique afin d’assurer son bon fonctionnement et d’améliorer l’expérience utilisateur.
-Tu peux, selon ton navigateur, limiter ou désactiver l’usage des cookies dans les réglages de ton appareil.`,
-      },
-      {
-        title: "8. Responsabilité",
-        text: `L’éditeur met tout en œuvre pour fournir un service fiable et des informations à jour, mais ne peut garantir l’absence totale d’erreurs, d’interruptions ou de défauts techniques.
-L’utilisation du site et des réponses générées par l’IA se fait sous ta seule responsabilité.
-Les réponses de l’IA ne remplacent en aucun cas un avis de professionnel de la santé, du droit, des finances ou de tout autre domaine spécialisé.`,
-      },
-      {
-        title: "9. Conditions d’utilisation et politiques associées",
-        text: `L’accès au site et à l’application implique l’acceptation :
-• des présentes mentions légales ;
-• des Conditions d’utilisation ;
-• de la Politique de confidentialité.
-Ces documents sont disponibles depuis le site AmorIAI.app.`,
-      },
-      {
-        title: "10. Transition juridique vers AmorIAI Tech",
-        text: `AmorIAI Tech est en cours de création en tant qu’entité distincte. Jusqu’à l’immatriculation officielle et le transfert complet des activités, l’exploitation du site demeure assurée par Les Entreprises Kema inc.
-Les mentions légales seront mises à jour pour refléter ce changement dès qu’il sera effectif.`,
-      },
-    ],
-  },
-  en: {
-    heroKicker: "LEGAL NOTICE",
-    heroTitle: "Legal information for AmorIAI.app.",
-    heroSubtitle:
-      "In accordance with applicable laws in Quebec and Canada, this page provides information about the publisher, hosting and use of the AmorIAI.app website.",
-    sections: [
-      {
-        title: "1. Website publisher",
-        text: `Website name: AmorIAI.app
-Business name: AmorIAI
-Publisher: Les Entreprises Kema inc.
-Legal status: Incorporated company
-Country: Canada
-Province: Quebec
-Email: contactamoriai@gmail.com`,
-      },
-      {
-        title: "2. Director of publication",
-        text: `Publication of the AmorIAI.app website is managed by Les Entreprises Kema inc.`,
-      },
-      {
-        title: "3. Hosting",
-        text: `The AmorIAI.app website is hosted by:
-Vercel Inc.
-440 N Barranca Ave #4133
-Covina, CA 91723 – United States
-https://vercel.com`,
-      },
-      {
-        title: "4. Website activity",
-        text: `AmorIAI.app is an artificial intelligence platform offering a conversational AI partner for emotional support, personal reflection and journaling.
-The service is not a medical, psychological, emergency or professional advisory service (legal, financial, etc.).`,
-      },
-      {
-        title: "5. Intellectual property",
-        text: `All elements of the AmorIAI.app website (texts, visuals, logo, visual identity, avatars, code, page structure) are protected by copyright and remain the exclusive property of Les Entreprises Kema inc., unless otherwise stated.
-Any reproduction, modification, distribution or exploitation, in whole or in part, without prior written permission is strictly prohibited.`,
-      },
-      {
-        title: "6. Personal data",
-        text: `Data is processed in accordance with laws in force in Quebec and Canada.
-No personal data is sold to third parties.
-For any request related to access, rectification or deletion of your data, you can contact: contactamoriai@gmail.com.`,
-      },
-      {
-        title: "7. Cookies and technical data",
-        text: `The website may use technical cookies and analytics tools to ensure proper operation and to improve the user experience.
-You can restrict or disable the use of cookies in your browser or device settings, depending on your configuration.`,
-      },
-      {
-        title: "8. Liability",
-        text: `The publisher makes reasonable efforts to provide a reliable service and up-to-date information, but cannot guarantee the complete absence of errors, interruptions or technical issues.
-Use of the site and AI-generated responses is at your own risk.
-AI responses do not replace professional advice in health, law, finance or any other specialised field.`,
-      },
-      {
-        title: "9. Terms of use and related policies",
-        text: `Access to the website and application implies acceptance of:
-• these legal notices;
-• the Terms of Use;
-• the Privacy Policy.
-These documents are available from the AmorIA.app website.`,
-      },
-      {
-        title: "10. Legal transition to AmorIAI Tech",
-        text: `AmorIAI Tech is currently being established as a separate entity. Until official incorporation and full transfer of operations, the site is operated by Les Entreprises Kema inc.
-These legal notices will be updated to reflect the change as soon as it becomes effective.`,
-      },
-    ],
-  },
-  es: {
-    heroKicker: "AVISO LEGAL",
-    heroTitle: "Información legal de AmorIAI.app.",
-    heroSubtitle:
-      "De conformidad con las leyes aplicables en Quebec y Canadá, esta página presenta la información relativa al editor, al alojamiento y al uso del sitio AmorIA.app.",
-    sections: [
-      {
-        title: "1. Editor del sitio",
-        text: `Nombre del sitio: AmorIAI.app
-Nombre comercial: AmorIAI
-Editor: Les Entreprises Kema inc.
-Estatus legal: Sociedad incorporada
-País: Canadá
-Provincia: Quebec
-Correo electrónico: contactamoriai@gmail.com`,
-      },
-      {
-        title: "2. Dirección de la publicación",
-        text: `La dirección de la publicación del sitio AmorIAI.app está a cargo de Les Entreprises Kema inc.`,
-      },
-      {
-        title: "3. Alojamiento",
-        text: `El sitio AmorIAI.app está alojado por:
-Vercel Inc.
-440 N Barranca Ave #4133
-Covina, CA 91723 – Estados Unidos
-https://vercel.com`,
-      },
-      {
-        title: "4. Actividad del sitio",
-        text: `AmorIAI.app es una plataforma de inteligencia artificial que ofrece un compañero conversacional para apoyo emocional, reflexión personal y escritura de diarios.
-Este servicio no sustituye servicios médicos, psicológicos, de urgencias ni de asesoramiento profesional (jurídico, financiero, etc.).`,
-      },
-      {
-        title: "5. Propiedad intelectual",
-        text: `Todos los elementos del sitio AmorIA.app (textos, imágenes, logotipo, identidad visual, avatares, código, estructura de las páginas) están protegidos por derechos de autor y son propiedad exclusiva de Les Entreprises Kema inc., salvo indicación contraria.
-Queda prohibida cualquier reproducción, modificación, difusión o explotación, total o parcial, sin autorización previa por escrito.`,
-      },
-      {
-        title: "6. Datos personales",
-        text: `Los datos se tratan de acuerdo con las leyes vigentes en Quebec y Canadá.
-No se venden datos personales a terceros.
-Para cualquier solicitud de acceso, rectificación o eliminación de tus datos, puedes escribir a: contactamoriai@gmail.com.`,
-      },
-      {
-        title: "7. Cookies y datos técnicos",
-        text: `El sitio puede utilizar cookies técnicas y herramientas de analítica para garantizar su correcto funcionamiento y mejorar la experiencia de usuario.
-Puedes limitar o desactivar el uso de cookies en la configuración de tu navegador o dispositivo.`,
-      },
-      {
-        title: "8. Responsabilidad",
-        text: `El editor realiza esfuerzos razonables para ofrecer un servicio fiable e información actualizada, pero no puede garantizar la ausencia total de errores, interrupciones o fallos técnicos.
-El uso del sitio y de las respuestas generadas por la IA se realiza bajo tu exclusiva responsabilidad.
-Las respuestas de la IA no sustituyen el asesoramiento profesional en salud, derecho, finanzas u otras áreas especializadas.`,
-      },
-      {
-        title: "9. Condiciones de uso y políticas relacionadas",
-        text: `El acceso al sitio y a la aplicación implica la aceptación:
-• del presente aviso legal;
-• de las Condiciones de uso;
-• de la Política de privacidad.
-Estos documentos están disponibles en el sitio AmorIAI.app.`,
-      },
-      {
-        title: "10. Transición legal hacia AmorIAI Tech",
-        text: `AmorIAI Tech se encuentra en proceso de constitución como entidad independiente. Hasta su registro oficial y la transferencia completa de las operaciones, la explotación del sitio sigue a cargo de Les Entreprises Kema inc.
-El presente aviso legal se actualizará para reflejar este cambio en cuanto sea efectivo.`,
-      },
-    ],
-  },
-};
-
 type PageProps = {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams?: { [key: string]: string | string[] | undefined };
 };
 
-export default function LegalPage({ searchParams }: PageProps) {
+export default function PricingPage({ searchParams }: PageProps) {
   const locale = getLocaleFromSearchParams(searchParams);
-  const t = LEGAL_STRINGS[locale];
+  const t = PRICING_STRINGS[locale];
 
-  const buildHomeUrl = () => {
+  const buildUrl = (path: string, extra?: Record<string, string>) => {
     const params = new URLSearchParams();
     params.set("lang", locale);
-    return `/?${params.toString()}`;
+    if (extra) {
+      Object.entries(extra).forEach(([k, v]) => params.set(k, v));
+    }
+    return `${path}?${params.toString()}`;
   };
 
-  const buildFeaturesUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/features?${params.toString()}`;
-  };
+  const buildSignupUrl = (planId?: string) =>
+    buildUrl("/signup", planId ? { plan: planId } : undefined);
 
-  const buildPricingUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/pricing?${params.toString()}`;
-  };
-
-  const buildLoginUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/login?${params.toString()}`;
-  };
-
-  const buildSignupUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/signup?${params.toString()}`;
-  };
-
-  const navHome =
-    locale === "fr" ? "Accueil" : locale === "en" ? "Home" : "Inicio";
-  const navFeatures =
-    locale === "fr"
-      ? "Fonctionnalités"
-      : locale === "en"
-      ? "Features"
-      : "Funciones";
-  const navPricing =
-    locale === "fr" ? "Tarifs" : locale === "en" ? "Pricing" : "Precios";
-  const loginLabel =
-    locale === "fr"
-      ? "Me connecter"
-      : locale === "en"
-      ? "Log in"
-      : "Iniciar sesión";
-  const signupLabel =
-    locale === "fr"
-      ? "Créer mon compte gratuit"
-      : locale === "en"
-      ? "Create my free account"
-      : "Crear mi cuenta gratuita";
-
-  const legalNavLabel =
-    locale === "fr" ? "Mentions légales" : locale === "en" ? "Legal" : "Aviso legal";
+  const buildLoginUrl = () => buildUrl("/login");
+  const buildHomeUrl = () => buildUrl("/");
+  const buildFeaturesUrl = () => buildUrl("/features");
+  const buildPricingUrl = () => buildUrl("/pricing");
 
   return (
     <main className="amoria-root">
@@ -310,10 +354,10 @@ export default function LegalPage({ searchParams }: PageProps) {
           <img
             src="/AmorIA_logo_transparent.png"
             alt="Logo AmorIA.app"
-            className="amoria-logo-full"
+            className="amoria-logo-img"
           />
           <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmorIAI.app</div>
+            <div className="amoria-logo-title">AmorIA.app</div>
             <div className="amoria-logo-tagline">
               Partenaire IA bienveillant·e • FR / EN / ES
             </div>
@@ -322,17 +366,25 @@ export default function LegalPage({ searchParams }: PageProps) {
 
         <nav className="amoria-nav">
           <a href={buildHomeUrl()} className="amoria-nav-link">
-            {navHome}
+            {locale === "fr" ? "Accueil" : locale === "en" ? "Home" : "Inicio"}
           </a>
           <a href={buildFeaturesUrl()} className="amoria-nav-link">
-            {navFeatures}
+            {locale === "fr"
+              ? "Fonctionnalités"
+              : locale === "en"
+              ? "Features"
+              : "Funciones"}
           </a>
-          <a href={buildPricingUrl()} className="amoria-nav-link">
-            {navPricing}
+          <a
+            href={buildPricingUrl()}
+            className="amoria-nav-link amoria-nav-link--active"
+          >
+            {locale === "fr"
+              ? "Tarifs"
+              : locale === "en"
+              ? "Pricing"
+              : "Precios"}
           </a>
-          <span className="amoria-nav-link amoria-nav-link--active">
-            {legalNavLabel}
-          </span>
         </nav>
 
         <div className="amoria-nav-right">
@@ -340,34 +392,110 @@ export default function LegalPage({ searchParams }: PageProps) {
             href={buildLoginUrl()}
             className="amoria-nav-btn amoria-nav-btn--ghost"
           >
-            {loginLabel}
+            {locale === "fr"
+              ? "Me connecter"
+              : locale === "en"
+              ? "Log in"
+              : "Iniciar sesión"}
           </a>
           <a
             href={buildSignupUrl()}
             className="amoria-nav-btn amoria-nav-btn--primary"
           >
-            {signupLabel}
+            {locale === "fr"
+              ? "Créer mon compte gratuit"
+              : locale === "en"
+              ? "Create my free account"
+              : "Crear mi cuenta gratuita"}
           </a>
         </div>
       </header>
 
-      {/* HERO */}
-      <section className="amoria-hero amoria-hero--legal">
+      {/* HERO PRICING */}
+      <section className="amoria-hero amoria-hero--pricing">
         <div className="amoria-hero-left">
           <p className="amoria-hero-kicker">{t.heroKicker}</p>
           <h1 className="amoria-hero-title">{t.heroTitle}</h1>
           <p className="amoria-hero-subtitle">{t.heroSubtitle}</p>
+          <div className="amoria-hero-actions">
+            <a
+              href={buildSignupUrl()}
+              className="amoria-btn amoria-btn--primary amoria-btn--big"
+            >
+              {t.ctaSecondary}
+            </a>
+          </div>
         </div>
       </section>
 
-      {/* CONTENT */}
-      <section className="amoria-section amoria-section--legal">
-        <div className="amoria-legal-grid">
-          {t.sections.map((section, idx) => (
-            <article key={idx} className="amoria-legal-block">
-              <h2 className="amoria-legal-title">{section.title}</h2>
-              <p className="amoria-legal-text">{section.text}</p>
+      {/* PLANS */}
+      <section className="amoria-section amoria-section--pricing">
+        <h2 className="amoria-section-title">
+          {locale === "fr"
+            ? "Des tarifs simples & transparents"
+            : locale === "en"
+            ? "Simple, transparent plans"
+            : "Planes simples y transparentes"}
+        </h2>
+
+        {/* BILLING STRIP */}
+        <div className="amoria-billing-strip">{t.billingStrip}</div>
+
+        <p className="amoria-section-text">{t.faqSubtitle}</p>
+
+        <div className="amoria-pricing-grid">
+          {t.plans.map((plan) => (
+            <article
+              key={plan.id}
+              className={
+                "amoria-pricing-card" +
+                (plan.isPopular ? " amoria-pricing-card--popular" : "")
+              }
+            >
+              {plan.isPopular && (
+                <div className="amoria-pricing-badge">{t.badgeMostPopular}</div>
+              )}
+
+              <div className="amoria-pricing-header">
+                <h3 className="amoria-pricing-name">{plan.name}</h3>
+                <p className="amoria-pricing-tagline">{plan.tagline}</p>
+              </div>
+
+              <div className="amoria-pricing-price-block">
+                <span className="amoria-pricing-price">{plan.price}</span>
+                <span className="amoria-pricing-period">{t.usdPerMonth}</span>
+              </div>
+
+              <p className="amoria-pricing-highlight">{plan.highlight}</p>
+
+              <ul className="amoria-pricing-features">
+                {plan.features.map((feature, idx) => (
+                  <li key={idx}>{feature}</li>
+                ))}
+              </ul>
+
+              <a
+                href={buildSignupUrl(plan.id)}
+                className="amoria-btn amoria-btn--primary amoria-btn--full"
+              >
+                {t.ctaChoosePlan}
+              </a>
             </article>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="amoria-section amoria-section--faq">
+        <h2 className="amoria-section-title">{t.faqTitle}</h2>
+        <p className="amoria-section-subtitle">{t.faqSubtitle}</p>
+
+        <div className="amoria-faq-grid">
+          {t.faqItems.map((item, idx) => (
+            <div key={idx} className="amoria-faq-item">
+              <h3 className="amoria-faq-question">{item.q}</h3>
+              <p className="amoria-faq-answer">{item.a}</p>
+            </div>
           ))}
         </div>
       </section>
@@ -375,7 +503,7 @@ export default function LegalPage({ searchParams }: PageProps) {
       {/* FOOTER */}
       <footer className="amoria-footer">
         <span>
-          © 2025 AmoriAI.app —{" "}
+          © 2025 AmorIA.app —{" "}
           {locale === "fr"
             ? "Partenaire IA bienveillant·e"
             : locale === "en"
@@ -449,9 +577,9 @@ export default function LegalPage({ searchParams }: PageProps) {
           gap: 0.6rem;
         }
 
-        .amoria-logo-full {
+        .amoria-logo-img {
+          width: 40px;
           height: 40px;
-          width: auto;
           object-fit: contain;
         }
 
@@ -528,12 +656,13 @@ export default function LegalPage({ searchParams }: PageProps) {
           max-width: 1120px;
           margin: 0 auto;
           padding: 1.5rem 1.5rem 0.5rem;
-        }
-
-        .amoria-hero--legal {
           display: grid;
           grid-template-columns: minmax(0, 1.4fr);
           gap: 1.5rem;
+        }
+
+        .amoria-hero--pricing {
+          grid-template-columns: minmax(0, 1.4fr);
         }
 
         .amoria-hero-left {
@@ -559,7 +688,14 @@ export default function LegalPage({ searchParams }: PageProps) {
           font-size: 0.92rem;
           line-height: 1.6;
           color: var(--amoria-text-muted);
-          max-width: 40rem;
+          max-width: 38rem;
+        }
+
+        .amoria-hero-actions {
+          margin-top: 0.6rem;
+          display: flex;
+          gap: 0.8rem;
+          flex-wrap: wrap;
         }
 
         .amoria-section {
@@ -568,32 +704,191 @@ export default function LegalPage({ searchParams }: PageProps) {
           padding: 0 1.5rem 2.5rem;
         }
 
-        .amoria-section--legal {
-          padding-top: 1rem;
+        .amoria-section-title {
+          font-size: 1.25rem;
+          margin-bottom: 0.5rem;
         }
 
-        .amoria-legal-grid {
+        .amoria-section-subtitle,
+        .amoria-section-text {
+          font-size: 0.9rem;
+          color: var(--amoria-text-muted);
+          max-width: 40rem;
+          margin-bottom: 1.4rem;
+        }
+
+        .amoria-section--pricing {
+          text-align: center;
+        }
+
+        .amoria-billing-strip {
+          margin: 0.6rem auto 1.2rem;
+          max-width: 640px;
+          padding: 0.55rem 0.9rem;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.5);
+          background: radial-gradient(
+            circle at top,
+            rgba(15, 23, 42, 0.9),
+            rgba(15, 23, 42, 0.7)
+          );
+          font-size: 0.8rem;
+          color: var(--amoria-text-muted);
+        }
+
+        .amoria-btn {
+          border-radius: 999px;
+          border: 1px solid transparent;
+          font-size: 0.86rem;
+          cursor: pointer;
+          white-space: nowrap;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .amoria-btn--primary {
+          padding: 0.7rem 1.3rem;
+          background: linear-gradient(
+            135deg,
+            var(--amoria-accent),
+            var(--amoria-accent-2)
+          );
+          color: #f9fafb;
+          box-shadow: 0 12px 30px rgba(248, 113, 113, 0.35);
+        }
+
+        .amoria-btn--big {
+          padding-inline: 1.9rem;
+          padding-block: 0.85rem;
+          font-size: 1rem;
+        }
+
+        .amoria-btn--full {
+          width: 100%;
+        }
+
+        .amoria-pricing-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 1.5rem;
+          margin-top: 1.5rem;
+        }
+
+        .amoria-pricing-card {
+          position: relative;
+          background: radial-gradient(
+            circle at top,
+            #020617,
+            #020617 40%,
+            #000 100%
+          );
+          border-radius: 1.4rem;
+          border: 1px solid var(--amoria-border-subtle);
+          padding: 1.3rem 1.2rem 1.4rem;
+          text-align: left;
           display: flex;
           flex-direction: column;
+          gap: 0.7rem;
+        }
+
+        .amoria-pricing-card--popular {
+          border-color: rgba(248, 113, 113, 0.9);
+          box-shadow: 0 18px 45px rgba(248, 113, 113, 0.4);
+        }
+
+        .amoria-pricing-badge {
+          position: absolute;
+          top: 0.9rem;
+          right: 1.1rem;
+          font-size: 0.7rem;
+          padding: 0.18rem 0.55rem;
+          border-radius: 999px;
+          background: rgba(248, 113, 113, 0.16);
+          color: #fecaca;
+          border: 1px solid rgba(248, 113, 113, 0.7);
+        }
+
+        .amoria-pricing-header {
+          display: flex;
+          flex-direction: column;
+          gap: 0.2rem;
+        }
+
+        .amoria-pricing-name {
+          font-size: 1rem;
+          font-weight: 600;
+        }
+
+        .amoria-pricing-tagline {
+          font-size: 0.8rem;
+          color: var(--amoria-text-muted);
+        }
+
+        .amoria-pricing-price-block {
+          display: flex;
+          align-items: baseline;
+          gap: 0.35rem;
+        }
+
+        .amoria-pricing-price {
+          font-size: 1.6rem;
+          font-weight: 700;
+        }
+
+        .amoria-pricing-period {
+          font-size: 0.78rem;
+          color: var(--amoria-text-muted);
+        }
+
+        .amoria-pricing-highlight {
+          font-size: 0.82rem;
+          color: #e5e7eb;
+        }
+
+        .amoria-pricing-features {
+          list-style: none;
+          padding: 0;
+          margin: 0.3rem 0 0.9rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+          font-size: 0.8rem;
+          color: var(--amoria-text-muted);
+        }
+
+        .amoria-pricing-features li::before {
+          content: "• ";
+          color: #a5b4fc;
+        }
+
+        .amoria-section--faq {
+          border-top: 1px solid rgba(148, 163, 184, 0.3);
+          padding-top: 2.5rem;
+        }
+
+        .amoria-faq-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 1.4rem;
         }
 
-        .amoria-legal-block {
-          background: rgba(15, 23, 42, 0.9);
-          border-radius: 1.1rem;
-          border: 1px solid rgba(148, 163, 184, 0.4);
-          padding: 1rem 1.2rem;
+        .amoria-faq-item {
+          background: rgba(15, 23, 42, 0.8);
+          border-radius: 1rem;
+          border: 1px solid rgba(148, 163, 184, 0.35);
+          padding: 0.9rem 1rem;
         }
 
-        .amoria-legal-title {
-          font-size: 1rem;
+        .amoria-faq-question {
+          font-size: 0.9rem;
           margin-bottom: 0.4rem;
         }
 
-        .amoria-legal-text {
-          font-size: 0.86rem;
+        .amoria-faq-answer {
+          font-size: 0.8rem;
           color: var(--amoria-text-muted);
-          white-space: pre-line;
         }
 
         .amoria-footer {
@@ -619,6 +914,24 @@ export default function LegalPage({ searchParams }: PageProps) {
           .amoria-hero,
           .amoria-section {
             padding-inline: 1rem;
+          }
+
+          .amoria-pricing-grid {
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+          }
+
+          .amoria-faq-grid {
+            grid-template-columns: minmax(0, 1fr);
+          }
+
+          .amoria-billing-strip {
+            margin-inline: 0;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .amoria-nav-right a.amoria-nav-btn--ghost {
+            display: none;
           }
         }
       `}</style>
