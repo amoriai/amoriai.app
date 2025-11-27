@@ -3,14 +3,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
-import type { User } from "@supabase/supabase-js";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
-
 type PersonaType = "woman" | "man" | "woman50" | "man50" | "androgynous";
 
-// -------------------- AVATARS --------------------
+// ---------------- AVATARS ----------------
 
 const AVATARS: Record<PersonaType, string[]> = {
   woman: [
@@ -61,7 +59,7 @@ function randomAvatar(type: PersonaType): string {
   return list[index];
 }
 
-// -------------------- TEXTES --------------------
+// ---------------- TEXTES ----------------
 
 type Copy = {
   stepBadge: string;
@@ -75,7 +73,6 @@ type Copy = {
   categoryLabel: string;
   expectationLabel: string;
   expectationPlaceholder: string;
-  notLoggedBanner: string;
   helperText: string;
   createButton: string;
   backHome: string;
@@ -105,10 +102,8 @@ const STRINGS: Record<Locale, Copy> = {
     expectationLabel: "Ce que tu attends le plus de ton AmorIAI",
     expectationPlaceholder:
       'Ex. : « M’aider à me sentir moins seule le soir », « Me motiver pour mes projets », « Me coacher émotionnellement »…',
-    notLoggedBanner:
-      "Tu dois être connectée pour créer ton AmorIAI. Reviens après t’être inscrite / connectée.",
     helperText:
-      "Tu peux ajuster la personnalité, le style et la voix de ton AmorIAI plus tard depuis ton espace.",
+      "Tu pourras ajuster la personnalité, le style et la voix de ton AmorIAI plus tard depuis ton espace.",
     createButton: "Créer mon AmorIAI",
     backHome: "Retour à l’accueil",
     saving: "Création en cours…",
@@ -136,8 +131,6 @@ const STRINGS: Record<Locale, Copy> = {
     expectationLabel: "What you expect most from your AmorIAI",
     expectationPlaceholder:
       `"Help me feel less alone at night", "Motivate me for my projects", "Emotionally coach me"…`,
-    notLoggedBanner:
-      "You must be logged in to create your AmorIAI. Please come back after signing up / logging in.",
     helperText:
       "You’ll be able to adjust personality, style and voice later from your space.",
     createButton: "Create my AmorIAI",
@@ -167,8 +160,6 @@ const STRINGS: Record<Locale, Copy> = {
     expectationLabel: "Lo que más esperas de tu AmorIAI",
     expectationPlaceholder:
       'Ej.: « Ayudarme a sentirme menos sola por la noche », « Motivarme con mis proyectos », « Acompañarme emocionalmente »…',
-    notLoggedBanner:
-      "Debes estar conectada para crear tu AmorIAI. Vuelve después de registrarte / iniciar sesión.",
     helperText:
       "Podrás ajustar la personalidad, el estilo y la voz de tu AmorIAI más adelante desde tu espacio.",
     createButton: "Crear mi AmorIAI",
@@ -178,8 +169,6 @@ const STRINGS: Record<Locale, Copy> = {
       "Ocurrió un error al crear tu AmorIAI. Inténtalo de nuevo, por favor.",
   },
 };
-
-// -------------------- OPTIONS --------------------
 
 const RELATION_OPTIONS: Record<Locale, string[]> = {
   fr: [
@@ -229,80 +218,80 @@ type CategoryOption = {
 };
 
 const CATEGORY_OPTIONS: CategoryOption[] = [
-  { value: "woman",       label: { fr: "Femme",       en: "Woman",       es: "Mujer" } },
-  { value: "man",         label: { fr: "Homme",       en: "Man",         es: "Hombre" } },
-  { value: "woman50",     label: { fr: "Femme 50+",   en: "Woman 50+",   es: "Mujer 50+" } },
-  { value: "man50",       label: { fr: "Homme 50+",   en: "Man 50+",     es: "Hombre 50+" } },
-  { value: "androgynous", label: { fr: "Androgyne / non-binaire", en: "Androgynous / non-binary", es: "Andrógino / no binario" } },
+  { value: "woman", label: { fr: "Femme", en: "Woman", es: "Mujer" } },
+  { value: "man", label: { fr: "Homme", en: "Man", es: "Hombre" } },
+  {
+    value: "woman50",
+    label: { fr: "Femme 50+", en: "Woman 50+", es: "Mujer 50+" },
+  },
+  {
+    value: "man50",
+    label: { fr: "Homme 50+", en: "Man 50+", es: "Hombre 50+" },
+  },
+  {
+    value: "androgynous",
+    label: {
+      fr: "Androgyne / non-binaire",
+      en: "Androgynous / non-binary",
+      es: "Andrógino / no binario",
+    },
+  },
 ];
 
-// -------------------- COMPOSANT --------------------
+// ---------------- COMPONENT ----------------
 
 export default function CreateAmoriaPage() {
   const router = useRouter();
 
   const [locale, setLocale] = useState<Locale>("fr");
   const [plan, setPlan] = useState<PlanId>("free");
+  const [ready, setReady] = useState(false); // on attend la vérif de session
 
   const [name, setName] = useState("");
   const [relationType, setRelationType] = useState("");
   const [tone, setTone] = useState("");
   const [category, setCategory] = useState<PersonaType>("woman");
   const [expectation, setExpectation] = useState("");
-
   const [avatarUrl, setAvatarUrl] = useState<string>(randomAvatar("woman"));
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Nouvel état : user Supabase + chargement auth
-  const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  // Lire ?lang / ?plan + récupérer la session Supabase une seule fois
+  // Lire les query params et vérifier la session
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    const init = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const langParam = params.get("lang");
+      const planParam = params.get("plan");
 
-    const params = new URLSearchParams(window.location.search);
-
-    const langParam = params.get("lang");
-    if (langParam === "fr" || langParam === "en" || langParam === "es") {
-      setLocale(langParam);
-    }
-
-    const planParam = params.get("plan");
-    if (
-      planParam === "free" ||
-      planParam === "chat" ||
-      planParam === "plus" ||
-      planParam === "unlimited"
-    ) {
-      setPlan(planParam);
-    }
-
-    // Récupérer la session actuelle
-    supabase.auth
-      .getUser()
-      .then(({ data, error }) => {
-        if (!error && data?.user) {
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
-      })
-      .finally(() => setAuthLoading(false));
-
-    // Se mettre à jour en cas de login/logout plus tard
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
+      if (langParam === "fr" || langParam === "en" || langParam === "es") {
+        setLocale(langParam);
       }
-    );
+      if (
+        planParam === "free" ||
+        planParam === "chat" ||
+        planParam === "plus" ||
+        planParam === "unlimited"
+      ) {
+        setPlan(planParam);
+      }
 
-    return () => {
-      listener.subscription.unsubscribe();
+      const { data, error } = await supabase.auth.getUser();
+
+      // si pas de user → on renvoie vers signup
+      if (error || !data?.user) {
+        const qp = new URLSearchParams();
+        qp.set("lang", langParam === "en" || langParam === "es" ? langParam : "fr");
+        qp.set("plan", planParam ?? "free");
+        router.push(`/signup?${qp.toString()}`);
+        return;
+      }
+
+      setReady(true);
     };
-  }, []);
+
+    init();
+  }, [router]);
 
   const t = STRINGS[locale];
   const relationOptions = RELATION_OPTIONS[locale];
@@ -339,15 +328,22 @@ export default function CreateAmoriaPage() {
       return;
     }
 
-    if (!user) {
-      // Ici : Supabase ne voit aucun user (donc pas connecté)
-      setErrorMsg(t.notLoggedBanner);
-      return;
-    }
-
     setSaving(true);
 
     try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !userData?.user) {
+        // sécurité : si la session est tombée, on renvoie vers signup
+        const params = new URLSearchParams();
+        params.set("lang", locale);
+        params.set("plan", plan);
+        router.push("/signup?" + params.toString());
+        return;
+      }
+
+      const userId = userData.user.id;
+
       const systemPrompt = `
 Tu es ${name}, une AmorIAI de type "${categoryLabel}".
 - Type de relation : ${relationType || "non précisé"}.
@@ -359,7 +355,7 @@ sans jugement, en respectant les limites de l’utilisateur.
       `.trim();
 
       const { error } = await supabase.from("user_amoria").insert({
-        user_id: user.id,
+        user_id: userId,
         name,
         persona_type: category,
         main_language: locale,
@@ -387,7 +383,22 @@ sans jugement, en respectant les limites de l’utilisateur.
     }
   };
 
-  const isDisabled = saving || authLoading;
+  if (!ready) {
+    // petit écran d’attente pendant la vérif de session
+    return (
+      <main className="amoria-create-root">
+        <div className="amoria-create-wrapper">
+          <div className="amoria-create-card">
+            <p style={{ fontSize: "0.85rem", color: "#9ca3af" }}>
+              Chargement de ton espace…
+            </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const isDisabled = saving;
 
   return (
     <main className="amoria-create-root">
@@ -399,17 +410,11 @@ sans jugement, en respectant les limites de l’utilisateur.
             <div className="amoria-create-top">
               <div>
                 <h1 className="amoria-create-title">{t.pageTitle}</h1>
-                <p className="amoria-create-subtitle">
-                  {t.pageSubtitle}
-                </p>
+                <p className="amoria-create-subtitle">{t.pageSubtitle}</p>
               </div>
               <div className="amoria-plan-pill">
-                <span className="amoria-plan-label">
-                  {t.currentPlanLabel}
-                </span>
-                <span className="amoria-plan-name">
-                  {t.planName(plan)}
-                </span>
+                <span className="amoria-plan-label">{t.currentPlanLabel}</span>
+                <span className="amoria-plan-name">{t.planName(plan)}</span>
               </div>
             </div>
           </header>
@@ -484,9 +489,7 @@ sans jugement, en respectant les limites de l’utilisateur.
               </label>
 
               <label className="amoria-field">
-                <span className="amoria-label">
-                  {t.categoryLabel}
-                </span>
+                <span className="amoria-label">{t.categoryLabel}</span>
                 <select
                   className="amoria-select"
                   value={category}
@@ -513,9 +516,7 @@ sans jugement, en respectant les limites de l’utilisateur.
               </div>
 
               <label className="amoria-field amoria-field--textarea">
-                <span className="amoria-label">
-                  {t.expectationLabel}
-                </span>
+                <span className="amoria-label">{t.expectationLabel}</span>
                 <textarea
                   className="amoria-textarea"
                   value={expectation}
