@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+export const dynamic = "force-dynamic";
+export const runtime = "edge";
+
+import React, { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
@@ -58,7 +61,8 @@ const COPY: Record<
     backToPricing: string;
     errorGeneric: string;
     included: string;
-    selectedLabel: string;
+    selectedPlanLabel: string;
+    freeRedirectText: string;
   }
 > = {
   fr: {
@@ -71,7 +75,9 @@ const COPY: Record<
     errorGeneric:
       "Une erreur est survenue pendant la création de la session de paiement. Réessaie dans quelques instants.",
     included: "Ce qui est inclus dans ce forfait :",
-    selectedLabel: "Forfait sélectionné",
+    selectedPlanLabel: "Forfait sélectionné",
+    freeRedirectText:
+      "Tu es sur le forfait gratuit. Tu vas être redirigé·e vers la configuration de ton AmorIA.",
   },
   en: {
     title: "Complete your subscription",
@@ -83,7 +89,9 @@ const COPY: Record<
     errorGeneric:
       "Something went wrong while creating the checkout session. Please try again.",
     included: "What’s included in this plan:",
-    selectedLabel: "Selected plan",
+    selectedPlanLabel: "Selected plan",
+    freeRedirectText:
+      "You’re on the free plan. You will be redirected to configure your AmorIA.",
   },
   es: {
     title: "Finalizar mi suscripción",
@@ -95,7 +103,9 @@ const COPY: Record<
     errorGeneric:
       "Se produjo un error al crear la sesión de pago. Inténtalo de nuevo.",
     included: "Lo que incluye este plan:",
-    selectedLabel: "Plan seleccionado",
+    selectedPlanLabel: "Plan seleccionado",
+    freeRedirectText:
+      "Estás en el plan gratuito. Serás redirigidx para configurar tu AmorIA.",
   },
 };
 
@@ -104,34 +114,50 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-function normalizePlan(raw: string | null): PlanId {
-  if (raw === "chat" || raw === "plus" || raw === "unlimited" || raw === "free") {
-    return raw;
-  }
-  return "free";
-}
-
-function PaymentPageInner() {
+export default function PaymentPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const locale = normalizeLocale(searchParams.get("lang"));
-  const plan = normalizePlan(searchParams.get("plan"));
+
+  // ⚠️ On garde la vraie valeur brute du plan
+  const rawPlan = searchParams.get("plan");
+
+  // Est-ce un plan vraiment gratuit ?
+  const isFree = !rawPlan || rawPlan === "free";
+
+  // Plan pour l’AFFICHAGE uniquement
+  let planKey: PlanId = "free";
+  if (rawPlan === "chat" || rawPlan === "plus" || rawPlan === "unlimited") {
+    planKey = rawPlan;
+  }
+  const planTitle = PLAN_TITLES[locale][planKey];
+  const planPrice = PLAN_PRICES[locale][planKey];
 
   const t = COPY[locale];
-  const planTitle = PLAN_TITLES[locale][plan];
-  const planPrice = PLAN_PRICES[locale][plan];
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Si quelqu’un arrive ici avec le plan gratuit → on saute Stripe
-  if (typeof window !== "undefined" && plan === "free") {
+  // 🔁 Si c’est réellement le plan gratuit, on renvoie vers /create-amoria
+  if (typeof window !== "undefined" && isFree) {
     const params = new URLSearchParams();
-    params.set("plan", plan);
     params.set("lang", locale);
-    router.replace(`/create-amoria?${params.toString()}`);
-    return null;
+    params.set("plan", "free");
+
+    // petite sécurité pour ne pas boucler
+    if (!window.location.pathname.startsWith("/create-amoria")) {
+      router.replace(`/create-amoria?${params.toString()}`);
+    }
+    return (
+      <main className="amoria-root amoria-payment-root">
+        <div className="amoria-payment-wrapper">
+          <div className="amoria-payment-card">
+            <p className="amoria-payment-subtitle">{t.freeRedirectText}</p>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   const handleCheckout = async () => {
@@ -141,7 +167,8 @@ function PaymentPageInner() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        // ICI on envoie le plan *brut* (chat / plus / unlimited)
+        body: JSON.stringify({ plan: rawPlan }),
       });
 
       if (!res.ok) {
@@ -184,7 +211,7 @@ function PaymentPageInner() {
           </header>
 
           <section className="amoria-payment-plan">
-            <p className="amoria-payment-plan-label">{t.selectedLabel}</p>
+            <p className="amoria-payment-plan-label">{t.selectedPlanLabel}</p>
             <h2 className="amoria-payment-plan-title">{planTitle}</h2>
             <p className="amoria-payment-plan-price">{planPrice}</p>
           </section>
@@ -362,15 +389,5 @@ function PaymentPageInner() {
         }
       `}</style>
     </main>
-  );
-}
-
-export default function PaymentPage() {
-  return (
-    <Suspense
-      fallback={<main className="amoria-root amoria-payment-root" />}
-    >
-      <PaymentPageInner />
-    </Suspense>
   );
 }
