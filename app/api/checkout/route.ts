@@ -20,7 +20,7 @@ const stripe = new Stripe(stripeSecretKey, {
   apiVersion: "2023-10-16",
 });
 
-type PlanId = "chat" | "plus" | "unlimited" | "free";
+type PlanId = "chat" | "plus" | "unlimited";
 
 export async function POST(req: Request) {
   try {
@@ -29,13 +29,6 @@ export async function POST(req: Request) {
 
     if (!plan) {
       return NextResponse.json({ error: "Missing plan" }, { status: 400 });
-    }
-
-    if (plan === "free") {
-      return NextResponse.json(
-        { error: "Free plan does not require Stripe" },
-        { status: 400 }
-      );
     }
 
     let priceId: string | undefined;
@@ -63,7 +56,7 @@ export async function POST(req: Request) {
       cancel_url: `${siteUrl}/payment/cancel?plan=${plan}`,
     });
 
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (err) {
     console.error("Stripe checkout error:", err);
     return NextResponse.json(
