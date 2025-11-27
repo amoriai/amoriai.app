@@ -36,7 +36,8 @@ const LABELS: Record<Locale, Labels> = {
     billingNote:
       "Facturation sécurisée via Stripe · Annulation en tout temps depuis ton compte · Aucun frais caché",
     simplePricing: "Des tarifs simples & transparents",
-    usdNote: "Tu peux changer de forfait ou annuler à tout moment. Les prix sont en dollars américains (USD).",
+    usdNote:
+      "Tu peux changer de forfait ou annuler à tout moment. Les prix sont en dollars américains (USD).",
     choosePlanCta: "Choisir ce forfait",
     backToPricing: "Retour aux tarifs",
     plans: [
@@ -104,7 +105,8 @@ const LABELS: Record<Locale, Labels> = {
     billingNote:
       "Secure billing via Stripe · Cancel anytime from your account · No hidden fees",
     simplePricing: "Simple & transparent pricing",
-    usdNote: "You can change or cancel your plan anytime. Prices are in US dollars (USD).",
+    usdNote:
+      "You can change or cancel your plan anytime. Prices are in US dollars (USD).",
     choosePlanCta: "Choose this plan",
     backToPricing: "Back to pricing",
     plans: [
@@ -247,17 +249,11 @@ export default function PricingClient() {
     params.set("lang", localeParam);
     params.set("plan", plan);
 
-    if (plan === "free") {
-      // Forfait gratuit → on va créer l’AmorIA
-      router.push(`/create-amoria?${params.toString()}`);
-    } else {
-      // Forfaits payants → on va directement vers la page paiement (Stripe)
-      router.push(`/payment?${params.toString()}`);
-    }
+    // ✅ Tous les plans (free + payants) passent par /payment
+    router.push(`/payment?${params.toString()}`);
   };
 
   const handleHeroCta = () => {
-    // Gros bouton en haut : on envoie vers le signup en gardant la langue
     const params = new URLSearchParams();
     params.set("lang", localeParam);
     router.push(`/signup?${params.toString()}`);
@@ -291,7 +287,9 @@ export default function PricingClient() {
               <header className="amoria-pricing-card-header">
                 <h3 className="amoria-pricing-card-name">{plan.name}</h3>
                 <p className="amoria-pricing-card-price">{plan.price}</p>
-                <p className="amoria-pricing-card-tagline">{plan.tagline}</p>
+                <p className="amoria-pricing-card-tagline">
+                  {plan.tagline}
+                </p>
               </header>
 
               <ul className="amoria-pricing-card-features">
@@ -389,7 +387,12 @@ export default function PricingClient() {
         .amoria-pricing-card {
           border-radius: 1.5rem;
           padding: 1.4rem 1.1rem 1.3rem;
-          background: radial-gradient(circle at top, #020617, #020617 40%, #020617);
+          background: radial-gradient(
+            circle at top,
+            #020617,
+            #020617 40%,
+            #020617
+          );
           border: 1px solid rgba(148, 163, 184, 0.45);
           display: flex;
           flex-direction: column;
