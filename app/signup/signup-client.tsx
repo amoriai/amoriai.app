@@ -12,19 +12,15 @@ const LABELS: Record<
     title: string;
     subtitle: string;
     emailLabel: string;
-    emailPlaceholder: string;
     passwordLabel: string;
     passwordPlaceholder: string;
     passwordHint: string;
     createButton: string;
-    loadingCreate: string;
     alreadyHave: string;
     login: string;
     google: string;
-    loadingGoogle: string;
     errorGeneric: string;
     orLabel: string;
-    termsText: string;
   }
 > = {
   fr: {
@@ -32,60 +28,45 @@ const LABELS: Record<
     subtitle:
       "Inscris-toi pour commencer avec ton partenaire IA. Tu choisiras ton forfait juste après.",
     emailLabel: "Adresse courriel",
-    emailPlaceholder: "ex. mon.adresse@email.com",
     passwordLabel: "Mot de passe",
     passwordPlaceholder: "Choisis un mot de passe sécurisé",
     passwordHint: "Minimum 6 caractères.",
     createButton: "Créer mon compte",
-    loadingCreate: "Création du compte…",
     alreadyHave: "Tu as déjà un compte ?",
     login: "Me connecter",
     google: "Continuer avec Google",
-    loadingGoogle: "Redirection vers Google…",
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
     orLabel: "ou",
-    termsText:
-      "En continuant, tu confirmes accepter les Conditions d’utilisation et la Politique de confidentialité d’AmorIAI.",
   },
   en: {
     title: "Create my AmorIAI account",
     subtitle:
-      "Sign up to start with your AI companion. You’ll choose your plan right after.",
+      "Sign up to start with your AI partner. You’ll choose your plan right after.",
     emailLabel: "Email address",
-    emailPlaceholder: "e.g. my.email@example.com",
     passwordLabel: "Password",
     passwordPlaceholder: "Choose a secure password",
     passwordHint: "At least 6 characters.",
     createButton: "Create my account",
-    loadingCreate: "Creating your account…",
     alreadyHave: "Already have an account?",
     login: "Log in",
     google: "Continue with Google",
-    loadingGoogle: "Redirecting to Google…",
     errorGeneric: "An error occurred. Please try again.",
     orLabel: "or",
-    termsText:
-      "By continuing, you agree to AmorIAI’s Terms of Use and Privacy Policy.",
   },
   es: {
     title: "Crear mi cuenta AmorIAI",
     subtitle:
-      "Regístrate para empezar con tu compañero de IA. Podrás elegir tu plan justo después.",
+      "Regístrate para empezar con tu pareja de IA. Elegirás tu plan justo después.",
     emailLabel: "Correo electrónico",
-    emailPlaceholder: "ej. mi.correo@ejemplo.com",
     passwordLabel: "Contraseña",
     passwordPlaceholder: "Elige una contraseña segura",
     passwordHint: "Mínimo 6 caracteres.",
     createButton: "Crear mi cuenta",
-    loadingCreate: "Creando tu cuenta…",
     alreadyHave: "¿Ya tienes una cuenta?",
     login: "Iniciar sesión",
     google: "Continuar con Google",
-    loadingGoogle: "Redirigiendo a Google…",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     orLabel: "o",
-    termsText:
-      "Al continuar, aceptas los Términos de uso y la Política de privacidad de AmorIAI.",
   },
 };
 
@@ -98,11 +79,13 @@ export default function SignupClient() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Après création du compte → TOUJOURS /pricing
+  // Après création → toujours /pricing
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
@@ -126,7 +109,6 @@ export default function SignupClient() {
       return;
     }
 
-    // Email de confirmation envoyé par Supabase → on affiche les plans
     redirectAfterSignup();
   };
 
@@ -139,9 +121,7 @@ export default function SignupClient() {
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo,
-        },
+        options: { redirectTo },
       });
 
       if (error) {
@@ -152,45 +132,76 @@ export default function SignupClient() {
     }
   };
 
-  const isBusy = loadingEmail || loadingGoogle;
-
   return (
     <main className="amoria-auth-root">
       <div className="amoria-auth-card">
-        <header className="amoria-auth-header">
-          <div className="amoria-auth-logo">AmorIAI</div>
-          <div>
-            <h1 className="amoria-auth-title">{t.title}</h1>
-            <p className="amoria-auth-subtitle">{t.subtitle}</p>
+        {/* En-tête avec logo + titre */}
+        <div className="amoria-auth-header">
+          <div className="amoria-auth-logo-wrapper">
+            <img
+              src="/AmorIA_logo_transparent.png"
+              alt="Logo AmorIAI"
+              className="amoria-auth-logo"
+            />
+            <span className="amoria-auth-brand">AmorIAI</span>
           </div>
-        </header>
 
-        <form className="amoria-auth-form" onSubmit={handleSubmit} noValidate>
+          <h1 className="amoria-auth-title">{t.title}</h1>
+          <p className="amoria-auth-subtitle">{t.subtitle}</p>
+        </div>
+
+        <form className="amoria-auth-form" onSubmit={handleSubmit}>
           <label className="amoria-auth-label">
-            <span>{t.emailLabel}</span>
+            {t.emailLabel}
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="amoria-auth-input"
-              placeholder={t.emailPlaceholder}
-              autoComplete="email"
+              placeholder="ex. mon.adresse@email.com"
             />
           </label>
 
           <label className="amoria-auth-label">
-            <span>{t.passwordLabel}</span>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="amoria-auth-input"
-              placeholder={t.passwordPlaceholder}
-              autoComplete="new-password"
-            />
+            {t.passwordLabel}
+            <div className="amoria-auth-password-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="amoria-auth-input amoria-auth-input--password"
+                placeholder={t.passwordPlaceholder}
+              />
+              <button
+                type="button"
+                className="amoria-auth-eye-btn"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+              >
+                {/* petit œil en SVG */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  className="amoria-auth-eye-icon"
+                >
+                  <path
+                    d="M12 5C7 5 3.1 8 1.5 12c1.6 4 5.5 7 10.5 7s8.9-3 10.5-7C20.9 8 17 5 12 5Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"
+                    fill="currentColor"
+                  />
+                  {showPassword ? (
+                    <path
+                      d="M5 5L19 19"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  ) : null}
+                </svg>
+              </button>
+            </div>
             <span className="amoria-auth-hint">{t.passwordHint}</span>
           </label>
 
@@ -199,25 +210,21 @@ export default function SignupClient() {
           <button
             type="submit"
             className="amoria-auth-btn-primary"
-            disabled={isBusy}
+            disabled={loadingEmail || loadingGoogle}
           >
-            {loadingEmail ? t.loadingCreate : t.createButton}
+            {loadingEmail ? "..." : t.createButton}
           </button>
         </form>
 
-        <div className="amoria-auth-divider">
-          <span className="amoria-auth-divider-line" />
-          <span className="amoria-auth-divider-label">{t.orLabel}</span>
-          <span className="amoria-auth-divider-line" />
-        </div>
+        <div className="amoria-auth-divider">{t.orLabel}</div>
 
         <button
           type="button"
           className="amoria-auth-btn-google"
           onClick={handleGoogleSignup}
-          disabled={isBusy}
+          disabled={loadingGoogle || loadingEmail}
         >
-          {loadingGoogle ? t.loadingGoogle : t.google}
+          {loadingGoogle ? "..." : t.google}
         </button>
 
         <p className="amoria-auth-footer">
@@ -230,7 +237,28 @@ export default function SignupClient() {
           </a>
         </p>
 
-        <p className="amoria-auth-terms">{t.termsText}</p>
+        <p className="amoria-auth-terms">
+          {localeParam === "fr" && (
+            <>
+              En continuant, tu confirmes accepter les{" "}
+              <span>Conditions d’utilisation</span> et la{" "}
+              <span>Politique de confidentialité</span> d’AmorIAI.
+            </>
+          )}
+          {localeParam === "en" && (
+            <>
+              By continuing, you agree to AmorIAI’s{" "}
+              <span>Terms of Use</span> and <span>Privacy Policy</span>.
+            </>
+          )}
+          {localeParam === "es" && (
+            <>
+              Al continuar, confirmas que aceptas los{" "}
+              <span>Términos de uso</span> y la{" "}
+              <span>Política de privacidad</span> de AmorIAI.
+            </>
+          )}
+        </p>
       </div>
 
       <style jsx global>{`
@@ -242,53 +270,59 @@ export default function SignupClient() {
           background: radial-gradient(circle at top, #020617 0, #000 100%);
           color: #e5e7eb;
           padding: 1.5rem;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
         }
 
         .amoria-auth-card {
           width: 100%;
           max-width: 430px;
           border-radius: 1.5rem;
-          padding: 1.9rem 1.9rem 1.8rem;
+          padding: 1.9rem 1.9rem 2.1rem;
           background: radial-gradient(
             circle at top,
             #020617,
-            #020617 45%,
+            #020617 40%,
             #000 100%
           );
-          border: 1px solid rgba(148, 163, 184, 0.38);
-          box-shadow: 0 22px 48px rgba(15, 23, 42, 0.85);
+          border: 1px solid rgba(148, 163, 184, 0.35);
+          box-shadow: 0 20px 40px rgba(15, 23, 42, 0.7);
+          font-family: system-ui, -apple-system, BlinkMacSystemFont,
+            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
         }
 
         .amoria-auth-header {
+          margin-bottom: 1.2rem;
+        }
+
+        .amoria-auth-logo-wrapper {
           display: flex;
           align-items: center;
-          gap: 0.85rem;
-          margin-bottom: 1rem;
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
         }
 
         .amoria-auth-logo {
-          width: 36px;
-          height: 36px;
+          width: 28px;
+          height: 28px;
           border-radius: 999px;
-          background: radial-gradient(circle at 30% 0, #fb37ff, #f97316);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.7rem;
+        }
+
+        .amoria-auth-brand {
+          font-size: 0.85rem;
           font-weight: 600;
           letter-spacing: 0.06em;
           text-transform: uppercase;
+          background: linear-gradient(135deg, #fb37ff, #ff8a5c, #ffe45e);
+          -webkit-background-clip: text;
+          color: transparent;
         }
 
         .amoria-auth-title {
-          font-size: 1.2rem;
-          margin-bottom: 0.2rem;
+          font-size: 1.25rem;
+          margin-bottom: 0.3rem;
         }
 
         .amoria-auth-subtitle {
-          font-size: 0.84rem;
+          font-size: 0.85rem;
           color: #9ca3af;
         }
 
@@ -296,7 +330,7 @@ export default function SignupClient() {
           display: flex;
           flex-direction: column;
           gap: 0.8rem;
-          margin-top: 0.4rem;
+          margin-top: 1rem;
         }
 
         .amoria-auth-label {
@@ -308,9 +342,9 @@ export default function SignupClient() {
 
         .amoria-auth-input {
           border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.45);
-          padding: 0.6rem 0.95rem;
-          background: rgba(15, 23, 42, 0.95);
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          padding: 0.55rem 0.95rem;
+          background: rgba(15, 23, 42, 0.9);
           color: #f9fafb;
           font-size: 0.85rem;
         }
@@ -325,6 +359,38 @@ export default function SignupClient() {
           box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.4);
         }
 
+        .amoria-auth-password-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .amoria-auth-input--password {
+          padding-right: 2.4rem;
+        }
+
+        .amoria-auth-eye-btn {
+          position: absolute;
+          right: 0.45rem;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 28px;
+          height: 28px;
+          border-radius: 999px;
+          border: none;
+          background: transparent;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: #9ca3af;
+          cursor: pointer;
+        }
+
+        .amoria-auth-eye-icon {
+          width: 18px;
+          height: 18px;
+        }
+
         .amoria-auth-hint {
           font-size: 0.7rem;
           color: #9ca3af;
@@ -333,15 +399,14 @@ export default function SignupClient() {
         .amoria-auth-error {
           font-size: 0.78rem;
           color: #fecaca;
-          background: rgba(185, 28, 28, 0.16);
-          border-radius: 0.8rem;
-          padding: 0.45rem 0.7rem;
-          margin-top: 0.1rem;
-          border: 1px solid rgba(248, 113, 113, 0.7);
+          background: rgba(185, 28, 28, 0.18);
+          border-radius: 0.75rem;
+          padding: 0.45rem 0.6rem;
+          margin-top: 0.15rem;
         }
 
         .amoria-auth-btn-primary {
-          margin-top: 0.35rem;
+          margin-top: 0.4rem;
           width: 100%;
           border-radius: 999px;
           border: none;
@@ -350,41 +415,28 @@ export default function SignupClient() {
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
           cursor: pointer;
-          box-shadow: 0 16px 36px rgba(248, 113, 113, 0.4);
+          box-shadow: 0 12px 32px rgba(248, 113, 113, 0.45);
         }
 
         .amoria-auth-btn-primary:disabled {
           opacity: 0.6;
           cursor: default;
-          box-shadow: none;
         }
 
         .amoria-auth-divider {
-          margin: 1.1rem 0 0.7rem;
-          display: flex;
-          align-items: center;
-          gap: 0.6rem;
+          margin: 1rem 0 0.7rem;
           font-size: 0.78rem;
           color: #9ca3af;
-        }
-
-        .amoria-auth-divider-line {
-          flex: 1;
-          height: 1px;
-          background: rgba(55, 65, 81, 0.9);
-        }
-
-        .amoria-auth-divider-label {
-          flex-shrink: 0;
+          text-align: center;
         }
 
         .amoria-auth-btn-google {
           width: 100%;
           border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.55);
-          padding: 0.65rem 1.2rem;
+          border: 1px solid rgba(148, 163, 184, 0.45);
+          padding: 0.6rem 1.2rem;
           font-size: 0.86rem;
-          background: rgba(15, 23, 42, 0.96);
+          background: rgba(15, 23, 42, 0.95);
           color: #f9fafb;
           cursor: pointer;
         }
@@ -407,17 +459,14 @@ export default function SignupClient() {
         }
 
         .amoria-auth-terms {
-          margin-top: 0.6rem;
-          font-size: 0.7rem;
+          margin-top: 0.55rem;
+          font-size: 0.68rem;
           color: #6b7280;
           text-align: center;
-          line-height: 1.4;
         }
 
-        @media (max-width: 480px) {
-          .amoria-auth-card {
-            padding-inline: 1.35rem;
-          }
+        .amoria-auth-terms span {
+          color: #9ca3af;
         }
       `}</style>
     </main>
