@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, FormEvent } from "react";
+import React, { useState, FormEvent, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -111,7 +111,7 @@ const COPY: Record<
   },
 };
 
-export default function SignupPage() {
+function SignupPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -150,7 +150,6 @@ export default function SignupPage() {
       return;
     }
 
-    // Succès : on redirige selon le plan
     const query = redirectParams();
 
     if (plan === "free") {
@@ -164,7 +163,7 @@ export default function SignupPage() {
     setError(null);
     setLoadingGoogle(true);
 
-    let redirectTo: string | undefined = undefined;
+    let redirectTo: string | undefined;
     if (typeof window !== "undefined") {
       redirectTo = `${window.location.origin}/oauth-callback?${redirectParams()}`;
     }
@@ -178,7 +177,6 @@ export default function SignupPage() {
       setError(error.message || t.errorGeneric);
       setLoadingGoogle(false);
     }
-    // Sinon Supabase redirige vers Google puis vers redirectTo
   };
 
   const handleBackHome = () => {
@@ -446,7 +444,8 @@ export default function SignupPage() {
           font-size: 0.8rem;
         }
 
-        .amoria-auth-link {
+        .amoria-auth-link,
+        .amoria-auth-back {
           border: none;
           background: transparent;
           color: #9ca3af;
@@ -458,22 +457,17 @@ export default function SignupPage() {
         .amoria-auth-link strong {
           color: #e5e7eb;
         }
-
-        .amoria-auth-back {
-          border: none;
-          background: transparent;
-          color: #9ca3af;
-          cursor: pointer;
-          padding: 0;
-          text-align: left;
-        }
-
-        @media (max-width: 640px) {
-          .amoria-auth-card {
-            padding-inline: 1.1rem;
-          }
-        }
       `}</style>
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={<main className="amoria-root amoria-auth-root" />}
+    >
+      <SignupPageInner />
+    </Suspense>
   );
 }
