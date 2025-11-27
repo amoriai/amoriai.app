@@ -7,13 +7,8 @@ import { supabase } from "../../lib/supabaseClient";
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-// On sépare bien les catégories 50+ homme / femme
-type PersonaType =
-  | "woman"
-  | "man"
-  | "woman50"
-  | "man50"
-  | "androgynous";
+// Catégories d’IA, avec séparation femme / homme 50+
+type PersonaType = "woman" | "man" | "woman50" | "man50" | "androgynous";
 
 // -------------------- AVATARS PAR CATÉGORIE --------------------
 
@@ -184,7 +179,8 @@ const STRINGS: Record<Locale, Copy> = {
   },
 };
 
-// options de select (texte UI seulement)
+// -------------------- OPTIONS UI --------------------
+
 const RELATION_OPTIONS: Record<Locale, string[]> = {
   fr: [
     "Soutien émotionnel & confidences",
@@ -243,19 +239,11 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
   },
   {
     value: "woman50",
-    label: {
-      fr: "Femme 50+",
-      en: "Woman 50+",
-      es: "Mujer 50+",
-    },
+    label: { fr: "Femme 50+", en: "Woman 50+", es: "Mujer 50+" },
   },
   {
     value: "man50",
-    label: {
-      fr: "Homme 50+",
-      en: "Man 50+",
-      es: "Hombre 50+",
-    },
+    label: { fr: "Homme 50+", en: "Man 50+", es: "Hombre 50+" },
   },
   {
     value: "androgynous",
@@ -281,12 +269,14 @@ export default function CreateAmoriaPage() {
   const [category, setCategory] = useState<PersonaType>("woman");
   const [expectation, setExpectation] = useState("");
 
-  const [avatarUrl, setAvatarUrl] = useState<string>(
-    randomAvatar("woman")
-  );
+  const [avatarUrl, setAvatarUrl] = useState<string>(randomAvatar("woman"));
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Auth : on vérifie la session côté client
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Lire ?lang= et ?plan= côté client
   useEffect(() => {
@@ -309,11 +299,29 @@ export default function CreateAmoriaPage() {
     }
   }, []);
 
+  // Vérifier la session Supabase (utile après Google OAuth)
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (!error && data.session?.user) {
+          setIsLoggedIn(true);
+        } else {
+          setIsLoggedIn(false);
+        }
+      } finally {
+        setAuthChecked(true);
+      }
+    };
+
+    checkSession();
+  }, []);
+
   const t = STRINGS[locale];
   const relationOptions = RELATION_OPTIONS[locale];
   const toneOptions = TONE_OPTIONS[locale];
 
-  // changement de catégorie => nouvel avatar random de cette catégorie
+  // changement de catégorie => nouvel avatar random
   const handleCategoryChange = (value: PersonaType) => {
     setCategory(value);
     setAvatarUrl(randomAvatar(value));
@@ -348,17 +356,19 @@ export default function CreateAmoriaPage() {
     setSaving(true);
 
     try {
-      // On vérifie la connexion AU MOMENT DU SUBMIT
-      const { data: userData, error: userError } =
-        await supabase.auth.getUser();
+      // On vérifie la session au moment du clic (plus fiable après OAuth)
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.getSession();
 
-      if (userError || !userData?.user) {
+      if (sessionError || !sessionData?.session?.user) {
+        setIsLoggedIn(false);
         setErrorMsg(t.notLoggedBanner);
         setSaving(false);
         return;
       }
 
-      const userId = userData.user.id;
+      setIsLoggedIn(true);
+      const userId = sessionData.session.user.id;
 
       const systemPrompt = `
 Tu es ${name}, une AmorIAI de type "${categoryLabel}".
@@ -399,7 +409,9 @@ sans jugement, en respectant les limites de l’utilisateur.
     }
   };
 
-  const isDisabled = saving; // on ne bloque plus sur la connexion ici
+  const isDisabled = saving;
+
+  const showBanner = errorMsg || (authChecked && !isLoggedIn);
 
   return (
     <main className="amoria-create-root">
@@ -411,9 +423,7 @@ sans jugement, en respectant les limites de l’utilisateur.
             <div className="amoria-create-top">
               <div>
                 <h1 className="amoria-create-title">{t.pageTitle}</h1>
-                <p className="amoria-create-subtitle">
-                  {t.pageSubtitle}
-                </p>
+                <p className="amoria-create-subtitle">{t.pageSubtitle}</p>
               </div>
               <div className="amoria-plan-pill">
                 <span className="amoria-plan-label">
@@ -426,9 +436,9 @@ sans jugement, en respectant les limites de l’utilisateur.
             </div>
           </header>
 
-          {errorMsg && (
+          {showBanner && (
             <div className="amoria-banner amoria-banner--error">
-              {errorMsg}
+              {errorMsg ?? t.notLoggedBanner}
             </div>
           )}
 
@@ -496,16 +506,12 @@ sans jugement, en respectant les limites de l’utilisateur.
               </label>
 
               <label className="amoria-field">
-                <span className="amoria-label">
-                  {t.categoryLabel}
-                </span>
+                <span className="amoria-label">{t.categoryLabel}</span>
                 <select
                   className="amoria-select"
                   value={category}
                   onChange={(e) =>
-                    handleCategoryChange(
-                      e.target.value as PersonaType
-                    )
+                    handleCategoryChange(e.target.value as PersonaType)
                   }
                 >
                   {CATEGORY_OPTIONS.map((opt) => (
@@ -527,9 +533,7 @@ sans jugement, en respectant les limites de l’utilisateur.
               </div>
 
               <label className="amoria-field amoria-field--textarea">
-                <span className="amoria-label">
-                  {t.expectationLabel}
-                </span>
+                <span className="amoria-label">{t.expectationLabel}</span>
                 <textarea
                   className="amoria-textarea"
                   value={expectation}
