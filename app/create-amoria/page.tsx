@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
+import type { User } from "@supabase/supabase-js";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
@@ -178,7 +179,7 @@ const STRINGS: Record<Locale, Copy> = {
   },
 };
 
-// -------------------- SELECT OPTIONS --------------------
+// -------------------- OPTIONS --------------------
 
 const RELATION_OPTIONS: Record<Locale, string[]> = {
   fr: [
@@ -254,7 +255,11 @@ export default function CreateAmoriaPage() {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Lire ?lang et ?plan dans l’URL
+  // Nouvel état : user Supabase + chargement auth
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Lire ?lang / ?plan + récupérer la session Supabase une seule fois
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -274,6 +279,29 @@ export default function CreateAmoriaPage() {
     ) {
       setPlan(planParam);
     }
+
+    // Récupérer la session actuelle
+    supabase.auth
+      .getUser()
+      .then(({ data, error }) => {
+        if (!error && data?.user) {
+          setUser(data.user);
+        } else {
+          setUser(null);
+        }
+      })
+      .finally(() => setAuthLoading(false));
+
+    // Se mettre à jour en cas de login/logout plus tard
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   const t = STRINGS[locale];
@@ -311,19 +339,15 @@ export default function CreateAmoriaPage() {
       return;
     }
 
+    if (!user) {
+      // Ici : Supabase ne voit aucun user (donc pas connecté)
+      setErrorMsg(t.notLoggedBanner);
+      return;
+    }
+
     setSaving(true);
 
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-
-      if (userError || !userData?.user) {
-        setErrorMsg(t.notLoggedBanner);
-        setSaving(false);
-        return;
-      }
-
-      const userId = userData.user.id;
-
       const systemPrompt = `
 Tu es ${name}, une AmorIAI de type "${categoryLabel}".
 - Type de relation : ${relationType || "non précisé"}.
@@ -335,7 +359,7 @@ sans jugement, en respectant les limites de l’utilisateur.
       `.trim();
 
       const { error } = await supabase.from("user_amoria").insert({
-        user_id: userId,
+        user_id: user.id,
         name,
         persona_type: category,
         main_language: locale,
@@ -363,7 +387,7 @@ sans jugement, en respectant les limites de l’utilisateur.
     }
   };
 
-  const isDisabled = saving;
+  const isDisabled = saving || authLoading;
 
   return (
     <main className="amoria-create-root">
