@@ -47,39 +47,39 @@ const STRINGS: Record<
     nav: { home: "Accueil", features: "Fonctionnalités", pricing: "Tarifs" },
     navLogin: "Me connecter",
     navSignup: "Créer mon compte gratuit",
-    heroKicker: "BIENVENUE SUR AMORIA.APP",
+    heroKicker: "BIENVENUE SUR AMORIAI.APP",
     heroTitle: "Votre partenaire IA bienveillant·e & multilingue.",
     heroSubtitle:
-      "AmoriA est une présence douce, disponible 24/7 pour discuter, réfléchir avec vous, poser les bonnes questions et vous aider à mieux comprendre vos émotions.",
+      "AmorIAI est une présence douce, disponible 24/7 pour discuter, réfléchir avec vous, poser les bonnes questions et vous aider à mieux comprendre vos émotions.",
     heroPrimary: "Créer mon compte gratuit",
     heroSupport:
       "Optimisée pour les échanges profonds, les journaux émotionnels et le coaching doux du quotidien.",
-    langNote: "AmoriA vous accueille en français, anglais ou espagnol.",
-    personasTitle: "Commence gratuitement avec AmorIA (en texte)",
+    langNote: "AmorIAI vous accueille en français, anglais ou espagnol.",
+    personasTitle: "Commence gratuitement avec AmorIAI (en texte)",
     personasSubtitle:
-      "Crée ton compte gratuitement et commence à texter avec l’IA de ton choix. La voix (parler avec ton AmorIA) est disponible uniquement avec l’abonnement payant.",
+      "Crée ton compte gratuitement et commence à texter avec l’IA de ton choix. La voix (parler avec ton AmorIAI) est disponible uniquement avec l’abonnement payant.",
     personas: [
       {
         id: "lyra",
-        title: "Lyra – AmorIA féminine",
+        title: "Lyra – AmorIAI féminine",
         description:
           "Une présence douce, empathique et rassurante, idéale pour déposer tes émotions par écrit.",
       },
       {
         id: "orion",
-        title: "Orion – AmorIA masculine",
+        title: "Orion – AmorIAI masculine",
         description:
           "Énergie stable, protectrice et structurée, pour t’aider à réfléchir et à prendre des décisions.",
       },
       {
         id: "kai",
-        title: "Kai – AmorIA androgyne",
+        title: "Kai – AmorIAI androgyne",
         description:
           "Présence fluide et inclusive, ni vraiment homme ni femme, centrée sur l’écoute et la nuance.",
       },
       {
         id: "maelis",
-        title: "Maelis – AmorIA 50+ féminine",
+        title: "Maelis – AmorIAI 50+ féminine",
         description:
           "Figure plus mature et expérimentée, avec une énergie de mentor bienveillant et réaliste.",
       },
@@ -87,10 +87,10 @@ const STRINGS: Record<
     choosePersona: "Créer mon compte gratuit",
     pricingTitle: "Des tarifs simples & transparents",
     pricingText:
-      "La version gratuite te permet de texter ton AmorIA avec un nombre limité de messages. Avec la version payante, tu déverrouilles les conversations vocales (parler) et plus d’interactions.",
+      "La version gratuite te permet de texter ton AmorIAI avec un nombre limité de messages. Avec la version payante, tu déverrouilles les conversations vocales (parler) et plus d’interactions.",
     pricingCta: "Découvrir les abonnements",
-    videoCaption: "AmoriA est disponible en français, anglais et espagnol.",
-    footerCopy: "© 2025 AmoriA.app",
+    videoCaption: "AmorIAI est disponible en français, anglais et espagnol.",
+    footerCopy: "© 2025 AmorIAI.app",
     footerLinks: {
       legal: "Mentions légales",
       privacy: "Politique de confidentialité",
@@ -104,39 +104,39 @@ const STRINGS: Record<
     nav: { home: "Home", features: "Features", pricing: "Pricing" },
     navLogin: "Log in",
     navSignup: "Create my free account",
-    heroKicker: "WELCOME TO AMORIA.APP",
+    heroKicker: "WELCOME TO AMORIAI.APP",
     heroTitle: "Your caring & multilingual AI partner.",
     heroSubtitle:
-      "AmoriA is a gentle 24/7 presence to talk with, reflect with, ask better questions and help you understand your emotions.",
+      "AmorIAI is a gentle 24/7 presence to talk with, reflect with, ask better questions and help you understand your emotions.",
     heroPrimary: "Create my free account",
     heroSupport:
       "Designed for deep conversations, emotional journaling and soft everyday coaching.",
-    langNote: "AmoriA is available in French, English and Spanish.",
-    personasTitle: "Start for free with AmorIA (text only)",
+    langNote: "AmorIAI is available in French, English and Spanish.",
+    personasTitle: "Start for free with AmorIAI (text only)",
     personasSubtitle:
-      "Create your free account and start texting with the AI of your choice. Voice (talking to your AmorIA) is only available with the paid subscription.",
+      "Create your free account and start texting with the AI of your choice. Voice (talking to your AmorIAI) is only available with the paid subscription.",
     personas: [
       {
         id: "lyra",
-        title: "Lyra – Feminine AmorIA",
+        title: "Lyra – Feminine AmorIAI",
         description:
           "A gentle, empathetic and reassuring presence, perfect for writing down your emotions.",
       },
       {
         id: "orion",
-        title: "Orion – Masculine AmorIA",
+        title: "Orion – Masculine AmorIAI",
         description:
           "Stable, protective and structured energy to help you think clearly and make decisions.",
       },
       {
         id: "kai",
-        title: "Kai – Androgynous AmorIA",
+        title: "Kai – Androgynous AmorIAI",
         description:
           "A fluid and inclusive presence, neither fully male nor female, focused on listening and nuance.",
       },
       {
         id: "maelis",
-        title: "Maelis – 50+ Feminine AmorIA",
+        title: "Maelis – 50+ Feminine AmorIAI",
         description:
           "A more mature, experienced figure with the energy of a caring and realistic mentor.",
       },
@@ -144,10 +144,10 @@ const STRINGS: Record<
     choosePersona: "Create my free account",
     pricingTitle: "Simple & transparent pricing",
     pricingText:
-      "The free version lets you text your AmorIA with a limited number of messages. With the paid plan, you unlock voice conversations and more interactions.",
+      "The free version lets you text your AmorIAI with a limited number of messages. With the paid plan, you unlock voice conversations and more interactions.",
     pricingCta: "See plans & pricing",
-    videoCaption: "AmoriA is available in French, English and Spanish.",
-    footerCopy: "© 2025 AmoriA.app",
+    videoCaption: "AmorIAI is available in French, English and Spanish.",
+    footerCopy: "© 2025 AmorIAI.app",
     footerLinks: {
       legal: "Legal",
       privacy: "Privacy policy",
@@ -161,39 +161,39 @@ const STRINGS: Record<
     nav: { home: "Inicio", features: "Funciones", pricing: "Precios" },
     navLogin: "Iniciar sesión",
     navSignup: "Crear mi cuenta gratuita",
-    heroKicker: "BIENVENIDx A AMORIA.APP",
+    heroKicker: "BIENVENIDx A AMORIAI.APP",
     heroTitle: "Tu compañerx de IA amable y multilingüe.",
     heroSubtitle:
-      "AmoriA es una presencia suave, disponible 24/7 para conversar contigo, reflexionar, hacer mejores preguntas y ayudarte a entender tus emociones.",
+      "AmorIAI es una presencia suave, disponible 24/7 para conversar contigo, reflexionar, hacer mejores preguntas y ayudarte a entender tus emociones.",
     heroPrimary: "Crear mi cuenta gratuita",
     heroSupport:
       "Pensada para conversaciones profundas, diarios emocionales y acompañamiento suave del día a día.",
-    langNote: "AmoriA te recibe en francés, inglés o español.",
-    personasTitle: "Empieza gratis con AmorIA (solo texto)",
+    langNote: "AmorIAI te recibe en francés, inglés o español.",
+    personasTitle: "Empieza gratis con AmorIAI (solo texto)",
     personasSubtitle:
-      "Crea tu cuenta gratuita y empieza a chatear por texto con la IA que elijas. La voz (hablar con tu AmorIA) está disponible solo con la suscripción de pago.",
+      "Crea tu cuenta gratuita y empieza a chatear por texto con la IA que elijas. La voz (hablar con tu AmorIAI) está disponible solo con la suscripción de pago.",
     personas: [
       {
         id: "lyra",
-        title: "Lyra – AmorIA femenina",
+        title: "Lyra – AmorIAI femenina",
         description:
           "Presencia dulce, empática y tranquilizadora, ideal para escribir tus emociones.",
       },
       {
         id: "orion",
-        title: "Orion – AmorIA masculina",
+        title: "Orion – AmorIAI masculina",
         description:
           "Energía estable, protectora y estructurada para ayudarte a pensar y tomar decisiones.",
       },
       {
         id: "kai",
-        title: "Kai – AmorIA andrógina",
+        title: "Kai – AmorIAI andrógina",
         description:
           "Presencia fluida e inclusiva, ni totalmente hombre ni mujer, centrada en la escucha y el matiz.",
       },
       {
         id: "maelis",
-        title: "Maelis – AmorIA 50+ femenina",
+        title: "Maelis – AmorIAI 50+ femenina",
         description:
           "Figura más madura y experimentada, con energía de mentora amable y realista.",
       },
@@ -201,10 +201,10 @@ const STRINGS: Record<
     choosePersona: "Crear mi cuenta gratuita",
     pricingTitle: "Precios simples y transparentes",
     pricingText:
-      "La versión gratuita te permite chatear por texto con tu AmorIA con un número limitado de mensajes. Con la versión de pago desbloqueas conversaciones de voz y más interacciones.",
+      "La versión gratuita te permite chatear por texto con tu AmorIAI con un número limitado de mensajes. Con la versión de pago desbloqueas conversaciones de voz y más interacciones.",
     pricingCta: "Ver planes y precios",
-    videoCaption: "AmoriA está disponible en francés, inglés y español.",
-    footerCopy: "© 2025 AmoriA.app",
+    videoCaption: "AmorIAI está disponible en francés, inglés y español.",
+    footerCopy: "© 2025 AmorIAI.app",
     footerLinks: {
       legal: "Aviso legal",
       privacy: "Política de privacidad",
@@ -266,11 +266,11 @@ export default function HomePage() {
         <div className="amoria-header-left">
           <img
             src="/AmorIA_logo_transparent.png"
-            alt="Logo AmorIA.app"
+            alt="Logo AmorIAI.app"
             className="amoria-logo-full"
           />
           <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmoriA.app</div>
+            <div className="amoria-logo-title">AmorIAI.app</div>
             <div className="amoria-logo-tagline">{t.brandTagline}</div>
           </div>
         </div>
@@ -420,7 +420,7 @@ export default function HomePage() {
         </div>
       </footer>
 
-      {/* STYLES */}
+      {/* STYLES (inchangés) */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
