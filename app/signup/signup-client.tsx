@@ -73,7 +73,6 @@ const LABELS: Record<
 export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const localeParam = (searchParams.get("lang") || "fr") as Locale;
   const t = LABELS[localeParam];
 
@@ -85,11 +84,8 @@ export default function SignupClient() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Après création → toujours /pricing
   const redirectAfterSignup = () => {
-    const params = new URLSearchParams();
-    params.set("lang", localeParam);
-    router.push(`/pricing?${params.toString()}`);
+    router.push(`/pricing?lang=${localeParam}`);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -117,16 +113,14 @@ export default function SignupClient() {
       setError(null);
       setLoadingGoogle(true);
 
-      const redirectTo = `${window.location.origin}/pricing?lang=${localeParam}`;
-
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo },
+        options: {
+          redirectTo: `${window.location.origin}/pricing?lang=${localeParam}`,
+        },
       });
 
-      if (error) {
-        setError(error.message || t.errorGeneric);
-      }
+      if (error) setError(error.message || t.errorGeneric);
     } finally {
       setLoadingGoogle(false);
     }
@@ -135,7 +129,6 @@ export default function SignupClient() {
   return (
     <main className="amoria-auth-root">
       <div className="amoria-auth-card">
-        {/* En-tête avec logo + titre */}
         <div className="amoria-auth-header">
           <div className="amoria-auth-logo-wrapper">
             <img
@@ -179,27 +172,8 @@ export default function SignupClient() {
                 type="button"
                 className="amoria-auth-eye-btn"
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
               >
-                {/* petit œil en SVG */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  className="amoria-auth-eye-icon"
-                >
-                  <path
-                    d="M12 5C7 5 3.1 8 1.5 12c1.6 4 5.5 7 10.5 7s8.9-3 10.5-7C20.9 8 17 5 12 5Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"
-                    fill="currentColor"
-                  />
-                  {showPassword ? (
-                    <path
-                      d="M5 5L19 19"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-                  ) : null}
-                </svg>
+                👁
               </button>
             </div>
             <span className="amoria-auth-hint">{t.passwordHint}</span>
@@ -229,35 +203,9 @@ export default function SignupClient() {
 
         <p className="amoria-auth-footer">
           {t.alreadyHave}{" "}
-          <a
-            href={`/login?lang=${localeParam}`}
-            className="amoria-auth-footer-link"
-          >
+          <a href={`/login?lang=${localeParam}`} className="amoria-auth-footer-link">
             {t.login}
           </a>
-        </p>
-
-        <p className="amoria-auth-terms">
-          {localeParam === "fr" && (
-            <>
-              En continuant, tu confirmes accepter les{" "}
-              <span>Conditions d’utilisation</span> et la{" "}
-              <span>Politique de confidentialité</span> d’AmorIAI.
-            </>
-          )}
-          {localeParam === "en" && (
-            <>
-              By continuing, you agree to AmorIAI’s{" "}
-              <span>Terms of Use</span> and <span>Privacy Policy</span>.
-            </>
-          )}
-          {localeParam === "es" && (
-            <>
-              Al continuar, confirmas que aceptas los{" "}
-              <span>Términos de uso</span> y la{" "}
-              <span>Política de privacidad</span> de AmorIAI.
-            </>
-          )}
         </p>
       </div>
 
@@ -269,204 +217,74 @@ export default function SignupClient() {
           justify-content: center;
           background: radial-gradient(circle at top, #020617 0, #000 100%);
           color: #e5e7eb;
-          padding: 1.5rem;
         }
 
         .amoria-auth-card {
           width: 100%;
           max-width: 430px;
           border-radius: 1.5rem;
-          padding: 1.9rem 1.9rem 2.1rem;
-          background: radial-gradient(
-            circle at top,
-            #020617,
-            #020617 40%,
-            #000 100%
-          );
+          padding: 2rem;
+          background: #020617;
           border: 1px solid rgba(148, 163, 184, 0.35);
-          box-shadow: 0 20px 40px rgba(15, 23, 42, 0.7);
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-        }
-
-        .amoria-auth-header {
-          margin-bottom: 1.2rem;
         }
 
         .amoria-auth-logo-wrapper {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          margin-bottom: 0.5rem;
         }
 
         .amoria-auth-logo {
-          width: 28px;
-          height: 28px;
-          border-radius: 999px;
+          width: 30px;
         }
 
         .amoria-auth-brand {
-          font-size: 0.85rem;
-          font-weight: 600;
-          letter-spacing: 0.06em;
-          text-transform: uppercase;
-          background: linear-gradient(135deg, #fb37ff, #ff8a5c, #ffe45e);
+          font-weight: bold;
+          background: linear-gradient(135deg, #fb37ff, #ff8a5c);
           -webkit-background-clip: text;
           color: transparent;
-        }
-
-        .amoria-auth-title {
-          font-size: 1.25rem;
-          margin-bottom: 0.3rem;
-        }
-
-        .amoria-auth-subtitle {
-          font-size: 0.85rem;
-          color: #9ca3af;
         }
 
         .amoria-auth-form {
           display: flex;
           flex-direction: column;
           gap: 0.8rem;
-          margin-top: 1rem;
-        }
-
-        .amoria-auth-label {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-          font-size: 0.8rem;
         }
 
         .amoria-auth-input {
+          width: 100%;
           border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.4);
-          padding: 0.55rem 0.95rem;
-          background: rgba(15, 23, 42, 0.9);
-          color: #f9fafb;
-          font-size: 0.85rem;
-        }
-
-        .amoria-auth-input::placeholder {
-          color: #6b7280;
-        }
-
-        .amoria-auth-input:focus {
-          outline: none;
-          border-color: #fb37ff;
-          box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.4);
+          padding: 0.7rem 1rem;
+          background: #020617;
+          border: 1px solid #334155;
+          color: white;
         }
 
         .amoria-auth-password-wrapper {
           position: relative;
-          display: flex;
-          align-items: center;
         }
 
         .amoria-auth-input--password {
-          padding-right: 2.4rem;
+          padding-right: 3rem;
         }
 
         .amoria-auth-eye-btn {
           position: absolute;
-          right: 0.45rem;
+          right: 0.6rem;
           top: 50%;
           transform: translateY(-50%);
-          width: 28px;
-          height: 28px;
-          border-radius: 999px;
+          background: none;
           border: none;
-          background: transparent;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          color: #9ca3af;
+          color: white;
           cursor: pointer;
-        }
-
-        .amoria-auth-eye-icon {
-          width: 18px;
-          height: 18px;
-        }
-
-        .amoria-auth-hint {
-          font-size: 0.7rem;
-          color: #9ca3af;
-        }
-
-        .amoria-auth-error {
-          font-size: 0.78rem;
-          color: #fecaca;
-          background: rgba(185, 28, 28, 0.18);
-          border-radius: 0.75rem;
-          padding: 0.45rem 0.6rem;
-          margin-top: 0.15rem;
         }
 
         .amoria-auth-btn-primary {
-          margin-top: 0.4rem;
-          width: 100%;
           border-radius: 999px;
+          padding: 0.8rem;
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c);
           border: none;
-          padding: 0.7rem 1.2rem;
-          font-size: 0.9rem;
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
-          color: #f9fafb;
-          cursor: pointer;
-          box-shadow: 0 12px 32px rgba(248, 113, 113, 0.45);
-        }
-
-        .amoria-auth-btn-primary:disabled {
-          opacity: 0.6;
-          cursor: default;
-        }
-
-        .amoria-auth-divider {
-          margin: 1rem 0 0.7rem;
-          font-size: 0.78rem;
-          color: #9ca3af;
-          text-align: center;
-        }
-
-        .amoria-auth-btn-google {
-          width: 100%;
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.45);
-          padding: 0.6rem 1.2rem;
-          font-size: 0.86rem;
-          background: rgba(15, 23, 42, 0.95);
-          color: #f9fafb;
-          cursor: pointer;
-        }
-
-        .amoria-auth-btn-google:disabled {
-          opacity: 0.6;
-          cursor: default;
-        }
-
-        .amoria-auth-footer {
-          margin-top: 0.9rem;
-          font-size: 0.78rem;
-          color: #9ca3af;
-          text-align: center;
-        }
-
-        .amoria-auth-footer-link {
-          color: #e5e7eb;
-          text-decoration: underline;
-        }
-
-        .amoria-auth-terms {
-          margin-top: 0.55rem;
-          font-size: 0.68rem;
-          color: #6b7280;
-          text-align: center;
-        }
-
-        .amoria-auth-terms span {
-          color: #9ca3af;
+          color: white;
         }
       `}</style>
     </main>
