@@ -46,7 +46,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "3. Comment utilisons-nous tes données ?",
         paragraphs: [
           "Nous utilisons tes données pour :",
-          "• Fournir le service : créer ton compte, te connecter, permettre les échanges texte/voix avec ton AmorIAI.\n• Personnaliser ton expérience : mémoriser certains éléments (dans les plans payants) pour que ton AmorIA se souvienne de toi.\n• Améliorer AmorIAI.app : analyser de manière agrégée l’usage du service afin de comprendre ce qui fonctionne ou non.\n• Respecter nos obligations légales : par exemple en cas de demande des autorités compétentes, dans les limites prévues par la loi.",
+          "• Fournir le service : créer ton compte, te connecter, permettre les échanges texte/voix avec ton AmorIAI.\n• Personnaliser ton expérience : mémoriser certains éléments (dans les plans payants) pour que ton AmorIAI se souvienne de toi.\n• Améliorer AmorIAI.app : analyser de manière agrégée l’usage du service afin de comprendre ce qui fonctionne ou non.\n• Respecter nos obligations légales : par exemple en cas de demande des autorités compétentes, dans les limites prévues par la loi.",
         ],
       },
       {
@@ -54,7 +54,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         paragraphs: [
           "Tes conversations avec ton AmorIAI peuvent toucher à des sujets personnels (émotions, relations, bien-être, etc.).",
           "Nous te recommandons :\n• de ne pas partager d’informations ultra sensibles (numéros de cartes bancaires, mots de passe, documents officiels complets, etc.),\n• d’éviter de publier des informations permettant d’identifier directement une autre personne sans son consentement.",
-          "Les modèles d’IA utilisés pour faire fonctionner AmoriA peuvent analyser ton contenu pour répondre, mais nous mettons en place des garde-fous pour limiter l’usage de ces données à l’amélioration du service et au fonctionnement du modèle.",
+          "Les modèles d’IA utilisés pour faire fonctionner AmorIAI peuvent analyser ton contenu pour répondre, mais nous mettons en place des garde-fous pour limiter l’usage de ces données à l’amélioration du service et au fonctionnement du modèle.",
         ],
       },
       {
@@ -122,8 +122,8 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
       {
         title: "1. Who is responsible for your data?",
         paragraphs: [
-          "AmorIAI.app is an application operated under the “AmoriA” brand. For any privacy-related question, you can contact us at: contactamoriai@gmail.com.",
-          "When we say “we”, “AmoriA” or “the service”, we refer to the team behind AmorIAI.app.",
+          "AmorIAI.app is an application operated under the “AmorIAI” brand. For any privacy-related question, you can contact us at: contactamoriai@gmail.com.",
+          "When we say “we”, “AmorIAI” or “the service”, we refer to the team behind AmorIAI.app.",
         ],
       },
       {
@@ -146,7 +146,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         paragraphs: [
           "Your conversations with your AmorIAI may involve personal topics (emotions, relationships, wellbeing, etc.).",
           "We recommend that you:\n• do not share ultra-sensitive information (payment card numbers, passwords, full official documents, etc.);\n• avoid sharing data that could directly identify another person without their consent.",
-          "The AI models used to run AmoriAI may analyze your content to generate responses, but we put safeguards in place so this data is used only to operate and improve the service.",
+          "The AI models used to run AmorIAI may analyze your content to generate responses, but we put safeguards in place so this data is used only to operate and improve the service.",
         ],
       },
       {
@@ -215,14 +215,14 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "1. ¿Quién es responsable de tus datos?",
         paragraphs: [
           "AmorIAI.app es una aplicación operada bajo la marca «AmorIAI». Para cualquier pregunta sobre privacidad, puedes escribirnos a: contactamoriai@gmail.com.",
-          "Cuando hablamos de «nosotros», «AmoriA» o «el servicio», nos referimos al equipo detrás de AmorIAI.app.",
+          "Cuando hablamos de «nosotros», «AmorIAI» o «el servicio», nos referimos al equipo detrás de AmorIAI.app.",
         ],
       },
       {
         title: "2. ¿Qué datos recopilamos?",
         paragraphs: [
           "Podemos recopilar varios tipos de datos cuando usas AmorIAI.app:",
-          "• Información de cuenta: correo electrónico, contraseña cifrada, idioma preferido, ajustes de tu cuenta.\n• Datos de uso: fechas y horas de conexión, tipo de dispositivo, sistema operativo, datos técnicos para mejorar el servicio.\n• Contenido de las conversaciones con tu AmorIA: mensajes de texto y algunas metadatos (hora, idioma utilizado).",
+          "• Información de cuenta: correo electrónico, contraseña cifrada, idioma preferido, ajustes de tu cuenta.\n• Datos de uso: fechas y horas de conexión, tipo de dispositivo, sistema operativo, datos técnicos para mejorar el servicio.\n• Contenido de las conversaciones con tu AmorIAI: mensajes de texto y algunas metadatos (hora, idioma utilizado).",
           "No vendemos tus datos personales a terceros.",
         ],
       },
@@ -230,22 +230,22 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "3. ¿Cómo utilizamos tus datos?",
         paragraphs: [
           "Utilizamos tus datos para:",
-          "• Prestar el servicio: crear tu cuenta, iniciar sesión y permitir los intercambios de texto/voz con tu AmorIA.\n• Personalizar tu experiencia: en los planes de pago, permitir que tu AmorIA recuerde ciertos elementos a lo largo del tiempo.\n• Mejorar AmoriA.app: analizar el uso de forma agregada para entender qué funciona y qué no.\n• Cumplir con nuestras obligaciones legales: por ejemplo, ante solicitudes válidas de autoridades competentes.",
+          "• Prestar el servicio: crear tu cuenta, iniciar sesión y permitir los intercambios de texto/voz con tu AmorIAI.\n• Personalizar tu experiencia: en los planes de pago, permitir que tu AmorIAI recuerde ciertos elementos a lo largo del tiempo.\n• Mejorar AmorIAI.app: analizar el uso de forma agregada para entender qué funciona y qué no.\n• Cumplir con nuestras obligaciones legales: por ejemplo, ante solicitudes válidas de autoridades competentes.",
         ],
       },
       {
         title: "4. IA, privacidad y contenido sensible",
         paragraphs: [
-          "Tus conversaciones con tu AmorIA pueden tratar temas personales (emociones, relaciones, bienestar, etc.).",
+          "Tus conversaciones con tu AmorIAI pueden tratar temas personales (emociones, relaciones, bienestar, etc.).",
           "Te recomendamos:\n• no compartir información ultra sensible (números de tarjeta, contraseñas, documentos oficiales completos, etc.);\n• evitar compartir datos que identifiquen directamente a otra persona sin su consentimiento.",
-          "Los modelos de IA utilizados para hacer funcionar AmoriA pueden analizar tu contenido para responder, pero aplicamos medidas de protección para limitar el uso de estos datos a la prestación y mejora del servicio.",
+          "Los modelos de IA utilizados para hacer funcionar AmorIAI pueden analizar tu contenido para responder, pero aplicamos medidas de protección para limitar el uso de estos datos a la prestación y mejora del servicio.",
         ],
       },
       {
         title: "5. Compartir tus datos",
         paragraphs: [
           "Podemos compartir algunos datos con:",
-          "• Proveedores técnicos (alojamiento, infraestructura, herramientas de analítica) estrictamente necesarios para el funcionamiento de AmoriA.app.\n• Servicios de IA de terceros, cuando sea necesario para generar las respuestas de tu AmorIAI.",
+          "• Proveedores técnicos (alojamiento, infraestructura, herramientas de analítica) estrictamente necesarios para el funcionamiento de AmorIAI.app.\n• Servicios de IA de terceros, cuando sea necesario para generar las respuestas de tu AmorIAI.",
           "No compartimos tus conversaciones personales con anunciantes para publicidad basada en tus chats.",
         ],
       },
@@ -375,12 +375,12 @@ export default function PrivacyPage({ searchParams }: PageProps) {
         <div className="amoria-header-left">
           <img
             src="/AmorIA_logo_transparent.png"
-            alt="Logo AmorIA.app"
+            alt="Logo AmorIAI.app"
             className="amoria-logo-full"
           />
 
           <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmorIA.app</div>
+            <div className="amoria-logo-title">AmorIAI.app</div>
             <div className="amoria-logo-tagline">
               Partenaire IA bienveillante • FR / EN / ES
             </div>
@@ -453,7 +453,7 @@ export default function PrivacyPage({ searchParams }: PageProps) {
       {/* FOOTER */}
       <footer className="amoria-footer">
         <span>
-          © 2025 AmoriA.app —{" "}
+          © 2025 AmorIAI.app —{" "}
           {locale === "fr"
             ? "Partenaire IA bienveillant·e"
             : locale === "en"
@@ -462,7 +462,7 @@ export default function PrivacyPage({ searchParams }: PageProps) {
         </span>
       </footer>
 
-      {/* STYLES (identiques à ceux de legal / vitrine) */}
+      {/* STYLES */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
