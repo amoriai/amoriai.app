@@ -58,14 +58,16 @@ export default function CreateAmoriaPage() {
   // ---- gestion du plan -------------------------------------------------
   const rawPlan = searchParams.get("plan") ?? "free";
 
-  // on normalise pour éviter les surprises dans l’URL
   const plan =
-    rawPlan.includes("chat") ? "chat" :
-    rawPlan.includes("plus") ? "plus" :
-    rawPlan.includes("unlimited") ? "unlimited" :
-    "free";
+    rawPlan.includes("chat")
+      ? "chat"
+      : rawPlan.includes("plus")
+      ? "plus"
+      : rawPlan.includes("unlimited")
+      ? "unlimited"
+      : "free";
 
-  // 👉 si le plan N’EST PAS gratuit, on envoie direct vers /payment
+  // si le plan n’est pas gratuit → on envoie vers /payment
   useEffect(() => {
     if (plan !== "free") {
       const params = new URLSearchParams();
@@ -79,10 +81,12 @@ export default function CreateAmoriaPage() {
   const t = COPY_CREATE[locale];
 
   const handleStart = () => {
-    // Pour l’instant : flow de création seulement pour le plan gratuit
+    // pour l’instant : flow de création pour le plan gratuit,
+    // puis on arrive sur la page /my-ai (récap de l’AmorIA créée)
     const params = new URLSearchParams();
     params.set("lang", locale);
-    router.push(`/my-amoria?${params.toString()}`);
+    params.set("plan", plan);
+    router.push(`/my-ai?${params.toString()}`);
   };
 
   const handleBackHome = () => {
@@ -98,7 +102,7 @@ export default function CreateAmoriaPage() {
           <header className="amoria-create-header">
             <img
               src="/AmorIA_logo_transparent.png"
-              alt="AmorIA logo"
+              alt="AmorIAI logo"
               className="amoria-create-logo"
             />
             <div>
@@ -113,7 +117,7 @@ export default function CreateAmoriaPage() {
             <div className="amoria-create-avatar-frame">
               <img
                 src="/amoria-avatar-preview.png"
-                alt="AmorIA avatar preview"
+                alt="AmorIAI avatar preview"
                 className="amoria-create-avatar-img"
               />
             </div>
@@ -122,7 +126,9 @@ export default function CreateAmoriaPage() {
                 • Nom, âge et personnalité de ton AmorIAI (douce, directe, etc.)
               </li>
               <li>• Langues de conversation (FR / EN / ES)</li>
-              <li>• Type de relation : soutien émotionnel, coaching, journal</li>
+              <li>
+                • Type de relation : soutien émotionnel, coaching, journal
+              </li>
               <li>• Limites et sujets que tu préfères éviter</li>
             </ul>
           </section>
