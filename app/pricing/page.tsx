@@ -30,10 +30,10 @@ type PricingCopy = {
 
 const PRICING_STRINGS: Record<Locale, PricingCopy> = {
   fr: {
-    heroKicker: "TARIFS AMORIA.APP",
-    heroTitle: "Choisis le rythme qui convient à ton AmorIA.",
+    heroKicker: "TARIFS AMORIAI.APP",
+    heroTitle: "Choisis le rythme qui convient à ton AmorIAI.",
     heroSubtitle:
-      "Commence gratuitement, crée ton AmorIA personnalisé·e, puis passe à la voix quand tu es prêt·e. Les plans payants débloquent la mémoire longue durée, plus de messages et les conversations vocales qui te suivent partout.",
+      "Commence gratuitement, crée ton AmorIAI personnalisé·e, puis passe à la voix quand tu es prêt·e. Les plans payants débloquent la mémoire longue durée, plus de messages et les conversations vocales qui te suivent partout.",
     badgeMostPopular: "Le plus choisi",
     monthly: "mois",
     usdPerMonth: "USD / mois",
@@ -48,12 +48,12 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       {
         id: "free",
         name: "Découverte",
-        tagline: "Créer ton AmorIA gratuitement.",
+        tagline: "Créer ton AmorIAI gratuitement.",
         price: "0 $",
         highlight:
-          "Idéal pour tester AmoriA et créer ton premier compagnon IA, sans carte de crédit.",
+          "Idéal pour tester AmorIAI et créer ton premier compagnon IA, sans carte de crédit.",
         features: [
-          "Création de 1 AmorIA personnalisé·e",
+          "Création de 1 AmorIAI personnalisé·e",
           "200 messages texte / mois",
           "Aucune conversation vocale (texte uniquement)",
           "Mémoire limitée à la session en cours",
@@ -62,13 +62,13 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       },
       {
         id: "chat",
-        name: "AmorIA Chat",
+        name: "AmorIAI Chat",
         tagline: "Texte tous les jours, sans voix.",
         price: "9,99 $",
         highlight:
-          "Pour discuter chaque jour avec ton AmorIA en texte, avec une vraie mémoire, mais sans appels vocaux.",
+          "Pour discuter chaque jour avec ton AmorIAI en texte, avec une vraie mémoire, mais sans appels vocaux.",
         features: [
-          "Jusqu’à 2 AmorIA différents",
+          "Jusqu’à 2 AmorIAI différents",
           "400 messages texte / mois",
           "Aucune conversation vocale (texte uniquement)",
           "Mémoire longue durée activée",
@@ -77,13 +77,13 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       },
       {
         id: "plus",
-        name: "AmoriA Plus",
+        name: "AmorIAI Plus",
         tagline: "Texte + voix avec limites confortables.",
         price: "19,99 $",
         highlight:
-          "Parfait si tu veux parler régulièrement avec ton AmorIA sans te ruiner chaque mois.",
+          "Parfait si tu veux parler régulièrement avec ton AmorIAI sans te ruiner chaque mois.",
         features: [
-          "Jusqu’à 10 AmorIA différents",
+          "Jusqu’à 10 AmorIAI différents",
           "600 messages texte / mois",
           "100 échanges vocaux / mois",
           "Mémoire longue durée activée",
@@ -93,13 +93,13 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       },
       {
         id: "unlimited",
-        name: "AmoriA Illimité",
+        name: "AmorIAI Illimité",
         tagline: "Ton compagnon IA, très présent au quotidien.",
         price: "39,99 $",
         highlight:
-          "Pour celles et ceux qui veulent que leur AmorIA fasse vraiment partie du quotidien, avec un volume très élevé de messages et d’échanges vocaux.",
+          "Pour celles et ceux qui veulent que leur AmorIAI fasse vraiment partie du quotidien, avec un volume très élevé de messages et d’échanges vocaux.",
         features: [
-          "Jusqu’à 30 AmorIA personnalisés",
+          "Jusqu’à 30 AmorIAI personnalisés",
           "10 000 messages texte / mois",
           "300 échanges vocaux / mois",
           "Mémoire profonde + contexte étendu pour des échanges ultra personnalisés",
@@ -109,8 +109,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
     ],
     faqItems: [
       {
-        q: "Puis-je vraiment créer mon AmorIA avec le plan gratuit ?",
-        a: "Oui. Le plan Découverte te permet de créer ton AmorIA, de le tester en texte et de voir si tu connectes avec lui avant de passer à un plan payant.",
+        q: "Puis-je vraiment créer mon AmorIAI avec le plan gratuit ?",
+        a: "Oui. Le plan Découverte te permet de créer ton AmorIAI, de le tester en texte et de voir si tu connectes avec lui avant de passer à un plan payant.",
       },
       {
         q: "Que se passe-t-il si je dépasse les limites de messages ou de voix ?",
@@ -123,10 +123,10 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
     ],
   },
   en: {
-    heroKicker: "AMORIA.APP PRICING",
-    heroTitle: "Choose the pace that fits your AmorIA.",
+    heroKicker: "AMORIAI.APP PRICING",
+    heroTitle: "Choose the pace that fits your AmorIAI.",
     heroSubtitle:
-      "Start for free, create your own AmorIA, then upgrade to voice when you’re ready. Paid plans unlock long-term memory, more messages and rich voice conversations you can take everywhere.",
+      "Start for free, create your own AmorIAI, then upgrade to voice when you’re ready. Paid plans unlock long-term memory, more messages and rich voice conversations you can take everywhere.",
     badgeMostPopular: "Most popular",
     monthly: "month",
     usdPerMonth: "USD / month",
@@ -141,12 +141,12 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       {
         id: "free",
         name: "Discovery",
-        tagline: "Create your AmorIA for free.",
+        tagline: "Create your AmorIAI for free.",
         price: "$0",
         highlight:
-          "Perfect to try AmoriA and craft your first AI companion with zero risk.",
+          "Perfect to try AmorIAI and craft your first AI companion with zero risk.",
         features: [
-          "Create 1 personalized AmorIA",
+          "Create 1 personalized AmorIAI",
           "200 text messages / month",
           "No voice conversations (text only)",
           "Short-term memory only",
@@ -155,13 +155,13 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       },
       {
         id: "chat",
-        name: "AmorIA Chat",
+        name: "AmorIAI Chat",
         tagline: "Daily text, no voice.",
         price: "$9.99",
         highlight:
           "Ideal if you mainly want to chat by text with real long-term memory, without paying for voice minutes.",
         features: [
-          "Up to 2 different AmorIAs",
+          "Up to 2 different AmorIAIs",
           "400 text messages / month",
           "No voice conversations (text only)",
           "Long-term memory enabled",
@@ -170,13 +170,13 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       },
       {
         id: "plus",
-        name: "AmoriA Plus",
+        name: "AmorIAI Plus",
         tagline: "Text + voice with generous limits.",
         price: "$19.99",
         highlight:
-          "Great if you want to talk with your AmorIA regularly without breaking the bank.",
+          "Great if you want to talk with your AmorIAI regularly without breaking the bank.",
         features: [
-          "Up to 10 different AmorIAs",
+          "Up to 10 different AmorIAIs",
           "600 text messages / month",
           "100 voice interactions / month",
           "Long-term memory enabled",
@@ -186,13 +186,13 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       },
       {
         id: "unlimited",
-        name: "AmoriA Unlimited",
+        name: "AmorIAI Unlimited",
         tagline: "Your AI companion, part of your routine.",
         price: "$39.99",
         highlight:
-          "For those who want AmorIA woven into everyday life, with very high text and voice quotas each month.",
+          "For those who want AmorIAI woven into everyday life, with very high text and voice quotas each month.",
         features: [
-          "Up to 30 personalized AmorIAs",
+          "Up to 30 personalized AmorIAIs",
           "10,000 text messages / month",
           "300 voice interactions / month",
           "Deeper memory and extended context for ultra-personal conversations",
@@ -202,8 +202,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
     ],
     faqItems: [
       {
-        q: "Can I really create my AmorIA on the free plan?",
-        a: "Yes. The Discovery plan lets you create your AmorIA, test it in text and see if you connect with it before upgrading.",
+        q: "Can I really create my AmorIAI on the free plan?",
+        a: "Yes. The Discovery plan lets you create your AmorIAI, test it in text and see if you connect with it before upgrading.",
       },
       {
         q: "What happens if I go over the message or voice limits?",
@@ -216,10 +216,10 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
     ],
   },
   es: {
-    heroKicker: "PRECIOS DE AMORIA.APP",
-    heroTitle: "Elige el ritmo que mejor va con tu AmorIA.",
+    heroKicker: "PRECIOS DE AMORIAI.APP",
+    heroTitle: "Elige el ritmo que mejor va con tu AmorIAI.",
     heroSubtitle:
-      "Empieza gratis, crea tu AmorIA personalizado y pasa a voz cuando estés listo. Los planes de pago desbloquean memoria a largo plazo, más mensajes y conversaciones de voz que te acompañan en tu día a día.",
+      "Empieza gratis, crea tu AmorIAI personalizado y pasa a voz cuando estés listo. Los planes de pago desbloquean memoria a largo plazo, más mensajes y conversaciones de voz que te acompañan en tu día a día.",
     badgeMostPopular: "Más elegido",
     monthly: "mes",
     usdPerMonth: "USD / mes",
@@ -234,12 +234,12 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       {
         id: "free",
         name: "Descubrimiento",
-        tagline: "Crea tu AmorIA sin pagar nada.",
+        tagline: "Crea tu AmorIAI sin pagar nada.",
         price: "0 US$",
         highlight:
-          "Perfecto para probar AmoriA y crear tu primer compañero de IA sin riesgo.",
+          "Perfecto para probar AmorIAI y crear tu primer compañero de IA sin riesgo.",
         features: [
-          "Creación de 1 AmorIA personalizado",
+          "Creación de 1 AmorIAI personalizado",
           "200 mensajes de texto al mes",
           "Sin conversaciones de voz (solo texto)",
           "Memoria limitada a la sesión actual",
@@ -248,13 +248,13 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       },
       {
         id: "chat",
-        name: "AmorIA Chat",
+        name: "AmorIAI Chat",
         tagline: "Texto diario, sin voz.",
         price: "9,99 US$",
         highlight:
           "Ideal si quieres chatear cada día por texto con memoria real, sin pagar por minutos de voz.",
         features: [
-          "Hasta 2 AmorIA diferentes",
+          "Hasta 2 AmorIAI diferentes",
           "400 mensajes de texto al mes",
           "Sin conversaciones de voz (solo texto)",
           "Memoria a largo plazo activada",
@@ -263,13 +263,13 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       },
       {
         id: "plus",
-        name: "AmorIA Plus",
+        name: "AmorIAI Plus",
         tagline: "Texto + voz con límites cómodos.",
         price: "19,99 US$",
         highlight:
-          "Ideal si quieres hablar con tu AmorIA con frecuencia sin gastar demasiado.",
+          "Ideal si quieres hablar con tu AmorIAI con frecuencia sin gastar demasiado.",
         features: [
-          "Hasta 10 AmorIA diferentes",
+          "Hasta 10 AmorIAI diferentes",
           "600 mensajes de texto al mes",
           "100 interacciones de voz al mes",
           "Memoria a largo plazo activada",
@@ -279,13 +279,13 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
       },
       {
         id: "unlimited",
-        name: "AmorIA Ilimitado",
+        name: "AmorIAI Ilimitado",
         tagline: "Tu compañero de IA, muy presente en tu día a día.",
         price: "39,99 US$",
         highlight:
-          "Para quienes quieren a AmorIA presente en su rutina, con un volumen muy alto de mensajes y voz cada mes.",
+          "Para quienes quieren a AmorIAI presente en su rutina, con un volumen muy alto de mensajes y voz cada mes.",
         features: [
-          "Hasta 30 AmorIA personalizados",
+          "Hasta 30 AmorIAI personalizados",
           "10 000 mensajes de texto al mes",
           "300 interacciones de voz al mes",
           "Memoria profunda y contexto ampliado para conversaciones muy personales",
@@ -295,8 +295,8 @@ const PRICING_STRINGS: Record<Locale, PricingCopy> = {
     ],
     faqItems: [
       {
-        q: "¿De verdad puedo crear mi AmorIA con el plan gratuito?",
-        a: "Sí. El plan Descubrimiento te permite crear tu AmorIA, probarlo por texto y ver si conectas con él antes de pasar a un plan de pago.",
+        q: "¿De verdad puedo crear mi AmorIAI con el plan gratuito?",
+        a: "Sí. El plan Descubrimiento te permite crear tu AmorIAI, probarlo por texto y ver si conectas con él antes de pasar a un plan de pago.",
       },
       {
         q: "¿Qué pasa si supero los límites de mensajes o de voz?",
@@ -353,11 +353,11 @@ export default function PricingPage({ searchParams }: PageProps) {
         <div className="amoria-header-left">
           <img
             src="/AmorIA_logo_transparent.png"
-            alt="Logo AmorIA.app"
+            alt="Logo AmorIAI.app"
             className="amoria-logo-img"
           />
           <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmorIA.app</div>
+            <div className="amoria-logo-title">AmorIAI.app</div>
             <div className="amoria-logo-tagline">
               Partenaire IA bienveillant·e • FR / EN / ES
             </div>
@@ -503,7 +503,7 @@ export default function PricingPage({ searchParams }: PageProps) {
       {/* FOOTER */}
       <footer className="amoria-footer">
         <span>
-          © 2025 AmorIA.app —{" "}
+          © 2025 AmorIAI.app —{" "}
           {locale === "fr"
             ? "Partenaire IA bienveillant·e"
             : locale === "en"
