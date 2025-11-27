@@ -1,23 +1,31 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2023-10-16",
+});
+
+const PRICE_MAP: any = {
+  chat: process.env.STRIPE_PRICE_CHAT,
+  plus: process.env.STRIPE_PRICE_PLUS,
+  unlimited: process.env.STRIPE_PRICE_UNLIMITED,
+};
 
 export async function POST(req: Request) {
-  const { email, password } = await req.json();
+  const { plan, user_id } = await req.json();
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-
-  const { data, error } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+  const priceId = PRICE_MAP[plan];
+  if (!priceId) {
+    return NextResponse.json({ error: "Plan invalide" }, { status: 400 });
   }
 
-  return NextResponse.json({ user_id: data.user.id });
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    line_items: [{ price: priceId, quantity: 1 }],
+    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/success`,
+    cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/signup`,
+    metadata: { user_id },
+  });
+
+  return NextResponse.json({ url: session.url });
 }
