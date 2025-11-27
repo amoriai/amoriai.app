@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import React, { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabaseClient";
+import { createClient } from "@supabase/supabase-js";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
@@ -213,43 +213,45 @@ const TONE_OPTIONS: Option[] = [
   },
 ];
 
-const CATEGORY_OPTIONS: { id: PersonaCategory; label: Record<Locale, string> }[] =
-  [
-    {
-      id: "woman",
-      label: {
-        fr: "Femme",
-        en: "Woman",
-        es: "Mujer",
-      },
+const CATEGORY_OPTIONS: {
+  id: PersonaCategory;
+  label: Record<Locale, string>;
+}[] = [
+  {
+    id: "woman",
+    label: {
+      fr: "Femme",
+      en: "Woman",
+      es: "Mujer",
     },
-    {
-      id: "man",
-      label: {
-        fr: "Homme",
-        en: "Man",
-        es: "Hombre",
-      },
+  },
+  {
+    id: "man",
+    label: {
+      fr: "Homme",
+      en: "Man",
+      es: "Hombre",
     },
-    {
-      id: "androgynous",
-      label: {
-        fr: "Androgyne / non-binaire",
-        en: "Androgynous / non-binary",
-        es: "Andrógino / no binario",
-      },
+  },
+  {
+    id: "androgynous",
+    label: {
+      fr: "Androgyne / non-binaire",
+      en: "Androgynous / non-binary",
+      es: "Andrógino / no binario",
     },
-    {
-      id: "50plus",
-      label: {
-        fr: "50+ (apparence plus mature)",
-        en: "50+ (more mature appearance)",
-        es: "50+ (apariencia más madura)",
-      },
+  },
+  {
+    id: "50plus",
+    label: {
+      fr: "50+ (apparence plus mature)",
+      en: "50+ (more mature appearance)",
+      es: "50+ (apariencia más madura)",
     },
-  ];
+  },
+];
 
-// Avatars existants dans /public (tu peux ajuster les noms si besoin)
+// Avatars dans /public
 const AVATAR_BY_CATEGORY: Record<PersonaCategory, string> = {
   woman: "/amoria-rousse.png",
   man: "/amoria-m-protecteur.png",
@@ -306,11 +308,12 @@ export default function CreateAmoriaPage({
 
     const goalPart =
       expectations.trim().length > 0
-        ? ` ${locale === "fr"
-            ? "Son rôle principal : "
-            : locale === "en"
-            ? "Main role: "
-            : "Su papel principal: "
+        ? ` ${
+            locale === "fr"
+              ? "Son rôle principal : "
+              : locale === "en"
+              ? "Main role: "
+              : "Su papel principal: "
           }${expectations.trim()}`
         : locale === "fr"
         ? " Son rôle principal : t’écouter, te soutenir au quotidien et t’aider à te sentir moins seule."
@@ -325,6 +328,12 @@ export default function CreateAmoriaPage({
     e.preventDefault();
     setLoading(true);
     setErrorMsg(null);
+
+    // client Supabase côté navigateur
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
     const { data: authData, error: authError } = await supabase.auth.getUser();
 
