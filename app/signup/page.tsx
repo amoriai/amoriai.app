@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import React, { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
@@ -9,7 +7,19 @@ import { supabase } from "../../lib/supabaseClient";
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-const PLAN_TITLES: Record<Locale, Record<PlanId, string>> = {
+function normalizeLocale(raw: string | null): Locale {
+  if (raw === "en" || raw === "es" || raw === "fr") return raw;
+  return "fr";
+}
+
+function normalizePlan(raw: string | null): PlanId {
+  if (raw === "chat" || raw === "plus" || raw === "unlimited" || raw === "free") {
+    return raw;
+  }
+  return "free";
+}
+
+const PLAN_LABELS: Record<Locale, Record<PlanId, string>> = {
   fr: {
     free: "Découverte (gratuit)",
     chat: "AmorIA Chat",
@@ -30,80 +40,53 @@ const PLAN_TITLES: Record<Locale, Record<PlanId, string>> = {
   },
 };
 
-const COPY_SIGNUP: Record<
-  Locale,
-  {
-    title: string;
-    subtitle: string;
-    emailLabel: string;
-    passwordLabel: string;
-    passwordHint: string;
-    createButton: string;
-    or: string;
-    googleButton: string;
-    already: string;
-    signin: string;
-    errorGeneric: string;
-  }
-> = {
+const COPY = {
   fr: {
     title: "Créer mon compte AmorIA",
     subtitle:
       "Inscris-toi pour commencer avec ton AmorIA. Tu pourras changer de forfait plus tard.",
+    selectedPlanPrefix: "Forfait sélectionné : ",
     emailLabel: "Adresse courriel",
     passwordLabel: "Mot de passe",
     passwordHint: "Minimum 6 caractères.",
     createButton: "Créer mon compte",
     or: "ou",
-    googleButton: "Continuer avec Google",
+    continueGoogle: "Continuer avec Google",
     already: "Tu as déjà un compte ?",
-    signin: "Me connecter",
-    errorGeneric:
-      "Une erreur est survenue lors de la création du compte. Réessaie dans quelques instants.",
+    login: "Me connecter",
+    errorGeneric: "Une erreur est survenue. Réessaie dans quelques instants.",
   },
   en: {
     title: "Create my AmorIA account",
     subtitle:
-      "Sign up to start chatting with your AmorIA. You can change your plan later.",
+      "Sign up to start with your AmorIA. You can change your plan later.",
+    selectedPlanPrefix: "Selected plan: ",
     emailLabel: "Email address",
     passwordLabel: "Password",
     passwordHint: "Minimum 6 characters.",
     createButton: "Create my account",
     or: "or",
-    googleButton: "Continue with Google",
+    continueGoogle: "Continue with Google",
     already: "Already have an account?",
-    signin: "Sign in",
-    errorGeneric:
-      "Something went wrong while creating your account. Please try again.",
+    login: "Log in",
+    errorGeneric: "Something went wrong. Please try again.",
   },
   es: {
     title: "Crear mi cuenta AmorIA",
     subtitle:
-      "Regístrate para empezar con tu AmorIA. Podrás cambiar de plan más adelante.",
+      "Regístrate para empezar con tu AmorIA. Podrás cambiar de plan más tarde.",
+    selectedPlanPrefix: "Plan seleccionado: ",
     emailLabel: "Correo electrónico",
     passwordLabel: "Contraseña",
     passwordHint: "Mínimo 6 caracteres.",
     createButton: "Crear mi cuenta",
     or: "o",
-    googleButton: "Continuar con Google",
-    already: "¿Ya tienes una cuenta?",
-    signin: "Iniciar sesión",
-    errorGeneric:
-      "Se produjo un error al crear la cuenta. Inténtalo de nuevo.",
+    continueGoogle: "Continuar con Google",
+    already: "¿Ya tienes cuenta?",
+    login: "Iniciar sesión",
+    errorGeneric: "Se produjo un error. Inténtalo de nuevo.",
   },
 };
-
-function normalizeLocale(raw: string | null): Locale {
-  if (raw === "en" || raw === "es" || raw === "fr") return raw;
-  return "fr";
-}
-
-function normalizePlan(raw: string | null): PlanId {
-  if (raw === "chat" || raw === "plus" || raw === "unlimited" || raw === "free") {
-    return raw;
-  }
-  return "free";
-}
 
 export default function SignupPage() {
   const router = useRouter();
@@ -114,83 +97,61 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const [loadingEmail, setLoadingEmail] = useState(false);
-  const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
 
-  // Lire les paramètres de l’URL côté client
+  // Lecture des query params côté client
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const urlLocale = params.get("lang");
-    const urlPlan = params.get("plan");
+    const rawPlan = params.get("plan");
+    const rawLang = params.get("lang");
 
-    setLocale(normalizeLocale(urlLocale));
-    setPlan(normalizePlan(urlPlan));
+    setLocale(normalizeLocale(rawLang));
+    setPlan(normalizePlan(rawPlan));
   }, []);
 
-  const t = COPY_SIGNUP[locale];
-  const planTitle = PLAN_TITLES[locale][plan];
+  const t = COPY[locale];
+  const planLabel = PLAN_LABELS[locale][plan];
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    setInfo(null);
-    setLoadingEmail(true);
+    setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    setLoadingEmail(false);
-
-    if (error) {
-      setError(error.message || t.errorGeneric);
-      return;
-    }
-
-    // Redirection selon le plan
-    const params = new URLSearchParams();
-    params.set("plan", plan);
-    params.set("lang", locale);
-
-    if (plan === "free") {
-      router.push(`/create-amoria?${params.toString()}`);
-    } else {
-      router.push(`/payment?${params.toString()}`);
-    }
-  };
-
-  const handleGoogle = async () => {
     try {
-      setError(null);
-      setLoadingGoogle(true);
-
-      const redirectTo = `${window.location.origin}/auth/callback?plan=${plan}&lang=${locale}`;
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo,
-        },
+      const { error: supaError } = await supabase.auth.signUp({
+        email,
+        password,
       });
 
-      if (error) {
-        setError(error.message || t.errorGeneric);
-        setLoadingGoogle(false);
+      if (supaError) {
+        setError(supaError.message || t.errorGeneric);
+        setLoading(false);
+        return;
+      }
+
+      // Après inscription :
+      // - plan gratuit → direct vers la création d’AmorIA
+      // - plan payant  → page de paiement Stripe
+      const qs = new URLSearchParams();
+      qs.set("plan", plan);
+      qs.set("lang", locale);
+
+      if (plan === "free") {
+        router.push(`/create-amoria?${qs.toString()}`);
+      } else {
+        router.push(`/payment?${qs.toString()}`);
       }
     } catch (err: any) {
       setError(err?.message || t.errorGeneric);
-      setLoadingGoogle(false);
+      setLoading(false);
     }
   };
 
-  const handleGoToSignin = () => {
-    const params = new URLSearchParams();
-    params.set("plan", plan);
-    params.set("lang", locale);
-    router.push(`/login?${params.toString()}`);
+  const handleLogin = () => {
+    const qs = new URLSearchParams();
+    qs.set("lang", locale);
+    router.push(`/login?${qs.toString()}`);
   };
 
   return (
@@ -209,77 +170,69 @@ export default function SignupPage() {
             </div>
           </header>
 
-          <section className="amoria-auth-plan-pill">
-            <span className="amoria-auth-plan-label">
-              {locale === "fr"
-                ? "Forfait sélectionné :"
-                : locale === "en"
-                ? "Selected plan:"
-                : "Plan seleccionado:"}
-            </span>
-            <span className="amoria-auth-plan-value">{planTitle}</span>
-          </section>
+          <div className="amoria-auth-plan-pill">
+            {t.selectedPlanPrefix}
+            <strong>{planLabel}</strong>
+          </div>
 
           <form className="amoria-auth-form" onSubmit={handleSubmit}>
             <label className="amoria-auth-label">
-              <span>{t.emailLabel}</span>
+              {t.emailLabel}
               <input
                 type="email"
-                required
+                className="amoria-auth-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="amoria-auth-input"
+                required
               />
             </label>
 
             <label className="amoria-auth-label">
-              <span>{t.passwordLabel}</span>
+              {t.passwordLabel}
               <input
                 type="password"
-                required
-                minLength={6}
+                className="amoria-auth-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="amoria-auth-input"
+                required
+                minLength={6}
               />
               <span className="amoria-auth-hint">{t.passwordHint}</span>
             </label>
 
             {error && <p className="amoria-auth-error">{error}</p>}
-            {info && <p className="amoria-auth-info">{info}</p>}
 
             <button
               type="submit"
               className="amoria-auth-primary"
-              disabled={loadingEmail || loadingGoogle}
+              disabled={loading}
             >
-              {loadingEmail ? "…" : t.createButton}
+              {loading ? "..." : t.createButton}
             </button>
           </form>
 
-          <div className="amoria-auth-separator">
+          <div className="amoria-auth-or">
             <span>{t.or}</span>
           </div>
 
           <button
             type="button"
             className="amoria-auth-google"
-            onClick={handleGoogle}
-            disabled={loadingEmail || loadingGoogle}
+            // tu brancheras ton login Google ici plus tard
           >
-            {loadingGoogle ? "…" : t.googleButton}
+            {t.continueGoogle}
           </button>
 
-          <footer className="amoria-auth-footer">
-            <span>{t.already}</span>{" "}
+          <div className="amoria-auth-footer">
+            <span>{t.already} </span>
             <button
               type="button"
-              onClick={handleGoToSignin}
               className="amoria-auth-link"
+              onClick={handleLogin}
             >
-              {t.signin}
+              {t.login}
             </button>
-          </footer>
+          </div>
         </div>
       </div>
     </main>
