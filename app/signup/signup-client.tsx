@@ -19,13 +19,13 @@ const LABELS: Record<
     login: string;
     google: string;
     errorGeneric: string;
-    or: string;
+    orLabel: string;
   }
 > = {
   fr: {
     title: "Créer mon compte AmorIAI",
     subtitle:
-      "Inscris-toi pour commencer avec ton AmorIAI. Tu choisiras ton forfait juste après.",
+      "Inscris-toi pour commencer avec ton AmorIAI. Tu pourras choisir ton forfait juste après.",
     emailLabel: "Adresse courriel",
     passwordLabel: "Mot de passe",
     passwordHint: "Minimum 6 caractères.",
@@ -34,11 +34,12 @@ const LABELS: Record<
     login: "Me connecter",
     google: "Continuer avec Google",
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
-    or: "ou",
+    orLabel: "ou",
   },
   en: {
     title: "Create my AmorIAI account",
-    subtitle: "Sign up to start with your AmorIAI. You’ll pick a plan next.",
+    subtitle:
+      "Sign up to start with your AmorIAI. You’ll choose your plan right after.",
     emailLabel: "Email address",
     passwordLabel: "Password",
     passwordHint: "At least 6 characters.",
@@ -47,12 +48,12 @@ const LABELS: Record<
     login: "Log in",
     google: "Continue with Google",
     errorGeneric: "An error occurred. Please try again.",
-    or: "or",
+    orLabel: "or",
   },
   es: {
     title: "Crear mi cuenta AmorIAI",
     subtitle:
-      "Regístrate para empezar con tu AmorIAI. Elegirás tu plan a continuación.",
+      "Regístrate para empezar con tu AmorIAI. Elegirás tu plan justo después.",
     emailLabel: "Correo electrónico",
     passwordLabel: "Contraseña",
     passwordHint: "Mínimo 6 caracteres.",
@@ -61,7 +62,7 @@ const LABELS: Record<
     login: "Iniciar sesión",
     google: "Continuar con Google",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
-    or: "o",
+    orLabel: "o",
   },
 };
 
@@ -69,6 +70,7 @@ export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // langue depuis l’URL (par défaut FR)
   const localeParam = (searchParams.get("lang") || "fr") as Locale;
   const t = LABELS[localeParam];
 
@@ -78,7 +80,7 @@ export default function SignupClient() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 👉 après création du compte : TOUJOURS la page tarifs
+  // 👉 Après création du compte → TOUJOURS /pricing
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
@@ -103,6 +105,7 @@ export default function SignupClient() {
     }
 
     // Supabase envoie l’email de confirmation
+    // puis on envoie l’utilisateur vers la page des forfaits
     redirectAfterSignup();
   };
 
@@ -170,7 +173,7 @@ export default function SignupClient() {
           </button>
         </form>
 
-        <div className="amoria-auth-divider">{t.or}</div>
+        <div className="amoria-auth-divider">{t.orLabel}</div>
 
         <button
           type="button"
