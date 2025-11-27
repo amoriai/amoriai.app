@@ -85,7 +85,7 @@ export default function SignupClient() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Après création → /pricing
+  // Après création → toujours /pricing
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
@@ -135,7 +135,7 @@ export default function SignupClient() {
   return (
     <main className="amoria-auth-root">
       <div className="amoria-auth-card">
-        {/* Header logo + brand */}
+        {/* En-tête avec logo + titre */}
         <div className="amoria-auth-header">
           <div className="amoria-auth-logo-wrapper">
             <img
@@ -150,7 +150,6 @@ export default function SignupClient() {
           <p className="amoria-auth-subtitle">{t.subtitle}</p>
         </div>
 
-        {/* Formulaire email / mot de passe */}
         <form className="amoria-auth-form" onSubmit={handleSubmit}>
           <label className="amoria-auth-label">
             {t.emailLabel}
@@ -186,6 +185,7 @@ export default function SignupClient() {
                     : "Afficher le mot de passe"
                 }
               >
+                {/* petit œil en SVG */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -220,25 +220,17 @@ export default function SignupClient() {
           </button>
         </form>
 
-        {/* Séparateur plus aéré */}
-        <div className="amoria-auth-divider-row">
-          <span className="amoria-auth-divider-line" />
-          <span className="amoria-auth-divider-text">{t.orLabel}</span>
-          <span className="amoria-auth-divider-line" />
-        </div>
+        <div className="amoria-auth-divider">{t.orLabel}</div>
 
-        {/* Bouton Google, bien séparé */}
         <button
           type="button"
           className="amoria-auth-btn-google"
           onClick={handleGoogleSignup}
           disabled={loadingGoogle || loadingEmail}
         >
-          <span className="amoria-auth-google-icon">G</span>
-          <span>{loadingGoogle ? "..." : t.google}</span>
+          {loadingGoogle ? "..." : t.google}
         </button>
 
-        {/* Footer login + conditions */}
         <p className="amoria-auth-footer">
           {t.alreadyHave}{" "}
           <a
@@ -286,9 +278,9 @@ export default function SignupClient() {
 
         .amoria-auth-card {
           width: 100%;
-          max-width: 440px;
-          border-radius: 1.6rem;
-          padding: 2rem 2rem 2.2rem;
+          max-width: 430px;
+          border-radius: 1.5rem;
+          padding: 1.9rem 1.9rem 2.1rem;
           background: radial-gradient(
             circle at top,
             #020617,
@@ -296,32 +288,32 @@ export default function SignupClient() {
             #000 100%
           );
           border: 1px solid rgba(148, 163, 184, 0.35);
-          box-shadow: 0 20px 45px rgba(15, 23, 42, 0.8);
+          box-shadow: 0 20px 40px rgba(15, 23, 42, 0.7);
           font-family: system-ui, -apple-system, BlinkMacSystemFont,
             "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
         }
 
         .amoria-auth-header {
-          margin-bottom: 1.3rem;
+          margin-bottom: 1.2rem;
         }
 
         .amoria-auth-logo-wrapper {
           display: flex;
           align-items: center;
-          gap: 0.55rem;
-          margin-bottom: 0.6rem;
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
         }
 
         .amoria-auth-logo {
-          width: 26px;
-          height: 26px;
+          width: 28px;
+          height: 28px;
           border-radius: 999px;
         }
 
         .amoria-auth-brand {
-          font-size: 0.86rem;
+          font-size: 0.85rem;
           font-weight: 600;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.06em;
           text-transform: uppercase;
           background: linear-gradient(135deg, #fb37ff, #ff8a5c, #ffe45e);
           -webkit-background-clip: text;
@@ -330,36 +322,36 @@ export default function SignupClient() {
 
         .amoria-auth-title {
           font-size: 1.25rem;
-          margin-bottom: 0.35rem;
+          margin-bottom: 0.3rem;
         }
 
         .amoria-auth-subtitle {
-          font-size: 0.86rem;
+          font-size: 0.85rem;
           color: #9ca3af;
-          line-height: 1.4;
         }
 
         .amoria-auth-form {
           display: flex;
           flex-direction: column;
-          gap: 0.95rem;
-          margin-top: 1.2rem;
+          gap: 0.9rem;
+          margin-top: 1rem;
         }
 
         .amoria-auth-label {
           display: flex;
           flex-direction: column;
-          gap: 0.28rem;
+          gap: 0.25rem;
           font-size: 0.8rem;
         }
 
         .amoria-auth-input {
           border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.45);
-          padding: 0.6rem 1rem;
-          background: rgba(15, 23, 42, 0.92);
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          padding: 0.55rem 0.95rem;
+          background: rgba(15, 23, 42, 0.9);
           color: #f9fafb;
-          font-size: 0.86rem;
+          font-size: 0.85rem;
+          width: 100%;
         }
 
         .amoria-auth-input::placeholder {
@@ -376,15 +368,17 @@ export default function SignupClient() {
           position: relative;
           display: flex;
           align-items: center;
+          width: 100%;
         }
 
         .amoria-auth-input--password {
-          padding-right: 2.5rem;
+          padding-right: 2.4rem;
+          width: 100%;
         }
 
         .amoria-auth-eye-btn {
           position: absolute;
-          right: 0.55rem;
+          right: 0.45rem;
           top: 50%;
           transform: translateY(-50%);
           width: 28px;
@@ -407,7 +401,6 @@ export default function SignupClient() {
         .amoria-auth-hint {
           font-size: 0.7rem;
           color: #9ca3af;
-          margin-top: 0.1rem;
         }
 
         .amoria-auth-error {
@@ -416,7 +409,7 @@ export default function SignupClient() {
           background: rgba(185, 28, 28, 0.18);
           border-radius: 0.75rem;
           padding: 0.45rem 0.6rem;
-          margin-top: 0.2rem;
+          margin-top: 0.15rem;
         }
 
         .amoria-auth-btn-primary {
@@ -424,12 +417,12 @@ export default function SignupClient() {
           width: 100%;
           border-radius: 999px;
           border: none;
-          padding: 0.75rem 1.2rem;
+          padding: 0.7rem 1.2rem;
           font-size: 0.9rem;
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
           cursor: pointer;
-          box-shadow: 0 14px 34px rgba(248, 113, 113, 0.45);
+          box-shadow: 0 12px 32px rgba(248, 113, 113, 0.45);
         }
 
         .amoria-auth-btn-primary:disabled {
@@ -437,45 +430,22 @@ export default function SignupClient() {
           cursor: default;
         }
 
-        /* Divider plus aéré */
-        .amoria-auth-divider-row {
-          display: flex;
-          align-items: center;
-          gap: 0.7rem;
-          margin: 1.3rem 0 1rem;
-        }
-
-        .amoria-auth-divider-line {
-          flex: 1;
-          height: 1px;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(148, 163, 184, 0.7),
-            transparent
-          );
-        }
-
-        .amoria-auth-divider-text {
+        .amoria-auth-divider {
+          margin: 1.2rem 0 0.8rem;
           font-size: 0.78rem;
           color: #9ca3af;
+          text-align: center;
         }
 
-        /* Bouton Google bien séparé */
         .amoria-auth-btn-google {
           width: 100%;
           border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.55);
+          border: 1px solid rgba(148, 163, 184, 0.45);
           padding: 0.7rem 1.2rem;
           font-size: 0.86rem;
-          background: rgba(15, 23, 42, 0.96);
+          background: rgba(15, 23, 42, 0.95);
           color: #f9fafb;
           cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-          margin-bottom: 0.8rem;
         }
 
         .amoria-auth-btn-google:disabled {
@@ -483,47 +453,27 @@ export default function SignupClient() {
           cursor: default;
         }
 
-        .amoria-auth-google-icon {
-          width: 20px;
-          height: 20px;
-          border-radius: 999px;
-          background: #f9fafb;
-          color: #111827;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.9rem;
-          font-weight: 700;
-        }
-
         .amoria-auth-footer {
-          margin-top: 0.4rem;
+          margin-top: 1rem;
           font-size: 0.78rem;
           color: #9ca3af;
           text-align: center;
         }
 
         .amoria-auth-footer-link {
-          color: #f9a8d4;
+          color: #e5e7eb;
           text-decoration: underline;
         }
 
         .amoria-auth-terms {
-          margin-top: 0.6rem;
+          margin-top: 0.55rem;
           font-size: 0.68rem;
           color: #6b7280;
           text-align: center;
-          line-height: 1.4;
         }
 
         .amoria-auth-terms span {
           color: #9ca3af;
-        }
-
-        @media (max-width: 480px) {
-          .amoria-auth-card {
-            padding-inline: 1.4rem;
-          }
         }
       `}</style>
     </main>
