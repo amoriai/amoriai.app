@@ -7,6 +7,8 @@ import { supabase } from "../../lib/supabaseClient";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 type Locale = "fr" | "en" | "es";
 
+const PLAN_IDS: PlanId[] = ["free", "chat", "plus", "unlimited"];
+
 const LABELS: Record<
   Locale,
   {
@@ -21,6 +23,7 @@ const LABELS: Record<
     selectedPlanPrefix: string;
     google: string;
     errorGeneric: string;
+    or: string;
     planNames: Record<PlanId, string>;
   }
 > = {
@@ -37,11 +40,12 @@ const LABELS: Record<
     selectedPlanPrefix: "Forfait sélectionné :",
     google: "Continuer avec Google",
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
+    or: "ou",
     planNames: {
       free: "Découverte (gratuit)",
-      chat: "AmorIAI Chat 9,99$",
-      plus: "AmorIAI Plus 19,99$",
-      unlimited: "AmorIAI illimité 39,99$",
+      chat: "AmorIAI Chat 9,99 $",
+      plus: "AmorIAI Plus 19,99 $",
+      unlimited: "AmorIAI illimité 39,99 $",
     },
   },
   en: {
@@ -57,11 +61,12 @@ const LABELS: Record<
     selectedPlanPrefix: "Selected plan:",
     google: "Continue with Google",
     errorGeneric: "An error occurred. Please try again.",
+    or: "or",
     planNames: {
       free: "Discovery (free)",
-      chat: "AmorIAI Chat 9,99$",
-      plus: "AmorIAI Plus 19,99$",
-      unlimited: "AmorIAI Unlimited 39,99$",
+      chat: "AmorIAI Chat $9.99",
+      plus: "AmorIAI Plus $19.99",
+      unlimited: "AmorIAI Unlimited $39.99",
     },
   },
   es: {
@@ -77,11 +82,12 @@ const LABELS: Record<
     selectedPlanPrefix: "Plan seleccionado:",
     google: "Continuar con Google",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
+    or: "o",
     planNames: {
       free: "Descubrimiento (gratis)",
-      chat: "AmorIAI Chat 9,99$",
-      plus: "AmorIAI Plus 19,99$",
-      unlimited: "AmorIAI Ilimitado 39,99$",
+      chat: "AmorIAI Chat 9,99 US$",
+      plus: "AmorIAI Plus 19,99 US$",
+      unlimited: "AmorIAI Ilimitado 39,99 US$",
     },
   },
 };
@@ -90,38 +96,30 @@ export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // --- locale depuis l’URL, avec fallback sécurisé ---
-  const localeFromUrl = searchParams.get("lang");
-  const locale: Locale =
-    localeFromUrl === "en" || localeFromUrl === "es" || localeFromUrl === "fr"
-      ? localeFromUrl
-      : "fr";
+  // langue depuis l’URL
+  const localeParam = (searchParams.get("lang") || "fr") as Locale;
 
-  // --- plan depuis l’URL, avec fallback sécurisé ---
-  const planFromUrl = searchParams.get("plan");
-  let initialPlan: PlanId = "free";
-  if (planFromUrl === "chat" || planFromUrl === "plus" || planFromUrl === "unlimited") {
-    initialPlan = planFromUrl;
-  }
+  // plan initial depuis l’URL (ex: /signup?lang=fr&plan=chat) sinon "free"
+  const initialPlanParam = (searchParams.get("plan") || "free") as PlanId;
 
-  const t = LABELS[locale];
+  const t = LABELS[localeParam];
 
-  const [plan, setPlan] = useState<PlanId>(initialPlan);
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>(initialPlanParam);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const selectedPlanLabel = t.planNames[plan];
+  const selectedPlanLabel = t.planNames[selectedPlan];
 
-  // 👉 Après création du compte, on décide où aller en fonction du plan choisi
+  // 👉 Après création du compte, on va TOUJOURS vers /pricing
+  //    en passant la langue + le plan choisi pour pré-sélectionner la carte.
   const redirectAfterSignup = () => {
-    if (plan === "free") {
-      router.push(`/create-amoria?lang=${locale}&plan=${plan}`);
-    } else {
-      router.push(`/payment?lang=${locale}&plan=${plan}`);
-    }
+    const params = new URLSearchParams();
+    params.set("lang", localeParam);
+    params.set("plan", selectedPlan);
+    router.push(`/pricing?${params.toString()}`);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -141,7 +139,7 @@ export default function SignupClient() {
       return;
     }
 
-    // Supabase envoie l’email de confirmation
+    // Supabase envoie l’email de confirmation → on enchaîne sur la page des forfaits
     redirectAfterSignup();
   };
 
@@ -150,10 +148,10 @@ export default function SignupClient() {
       setError(null);
       setLoadingGoogle(true);
 
-      const redirectTo =
-        plan === "free"
-          ? `${window.location.origin}/create-amoria?lang=${locale}&plan=${plan}`
-          : `${window.location.origin}/payment?lang=${locale}&plan=${plan}`;
+      const params = new URLSearchParams();
+      params.set("lang", localeParam);
+      params.set("plan", selectedPlan);
+      const redirectTo = `${window.location.origin}/pricing?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -176,54 +174,28 @@ export default function SignupClient() {
         <h1 className="amoria-auth-title">{t.title}</h1>
         <p className="amoria-auth-subtitle">{t.subtitle}</p>
 
-        {/* Sélecteur de plan */}
-        <div className="amoria-auth-plan-picker">
-          <p className="amoria-auth-plan-picker-label">
-            {t.selectedPlanPrefix}{" "}
-            <span className="amoria-auth-plan-name">{selectedPlanLabel}</span>
-          </p>
-          <div className="amoria-auth-plan-options">
+        {/* Forfait sélectionné + boutons de choix */}
+        <p className="amoria-auth-plan">
+          <span className="amoria-auth-plan-label">{t.selectedPlanPrefix}</span>{" "}
+          <span className="amoria-auth-plan-name">{selectedPlanLabel}</span>
+        </p>
+
+        <div className="amoria-auth-plan-switch">
+          {PLAN_IDS.map((plan) => (
             <button
+              key={plan}
               type="button"
               className={
-                "amoria-auth-plan-option" +
-                (plan === "free" ? " amoria-auth-plan-option--active" : "")
+                "amoria-auth-plan-btn" +
+                (plan === selectedPlan
+                  ? " amoria-auth-plan-btn--active"
+                  : "")
               }
-              onClick={() => setPlan("free")}
+              onClick={() => setSelectedPlan(plan)}
             >
-              {t.planNames.free}
+              {t.planNames[plan]}
             </button>
-            <button
-              type="button"
-              className={
-                "amoria-auth-plan-option" +
-                (plan === "chat" ? " amoria-auth-plan-option--active" : "")
-              }
-              onClick={() => setPlan("chat")}
-            >
-              {t.planNames.chat}
-            </button>
-            <button
-              type="button"
-              className={
-                "amoria-auth-plan-option" +
-                (plan === "plus" ? " amoria-auth-plan-option--active" : "")
-              }
-              onClick={() => setPlan("plus")}
-            >
-              {t.planNames.plus}
-            </button>
-            <button
-              type="button"
-              className={
-                "amoria-auth-plan-option" +
-                (plan === "unlimited" ? " amoria-auth-plan-option--active" : "")
-              }
-              onClick={() => setPlan("unlimited")}
-            >
-              {t.planNames.unlimited}
-            </button>
-          </div>
+          ))}
         </div>
 
         <form className="amoria-auth-form" onSubmit={handleSubmit}>
@@ -262,7 +234,7 @@ export default function SignupClient() {
           </button>
         </form>
 
-        <div className="amoria-auth-divider">ou</div>
+        <div className="amoria-auth-divider">{t.or}</div>
 
         <button
           type="button"
@@ -276,7 +248,7 @@ export default function SignupClient() {
         <p className="amoria-auth-footer">
           {t.alreadyHave}{" "}
           <a
-            href={`/login?lang=${locale}`}
+            href={`/login?lang=${localeParam}`}
             className="amoria-auth-footer-link"
           >
             {t.login}
@@ -284,6 +256,7 @@ export default function SignupClient() {
         </p>
       </div>
 
+      {/* Styles */}
       <style jsx global>{`
         .amoria-auth-root {
           min-height: 100vh;
@@ -301,7 +274,7 @@ export default function SignupClient() {
           width: 100%;
           max-width: 480px;
           border-radius: 1.5rem;
-          padding: 1.8rem 1.9rem 2rem;
+          padding: 1.9rem 2rem 2.1rem;
           background: radial-gradient(
             circle at top,
             #020617,
@@ -313,56 +286,54 @@ export default function SignupClient() {
         }
 
         .amoria-auth-title {
-          font-size: 1.2rem;
+          font-size: 1.3rem;
           margin-bottom: 0.35rem;
         }
 
         .amoria-auth-subtitle {
           font-size: 0.85rem;
           color: #9ca3af;
-          margin-bottom: 0.9rem;
+          margin-bottom: 0.8rem;
         }
 
-        .amoria-auth-plan-picker {
-          margin-bottom: 1.1rem;
-        }
-
-        .amoria-auth-plan-picker-label {
+        .amoria-auth-plan {
           font-size: 0.8rem;
-          margin-bottom: 0.45rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .amoria-auth-plan-label {
           color: #9ca3af;
         }
 
         .amoria-auth-plan-name {
           font-weight: 600;
-          color: #e5e7eb;
         }
 
-        .amoria-auth-plan-options {
-          display: flex;
-          flex-wrap: wrap;
+        .amoria-auth-plan-switch {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 0.4rem;
+          margin-bottom: 1rem;
         }
 
-        .amoria-auth-plan-option {
-          flex: 1 1 48%;
-          min-width: 46%;
+        .amoria-auth-plan-btn {
           border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.45);
+          border: 1px solid rgba(148, 163, 184, 0.5);
           padding: 0.35rem 0.8rem;
-          font-size: 0.76rem;
-          background: rgba(15, 23, 42, 0.9);
+          font-size: 0.78rem;
+          background: rgba(15, 23, 42, 0.95);
           color: #e5e7eb;
           cursor: pointer;
-          text-align: left;
+          text-align: center;
+          white-space: nowrap;
         }
 
-        .amoria-auth-plan-option--active {
+        .amoria-auth-plan-btn--active {
           border-color: #fb37ff;
           background: radial-gradient(
-            circle at top,
-            rgba(251, 55, 255, 0.14),
-            rgba(15, 23, 42, 0.9)
+            circle at top left,
+            rgba(251, 55, 255, 0.24),
+            rgba(15, 23, 42, 0.95)
           );
           box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.35);
         }
@@ -371,6 +342,7 @@ export default function SignupClient() {
           display: flex;
           flex-direction: column;
           gap: 0.75rem;
+          margin-top: 0.3rem;
         }
 
         .amoria-auth-label {
@@ -462,8 +434,8 @@ export default function SignupClient() {
         }
 
         @media (max-width: 480px) {
-          .amoria-auth-plan-option {
-            flex: 1 1 100%;
+          .amoria-auth-card {
+            padding-inline: 1.3rem;
           }
         }
       `}</style>
