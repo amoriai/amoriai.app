@@ -80,10 +80,11 @@ export default function SignupClient() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 👉 Après création du compte → TOUJOURS /pricing
+  // 👉 Après création du compte → on va TOUJOURS sur /pricing
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
+    params.set("from", "signup"); // important : pour que /pricing sache qu’on vient de signup
     router.push(`/pricing?${params.toString()}`);
   };
 
@@ -114,7 +115,8 @@ export default function SignupClient() {
       setError(null);
       setLoadingGoogle(true);
 
-      const redirectTo = `${window.location.origin}/pricing?lang=${localeParam}`;
+      // Après Google → retour direct sur /pricing avec lang + from=signup
+      const redirectTo = `${window.location.origin}/pricing?lang=${localeParam}&from=signup`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
