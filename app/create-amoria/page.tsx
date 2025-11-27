@@ -8,6 +8,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
+type Gender = "female" | "male" | "androgynous";
+type AgeBand = "18-34" | "35-49" | "50plus";
 
 type CopyCreate = {
   badge: string;
@@ -21,6 +23,10 @@ type CopyCreate = {
     relationOptions: { value: string; label: string }[];
     toneLabel: string;
     toneOptions: { value: string; label: string }[];
+    genderLabel: string;
+    genderOptions: { value: Gender; label: string }[];
+    ageLabel: string;
+    ageOptions: { value: AgeBand; label: string }[];
     languageLabel: string;
     goalLabel: string;
     goalPlaceholder: string;
@@ -75,6 +81,18 @@ const COPY_CREATE: Record<Locale, CopyCreate> = {
         { value: "playful", label: "Léger, taquin" },
         { value: "mystic", label: "Mystique / spirituel" },
       ],
+      genderLabel: "Apparence / genre de ton AmorIAI",
+      genderOptions: [
+        { value: "female", label: "Femme" },
+        { value: "male", label: "Homme" },
+        { value: "androgynous", label: "Androgyne / non-binaire" },
+      ],
+      ageLabel: "Tranche d’âge apparente",
+      ageOptions: [
+        { value: "18-34", label: "18–34 ans" },
+        { value: "35-49", label: "35–49 ans" },
+        { value: "50plus", label: "50+ ans" },
+      ],
       languageLabel: "Langue principale de discussion",
       goalLabel: "Ce que tu attends le plus de ton AmorIAI",
       goalPlaceholder:
@@ -106,6 +124,18 @@ const COPY_CREATE: Record<Locale, CopyCreate> = {
         { value: "direct", label: "Direct, honest" },
         { value: "playful", label: "Light, playful" },
         { value: "mystic", label: "Mystical / spiritual" },
+      ],
+      genderLabel: "AmorIAI gender / appearance",
+      genderOptions: [
+        { value: "female", label: "Female" },
+        { value: "male", label: "Male" },
+        { value: "androgynous", label: "Androgynous / non-binary" },
+      ],
+      ageLabel: "Apparent age range",
+      ageOptions: [
+        { value: "18-34", label: "18–34" },
+        { value: "35-49", label: "35–49" },
+        { value: "50plus", label: "50+ years" },
       ],
       languageLabel: "Main conversation language",
       goalLabel: "What you want most from your AmorIAI",
@@ -139,6 +169,18 @@ const COPY_CREATE: Record<Locale, CopyCreate> = {
         { value: "playful", label: "Ligero, juguetón" },
         { value: "mystic", label: "Místico / espiritual" },
       ],
+      genderLabel: "Género / apariencia de tu AmorIAI",
+      genderOptions: [
+        { value: "female", label: "Mujer" },
+        { value: "male", label: "Hombre" },
+        { value: "androgynous", label: "Andrógino / no binario" },
+      ],
+      ageLabel: "Rango de edad aparente",
+      ageOptions: [
+        { value: "18-34", label: "18–34 años" },
+        { value: "35-49", label: "35–49 años" },
+        { value: "50plus", label: "50+ años" },
+      ],
       languageLabel: "Idioma principal de conversación",
       goalLabel: "Lo que más esperas de tu AmorIAI",
       goalPlaceholder:
@@ -171,6 +213,8 @@ export default function CreateAmoriaPage() {
   const [name, setName] = useState("");
   const [relation, setRelation] = useState("support");
   const [tone, setTone] = useState("gentle");
+  const [gender, setGender] = useState<Gender>("female");
+  const [ageBand, setAgeBand] = useState<AgeBand>("35-49");
   const [language, setLanguage] = useState<Locale>(locale);
   const [goal, setGoal] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -188,14 +232,13 @@ export default function CreateAmoriaPage() {
     setLoading(true);
 
     try {
-      // 👉 ICI tu pourras appeler ton API / Supabase pour
-      // sauvegarder l’AmorIAI dans la base de données.
+      // ➜ Ici tu pourras appeler ton API / Supabase pour sauvegarder
+      // l’AmorIAI (nom, relation, ton, genre, âge, langue, objectif, plan).
       //
-      // Exemple (à adapter) :
       // await fetch("/api/amoria", {
       //   method: "POST",
       //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({ name, relation, tone, language, goal, plan }),
+      //   body: JSON.stringify({ name, relation, tone, gender, ageBand, language, goal, plan }),
       // });
 
       const params = new URLSearchParams();
@@ -203,7 +246,13 @@ export default function CreateAmoriaPage() {
       params.set("plan", plan);
       router.push(`/my-amoria?${params.toString()}`);
     } catch (e) {
-      setError("Une erreur est survenue. Réessaie dans quelques instants.");
+      setError(
+        locale === "fr"
+          ? "Une erreur est survenue. Réessaie dans quelques instants."
+          : locale === "es"
+          ? "Se produjo un error. Inténtalo de nuevo en unos instantes."
+          : "Something went wrong. Please try again in a moment."
+      );
       setLoading(false);
     }
   };
@@ -284,6 +333,44 @@ export default function CreateAmoriaPage() {
                     className="amoria-select"
                   >
                     {t.fields.toneOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="amoria-field">
+                  <span className="amoria-field-label">
+                    {t.fields.genderLabel}
+                  </span>
+                  <select
+                    value={gender}
+                    onChange={(e) =>
+                      setGender(e.target.value as Gender)
+                    }
+                    className="amoria-select"
+                  >
+                    {t.fields.genderOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="amoria-field">
+                  <span className="amoria-field-label">
+                    {t.fields.ageLabel}
+                  </span>
+                  <select
+                    value={ageBand}
+                    onChange={(e) =>
+                      setAgeBand(e.target.value as AgeBand)
+                    }
+                    className="amoria-select"
+                  >
+                    {t.fields.ageOptions.map((opt) => (
                       <option key={opt.value} value={opt.value}>
                         {opt.label}
                       </option>
