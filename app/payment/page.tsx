@@ -1,10 +1,10 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-export const runtime = "edge";
-
 import React, { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
@@ -62,7 +62,7 @@ const COPY: Record<
     errorGeneric: string;
     included: string;
     selectedPlanLabel: string;
-    freeRedirectText: string;
+    missingPlan: string;
   }
 > = {
   fr: {
@@ -76,8 +76,8 @@ const COPY: Record<
       "Une erreur est survenue pendant la création de la session de paiement. Réessaie dans quelques instants.",
     included: "Ce qui est inclus dans ce forfait :",
     selectedPlanLabel: "Forfait sélectionné",
-    freeRedirectText:
-      "Tu es sur le forfait gratuit. Tu vas être redirigé·e vers la configuration de ton AmorIA.",
+    missingPlan:
+      "Aucun forfait payant n’a été sélectionné. Retourne à la page des tarifs pour choisir un plan.",
   },
   en: {
     title: "Complete your subscription",
@@ -90,8 +90,8 @@ const COPY: Record<
       "Something went wrong while creating the checkout session. Please try again.",
     included: "What’s included in this plan:",
     selectedPlanLabel: "Selected plan",
-    freeRedirectText:
-      "You’re on the free plan. You will be redirected to configure your AmorIA.",
+    missingPlan:
+      "No paid plan was selected. Go back to the pricing page to choose a plan.",
   },
   es: {
     title: "Finalizar mi suscripción",
@@ -104,8 +104,8 @@ const COPY: Record<
       "Se produjo un error al crear la sesión de pago. Inténtalo de nuevo.",
     included: "Lo que incluye este plan:",
     selectedPlanLabel: "Plan seleccionado",
-    freeRedirectText:
-      "Estás en el plan gratuito. Serás redirigidx para configurar tu AmorIA.",
+    missingPlan:
+      "No se ha seleccionado ningún plan de pago. Vuelve a la página de tarifas para elegir un plan.",
   },
 };
 
@@ -119,46 +119,40 @@ export default function PaymentPage() {
   const router = useRouter();
 
   const locale = normalizeLocale(searchParams.get("lang"));
-
-  // ⚠️ On garde la vraie valeur brute du plan
-  const rawPlan = searchParams.get("plan");
-
-  // Est-ce un plan vraiment gratuit ?
-  const isFree = !rawPlan || rawPlan === "free";
-
-  // Plan pour l’AFFICHAGE uniquement
-  let planKey: PlanId = "free";
-  if (rawPlan === "chat" || rawPlan === "plus" || rawPlan === "unlimited") {
-    planKey = rawPlan;
-  }
-  const planTitle = PLAN_TITLES[locale][planKey];
-  const planPrice = PLAN_PRICES[locale][planKey];
-
+  const rawPlan = searchParams.get("plan") as PlanId | null;
   const t = COPY[locale];
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔁 Si c’est réellement le plan gratuit, on renvoie vers /create-amoria
-  if (typeof window !== "undefined" && isFree) {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    params.set("plan", "free");
-
-    // petite sécurité pour ne pas boucler
-    if (!window.location.pathname.startsWith("/create-amoria")) {
-      router.replace(`/create-amoria?${params.toString()}`);
-    }
+  // Pas de plan → on affiche juste un message et un bouton retour
+  if (!rawPlan || rawPlan === "free") {
     return (
       <main className="amoria-root amoria-payment-root">
         <div className="amoria-payment-wrapper">
           <div className="amoria-payment-card">
-            <p className="amoria-payment-subtitle">{t.freeRedirectText}</p>
+            <p className="amoria-payment-subtitle">{t.missingPlan}</p>
+            <button
+              type="button"
+              onClick={() => {
+                const params = new URLSearchParams();
+                params.set("lang", locale);
+                router.push(`/pricing?${params.toString()}`);
+              }}
+              className="amoria-payment-secondary"
+            >
+              {t.backToPricing}
+            </button>
           </div>
         </div>
       </main>
     );
   }
+
+  // Plan pour l’affichage
+  const planKey: PlanId = rawPlan;
+  const planTitle = PLAN_TITLES[locale][planKey];
+  const planPrice = PLAN_PRICES[locale][planKey];
 
   const handleCheckout = async () => {
     setError(null);
@@ -167,16 +161,12 @@ export default function PaymentPage() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // ICI on envoie le plan *brut* (chat / plus / unlimited)
         body: JSON.stringify({ plan: rawPlan }),
       });
 
-      if (!res.ok) {
-        throw new Error(t.errorGeneric);
-      }
+      if (!res.ok) throw new Error(t.errorGeneric);
 
       const data = await res.json();
-
       if (data?.url) {
         window.location.href = data.url;
       } else {
@@ -211,7 +201,9 @@ export default function PaymentPage() {
           </header>
 
           <section className="amoria-payment-plan">
-            <p className="amoria-payment-plan-label">{t.selectedPlanLabel}</p>
+            <p className="amoria-payment-plan-label">
+              {t.selectedPlanLabel}
+            </p>
             <h2 className="amoria-payment-plan-title">{planTitle}</h2>
             <p className="amoria-payment-plan-price">{planPrice}</p>
           </section>
@@ -220,7 +212,9 @@ export default function PaymentPage() {
             <p className="amoria-payment-included-label">{t.included}</p>
             <ul>
               <li>Accès 24/7 à AmorIA</li>
-              <li>Volume de messages adapté à un usage quotidien (fair use)</li>
+              <li>
+                Volume de messages adapté à un usage quotidien (fair use)
+              </li>
               <li>Historique de conversation sauvegardé</li>
               <li>Support par courriel en cas de question technique</li>
             </ul>
@@ -249,145 +243,7 @@ export default function PaymentPage() {
         </div>
       </div>
 
-      <style jsx global>{`
-        .amoria-payment-root {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 1.5rem;
-        }
-
-        .amoria-payment-wrapper {
-          max-width: 640px;
-          width: 100%;
-        }
-
-        .amoria-payment-card {
-          background: radial-gradient(
-            circle at top,
-            #020617,
-            #020617 40%,
-            #000 100%
-          );
-          border-radius: 1.5rem;
-          border: 1px solid rgba(148, 163, 184, 0.4);
-          padding: 1.8rem 1.7rem 1.6rem;
-          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
-        }
-
-        .amoria-payment-header {
-          display: flex;
-          gap: 0.9rem;
-          align-items: center;
-          margin-bottom: 1.4rem;
-        }
-
-        .amoria-payment-logo {
-          width: 52px;
-          height: 52px;
-          object-fit: contain;
-        }
-
-        .amoria-payment-title {
-          font-size: 1.3rem;
-          margin: 0 0 0.2rem;
-        }
-
-        .amoria-payment-subtitle {
-          margin: 0;
-          font-size: 0.85rem;
-          color: #9ca3af;
-        }
-
-        .amoria-payment-plan {
-          border-radius: 1rem;
-          padding: 0.9rem 1rem;
-          background: rgba(15, 23, 42, 0.9);
-          border: 1px solid rgba(148, 163, 184, 0.6);
-          margin-bottom: 1rem;
-        }
-
-        .amoria-payment-plan-label {
-          font-size: 0.8rem;
-          color: #9ca3af;
-          margin: 0 0 0.2rem;
-        }
-
-        .amoria-payment-plan-title {
-          margin: 0;
-          font-size: 1.05rem;
-        }
-
-        .amoria-payment-plan-price {
-          margin: 0.1rem 0 0;
-          font-size: 0.9rem;
-          color: #e5e7eb;
-        }
-
-        .amoria-payment-included {
-          margin-top: 0.6rem;
-          margin-bottom: 0.8rem;
-        }
-
-        .amoria-payment-included-label {
-          font-size: 0.8rem;
-          color: #9ca3af;
-          margin-bottom: 0.3rem;
-        }
-
-        .amoria-payment-included ul {
-          padding-left: 1.2rem;
-          margin: 0;
-          font-size: 0.82rem;
-          color: #e5e7eb;
-        }
-
-        .amoria-payment-error {
-          margin: 0.5rem 0 0.3rem;
-          padding: 0.5rem 0.7rem;
-          border-radius: 0.6rem;
-          background: rgba(248, 113, 113, 0.12);
-          color: #fecaca;
-          font-size: 0.78rem;
-        }
-
-        .amoria-payment-actions {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-          margin-top: 0.9rem;
-        }
-
-        .amoria-payment-primary {
-          width: 100%;
-          border-radius: 999px;
-          border: none;
-          padding: 0.75rem 1rem;
-          font-size: 0.9rem;
-          cursor: pointer;
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c);
-          color: #f9fafb;
-          box-shadow: 0 12px 30px rgba(248, 113, 113, 0.35);
-        }
-
-        .amoria-payment-secondary {
-          width: 100%;
-          border-radius: 999px;
-          padding: 0.65rem 1rem;
-          font-size: 0.86rem;
-          cursor: pointer;
-          border: 1px solid rgba(148, 163, 184, 0.7);
-          background: rgba(15, 23, 42, 0.9);
-          color: #e5e7eb;
-        }
-
-        @media (max-width: 640px) {
-          .amoria-payment-card {
-            padding-inline: 1.1rem;
-          }
-        }
-      `}</style>
+      {/* tu gardes tes styles global existants ici si tu veux */}
     </main>
   );
 }
