@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
@@ -58,7 +58,7 @@ const COPY: Record<
     backToPricing: string;
     errorGeneric: string;
     included: string;
-    selectedPlanLabel: string;
+    selectedLabel: string;
   }
 > = {
   fr: {
@@ -71,7 +71,7 @@ const COPY: Record<
     errorGeneric:
       "Une erreur est survenue pendant la création de la session de paiement. Réessaie dans quelques instants.",
     included: "Ce qui est inclus dans ce forfait :",
-    selectedPlanLabel: "Forfait sélectionné",
+    selectedLabel: "Forfait sélectionné",
   },
   en: {
     title: "Complete your subscription",
@@ -83,7 +83,7 @@ const COPY: Record<
     errorGeneric:
       "Something went wrong while creating the checkout session. Please try again.",
     included: "What’s included in this plan:",
-    selectedPlanLabel: "Selected plan",
+    selectedLabel: "Selected plan",
   },
   es: {
     title: "Finalizar mi suscripción",
@@ -95,12 +95,12 @@ const COPY: Record<
     errorGeneric:
       "Se produjo un error al crear la sesión de pago. Inténtalo de nuevo.",
     included: "Lo que incluye este plan:",
-    selectedPlanLabel: "Plan seleccionado",
+    selectedLabel: "Plan seleccionado",
   },
 };
 
 function normalizeLocale(raw: string | null): Locale {
-  if (raw === "en" || raw === "es" || raw === "fr") return raw;
+  if (raw === "fr" || raw === "en" || raw === "es") return raw;
   return "fr";
 }
 
@@ -111,41 +111,30 @@ function normalizePlan(raw: string | null): PlanId {
   return "free";
 }
 
-export default function PaymentPage() {
+function PaymentPageInner() {
+  const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [locale, setLocale] = useState<Locale>("fr");
-  const [plan, setPlan] = useState<PlanId>("free");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // On lit les query params côté client (plus de useSearchParams → plus d’erreur de prerender)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const rawPlan = params.get("plan");
-    const rawLang = params.get("lang");
-    const loc = normalizeLocale(rawLang);
-    const pl = normalizePlan(rawPlan);
-
-    setLocale(loc);
-    setPlan(pl);
-
-    // Plan gratuit → on ne passe PAS par Stripe, on envoie direct vers la création d’AmorIA
-    if (pl === "free") {
-      const qp = new URLSearchParams();
-      qp.set("plan", pl);
-      qp.set("lang", loc);
-      router.replace(`/create-amoria?${qp.toString()}`);
-    }
-  }, [router]);
+  const locale = normalizeLocale(searchParams.get("lang"));
+  const plan = normalizePlan(searchParams.get("plan"));
 
   const t = COPY[locale];
   const planTitle = PLAN_TITLES[locale][plan];
   const planPrice = PLAN_PRICES[locale][plan];
 
-  const handleCheckout = async () => {
-    if (plan === "free") return; // sécurité
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Si quelqu’un arrive ici avec le plan gratuit → on saute Stripe
+  if (typeof window !== "undefined" && plan === "free") {
+    const params = new URLSearchParams();
+    params.set("plan", plan);
+    params.set("lang", locale);
+    router.replace(`/create-amoria?${params.toString()}`);
+    return null;
+  }
+
+  const handleCheckout = async () => {
     setError(null);
     setLoading(true);
     try {
@@ -178,21 +167,6 @@ export default function PaymentPage() {
     router.push(`/pricing?${params.toString()}`);
   };
 
-  // Si on est en train de rediriger le gratuit, on peut afficher un petit écran neutre
-  if (plan === "free") {
-    return (
-      <main className="amoria-root amoria-payment-root">
-        <div className="amoria-payment-wrapper">
-          <div className="amoria-payment-card">
-            <p style={{ color: "#e5e7eb", fontSize: "0.9rem" }}>
-              Redirection vers la création de ton AmorIA…
-            </p>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="amoria-root amoria-payment-root">
       <div className="amoria-payment-wrapper">
@@ -210,7 +184,7 @@ export default function PaymentPage() {
           </header>
 
           <section className="amoria-payment-plan">
-            <p className="amoria-payment-plan-label">{t.selectedPlanLabel}</p>
+            <p className="amoria-payment-plan-label">{t.selectedLabel}</p>
             <h2 className="amoria-payment-plan-title">{planTitle}</h2>
             <p className="amoria-payment-plan-price">{planPrice}</p>
           </section>
@@ -247,6 +221,156 @@ export default function PaymentPage() {
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        .amoria-payment-root {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1.5rem;
+        }
+
+        .amoria-payment-wrapper {
+          max-width: 640px;
+          width: 100%;
+        }
+
+        .amoria-payment-card {
+          background: radial-gradient(
+            circle at top,
+            #020617,
+            #020617 40%,
+            #000 100%
+          );
+          border-radius: 1.5rem;
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          padding: 1.8rem 1.7rem 1.6rem;
+          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+        }
+
+        .amoria-payment-header {
+          display: flex;
+          gap: 0.9rem;
+          align-items: center;
+          margin-bottom: 1.4rem;
+        }
+
+        .amoria-payment-logo {
+          width: 52px;
+          height: 52px;
+          object-fit: contain;
+        }
+
+        .amoria-payment-title {
+          font-size: 1.3rem;
+          margin: 0 0 0.2rem;
+        }
+
+        .amoria-payment-subtitle {
+          margin: 0;
+          font-size: 0.85rem;
+          color: #9ca3af;
+        }
+
+        .amoria-payment-plan {
+          border-radius: 1rem;
+          padding: 0.9rem 1rem;
+          background: rgba(15, 23, 42, 0.9);
+          border: 1px solid rgba(148, 163, 184, 0.6);
+          margin-bottom: 1rem;
+        }
+
+        .amoria-payment-plan-label {
+          font-size: 0.8rem;
+          color: #9ca3af;
+          margin: 0 0 0.2rem;
+        }
+
+        .amoria-payment-plan-title {
+          margin: 0;
+          font-size: 1.05rem;
+        }
+
+        .amoria-payment-plan-price {
+          margin: 0.1rem 0 0;
+          font-size: 0.9rem;
+          color: #e5e7eb;
+        }
+
+        .amoria-payment-included {
+          margin-top: 0.6rem;
+          margin-bottom: 0.8rem;
+        }
+
+        .amoria-payment-included-label {
+          font-size: 0.8rem;
+          color: #9ca3af;
+          margin-bottom: 0.3rem;
+        }
+
+        .amoria-payment-included ul {
+          padding-left: 1.2rem;
+          margin: 0;
+          font-size: 0.82rem;
+          color: #e5e7eb;
+        }
+
+        .amoria-payment-error {
+          margin: 0.5rem 0 0.3rem;
+          padding: 0.5rem 0.7rem;
+          border-radius: 0.6rem;
+          background: rgba(248, 113, 113, 0.12);
+          color: #fecaca;
+          font-size: 0.78rem;
+        }
+
+        .amoria-payment-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          margin-top: 0.9rem;
+        }
+
+        .amoria-payment-primary {
+          width: 100%;
+          border-radius: 999px;
+          border: none;
+          padding: 0.75rem 1rem;
+          font-size: 0.9rem;
+          cursor: pointer;
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c);
+          color: #f9fafb;
+          box-shadow: 0 12px 30px rgba(248, 113, 113, 0.35);
+        }
+
+        .amoria-payment-secondary {
+          width: 100%;
+          border-radius: 999px;
+          padding: 0.65rem 1rem;
+          font-size: 0.86rem;
+          cursor: pointer;
+          border: 1px solid rgba(148, 163, 184, 0.7);
+          background: rgba(15, 23, 42, 0.9);
+          color: #e5e7eb;
+        }
+
+        @media (max-width: 640px) {
+          .amoria-payment-card {
+            padding-inline: 1.1rem;
+          }
+        }
+      `}</style>
     </main>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense
+      fallback={<main className="amoria-root amoria-payment-root" />}
+    >
+      <PaymentPageInner />
+    </Suspense>
   );
 }
