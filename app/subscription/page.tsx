@@ -100,7 +100,7 @@ export default function SubscriptionPage() {
           textAlign: "center",
         }}
       >
-        Choisis ton forfait AmorIA
+        Choisis ton forfait AmorIAI
       </h1>
 
       <p
@@ -112,7 +112,7 @@ export default function SubscriptionPage() {
         }}
       >
         Tous les forfaits utilisent la même IA de base. Tu payes en fonction de
-        la quantité de messages, du nombre d’AmorIA personnalisés et de la voix.
+        la quantité de messages, du nombre d’AmorIAI personnalisés et de la voix.
       </p>
 
       {loading && <p style={{ textAlign: "center" }}>Chargement des forfaits…</p>}
