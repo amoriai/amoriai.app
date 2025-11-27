@@ -1,194 +1,376 @@
 "use client";
 
-import React, { useState, FormEvent } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import React, { FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "../../lib/supabaseClient";
 
 type PlanId = "free" | "chat" | "plus" | "unlimited";
+type Locale = "fr" | "en" | "es";
 
-const PLAN_LABELS: Record<PlanId, string> = {
-  free: "Découverte (gratuit)",
-  chat: "AmorIA Chat",
-  plus: "AmorIA Plus",
-  unlimited: "AmorIA Illimité",
+const LABELS: Record<
+  Locale,
+  {
+    title: string;
+    subtitle: string;
+    emailLabel: string;
+    passwordLabel: string;
+    passwordHint: string;
+    createButton: string;
+    alreadyHave: string;
+    login: string;
+    selectedPlanPrefix: string;
+    google: string;
+    errorGeneric: string;
+    planNames: Record<PlanId, string>;
+  }
+> = {
+  fr: {
+    title: "Créer mon compte AmorIA",
+    subtitle:
+      "Inscris-toi pour commencer avec ton AmorIA. Tu pourras changer de forfait plus tard.",
+    emailLabel: "Adresse courriel",
+    passwordLabel: "Mot de passe",
+    passwordHint: "Minimum 6 caractères.",
+    createButton: "Créer mon compte",
+    alreadyHave: "Tu as déjà un compte ?",
+    login: "Me connecter",
+    selectedPlanPrefix: "Forfait sélectionné :",
+    google: "Continuer avec Google",
+    errorGeneric: "Une erreur est survenue. Merci de réessayer.",
+    planNames: {
+      free: "Découverte (gratuit)",
+      chat: "AmorIA Chat",
+      plus: "AmorIA Plus",
+      unlimited: "AmorIA illimité",
+    },
+  },
+  en: {
+    title: "Create my AmorIA account",
+    subtitle:
+      "Sign up to start with your AmorIA. You can change plan later.",
+    emailLabel: "Email address",
+    passwordLabel: "Password",
+    passwordHint: "At least 6 characters.",
+    createButton: "Create my account",
+    alreadyHave: "Already have an account?",
+    login: "Log in",
+    selectedPlanPrefix: "Selected plan:",
+    google: "Continue with Google",
+    errorGeneric: "An error occurred. Please try again.",
+    planNames: {
+      free: "Discovery (free)",
+      chat: "AmorIA Chat",
+      plus: "AmorIA Plus",
+      unlimited: "AmorIA Unlimited",
+    },
+  },
+  es: {
+    title: "Crear mi cuenta AmorIA",
+    subtitle:
+      "Regístrate para empezar con tu AmorIA. Podrás cambiar de plan más tarde.",
+    emailLabel: "Correo electrónico",
+    passwordLabel: "Contraseña",
+    passwordHint: "Mínimo 6 caracteres.",
+    createButton: "Crear mi cuenta",
+    alreadyHave: "¿Ya tienes una cuenta?",
+    login: "Iniciar sesión",
+    selectedPlanPrefix: "Plan seleccionado:",
+    google: "Continuar con Google",
+    errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
+    planNames: {
+      free: "Descubrimiento (gratis)",
+      chat: "AmorIA Chat",
+      plus: "AmorIA Plus",
+      unlimited: "AmorIA Ilimitado",
+    },
+  },
 };
 
 export default function SignupClient() {
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const plan = (searchParams.get("plan") as PlanId) || "free";
+  // langue & plan depuis l’URL
+  const localeParam = (searchParams.get("lang") || "fr") as Locale;
+  const planParam = (searchParams.get("plan") || "free") as PlanId;
+
+  const t = LABELS[localeParam];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loadingEmail, setLoadingEmail] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // ✅ EMAIL + PASSWORD
-  async function handleSignup(e: FormEvent) {
+  const selectedPlanLabel = t.planNames[planParam];
+
+  // 👉 Après création du compte, on décide où aller
+  const redirectAfterSignup = () => {
+    if (planParam === "free") {
+      // Plan gratuit → configuration directe
+      router.push(`/create-amoria?lang=${localeParam}&plan=${planParam}`);
+    } else {
+      // Plan payant → page /payment qui gère Stripe
+      router.push(`/payment?lang=${localeParam}&plan=${planParam}`);
+    }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setError(null);
+    setLoadingEmail(true);
 
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
     });
 
-    if (error || !data.user?.id) {
-      alert(error?.message || "Erreur création compte");
-      setLoading(false);
+    setLoadingEmail(false);
+
+    if (error) {
+      setError(error.message || t.errorGeneric);
       return;
     }
 
-    await handlePostSignup(data.user.id);
-  }
+    // ✅ On laisse Supabase envoyer l’email de confirmation
+    // puis on envoie l’utilisateur vers la bonne page
+    redirectAfterSignup();
+  };
 
-  // ✅ GOOGLE SIGNUP
-  async function handleGoogleSignup() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/oauth-callback?plan=${plan}`,
-      },
-    });
+  const handleGoogleSignup = async () => {
+    try {
+      setError(null);
+      setLoadingGoogle(true);
 
-    if (error) alert(error.message);
-  }
+      const redirectTo =
+        planParam === "free"
+          ? `${window.location.origin}/create-amoria?lang=${localeParam}&plan=${planParam}`
+          : `${window.location.origin}/payment?lang=${localeParam}&plan=${planParam}`;
 
-  // ✅ APRES INSCRIPTION (EMAIL OU GOOGLE)
-  async function handlePostSignup(userId: string) {
-    if (plan === "free") {
-      router.push("/create-amoria");
-      return;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+        },
+      });
+
+      if (error) {
+        setError(error.message || t.errorGeneric);
+      }
+    } finally {
+      setLoadingGoogle(false);
     }
-
-    // ✅ STRIPE
-    const stripeRes = await fetch("/api/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        plan,
-        user_id: userId,
-      }),
-    });
-
-    const stripeData = await stripeRes.json();
-
-    if (stripeRes.ok && stripeData.url) {
-      window.location.href = stripeData.url;
-    } else {
-      alert("Erreur Stripe");
-      setLoading(false);
-    }
-  }
+  };
 
   return (
-    <main style={styles.main}>
-      <form onSubmit={handleSignup} style={styles.form}>
-        <h1 style={styles.title}>Créer mon compte AmorIA</h1>
+    <main className="amoria-auth-root">
+      <div className="amoria-auth-card">
+        <h1 className="amoria-auth-title">{t.title}</h1>
+        <p className="amoria-auth-subtitle">{t.subtitle}</p>
 
-        <p style={styles.text}>
-          Forfait sélectionné : <strong>{PLAN_LABELS[plan]}</strong>
+        <p className="amoria-auth-plan">
+          <span className="amoria-auth-plan-label">{t.selectedPlanPrefix}</span>{" "}
+          <span className="amoria-auth-plan-name">{selectedPlanLabel}</span>
         </p>
 
-        <input
-          style={styles.input}
-          type="email"
-          placeholder="Adresse courriel"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+        <form className="amoria-auth-form" onSubmit={handleSubmit}>
+          <label className="amoria-auth-label">
+            {t.emailLabel}
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="amoria-auth-input"
+            />
+          </label>
 
-        <input
-          style={styles.input}
-          type="password"
-          placeholder="Mot de passe"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={6}
-        />
+          <label className="amoria-auth-label">
+            {t.passwordLabel}
+            <input
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="amoria-auth-input"
+            />
+            <span className="amoria-auth-hint">{t.passwordHint}</span>
+          </label>
 
-        <button style={styles.primary} type="submit" disabled={loading}>
-          {loading ? "En cours..." : "Créer mon compte"}
-        </button>
+          {error && <p className="amoria-auth-error">{error}</p>}
 
-        {/* ✅ GOOGLE */}
+          <button
+            type="submit"
+            className="amoria-auth-btn-primary"
+            disabled={loadingEmail || loadingGoogle}
+          >
+            {loadingEmail ? "..." : t.createButton}
+          </button>
+        </form>
+
+        <div className="amoria-auth-divider">ou</div>
+
         <button
           type="button"
+          className="amoria-auth-btn-google"
           onClick={handleGoogleSignup}
-          style={styles.google}
+          disabled={loadingGoogle || loadingEmail}
         >
-          Continuer avec Google
+          {loadingGoogle ? "..." : t.google}
         </button>
 
-        <p style={styles.small}>
-          Tu as déjà un compte ?{" "}
-          <a href="/login" style={{ color: "#fff", textDecoration: "underline" }}>
-            Me connecter
+        <p className="amoria-auth-footer">
+          {t.alreadyHave}{" "}
+          <a
+            href={`/login?lang=${localeParam}`}
+            className="amoria-auth-footer-link"
+          >
+            {t.login}
           </a>
         </p>
-      </form>
+      </div>
+
+      {/* Styles simples pour garder un look propre */}
+      <style jsx global>{`
+        .amoria-auth-root {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: radial-gradient(circle at top, #020617 0, #000 100%);
+          color: #e5e7eb;
+          padding: 1.5rem;
+        }
+
+        .amoria-auth-card {
+          width: 100%;
+          max-width: 420px;
+          border-radius: 1.5rem;
+          padding: 1.8rem 1.9rem 2rem;
+          background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
+          border: 1px solid rgba(148, 163, 184, 0.35);
+          box-shadow: 0 20px 40px rgba(15, 23, 42, 0.7);
+        }
+
+        .amoria-auth-title {
+          font-size: 1.2rem;
+          margin-bottom: 0.35rem;
+        }
+
+        .amoria-auth-subtitle {
+          font-size: 0.85rem;
+          color: #9ca3af;
+          margin-bottom: 0.9rem;
+        }
+
+        .amoria-auth-plan {
+          font-size: 0.8rem;
+          margin-bottom: 1.1rem;
+        }
+
+        .amoria-auth-plan-label {
+          color: #9ca3af;
+        }
+
+        .amoria-auth-plan-name {
+          font-weight: 600;
+        }
+
+        .amoria-auth-form {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .amoria-auth-label {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          font-size: 0.8rem;
+        }
+
+        .amoria-auth-input {
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          padding: 0.55rem 0.9rem;
+          background: rgba(15, 23, 42, 0.9);
+          color: #f9fafb;
+          font-size: 0.85rem;
+        }
+
+        .amoria-auth-input:focus {
+          outline: none;
+          border-color: #fb37ff;
+          box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.4);
+        }
+
+        .amoria-auth-hint {
+          font-size: 0.7rem;
+          color: #9ca3af;
+        }
+
+        .amoria-auth-error {
+          font-size: 0.78rem;
+          color: #fecaca;
+          background: rgba(185, 28, 28, 0.18);
+          border-radius: 0.75rem;
+          padding: 0.45rem 0.6rem;
+          margin-top: 0.3rem;
+        }
+
+        .amoria-auth-btn-primary {
+          margin-top: 0.4rem;
+          width: 100%;
+          border-radius: 999px;
+          border: none;
+          padding: 0.7rem 1.2rem;
+          font-size: 0.9rem;
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c);
+          color: #f9fafb;
+          cursor: pointer;
+        }
+
+        .amoria-auth-btn-primary:disabled {
+          opacity: 0.6;
+          cursor: default;
+        }
+
+        .amoria-auth-divider {
+          margin: 1rem 0 0.7rem;
+          font-size: 0.78rem;
+          color: #9ca3af;
+          text-align: center;
+        }
+
+        .amoria-auth-btn-google {
+          width: 100%;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.45);
+          padding: 0.6rem 1.2rem;
+          font-size: 0.86rem;
+          background: rgba(15, 23, 42, 0.95);
+          color: #f9fafb;
+          cursor: pointer;
+        }
+
+        .amoria-auth-btn-google:disabled {
+          opacity: 0.6;
+          cursor: default;
+        }
+
+        .amoria-auth-footer {
+          margin-top: 0.9rem;
+          font-size: 0.78rem;
+          color: #9ca3af;
+          text-align: center;
+        }
+
+        .amoria-auth-footer-link {
+          color: #e5e7eb;
+          text-decoration: underline;
+        }
+      `}</style>
     </main>
   );
 }
-
-const styles: any = {
-  main: {
-    minHeight: "100vh",
-    background: "#020617",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  form: {
-    background: "#0f172a",
-    padding: "2rem",
-    borderRadius: "24px",
-    width: "100%",
-    maxWidth: "380px",
-    textAlign: "center",
-    border: "1px solid rgba(148,163,184,0.3)",
-  },
-  title: {
-    color: "#fff",
-    marginBottom: "0.5rem",
-  },
-  text: {
-    fontSize: "0.85rem",
-    color: "#9ca3af",
-    marginBottom: "1rem",
-  },
-  input: {
-    width: "100%",
-    padding: "0.7rem",
-    borderRadius: "999px",
-    border: "1px solid #555",
-    marginBottom: "0.7rem",
-    background: "#020617",
-    color: "#fff",
-  },
-  primary: {
-    width: "100%",
-    padding: "0.7rem",
-    borderRadius: "999px",
-    background: "linear-gradient(135deg, #fb37ff, #ff6b9c)",
-    color: "#fff",
-    border: "none",
-    marginBottom: "0.7rem",
-  },
-  google: {
-    width: "100%",
-    padding: "0.7rem",
-    borderRadius: "999px",
-    background: "#fff",
-    color: "#000",
-    border: "none",
-    fontWeight: "600",
-  },
-  small: {
-    fontSize: "0.75rem",
-    color: "#aaa",
-    marginTop: "1rem",
-  },
-};
