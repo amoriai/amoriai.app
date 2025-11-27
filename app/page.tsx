@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 type Locale = "fr" | "en" | "es";
 type PersonaId = "lyra" | "orion" | "kai" | "maelis";
@@ -215,26 +215,55 @@ const STRINGS: Record<
   },
 };
 
+function detectInitialLocale(): Locale {
+  if (typeof window === "undefined") return "fr";
+
+  const params = new URLSearchParams(window.location.search);
+  const fromParam = params.get("lang");
+  if (fromParam === "fr" || fromParam === "en" || fromParam === "es") {
+    return fromParam;
+  }
+
+  const navLang = navigator.language.toLowerCase();
+  if (navLang.startsWith("fr")) return "fr";
+  if (navLang.startsWith("es")) return "es";
+  return "en";
+}
+
 export default function HomePage() {
   const [locale, setLocale] = useState<Locale>("fr");
+
+  useEffect(() => {
+    const initial = detectInitialLocale();
+    setLocale(initial);
+
+    const params = new URLSearchParams(window.location.search);
+    params.set("lang", initial);
+    const newUrl = window.location.pathname + "?" + params.toString();
+    window.history.replaceState(null, "", newUrl);
+  }, []);
+
   const t = STRINGS[locale];
 
-  // Vidéo héro en fonction de la langue
   const heroVideoSrc = `/amoria_${locale}.mp4`;
-
-  // Vidéo des cartes : /amoria_{id}_{lang}.mp4
   const getPersonaVideoSrc = (id: PersonaId) =>
     `/amoria_${id}_${locale}.mp4`;
 
-  // Helpers pour garder la langue dans les liens
   const withLang = (path: string) => `${path}?lang=${locale}`;
+
+  const handleLocaleChange = (code: Locale) => {
+    setLocale(code);
+    const params = new URLSearchParams(window.location.search);
+    params.set("lang", code);
+    const newUrl = window.location.pathname + "?" + params.toString();
+    window.history.replaceState(null, "", newUrl);
+  };
 
   return (
     <main className="amoria-root">
       {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-          {/* Logo complet transparent */}
           <img
             src="/AmorIA_logo_transparent.png"
             alt="Logo AmorIA.app"
@@ -264,7 +293,7 @@ export default function HomePage() {
               <button
                 key={code}
                 type="button"
-                onClick={() => setLocale(code)}
+                onClick={() => handleLocaleChange(code)}
                 className={
                   "amoria-lang-pill" +
                   (locale === code ? " amoria-lang-pill--active" : "")
@@ -367,32 +396,28 @@ export default function HomePage() {
         </a>
       </section>
 
-      {/* FOOTER AVEC LIENS LÉGAUX */}
+      {/* FOOTER */}
       <footer className="amoria-footer">
         <div className="amoria-footer-top">
           <span>{t.footerCopy}</span>
         </div>
         <div className="amoria-footer-links">
-  <a href={withLang("/legal")} className="amoria-footer-link">
-    {t.footerLinks.legal}
-  </a>
-
-  <a href={withLang("/legal/privacy")} className="amoria-footer-link">
-    {t.footerLinks.privacy}
-  </a>
-
-  <a href={withLang("/legal/terms")} className="amoria-footer-link">
-    {t.footerLinks.terms}
-  </a>
-
-  <a href={withLang("/contact")} className="amoria-footer-link">
-    {t.footerLinks.contact}
-  </a>
-
-  <a href={withLang("/about")} className="amoria-footer-link">
-    {t.footerLinks.about}
-  </a>
-</div>
+          <a href={withLang("/legal")} className="amoria-footer-link">
+            {t.footerLinks.legal}
+          </a>
+          <a href={withLang("/legal/privacy")} className="amoria-footer-link">
+            {t.footerLinks.privacy}
+          </a>
+          <a href={withLang("/legal/terms")} className="amoria-footer-link">
+            {t.footerLinks.terms}
+          </a>
+          <a href={withLang("/contact")} className="amoria-footer-link">
+            {t.footerLinks.contact}
+          </a>
+          <a href={withLang("/about")} className="amoria-footer-link">
+            {t.footerLinks.about}
+          </a>
+        </div>
       </footer>
 
       {/* STYLES */}
@@ -424,7 +449,6 @@ export default function HomePage() {
           padding-bottom: 3rem;
         }
 
-        /* HEADER */
         .amoria-header {
           max-width: 1120px;
           margin: 0 auto;
@@ -548,7 +572,6 @@ export default function HomePage() {
           color: var(--amoria-text-main);
         }
 
-        /* HERO */
         .amoria-hero {
           max-width: 1120px;
           margin: 0 auto;
@@ -631,7 +654,6 @@ export default function HomePage() {
           color: var(--amoria-text-muted);
         }
 
-        /* BUTTONS */
         .amoria-btn {
           border-radius: 999px;
           border: 1px solid transparent;
@@ -677,7 +699,6 @@ export default function HomePage() {
           padding-block: 0.7rem;
         }
 
-        /* SECTIONS */
         .amoria-section {
           max-width: 1120px;
           margin: 0 auto;
@@ -707,7 +728,6 @@ export default function HomePage() {
           margin: 0 auto 1.3rem;
         }
 
-        /* CARDS */
         .amoria-card-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -726,7 +746,7 @@ export default function HomePage() {
 
         .amoria-card-media {
           width: 100%;
-          aspect-ratio: 4 / 5; /* évite les têtes coupées */
+          aspect-ratio: 4 / 5;
           overflow: hidden;
           border-bottom: 1px solid rgba(15, 23, 42, 0.9);
           background: #020617;
@@ -758,7 +778,6 @@ export default function HomePage() {
           flex: 1;
         }
 
-        /* FOOTER */
         .amoria-footer {
           max-width: 1120px;
           margin: 0 auto;
@@ -790,7 +809,6 @@ export default function HomePage() {
           text-decoration: underline;
         }
 
-        /* RESPONSIVE */
         @media (max-width: 960px) {
           .amoria-header {
             flex-wrap: wrap;
