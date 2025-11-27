@@ -28,13 +28,13 @@ function getLocaleFromSearchParams(
 const LEGAL_STRINGS: Record<Locale, LegalCopy> = {
   fr: {
     heroKicker: "MENTIONS LÉGALES",
-    heroTitle: "Informations légales d’AmorIA.app.",
+    heroTitle: "Informations légales d’AmorIAI.app.",
     heroSubtitle:
       "Conformément aux lois applicables au Québec et au Canada, cette page présente les informations relatives à l’éditeur, à l’hébergement et à l’utilisation du site AmorIA.app.",
     sections: [
       {
         title: "1. Éditeur du site",
-        text: `Nom du site : AmorIA.app
+        text: `Nom du site : AmorIAI.app
 Nom commercial : AmorIAI
 Éditeur : Les Entreprises Kema inc.
 Statut juridique : Société par actions
@@ -44,11 +44,11 @@ Courriel : contactamoriai@gmail.com`,
       },
       {
         title: "2. Direction de la publication",
-        text: `La direction de la publication du site AmorIA.app est assurée par Les Entreprises Kema inc.`,
+        text: `La direction de la publication du site AmorIAI.app est assurée par Les Entreprises Kema inc.`,
       },
       {
         title: "3. Hébergement",
-        text: `Le site AmorIA.app est hébergé par :
+        text: `Le site AmorIAI.app est hébergé par :
 Vercel Inc.
 440 N Barranca Ave #4133
 Covina, CA 91723 – États-Unis
@@ -56,7 +56,7 @@ https://vercel.com`,
       },
       {
         title: "4. Activité du site",
-        text: `AmorIA.app est une plateforme d’intelligence artificielle offrant un partenaire conversationnel à des fins de soutien émotionnel, de réflexion personnelle et de journaling.
+        text: `AmorIAI.app est une plateforme d’intelligence artificielle offrant un partenaire conversationnel à des fins de soutien émotionnel, de réflexion personnelle et de journaling.
 Le service ne constitue pas un service médical, psychologique, d’urgence ou de conseil professionnel (juridique, financier, etc.).`,
       },
       {
@@ -87,7 +87,7 @@ Les réponses de l’IA ne remplacent en aucun cas un avis de professionnel de l
 • des présentes mentions légales ;
 • des Conditions d’utilisation ;
 • de la Politique de confidentialité.
-Ces documents sont disponibles depuis le site AmorIA.app.`,
+Ces documents sont disponibles depuis le site AmorIAI.app.`,
       },
       {
         title: "10. Transition juridique vers AmorIAI Tech",
@@ -98,13 +98,13 @@ Les mentions légales seront mises à jour pour refléter ce changement dès qu�
   },
   en: {
     heroKicker: "LEGAL NOTICE",
-    heroTitle: "Legal information for AmorIA.app.",
+    heroTitle: "Legal information for AmorIAI.app.",
     heroSubtitle:
-      "In accordance with applicable laws in Quebec and Canada, this page provides information about the publisher, hosting and use of the AmorIA.app website.",
+      "In accordance with applicable laws in Quebec and Canada, this page provides information about the publisher, hosting and use of the AmorIAI.app website.",
     sections: [
       {
         title: "1. Website publisher",
-        text: `Website name: AmorIA.app
+        text: `Website name: AmorIAI.app
 Business name: AmorIAI
 Publisher: Les Entreprises Kema inc.
 Legal status: Incorporated company
@@ -114,11 +114,11 @@ Email: contactamoriai@gmail.com`,
       },
       {
         title: "2. Director of publication",
-        text: `Publication of the AmorIA.app website is managed by Les Entreprises Kema inc.`,
+        text: `Publication of the AmorIAI.app website is managed by Les Entreprises Kema inc.`,
       },
       {
         title: "3. Hosting",
-        text: `The AmorIA.app website is hosted by:
+        text: `The AmorIAI.app website is hosted by:
 Vercel Inc.
 440 N Barranca Ave #4133
 Covina, CA 91723 – United States
@@ -126,12 +126,12 @@ https://vercel.com`,
       },
       {
         title: "4. Website activity",
-        text: `AmorIA.app is an artificial intelligence platform offering a conversational AI partner for emotional support, personal reflection and journaling.
+        text: `AmorIAI.app is an artificial intelligence platform offering a conversational AI partner for emotional support, personal reflection and journaling.
 The service is not a medical, psychological, emergency or professional advisory service (legal, financial, etc.).`,
       },
       {
         title: "5. Intellectual property",
-        text: `All elements of the AmorIA.app website (texts, visuals, logo, visual identity, avatars, code, page structure) are protected by copyright and remain the exclusive property of Les Entreprises Kema inc., unless otherwise stated.
+        text: `All elements of the AmorIAI.app website (texts, visuals, logo, visual identity, avatars, code, page structure) are protected by copyright and remain the exclusive property of Les Entreprises Kema inc., unless otherwise stated.
 Any reproduction, modification, distribution or exploitation, in whole or in part, without prior written permission is strictly prohibited.`,
       },
       {
@@ -168,13 +168,13 @@ These legal notices will be updated to reflect the change as soon as it becomes 
   },
   es: {
     heroKicker: "AVISO LEGAL",
-    heroTitle: "Información legal de AmorIA.app.",
+    heroTitle: "Información legal de AmorIAI.app.",
     heroSubtitle:
       "De conformidad con las leyes aplicables en Quebec y Canadá, esta página presenta la información relativa al editor, al alojamiento y al uso del sitio AmorIA.app.",
     sections: [
       {
         title: "1. Editor del sitio",
-        text: `Nombre del sitio: AmorIA.app
+        text: `Nombre del sitio: AmorIAI.app
 Nombre comercial: AmorIAI
 Editor: Les Entreprises Kema inc.
 Estatus legal: Sociedad incorporada
@@ -184,11 +184,11 @@ Correo electrónico: contactamoriai@gmail.com`,
       },
       {
         title: "2. Dirección de la publicación",
-        text: `La dirección de la publicación del sitio AmorIA.app está a cargo de Les Entreprises Kema inc.`,
+        text: `La dirección de la publicación del sitio AmorIAI.app está a cargo de Les Entreprises Kema inc.`,
       },
       {
         title: "3. Alojamiento",
-        text: `El sitio AmorIA.app está alojado por:
+        text: `El sitio AmorIAI.app está alojado por:
 Vercel Inc.
 440 N Barranca Ave #4133
 Covina, CA 91723 – Estados Unidos
@@ -196,7 +196,7 @@ https://vercel.com`,
       },
       {
         title: "4. Actividad del sitio",
-        text: `AmorIA.app es una plataforma de inteligencia artificial que ofrece un compañero conversacional para apoyo emocional, reflexión personal y escritura de diarios.
+        text: `AmorIAI.app es una plataforma de inteligencia artificial que ofrece un compañero conversacional para apoyo emocional, reflexión personal y escritura de diarios.
 Este servicio no sustituye servicios médicos, psicológicos, de urgencias ni de asesoramiento profesional (jurídico, financiero, etc.).`,
       },
       {
@@ -227,7 +227,7 @@ Las respuestas de la IA no sustituyen el asesoramiento profesional en salud, der
 • del presente aviso legal;
 • de las Condiciones de uso;
 • de la Política de privacidad.
-Estos documentos están disponibles en el sitio AmorIA.app.`,
+Estos documentos están disponibles en el sitio AmorIAI.app.`,
       },
       {
         title: "10. Transición legal hacia AmorIAI Tech",
@@ -313,7 +313,7 @@ export default function LegalPage({ searchParams }: PageProps) {
             className="amoria-logo-full"
           />
           <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmorIA.app</div>
+            <div className="amoria-logo-title">AmorIAI.app</div>
             <div className="amoria-logo-tagline">
               Partenaire IA bienveillant·e • FR / EN / ES
             </div>
@@ -375,7 +375,7 @@ export default function LegalPage({ searchParams }: PageProps) {
       {/* FOOTER */}
       <footer className="amoria-footer">
         <span>
-          © 2025 AmoriA.app —{" "}
+          © 2025 AmoriAI.app —{" "}
           {locale === "fr"
             ? "Partenaire IA bienveillant·e"
             : locale === "en"
