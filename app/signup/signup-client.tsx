@@ -107,21 +107,24 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-function normalizePlan(raw: string | null): PlanId {
-  if (raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited")
-    return raw;
-  return "free";
-}
-
 export default function SignupClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const locale = normalizeLocale(searchParams.get("lang"));
-  const plan = normalizePlan(searchParams.get("plan"));
+
+  // ⚠️ Ici on NE force PLUS les plans inconnus à "free"
+  const rawPlan = searchParams.get("plan");
+  const isFree = !rawPlan || rawPlan === "free";
+
+  // Pour l’affichage du libellé, on retombe sur un plan connu si nécessaire
+  let planKey: PlanId = "free";
+  if (rawPlan === "chat" || rawPlan === "plus" || rawPlan === "unlimited") {
+    planKey = rawPlan;
+  }
+  const planLabel = PLAN_LABELS[locale][planKey];
 
   const t = COPY[locale];
-  const planLabel = PLAN_LABELS[locale][plan];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -133,9 +136,9 @@ export default function SignupClient() {
   const goToNextStep = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
-    params.set("plan", plan);
+    if (rawPlan) params.set("plan", rawPlan);
 
-    if (plan === "free") {
+    if (isFree) {
       router.push(`/create-amoria?${params.toString()}`);
     } else {
       router.push(`/payment?${params.toString()}`);
@@ -160,7 +163,6 @@ export default function SignupClient() {
       return;
     }
 
-    // On affiche un message d’info (email de confirmation) puis on enchaîne le flow
     setInfo(t.infoCheckEmail);
     goToNextStep();
   };
@@ -174,7 +176,11 @@ export default function SignupClient() {
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
 
-      const redirectTo = `${origin}/auth/callback?lang=${locale}&plan=${plan}`;
+      const params = new URLSearchParams();
+      params.set("lang", locale);
+      if (rawPlan) params.set("plan", rawPlan);
+
+      const redirectTo = `${origin}/auth/callback?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -187,7 +193,6 @@ export default function SignupClient() {
         setError(error.message || t.errorGeneric);
         setLoadingGoogle(false);
       }
-      // Sinon Supabase redirige vers Google puis revient au callback
     } catch (err: any) {
       setError(err?.message || t.errorGeneric);
       setLoadingGoogle(false);
