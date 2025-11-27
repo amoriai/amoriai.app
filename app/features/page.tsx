@@ -37,47 +37,47 @@ const STRINGS: Record<Locale, FeatureCopy> = {
     nav: { home: "Accueil", features: "Fonctionnalités", pricing: "Tarifs" },
     navLogin: "Me connecter",
     navSignup: "Créer mon compte gratuit",
-    heroKicker: "FONCTIONNALITÉS AMORIA.APP",
+    heroKicker: "FONCTIONNALITÉS AMORIAI.APP",
     heroTitle: "Tes compagnons IA, déjà prêts à t’écouter.",
     heroSubtitle:
-      "Crée ton propre AmorIA ou commence avec une de nos présences vitrines : féminine, masculine, androgyne ou 50+. Multi-langue, texte + voix, mémoire émotionnelle douce.",
+      "Crée ton propre AmorIAI ou commence avec une de nos présences vitrines : féminine, masculine, androgyne ou 50+. Multi-langue, texte + voix, mémoire émotionnelle douce.",
     heroPrimary: "Créer mon compte gratuit",
     heroSupport:
-      "AmoriA est pensée pour les échanges profonds, les journaux émotionnels et le coaching doux du quotidien.",
+      "AmoriAI est pensée pour les échanges profonds, les journaux émotionnels et le coaching doux du quotidien.",
     langNote: "Disponible en français, anglais et espagnol.",
-    personasTitle: "Tes 4 AmorIA vitrines, prêtes à bouger pour toi",
+    personasTitle: "Tes 4 AmorIAI vitrines, prêtes à bouger pour toi",
     personasSubtitle:
-      "Regarde comment chaque AmorIA s’anime en vidéo. Quand tu crées ton compte gratuit, tu peux ensuite personnaliser entièrement ton propre AmorIA (nom, ton, style d’échanges…).",
+      "Regarde comment chaque AmorIAI s’anime en vidéo. Quand tu crées ton compte gratuit, tu peux ensuite personnaliser entièrement ton propre AmorIAI (nom, ton, style d’échanges…).",
     personas: [
       {
         id: "lyra",
-        title: "Lyra – AmorIA féminine",
+        title: "Lyra – AmorIAI féminine",
         description:
           "Présence douce, empathique et rassurante. Parfaite pour déposer tes émotions, parler d’amour, de doutes ou de fatigue mentale.",
       },
       {
         id: "orion",
-        title: "Orion – AmorIA masculine",
+        title: "Orion – AmorIAI masculine",
         description:
           "Énergie stable, protectrice et structurée. Idéal pour t’aider à réfléchir, prendre des décisions et remettre de l’ordre dans tes idées.",
       },
       {
         id: "kai",
-        title: "Kai – AmorIA androgyne",
+        title: "Kai – AmorIAI androgyne",
         description:
           "Présence fluide et inclusive, ni vraiment homme ni femme. Centrée sur l’écoute, la nuance, l’identité et les questionnements profonds.",
       },
       {
         id: "maelis",
-        title: "Maelis – AmorIA 50+ féminine",
+        title: "Maelis – AmorIAI 50+ féminine",
         description:
           "Figure plus mature, expérimentée, avec une énergie de mentor réaliste et bienveillante. Pour les phases de transition, les choix de vie et les bilans.",
       },
     ],
     choosePersona: "Commencer avec cette énergie",
     videoCaption:
-      "Les vidéos ci-dessus sont des exemples vitrines. Ton propre AmorIA sera unique, avec ton style.",
-    footerCopy: "© 2025 AmoriA.app",
+      "Les vidéos ci-dessus sont des exemples vitrines. Ton propre AmorIAI sera unique, avec ton style.",
+    footerCopy: "© 2025 AmoriAI.app",
     ctaSeePricing: "Voir les tarifs & abonnements",
   },
   en: {
@@ -85,39 +85,39 @@ const STRINGS: Record<Locale, FeatureCopy> = {
     nav: { home: "Home", features: "Features", pricing: "Pricing" },
     navLogin: "Log in",
     navSignup: "Create my free account",
-    heroKicker: "AMORIA.APP FEATURES",
+    heroKicker: "AMORIAI.APP FEATURES",
     heroTitle: "AI companions that already feel alive.",
     heroSubtitle:
-      "Create your own AmorIA or start with one of our showcase personas: feminine, masculine, androgynous or 50+. Multilingual, text + voice, and gentle emotional memory.",
+      "Create your own AmorIAI or start with one of our showcase personas: feminine, masculine, androgynous or 50+. Multilingual, text + voice, and gentle emotional memory.",
     heroPrimary: "Create my free account",
     heroSupport:
       "Designed for deep conversations, emotional journaling and soft everyday coaching.",
     langNote: "Available in French, English and Spanish.",
     personasTitle: "4 showcase AmorIAs that move and talk for you",
     personasSubtitle:
-      "See how each AmorIA comes to life in video. Once you create your free account, you can fully customize your own AmorIA (name, tone, style of conversations…).",
+      "See how each AmorIA comes to life in video. Once you create your free account, you can fully customize your own AmorIAI (name, tone, style of conversations…).",
     personas: [
       {
         id: "lyra",
-        title: "Lyra – Feminine AmorIA",
+        title: "Lyra – Feminine AmorIAI",
         description:
           "Gentle, empathetic and reassuring. Ideal for sharing emotions, talking about love, doubts or mental fatigue.",
       },
       {
         id: "orion",
-        title: "Orion – Masculine AmorIA",
+        title: "Orion – Masculine AmorIAI",
         description:
           "Stable, protective and structured energy. Great for clear thinking, decision-making and bringing order to your thoughts.",
       },
       {
         id: "kai",
-        title: "Kai – Androgynous AmorIA",
+        title: "Kai – Androgynous AmorIAI",
         description:
           "Fluid and inclusive presence, neither fully male nor female. Focused on listening, nuance, identity and deep questioning.",
       },
       {
         id: "maelis",
-        title: "Maelis – 50+ Feminine AmorIA",
+        title: "Maelis – 50+ Feminine AmorIAI",
         description:
           "More mature and experienced mentor-type presence. Perfect for life transitions, big decisions and looking at the big picture.",
       },
@@ -125,47 +125,47 @@ const STRINGS: Record<Locale, FeatureCopy> = {
     choosePersona: "Start with this energy",
     videoCaption:
       "These videos are just showcase examples. Your own AmorIA will be unique to you.",
-    footerCopy: "© 2025 AmoriA.app",
+    footerCopy: "© 2025 AmoriAI.app",
     ctaSeePricing: "See plans & pricing",
   },
   es: {
-    brandTagline: "Compañerx de IA amable • FR / EN / ES",
+    brandTagline: "Compañerx de IAI amable • FR / EN / ES",
     nav: { home: "Inicio", features: "Funciones", pricing: "Precios" },
     navLogin: "Iniciar sesión",
     navSignup: "Crear mi cuenta gratuita",
-    heroKicker: "FUNCIONES DE AMORIA.APP",
+    heroKicker: "FUNCIONES DE AMORIAI.APP",
     heroTitle: "Compañeros de IA que ya se sienten vivos.",
     heroSubtitle:
-      "Crea tu propio AmorIA o empieza con una de nuestras presencias vitrina: femenina, masculina, andrógina o 50+. Multilingüe, texto + voz y memoria emocional suave.",
+      "Crea tu propio AmorIAI o empieza con una de nuestras presencias vitrina: femenina, masculina, andrógina o 50+. Multilingüe, texto + voz y memoria emocional suave.",
     heroPrimary: "Crear mi cuenta gratuita",
     heroSupport:
       "Pensada para conversaciones profundas, diarios emocionales y acompañamiento suave en el día a día.",
     langNote: "Disponible en francés, inglés y español.",
-    personasTitle: "Tus 4 AmorIA vitrina listos para moverse",
+    personasTitle: "Tus 4 AmorIAI vitrina listos para moverse",
     personasSubtitle:
       "Mira cómo cada AmorIA cobra vida en video. Cuando crees tu cuenta gratuita, podrás personalizar por completo tu propio AmorIA (nombre, tono, estilo de conversación…).",
     personas: [
       {
         id: "lyra",
-        title: "Lyra – AmorIA femenina",
+        title: "Lyra – AmorIAI femenina",
         description:
           "Presencia dulce, empática y tranquilizadora. Ideal para escribir tus emociones y hablar de amor, dudas o cansancio mental.",
       },
       {
         id: "orion",
-        title: "Orion – AmorIA masculina",
+        title: "Orion – AmorIAI masculina",
         description:
           "Energía estable, protectora y estructurada para ayudarte a pensar y tomar decisiones.",
       },
       {
         id: "kai",
-        title: "Kai – AmorIA andrógina",
+        title: "Kai – AmorIAI andrógina",
         description:
           "Presencia fluida e inclusiva, ni totalmente hombre ni mujer. Centrada en la escucha, los matices y las preguntas profundas.",
       },
       {
         id: "maelis",
-        title: "Maelis – AmorIA 50+ femenina",
+        title: "Maelis – AmorIAI 50+ femenina",
         description:
           "Figura más madura y experimentada, con energía de mentora realista y amable. Ideal para cambios de vida y grandes decisiones.",
       },
@@ -173,7 +173,7 @@ const STRINGS: Record<Locale, FeatureCopy> = {
     choosePersona: "Empezar con esta energía",
     videoCaption:
       "Los videos son solo ejemplos vitrina. Tu propio AmorIA será único para ti.",
-    footerCopy: "© 2025 AmoriA.app",
+    footerCopy: "© 2025 AmoriAI.app",
     ctaSeePricing: "Ver precios y planes",
   },
 };
