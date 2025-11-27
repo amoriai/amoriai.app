@@ -21,24 +21,24 @@ type PrivacyCopy = {
 const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
   fr: {
     heroKicker: "POLITIQUE DE CONFIDENTIALITÉ",
-    heroTitle: "Comment AmoriA.app protège tes données.",
+    heroTitle: "Comment AmorIAI.app protège tes données.",
     heroSubtitle:
-      "Cette politique explique quelles données nous collectons, pourquoi nous les collectons et comment nous les protégeons lorsque tu utilises AmoriA.app.",
+      "Cette politique explique quelles données nous collectons, pourquoi nous les collectons et comment nous les protégeons lorsque tu utilises AmorIAI.app.",
     updatedLabel: "Dernière mise à jour :",
     updatedDate: "novembre 2025",
     sections: [
       {
         title: "1. Qui est responsable de tes données ?",
         paragraphs: [
-          "AmoriA.app est une application exploitée sous la marque « AmoriA ». Pour toute question liée à la protection de tes données, tu peux nous écrire à : contactamoriai@gmail.com.",
-          "Lorsque nous parlons de « nous », « AmoriA » ou « le service », nous faisons référence à l’équipe derrière AmoriA.app.",
+          "AmorIAI.app est une application exploitée sous la marque « AmorIAI ». Pour toute question liée à la protection de tes données, tu peux nous écrire à : contactamoriai@gmail.com.",
+          "Lorsque nous parlons de « nous », « AmorIAI » ou « le service », nous faisons référence à l’équipe derrière AmorIAI.app.",
         ],
       },
       {
         title: "2. Quelles données sont collectées ?",
         paragraphs: [
-          "Nous pouvons collecter plusieurs types de données lorsque tu utilises AmoriA.app :",
-          "• Informations de compte : adresse e-mail, mot de passe chiffré, langue préférée, paramètres de ton compte.\n• Données d’usage : dates et heures de connexion, type d’appareil, système d’exploitation, données techniques permettant d’améliorer le service.\n• Contenu des échanges avec ton AmorIA : messages texte, journaux, réponses, ainsi que certaines métadonnées (heure, langue utilisée).",
+          "Nous pouvons collecter plusieurs types de données lorsque tu utilises AmorIAI.app :",
+          "• Informations de compte : adresse e-mail, mot de passe chiffré, langue préférée, paramètres de ton compte.\n• Données d’usage : dates et heures de connexion, type d’appareil, système d’exploitation, données techniques permettant d’améliorer le service.\n• Contenu des échanges avec ton AmorIAI : messages texte, journaux, réponses, ainsi que certaines métadonnées (heure, langue utilisée).",
           "Nous ne vendons pas tes données personnelles à des tiers.",
         ],
       },
@@ -46,13 +46,13 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "3. Comment utilisons-nous tes données ?",
         paragraphs: [
           "Nous utilisons tes données pour :",
-          "• Fournir le service : créer ton compte, te connecter, permettre les échanges texte/voix avec ton AmorIA.\n• Personnaliser ton expérience : mémoriser certains éléments (dans les plans payants) pour que ton AmorIA se souvienne de toi.\n• Améliorer AmoriA.app : analyser de manière agrégée l’usage du service afin de comprendre ce qui fonctionne ou non.\n• Respecter nos obligations légales : par exemple en cas de demande des autorités compétentes, dans les limites prévues par la loi.",
+          "• Fournir le service : créer ton compte, te connecter, permettre les échanges texte/voix avec ton AmorIAI.\n• Personnaliser ton expérience : mémoriser certains éléments (dans les plans payants) pour que ton AmorIA se souvienne de toi.\n• Améliorer AmorIAI.app : analyser de manière agrégée l’usage du service afin de comprendre ce qui fonctionne ou non.\n• Respecter nos obligations légales : par exemple en cas de demande des autorités compétentes, dans les limites prévues par la loi.",
         ],
       },
       {
         title: "4. IA, confidentialité et contenu sensible",
         paragraphs: [
-          "Tes conversations avec ton AmorIA peuvent toucher à des sujets personnels (émotions, relations, bien-être, etc.).",
+          "Tes conversations avec ton AmorIAI peuvent toucher à des sujets personnels (émotions, relations, bien-être, etc.).",
           "Nous te recommandons :\n• de ne pas partager d’informations ultra sensibles (numéros de cartes bancaires, mots de passe, documents officiels complets, etc.),\n• d’éviter de publier des informations permettant d’identifier directement une autre personne sans son consentement.",
           "Les modèles d’IA utilisés pour faire fonctionner AmoriA peuvent analyser ton contenu pour répondre, mais nous mettons en place des garde-fous pour limiter l’usage de ces données à l’amélioration du service et au fonctionnement du modèle.",
         ],
@@ -61,7 +61,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "5. Partage de tes données",
         paragraphs: [
           "Nous pouvons partager certaines données avec :",
-          "• Des prestataires techniques (hébergement, infrastructure, outils d’analytique) strictement nécessaires au fonctionnement d’AmoriA.app.\n• Des services d’IA tiers, lorsque c’est nécessaire pour générer les réponses de ton AmorIA.",
+          "• Des prestataires techniques (hébergement, infrastructure, outils d’analytique) strictement nécessaires au fonctionnement d’AmorIAI.app.\n• Des services d’IA tiers, lorsque c’est nécessaire pour générer les réponses de ton AmorIAI.",
           "Nous ne partageons pas tes données avec des annonceurs pour du ciblage publicitaire basé sur tes conversations individuelles.",
         ],
       },
@@ -91,7 +91,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
       {
         title: "9. Utilisation par des mineurs",
         paragraphs: [
-          "AmoriA.app est destiné à des utilisateurs adultes. Si tu as moins de 18 ans, l’utilisation du service devrait se faire avec l’autorisation d’un parent ou d’un tuteur légal, en fonction des lois de ton pays.",
+          "AmorIAI.app est destiné à des utilisateurs adultes. Si tu as moins de 18 ans, l’utilisation du service devrait se faire avec l’autorisation d’un parent ou d’un tuteur légal, en fonction des lois de ton pays.",
           "Si nous découvrons qu’un compte a été créé en violation de ces règles, nous pourrons le suspendre ou le supprimer.",
         ],
       },
@@ -113,24 +113,24 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
   },
   en: {
     heroKicker: "PRIVACY POLICY",
-    heroTitle: "How AmoriA.app protects your data.",
+    heroTitle: "How AmorIAI.app protects your data.",
     heroSubtitle:
-      "This policy explains what data we collect, why we collect it and how we protect it when you use AmoriA.app.",
+      "This policy explains what data we collect, why we collect it and how we protect it when you use AmorIAI.app.",
     updatedLabel: "Last updated:",
     updatedDate: "November 2025",
     sections: [
       {
         title: "1. Who is responsible for your data?",
         paragraphs: [
-          "AmoriA.app is an application operated under the “AmoriA” brand. For any privacy-related question, you can contact us at: contactamoriai@gmail.com.",
-          "When we say “we”, “AmoriA” or “the service”, we refer to the team behind AmoriA.app.",
+          "AmorIAI.app is an application operated under the “AmoriA” brand. For any privacy-related question, you can contact us at: contactamoriai@gmail.com.",
+          "When we say “we”, “AmoriA” or “the service”, we refer to the team behind AmorIAI.app.",
         ],
       },
       {
         title: "2. What data do we collect?",
         paragraphs: [
-          "We may collect several types of data when you use AmoriA.app:",
-          "• Account information: e-mail address, encrypted password, preferred language, account settings.\n• Usage data: login dates and times, device type, operating system, technical logs used to improve the service.\n• Conversation content: text messages and some metadata (time, language used) exchanged with your AmorIA.",
+          "We may collect several types of data when you use AmorIAI.app:",
+          "• Account information: e-mail address, encrypted password, preferred language, account settings.\n• Usage data: login dates and times, device type, operating system, technical logs used to improve the service.\n• Conversation content: text messages and some metadata (time, language used) exchanged with your AmorIAI.",
           "We do not sell your personal data to third parties.",
         ],
       },
@@ -138,22 +138,22 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "3. How do we use your data?",
         paragraphs: [
           "We use your data to:",
-          "• Provide the service: create your account, log you in, enable text/voice exchanges with your AmorIA.\n• Personalize your experience: in paid plans, enable your AmorIA to remember you over time.\n• Improve AmoriA.app: analyze usage in an aggregated way to understand what works and what does not.\n• Comply with legal obligations: for example, in response to lawful requests from competent authorities.",
+          "• Provide the service: create your account, log you in, enable text/voice exchanges with your AmorIAI.\n• Personalize your experience: in paid plans, enable your AmorIAI to remember you over time.\n• Improve AmorIAI.app: analyze usage in an aggregated way to understand what works and what does not.\n• Comply with legal obligations: for example, in response to lawful requests from competent authorities.",
         ],
       },
       {
         title: "4. AI, privacy and sensitive content",
         paragraphs: [
-          "Your conversations with your AmorIA may involve personal topics (emotions, relationships, wellbeing, etc.).",
+          "Your conversations with your AmorIAI may involve personal topics (emotions, relationships, wellbeing, etc.).",
           "We recommend that you:\n• do not share ultra-sensitive information (payment card numbers, passwords, full official documents, etc.);\n• avoid sharing data that could directly identify another person without their consent.",
-          "The AI models used to run AmoriA may analyze your content to generate responses, but we put safeguards in place so this data is used only to operate and improve the service.",
+          "The AI models used to run AmoriAI may analyze your content to generate responses, but we put safeguards in place so this data is used only to operate and improve the service.",
         ],
       },
       {
         title: "5. Sharing your data",
         paragraphs: [
           "We may share certain data with:",
-          "• Technical providers (hosting, infrastructure, analytics tools) strictly necessary for AmoriA.app to function.\n• Third-party AI services, when needed to generate responses from your AmorIA.",
+          "• Technical providers (hosting, infrastructure, analytics tools) strictly necessary for AmorIAI.app to function.\n• Third-party AI services, when needed to generate responses from your AmorIAI.",
           "We do not share your personal conversations with advertisers for interest-based advertising.",
         ],
       },
@@ -183,7 +183,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
       {
         title: "9. Use by minors",
         paragraphs: [
-          "AmoriA.app is intended for adult users. If you are under 18, you should only use the service with the authorisation of a parent or legal guardian, where allowed by your local laws.",
+          "AmorIAI.app is intended for adult users. If you are under 18, you should only use the service with the authorisation of a parent or legal guardian, where allowed by your local laws.",
           "If we discover that an account was created in breach of these rules, we may suspend or delete it.",
         ],
       },
@@ -205,23 +205,23 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
   },
   es: {
     heroKicker: "POLÍTICA DE PRIVACIDAD",
-    heroTitle: "Cómo AmoriA.app protege tus datos.",
+    heroTitle: "Cómo AmorIAI.app protege tus datos.",
     heroSubtitle:
-      "Esta política explica qué datos recopilamos, por qué los recopilamos y cómo los protegemos cuando usas AmoriA.app.",
+      "Esta política explica qué datos recopilamos, por qué los recopilamos y cómo los protegemos cuando usas AmorIAI.app.",
     updatedLabel: "Última actualización:",
     updatedDate: "noviembre de 2025",
     sections: [
       {
         title: "1. ¿Quién es responsable de tus datos?",
         paragraphs: [
-          "AmoriA.app es una aplicación operada bajo la marca «AmoriA». Para cualquier pregunta sobre privacidad, puedes escribirnos a: contactamoriai@gmail.com.",
-          "Cuando hablamos de «nosotros», «AmoriA» o «el servicio», nos referimos al equipo detrás de AmoriA.app.",
+          "AmorIAI.app es una aplicación operada bajo la marca «AmorIAI». Para cualquier pregunta sobre privacidad, puedes escribirnos a: contactamoriai@gmail.com.",
+          "Cuando hablamos de «nosotros», «AmoriA» o «el servicio», nos referimos al equipo detrás de AmorIAI.app.",
         ],
       },
       {
         title: "2. ¿Qué datos recopilamos?",
         paragraphs: [
-          "Podemos recopilar varios tipos de datos cuando usas AmoriA.app:",
+          "Podemos recopilar varios tipos de datos cuando usas AmorIAI.app:",
           "• Información de cuenta: correo electrónico, contraseña cifrada, idioma preferido, ajustes de tu cuenta.\n• Datos de uso: fechas y horas de conexión, tipo de dispositivo, sistema operativo, datos técnicos para mejorar el servicio.\n• Contenido de las conversaciones con tu AmorIA: mensajes de texto y algunas metadatos (hora, idioma utilizado).",
           "No vendemos tus datos personales a terceros.",
         ],
@@ -245,7 +245,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "5. Compartir tus datos",
         paragraphs: [
           "Podemos compartir algunos datos con:",
-          "• Proveedores técnicos (alojamiento, infraestructura, herramientas de analítica) estrictamente necesarios para el funcionamiento de AmoriA.app.\n• Servicios de IA de terceros, cuando sea necesario para generar las respuestas de tu AmorIA.",
+          "• Proveedores técnicos (alojamiento, infraestructura, herramientas de analítica) estrictamente necesarios para el funcionamiento de AmoriA.app.\n• Servicios de IA de terceros, cuando sea necesario para generar las respuestas de tu AmorIAI.",
           "No compartimos tus conversaciones personales con anunciantes para publicidad basada en tus chats.",
         ],
       },
@@ -275,7 +275,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
       {
         title: "9. Uso por menores",
         paragraphs: [
-          "AmoriA.app está destinado a personas adultas. Si eres menor de 18 años, solo deberías usar el servicio con autorización de un padre, madre o tutor legal, según las leyes de tu país.",
+          "AmorIAI.app está destinado a personas adultas. Si eres menor de 18 años, solo deberías usar el servicio con autorización de un padre, madre o tutor legal, según las leyes de tu país.",
           "Si descubrimos que una cuenta se creó en contra de estas reglas, podremos suspenderla o eliminarla.",
         ],
       },
