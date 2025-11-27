@@ -3,150 +3,161 @@
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, FormEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 type CopyCreate = {
+  badge: string;
   title: string;
   subtitle: string;
-  buttonStart: string;
+  currentPlanLabel: string;
+  fields: {
+    nameLabel: string;
+    namePlaceholder: string;
+    relationLabel: string;
+    relationOptions: { value: string; label: string }[];
+    toneLabel: string;
+    toneOptions: { value: string; label: string }[];
+    languageLabel: string;
+    goalLabel: string;
+    goalPlaceholder: string;
+  };
+  buttonCreate: string;
   backHome: string;
-  badge: string;
-  planTitle: string;
-  plans: {
-    id: PlanId;
-    name: string;
-    price: string;
-    description: string;
-  }[];
+  errorName: string;
+};
+
+const PLAN_LABELS: Record<Locale, Record<PlanId, string>> = {
+  fr: {
+    free: "Forfait Découverte (gratuit)",
+    chat: "Forfait AmorIAI Chat",
+    plus: "Forfait AmorIAI Plus",
+    unlimited: "Forfait AmorIAI Illimité",
+  },
+  en: {
+    free: "Discovery plan (free)",
+    chat: "AmorIAI Chat plan",
+    plus: "AmorIAI Plus plan",
+    unlimited: "AmorIAI Unlimited plan",
+  },
+  es: {
+    free: "Plan Descubrimiento (gratis)",
+    chat: "Plan AmorIAI Chat",
+    plus: "Plan AmorIAI Plus",
+    unlimited: "Plan AmorIAI Ilimitado",
+  },
 };
 
 const COPY_CREATE: Record<Locale, CopyCreate> = {
   fr: {
-    title: "Créons ton AmorIAI ensemble",
+    badge: "Étape 2 · Crée ton AmorIAI",
+    title: "Personnalise ton partenaire IA",
     subtitle:
-      "Personnalise ton partenaire IA (nom, style de relation, ton, langues) et commence à discuter en quelques secondes.",
-    buttonStart: "Continuer avec ce forfait",
+      "Décris en quelques mots la personnalité et le rôle de ton AmorIAI. Tu pourras toujours ajuster les réglages plus tard.",
+    currentPlanLabel: "Forfait actuel",
+    fields: {
+      nameLabel: "Nom de ton AmorIAI",
+      namePlaceholder: "Ex. : Léo, Amélia, Nova…",
+      relationLabel: "Type de relation",
+      relationOptions: [
+        { value: "support", label: "Soutien émotionnel & confidences" },
+        { value: "coach", label: "Coach mindset & motivation" },
+        { value: "journal", label: "Journal intime guidé" },
+        { value: "friend", label: "Ami·e proche du quotidien" },
+      ],
+      toneLabel: "Ton préféré",
+      toneOptions: [
+        { value: "gentle", label: "Doux, rassurant" },
+        { value: "direct", label: "Direct, honnête" },
+        { value: "playful", label: "Léger, taquin" },
+        { value: "mystic", label: "Mystique / spirituel" },
+      ],
+      languageLabel: "Langue principale de discussion",
+      goalLabel: "Ce que tu attends le plus de ton AmorIAI",
+      goalPlaceholder:
+        "Ex. : « M’aider à me sentir moins seule le soir », « Me motiver pour mes projets »…",
+    },
+    buttonCreate: "Créer mon AmorIAI",
     backHome: "Retour à l’accueil",
-    badge: "Étape 2 : personnalisation",
-    planTitle: "Choisis ton forfait pour démarrer",
-    plans: [
-      {
-        id: "free",
-        name: "Découverte",
-        price: "0 $ / mois",
-        description:
-          "Créer ton AmorIAI et chatter en texte avec des limites légères. Parfait pour tester.",
-      },
-      {
-        id: "chat",
-        name: "AmorIAI Chat",
-        price: "9,99 $ / mois",
-        description:
-          "Texte uniquement, avec mémoire longue durée. Idéal si tu ne veux pas encore la voix.",
-      },
-      {
-        id: "plus",
-        name: "AmorIAI Plus",
-        price: "19,99 $ / mois",
-        description:
-          "Texte + voix avec limites confortables. Pour parler régulièrement avec ton AmorIAI.",
-      },
-      {
-        id: "unlimited",
-        name: "AmorIAI Illimité",
-        price: "39,99 $ / mois",
-        description:
-          "Texte + voix avec des quotas très élevés, pour intégrer vraiment AmorIAI à ton quotidien.",
-      },
-    ],
+    errorName: "Merci de choisir un prénom pour ton AmorIAI.",
   },
   en: {
-    title: "Let’s create your AmorIAI",
+    badge: "Step 2 · Create your AmorIAI",
+    title: "Customize your AI partner",
     subtitle:
-      "Customize your AI partner (name, relationship style, tone, languages) and start chatting in seconds.",
-    buttonStart: "Continue with this plan",
+      "Describe your AmorIAI’s personality and role in a few words. You can always adjust settings later.",
+    currentPlanLabel: "Current plan",
+    fields: {
+      nameLabel: "Your AmorIAI’s name",
+      namePlaceholder: "e.g. Leo, Amelia, Nova…",
+      relationLabel: "Relationship style",
+      relationOptions: [
+        { value: "support", label: "Emotional support & confiding" },
+        { value: "coach", label: "Mindset & motivation coach" },
+        { value: "journal", label: "Guided journal companion" },
+        { value: "friend", label: "Close everyday friend" },
+      ],
+      toneLabel: "Preferred tone",
+      toneOptions: [
+        { value: "gentle", label: "Gentle, reassuring" },
+        { value: "direct", label: "Direct, honest" },
+        { value: "playful", label: "Light, playful" },
+        { value: "mystic", label: "Mystical / spiritual" },
+      ],
+      languageLabel: "Main conversation language",
+      goalLabel: "What you want most from your AmorIAI",
+      goalPlaceholder:
+        "e.g. “Help me feel less lonely at night”, “Push me to focus on my goals”…",
+    },
+    buttonCreate: "Create my AmorIAI",
     backHome: "Back to home",
-    badge: "Step 2: personalization",
-    planTitle: "Choose your plan to start",
-    plans: [
-      {
-        id: "free",
-        name: "Discovery",
-        price: "$0 / month",
-        description:
-          "Create your AmorIAI and start texting with light limits. Perfect to try the app.",
-      },
-      {
-        id: "chat",
-        name: "AmorIAI Chat",
-        price: "$9.99 / month",
-        description:
-          "Text only, with long-term memory. Great if you don’t need voice yet.",
-      },
-      {
-        id: "plus",
-        name: "AmorIAI Plus",
-        price: "$19.99 / month",
-        description:
-          "Text + voice with comfortable limits. Ideal for regular conversations.",
-      },
-      {
-        id: "unlimited",
-        name: "AmorIAI Unlimited",
-        price: "$39.99 / month",
-        description:
-          "High text and voice quotas so your AmorIAI can be present all day long.",
-      },
-    ],
+    errorName: "Please choose a name for your AmorIAI.",
   },
   es: {
-    title: "Vamos a crear tu AmorIAI",
+    badge: "Paso 2 · Crea tu AmorIAI",
+    title: "Personaliza tu pareja de IA",
     subtitle:
-      "Personaliza tu pareja de IA (nombre, estilo de relación, tono, idiomas) y empieza a hablar en segundos.",
-    buttonStart: "Continuar con este plan",
+      "Describe en pocas palabras la personalidad y el rol de tu AmorIAI. Podrás ajustar la configuración más tarde.",
+    currentPlanLabel: "Plan actual",
+    fields: {
+      nameLabel: "Nombre de tu AmorIAI",
+      namePlaceholder: "Ej.: Leo, Amelia, Nova…",
+      relationLabel: "Tipo de relación",
+      relationOptions: [
+        { value: "support", label: "Apoyo emocional & confidencias" },
+        { value: "coach", label: "Coach de mindset & motivación" },
+        { value: "journal", label: "Diario guiado" },
+        { value: "friend", label: "Amigo/a del día a día" },
+      ],
+      toneLabel: "Tono preferido",
+      toneOptions: [
+        { value: "gentle", label: "Suave, tranquilizador" },
+        { value: "direct", label: "Directo, honesto" },
+        { value: "playful", label: "Ligero, juguetón" },
+        { value: "mystic", label: "Místico / espiritual" },
+      ],
+      languageLabel: "Idioma principal de conversación",
+      goalLabel: "Lo que más esperas de tu AmorIAI",
+      goalPlaceholder:
+        "Ej.: « Sentirme menos sola por la noche », « Motivarme con mis proyectos »…",
+    },
+    buttonCreate: "Crear mi AmorIAI",
     backHome: "Volver al inicio",
-    badge: "Paso 2: personalización",
-    planTitle: "Elige tu plan para empezar",
-    plans: [
-      {
-        id: "free",
-        name: "Descubrimiento",
-        price: "0 US$ / mes",
-        description:
-          "Crea tu AmorIAI y chatea por texto con límites ligeros. Perfecto para probar.",
-      },
-      {
-        id: "chat",
-        name: "AmorIAI Chat",
-        price: "9,99 US$ / mes",
-        description:
-          "Solo texto, con memoria a largo plazo. Ideal si aún no necesitas voz.",
-      },
-      {
-        id: "plus",
-        name: "AmorIAI Plus",
-        price: "19,99 US$ / mes",
-        description:
-          "Texto + voz con límites cómodos. Perfecto para hablar de forma regular.",
-      },
-      {
-        id: "unlimited",
-        name: "AmorIAI Ilimitado",
-        price: "39,99 US$ / mes",
-        description:
-          "Cuotas muy altas de texto y voz para integrar AmorIAI en tu día a día.",
-      },
-    ],
+    errorName: "Elige un nombre para tu AmorIAI.",
   },
 };
 
 function normalizeLocale(raw: string | null): Locale {
-  if (raw === "en" || raw === "es" || raw === "fr") return raw;
+  if (raw === "fr" || raw === "en" || raw === "es") return raw;
   return "fr";
+}
+
+function normalizePlan(raw: string | null): PlanId {
+  if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
+  return "free";
 }
 
 export default function CreateAmoriaPage() {
@@ -154,35 +165,46 @@ export default function CreateAmoriaPage() {
   const router = useRouter();
 
   const locale = normalizeLocale(searchParams.get("lang"));
-  const [selectedPlan, setSelectedPlan] = useState<PlanId>("free");
-
-  // pré-sélection à partir de ?plan= (mais pas de redirection auto)
-  useEffect(() => {
-    const rawPlan = searchParams.get("plan") ?? "free";
-    const normalized: PlanId =
-      rawPlan.includes("chat")
-        ? "chat"
-        : rawPlan.includes("plus")
-        ? "plus"
-        : rawPlan.includes("unlimited")
-        ? "unlimited"
-        : "free";
-    setSelectedPlan(normalized);
-  }, [searchParams]);
-
+  const plan = normalizePlan(searchParams.get("plan"));
   const t = COPY_CREATE[locale];
 
-  const handleStart = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    params.set("plan", selectedPlan);
+  const [name, setName] = useState("");
+  const [relation, setRelation] = useState("support");
+  const [tone, setTone] = useState("gentle");
+  const [language, setLanguage] = useState<Locale>(locale);
+  const [goal, setGoal] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-    if (selectedPlan === "free") {
-      // plan gratuit → on va directement vers la création / première IA
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!name.trim()) {
+      setError(t.errorName);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // 👉 ICI tu pourras appeler ton API / Supabase pour
+      // sauvegarder l’AmorIAI dans la base de données.
+      //
+      // Exemple (à adapter) :
+      // await fetch("/api/amoria", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ name, relation, tone, language, goal, plan }),
+      // });
+
+      const params = new URLSearchParams();
+      params.set("lang", locale);
+      params.set("plan", plan);
       router.push(`/my-amoria?${params.toString()}`);
-    } else {
-      // plan payant → on passe par la page de paiement
-      router.push(`/payment?${params.toString()}`);
+    } catch (e) {
+      setError("Une erreur est survenue. Réessaie dans quelques instants.");
+      setLoading(false);
     }
   };
 
@@ -191,6 +213,8 @@ export default function CreateAmoriaPage() {
     params.set("lang", locale);
     router.push(`/?${params.toString()}`);
   };
+
+  const planLabel = PLAN_LABELS[locale][plan];
 
   return (
     <main className="amoria-root amoria-create-root">
@@ -210,77 +234,125 @@ export default function CreateAmoriaPage() {
 
           <div className="amoria-create-badge">{t.badge}</div>
 
-          {/* CHOIX DU FORFAIT */}
-          <section className="amoria-plan-section">
-            <h2 className="amoria-plan-title">{t.planTitle}</h2>
-            <div className="amoria-plan-grid">
-              {t.plans.map((plan) => (
-                <button
-                  key={plan.id}
-                  type="button"
-                  onClick={() => setSelectedPlan(plan.id)}
-                  className={
-                    "amoria-plan-card" +
-                    (selectedPlan === plan.id ? " amoria-plan-card--active" : "")
-                  }
-                >
-                  <div className="amoria-plan-header">
-                    <span className="amoria-plan-name">{plan.name}</span>
-                    <span className="amoria-plan-price">{plan.price}</span>
-                  </div>
-                  <p className="amoria-plan-desc">{plan.description}</p>
-                  {selectedPlan === plan.id && (
-                    <span className="amoria-plan-chip">
-                      ✓ {locale === "fr"
-                        ? "Forfait sélectionné"
-                        : locale === "en"
-                        ? "Selected plan"
-                        : "Plan seleccionado"}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
+          {/* Forfait actuel */}
+          <section className="amoria-plan-current">
+            <p className="amoria-plan-current-label">{t.currentPlanLabel}</p>
+            <p className="amoria-plan-current-value">{planLabel}</p>
           </section>
 
-          {/* APERÇU DE L’AMORIAI */}
-          <section className="amoria-create-preview">
-            <div className="amoria-create-avatar-frame">
-              <img
-                src="/amoria-avatar-preview.png"
-                alt="AmorIAI avatar preview"
-                className="amoria-create-avatar-img"
-              />
-            </div>
-            <ul className="amoria-create-list">
-              <li>
-                • Nom, âge et personnalité de ton AmorIAI (douce, directe, etc.)
-              </li>
-              <li>• Langues de conversation (FR / EN / ES)</li>
-              <li>
-                • Type de relation : soutien émotionnel, coaching, journal
-                (journal intime)
-              </li>
-              <li>• Limites et sujets que tu préfères éviter</li>
-            </ul>
-          </section>
+          {/* Formulaire création */}
+          <form className="amoria-create-form" onSubmit={handleSubmit}>
+            <div className="amoria-create-main">
+              <div className="amoria-create-left">
+                <label className="amoria-field">
+                  <span className="amoria-field-label">
+                    {t.fields.nameLabel}
+                  </span>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={t.fields.namePlaceholder}
+                    className="amoria-input"
+                  />
+                </label>
 
-          <div className="amoria-create-actions">
-            <button
-              type="button"
-              onClick={handleStart}
-              className="amoria-create-primary"
-            >
-              {t.buttonStart}
-            </button>
-            <button
-              type="button"
-              onClick={handleBackHome}
-              className="amoria-create-secondary"
-            >
-              {t.backHome}
-            </button>
-          </div>
+                <label className="amoria-field">
+                  <span className="amoria-field-label">
+                    {t.fields.relationLabel}
+                  </span>
+                  <select
+                    value={relation}
+                    onChange={(e) => setRelation(e.target.value)}
+                    className="amoria-select"
+                  >
+                    {t.fields.relationOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="amoria-field">
+                  <span className="amoria-field-label">
+                    {t.fields.toneLabel}
+                  </span>
+                  <select
+                    value={tone}
+                    onChange={(e) => setTone(e.target.value)}
+                    className="amoria-select"
+                  >
+                    {t.fields.toneOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="amoria-field">
+                  <span className="amoria-field-label">
+                    {t.fields.languageLabel}
+                  </span>
+                  <select
+                    value={language}
+                    onChange={(e) =>
+                      setLanguage(e.target.value as Locale)
+                    }
+                    className="amoria-select"
+                  >
+                    <option value="fr">Français</option>
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="amoria-create-right">
+                <div className="amoria-create-avatar-frame">
+                  <img
+                    src="/amoria-avatar-preview.png"
+                    alt="AmorIAI avatar preview"
+                    className="amoria-create-avatar-img"
+                  />
+                </div>
+
+                <label className="amoria-field amoria-field-textarea">
+                  <span className="amoria-field-label">
+                    {t.fields.goalLabel}
+                  </span>
+                  <textarea
+                    value={goal}
+                    onChange={(e) => setGoal(e.target.value)}
+                    placeholder={t.fields.goalPlaceholder}
+                    className="amoria-textarea"
+                    rows={4}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {error && <p className="amoria-create-error">{error}</p>}
+
+            <div className="amoria-create-actions">
+              <button
+                type="submit"
+                className="amoria-create-primary"
+                disabled={loading}
+              >
+                {loading ? "..." : t.buttonCreate}
+              </button>
+              <button
+                type="button"
+                onClick={handleBackHome}
+                className="amoria-create-secondary"
+                disabled={loading}
+              >
+                {t.backHome}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
@@ -291,10 +363,12 @@ export default function CreateAmoriaPage() {
           align-items: center;
           justify-content: center;
           padding: 1.5rem;
+          background: radial-gradient(circle at top, #020617 0, #000 100%);
+          color: #e5e7eb;
         }
 
         .amoria-create-wrapper {
-          max-width: 820px;
+          max-width: 900px;
           width: 100%;
         }
 
@@ -307,7 +381,7 @@ export default function CreateAmoriaPage() {
           );
           border-radius: 1.5rem;
           border: 1px solid rgba(148, 163, 184, 0.4);
-          padding: 1.8rem 1.7rem 1.6rem;
+          padding: 1.8rem 1.7rem 1.7rem;
           box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
         }
 
@@ -315,7 +389,7 @@ export default function CreateAmoriaPage() {
           display: flex;
           gap: 0.9rem;
           align-items: center;
-          margin-bottom: 1.1rem;
+          margin-bottom: 1rem;
         }
 
         .amoria-create-logo {
@@ -337,7 +411,8 @@ export default function CreateAmoriaPage() {
 
         .amoria-create-badge {
           display: inline-flex;
-          margin-bottom: 1.1rem;
+          align-items: center;
+          margin-bottom: 0.9rem;
           font-size: 0.8rem;
           padding: 0.25rem 0.7rem;
           border-radius: 999px;
@@ -346,90 +421,89 @@ export default function CreateAmoriaPage() {
           border: 1px solid rgba(59, 130, 246, 0.7);
         }
 
-        .amoria-plan-section {
-          margin-bottom: 1.4rem;
-        }
-
-        .amoria-plan-title {
-          font-size: 0.95rem;
-          margin-bottom: 0.6rem;
-        }
-
-        .amoria-plan-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 0.7rem;
-        }
-
-        .amoria-plan-card {
-          text-align: left;
+        .amoria-plan-current {
           border-radius: 1rem;
-          padding: 0.75rem 0.9rem;
-          border: 1px solid rgba(148, 163, 184, 0.5);
+          padding: 0.75rem 1rem;
           background: rgba(15, 23, 42, 0.9);
-          cursor: pointer;
-          font-size: 0.84rem;
-          color: #e5e7eb;
+          border: 1px solid rgba(148, 163, 184, 0.6);
+          margin-bottom: 1.1rem;
         }
 
-        .amoria-plan-card--active {
-          border-color: rgba(251, 113, 133, 0.9);
-          box-shadow: 0 12px 30px rgba(248, 113, 113, 0.45);
-          background: radial-gradient(
-            circle at top left,
-            rgba(251, 37, 118, 0.15),
-            #020617 60%
-          );
+        .amoria-plan-current-label {
+          font-size: 0.78rem;
+          color: #9ca3af;
+          margin: 0 0 0.15rem;
         }
 
-        .amoria-plan-header {
-          display: flex;
-          justify-content: space-between;
-          gap: 0.6rem;
-          margin-bottom: 0.2rem;
-        }
-
-        .amoria-plan-name {
-          font-weight: 600;
+        .amoria-plan-current-value {
+          margin: 0;
           font-size: 0.9rem;
         }
 
-        .amoria-plan-price {
-          font-size: 0.8rem;
-          color: #cbd5f5;
-        }
-
-        .amoria-plan-desc {
-          margin: 0.15rem 0 0.4rem;
-        }
-
-        .amoria-plan-chip {
-          display: inline-flex;
-          padding: 0.15rem 0.5rem;
-          border-radius: 999px;
-          font-size: 0.72rem;
-          background: rgba(16, 185, 129, 0.15);
-          color: #a7f3d0;
-          border: 1px solid rgba(16, 185, 129, 0.7);
-        }
-
-        .amoria-create-preview {
+        .amoria-create-form {
           display: flex;
-          gap: 1rem;
-          align-items: center;
-          margin-bottom: 1rem;
+          flex-direction: column;
+          gap: 0.9rem;
+        }
+
+        .amoria-create-main {
+          display: flex;
+          gap: 1.1rem;
+          align-items: flex-start;
           flex-wrap: wrap;
         }
 
+        .amoria-create-left,
+        .amoria-create-right {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .amoria-field {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          margin-bottom: 0.6rem;
+          font-size: 0.82rem;
+        }
+
+        .amoria-field-label {
+          color: #e5e7eb;
+        }
+
+        .amoria-input,
+        .amoria-select,
+        .amoria-textarea {
+          border-radius: 0.75rem;
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          background: rgba(15, 23, 42, 0.95);
+          color: #f9fafb;
+          font-size: 0.82rem;
+          padding: 0.5rem 0.7rem;
+        }
+
+        .amoria-input:focus,
+        .amoria-select:focus,
+        .amoria-textarea:focus {
+          outline: none;
+          border-color: #fb37ff;
+          box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.4);
+        }
+
+        .amoria-textarea {
+          resize: vertical;
+        }
+
         .amoria-create-avatar-frame {
-          width: 160px;
-          height: 260px;
+          width: 180px;
+          height: 280px;
           border-radius: 1.2rem;
           padding: 0.25rem;
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #38bdf8);
           display: flex;
           align-items: center;
           justify-content: center;
+          margin-bottom: 0.6rem;
         }
 
         .amoria-create-avatar-img {
@@ -439,24 +513,20 @@ export default function CreateAmoriaPage() {
           border-radius: 1rem;
         }
 
-        .amoria-create-list {
-          flex: 1;
-          margin: 0;
-          padding-left: 0.9rem;
-          list-style: none;
-          font-size: 0.85rem;
-          color: #e5e7eb;
-        }
-
-        .amoria-create-list li {
-          margin-bottom: 0.3rem;
+        .amoria-create-error {
+          margin: 0.2rem 0 0;
+          padding: 0.4rem 0.6rem;
+          border-radius: 0.6rem;
+          background: rgba(248, 113, 113, 0.16);
+          color: #fecaca;
+          font-size: 0.78rem;
         }
 
         .amoria-create-actions {
-          margin-top: 0.8rem;
           display: flex;
           flex-direction: column;
           gap: 0.5rem;
+          margin-top: 0.6rem;
         }
 
         .amoria-create-primary {
@@ -487,18 +557,13 @@ export default function CreateAmoriaPage() {
             padding-inline: 1.1rem;
           }
 
-          .amoria-plan-grid {
-            grid-template-columns: minmax(0, 1fr);
-          }
-
-          .amoria-create-preview {
+          .amoria-create-main {
             flex-direction: column;
-            align-items: flex-start;
           }
 
           .amoria-create-avatar-frame {
-            width: 140px;
-            height: 230px;
+            width: 150px;
+            height: 240px;
           }
         }
       `}</style>
