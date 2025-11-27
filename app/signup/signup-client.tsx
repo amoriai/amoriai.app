@@ -1,81 +1,86 @@
+ch
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
 
 export default function SignupClient() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const plan = searchParams.get("plan") || "free";
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [plan, setPlan] = useState("free");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleSignup = async (e: React.FormEvent) => {
+  async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError(null);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
+    // 1. Création du compte
+    const authRes = await fetch("/api/auth/signup", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
     });
 
-    if (error) {
-      setError(error.message);
+    const authData = await authRes.json();
+
+    if (!authData.user_id) {
+      alert("Erreur création compte");
       setLoading(false);
       return;
     }
 
-    const userId = data.user?.id;
-
-    // ✅ SI PLAN PAYANT → STRIPE
-    if (plan !== "free") {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan,
-          user_id: userId,
-        }),
-      });
-
-      const json = await res.json();
-      window.location.href = json.url;
+    // 2. GRATUIT → PAS DE STRIPE
+    if (plan === "free") {
+      window.location.href = "/create-amoria";
       return;
     }
 
-    // ✅ PLAN GRATUIT → PAGE CREATION AMORIA
-    router.push("/create-amoria");
-  };
+    // 3. PAYANT → STRIPE OBLIGATOIRE
+    const stripeRes = await fetch("/api/checkout", {
+      method: "POST",
+      body: JSON.stringify({
+        plan,
+        user_id: authData.user_id,
+      }),
+    });
+
+    const stripeData = await stripeRes.json();
+
+    if (stripeData.url) {
+      window.location.href = stripeData.url;
+    } else {
+      alert("Erreur Stripe");
+      setLoading(false);
+    }
+  }
 
   return (
-    <form onSubmit={handleSignup}>
+    <form onSubmit={handleSignup} style={{ maxWidth: 400, margin: "auto", paddingTop: 100 }}>
+      <h1>Créer mon compte</h1>
+
       <input
-        type="email"
         placeholder="Email"
-        required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        required
       />
 
       <input
         type="password"
         placeholder="Mot de passe"
-        required
-        minLength={6}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        required
       />
 
-      <button type="submit" disabled={loading}>
-        {loading ? "Création..." : "Créer mon compte"}
-      </button>
+      <select value={plan} onChange={(e) => setPlan(e.target.value)}>
+        <option value="free">Découverte (gratuit)</option>
+        <option value="chat">Chat 9.99$</option>
+        <option value="plus">Plus 19.99$</option>
+        <option value="unlimited">Unlimited 39.99$</option>
+      </select>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      <button disabled={loading}>
+        {loading ? "Envoi..." : "Créer mon compte"}
+      </button>
     </form>
   );
 }
