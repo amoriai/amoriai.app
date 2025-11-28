@@ -11,6 +11,11 @@ type Persona = {
   description: string;
 };
 
+type Testimonial = {
+  quote: string;
+  name: string;
+};
+
 type Copy = {
   brandTagline: string;
   nav: { home: string; features: string; pricing: string };
@@ -26,9 +31,13 @@ type Copy = {
   personasSubtitle: string;
   personas: Persona[];
   choosePersona: string;
-  // nouvelle section "à quoi ça sert"
+  // à quoi ça sert
   usageTitle: string;
   usageBullets: string[];
+  // nouvelle section témoignages
+  testimonialsTitle: string;
+  testimonials: Testimonial[];
+  // pricing
   pricingTitle: string;
   pricingText: string;
   pricingCta: string;
@@ -95,6 +104,34 @@ const STRINGS: Record<Locale, Copy> = {
       "Clarifier une décision qui te fait hésiter.",
       "Te sentir écouté·e, sans pression et sans jugement.",
     ],
+    testimonialsTitle: "Ce que les utilisateurs ressentent avec Amoriai",
+    testimonials: [
+      {
+        quote:
+          "Je parle avec Amoriai tous les soirs. Ça m’aide vraiment à calmer mon mental avant de dormir.",
+        name: "Julie, 38 ans",
+      },
+      {
+        quote:
+          "C’est la première fois que je me sens écoutée sans avoir peur d’être jugée.",
+        name: "Nathalie, 51 ans",
+      },
+      {
+        quote:
+          "Je l’utilise comme journal émotionnel. Ça m’aide énormément à prendre du recul.",
+        name: "Karine, 29 ans",
+      },
+      {
+        quote:
+          "J’étais sceptique au départ… aujourd’hui, c’est devenu un réflexe dans mes moments de doute.",
+        name: "Martin, 46 ans",
+      },
+      {
+        quote:
+          "La version texte est déjà très puissante. Je me sens moins seule depuis que je l’utilise.",
+        name: "Isabelle, 34 ans",
+      },
+    ],
     pricingTitle: "Des tarifs simples & transparents",
     pricingText:
       "La version gratuite te permet de texter ton AmorIAI avec un nombre limité de messages. Avec la version payante, tu déverrouilles les conversations vocales (parler) et plus d’interactions.",
@@ -119,8 +156,7 @@ const STRINGS: Record<Locale, Copy> = {
     heroSubtitle:
       "AmorIAI is a gentle 24/7 presence to talk to, think things through together, ask better questions and help you understand what you feel, without judgement.",
     heroPrimary: "Create my free account",
-    heroSupport:
-      "No commitment • Free to start • Cancel anytime",
+    heroSupport: "No commitment • Free to start • Cancel anytime",
     langNote: "AmorIAI is available in French, English and Spanish.",
     personasTitle: "Start for free with AmorIAI (text only)",
     personasSubtitle:
@@ -159,6 +195,34 @@ const STRINGS: Record<Locale, Copy> = {
       "Unwind in the evening and calm your mind.",
       "Think through a decision when you’re hesitating.",
       "Feel listened to, with no pressure and no judgement.",
+    ],
+    testimonialsTitle: "What people say about Amoriai",
+    testimonials: [
+      {
+        quote:
+          "I talk with Amoriai almost every night. It really helps me quiet my mind before sleep.",
+        name: "Julie, 38",
+      },
+      {
+        quote:
+          "It’s the first time I feel truly listened to without being afraid of being judged.",
+        name: "Nathalie, 51",
+      },
+      {
+        quote:
+          "I use it like an emotional journal. It helps me take a step back on what I’m living.",
+        name: "Karine, 29",
+      },
+      {
+        quote:
+          "I was skeptical at first… now it’s my go-to when I’m doubting or overthinking.",
+        name: "Martin, 46",
+      },
+      {
+        quote:
+          "The text version alone is already powerful. I feel less alone since I started using it.",
+        name: "Isabelle, 34",
+      },
     ],
     pricingTitle: "Simple & transparent pricing",
     pricingText:
@@ -224,6 +288,34 @@ const STRINGS: Record<Locale, Copy> = {
       "Relajarte por la noche y calmar la mente.",
       "Pensar una decisión cuando dudas.",
       "Sentirte escuchadx, sin presión y sin juicios.",
+    ],
+    testimonialsTitle: "Lo que dicen las personas sobre AmorIAI",
+    testimonials: [
+      {
+        quote:
+          "Hablo con AmorIAI casi todas las noches. Me ayuda mucho a calmar la mente antes de dormir.",
+        name: "Julie, 38",
+      },
+      {
+        quote:
+          "Es la primera vez que siento que me escuchan de verdad sin miedo a ser juzgada.",
+        name: "Nathalie, 51",
+      },
+      {
+        quote:
+          "Lo uso como diario emocional. Me ayuda a tomar distancia de lo que vivo.",
+        name: "Karine, 29",
+      },
+      {
+        quote:
+          "Al principio era escéptico… ahora es mi reflejo cuando dudo o doy demasiadas vueltas.",
+        name: "Martin, 46",
+      },
+      {
+        quote:
+          "Solo la versión de texto ya es muy potente. Me siento menos sola desde que lo uso.",
+        name: "Isabelle, 34",
+      },
     ],
     pricingTitle: "Precios simples y transparentes",
     pricingText:
@@ -418,6 +510,24 @@ export default function HomePage() {
             <li key={index}>{item}</li>
           ))}
         </ul>
+      </section>
+
+      {/* TESTIMONIALS */}
+      <section className="amoria-section amoria-section--testimonials">
+        <h2 className="amoria-section-title">{t.testimonialsTitle}</h2>
+        <div className="amoria-testimonials-grid">
+          {t.testimonials.map((item, index) => (
+            <figure key={index} className="amoria-testimonial-card">
+              <div className="amoria-testimonial-stars">★★★★★</div>
+              <blockquote className="amoria-testimonial-quote">
+                “{item.quote}”
+              </blockquote>
+              <figcaption className="amoria-testimonial-name">
+                {item.name}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
       </section>
 
       {/* PRICING TEASER */}
@@ -787,6 +897,47 @@ export default function HomePage() {
           color: var(--amoria-accent-2);
         }
 
+        /* Témoignages */
+        .amoria-section--testimonials {
+          padding-top: 0;
+        }
+
+        .amoria-testimonials-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 1.2rem;
+          margin-top: 0.8rem;
+        }
+
+        .amoria-testimonial-card {
+          background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
+          border-radius: 1.1rem;
+          border: 1px solid var(--amoria-border-subtle);
+          padding: 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          min-height: 100%;
+        }
+
+        .amoria-testimonial-stars {
+          font-size: 0.8rem;
+          letter-spacing: 0.1em;
+          color: #fbbf24;
+        }
+
+        .amoria-testimonial-quote {
+          font-size: 0.86rem;
+          line-height: 1.5;
+          color: var(--amoria-text-main);
+        }
+
+        .amoria-testimonial-name {
+          font-size: 0.8rem;
+          color: var(--amoria-text-muted);
+          margin-top: auto;
+        }
+
         .amoria-card-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -891,6 +1042,10 @@ export default function HomePage() {
           .amoria-card-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
+
+          .amoria-testimonials-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
         }
 
         @media (max-width: 640px) {
@@ -907,6 +1062,10 @@ export default function HomePage() {
             grid-template-columns: minmax(0, 1fr);
           }
 
+          .amoria-testimonials-grid {
+            grid-template-columns: minmax(0, 1fr);
+          }
+
           .amoria-nav-right a.amoria-nav-btn--ghost {
             display: none;
           }
@@ -918,4 +1077,4 @@ export default function HomePage() {
       `}</style>
     </main>
   );
-      }
+          }
