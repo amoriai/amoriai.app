@@ -244,26 +244,22 @@ export default function PricingClient() {
   const localeParam = (searchParams.get("lang") || "fr") as Locale;
   const t = LABELS[localeParam];
 
-  // ➜ Clic sur une carte
+  // Sélection d’un plan (free → création, payant → paiement)
   const handleChoosePlan = (plan: PlanId) => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
     params.set("plan", plan);
 
     if (plan === "free") {
-      // Plan gratuit : on va configurer l’AmorIA (pas de Stripe)
       router.push(`/create-amoria?${params.toString()}`);
     } else {
-      // Plans payants : page paiement, puis Stripe
       router.push(`/payment?${params.toString()}`);
     }
   };
 
-  // ➜ Gros bouton en haut : retour au signup
+  // Gros bouton hero = équivalent de "choisir le plan gratuit"
   const handleHeroCta = () => {
-    const params = new URLSearchParams();
-    params.set("lang", localeParam);
-    router.push(`/signup?${params.toString()}`);
+    handleChoosePlan("free");
   };
 
   return (
@@ -457,4 +453,4 @@ export default function PricingClient() {
       `}</style>
     </main>
   );
-}
+          }
