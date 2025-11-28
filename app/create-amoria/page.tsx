@@ -8,7 +8,7 @@ type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 type PersonaType = "woman" | "man" | "woman50" | "man50" | "androgynous";
 
-// ---------------- AVATARS ----------------
+// ---------------- AVATARS (pour l'enregistrement en base) ----------------
 
 const AVATARS: Record<PersonaType, string[]> = {
   woman: [
@@ -71,6 +71,7 @@ type Copy = {
   relationLabel: string;
   toneLabel: string;
   categoryLabel: string;
+  categoryPlaceholder: string;
   expectationLabel: string;
   expectationPlaceholder: string;
   helperText: string;
@@ -78,8 +79,9 @@ type Copy = {
   backHome: string;
   saving: string;
   genericError: string;
-  creatingTitle: string;
-  creatingSubtitle: string;
+  formError: string;
+  previewTitle: string;
+  previewText: string;
 };
 
 const STRINGS: Record<Locale, Copy> = {
@@ -101,6 +103,7 @@ const STRINGS: Record<Locale, Copy> = {
     relationLabel: "Type de relation",
     toneLabel: "Ton préféré",
     categoryLabel: "Catégorie d’AmorIAI",
+    categoryPlaceholder: "Choisir la catégorie…",
     expectationLabel: "Ce que tu attends le plus de ton AmorIAI",
     expectationPlaceholder:
       'Ex. : « M’aider à me sentir moins seule le soir », « Me motiver pour mes projets », « Me coacher émotionnellement »…',
@@ -111,9 +114,11 @@ const STRINGS: Record<Locale, Copy> = {
     saving: "Création en cours…",
     genericError:
       "Une erreur est survenue pendant la création de ton AmorIAI. Merci de réessayer.",
-    creatingTitle: "Nous créons ton AmorIAI…",
-    creatingSubtitle:
-      "Nous générons sa personnalité, sa mémoire et son style de conversation. Cela ne prend que quelques secondes.",
+    formError:
+      "Merci de remplir tous les champs avant de créer ton AmorIAI.",
+    previewTitle: "Ta configuration d’abord, la magie ensuite ✨",
+    previewText:
+      'Ici, tu définis simplement la personnalité et le rôle de ton AmorIAI. Il sera réellement créé quand tu cliqueras sur « Créer mon AmorIAI ».',
   },
   en: {
     stepBadge: "Step 2 · Create your AmorIAI",
@@ -133,6 +138,7 @@ const STRINGS: Record<Locale, Copy> = {
     relationLabel: "Relationship type",
     toneLabel: "Preferred tone",
     categoryLabel: "AmorIAI category",
+    categoryPlaceholder: "Choose a category…",
     expectationLabel: "What you expect most from your AmorIAI",
     expectationPlaceholder:
       `"Help me feel less alone at night", "Motivate me for my projects", "Emotionally coach me"…`,
@@ -143,9 +149,11 @@ const STRINGS: Record<Locale, Copy> = {
     saving: "Creating your AmorIAI…",
     genericError:
       "Something went wrong while creating your AmorIAI. Please try again.",
-    creatingTitle: "We’re creating your AmorIAI…",
-    creatingSubtitle:
-      "We’re configuring their personality, memory and conversation style. It only takes a few seconds.",
+    formError:
+      "Please fill in all fields before creating your AmorIAI.",
+    previewTitle: "Set things up first, magic comes after ✨",
+    previewText:
+      'Here you only define your AmorIAI’s personality and role. It will actually be created when you click “Create my AmorIAI”.',
   },
   es: {
     stepBadge: "Paso 2 · Crea tu AmorIAI",
@@ -165,6 +173,7 @@ const STRINGS: Record<Locale, Copy> = {
     relationLabel: "Tipo de relación",
     toneLabel: "Tono preferido",
     categoryLabel: "Categoría de AmorIAI",
+    categoryPlaceholder: "Elegir la categoría…",
     expectationLabel: "Lo que más esperas de tu AmorIAI",
     expectationPlaceholder:
       'Ej.: « Ayudarme a sentirme menos sola por la noche », « Motivarme con mis proyectos », « Acompañarme emocionalmente »…',
@@ -175,9 +184,11 @@ const STRINGS: Record<Locale, Copy> = {
     saving: "Creando tu AmorIAI…",
     genericError:
       "Ocurrió un error al crear tu AmorIAI. Inténtalo de nuevo, por favor.",
-    creatingTitle: "Estamos creando tu AmorIAI…",
-    creatingSubtitle:
-      "Configuramos su personalidad, memoria y estilo de conversación. Solo tarda unos segundos.",
+    formError:
+      "Por favor, completa todos los campos antes de crear tu AmorIAI.",
+    previewTitle: "Primero la configuración, luego la magia ✨",
+    previewText:
+      'Aquí solo defines la personalidad y el papel de tu AmorIAI. Se creará realmente cuando pulses «Crear mi AmorIAI».',
   },
 };
 
@@ -263,20 +274,11 @@ export default function CreateAmoriaPage() {
   const [tone, setTone] = useState("");
   const [category, setCategory] = useState<PersonaType | "">("");
   const [expectation, setExpectation] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState<string>("/amoria-avatar-preview.png");
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const [hasPreview, setHasPreview] = useState(false);
-
-  useEffect(() => {
-    const hasCoreInfo =
-      name.trim().length > 0 && !!relationType && !!tone && !!category;
-    setHasPreview(hasCoreInfo);
-  }, [name, relationType, tone, category]);
-
-  // Lire les query params et vérifier la session
+  // Lecture des query params + vérification session
   useEffect(() => {
     const init = async () => {
       const params = new URLSearchParams(window.location.search);
@@ -300,7 +302,7 @@ export default function CreateAmoriaPage() {
       if (error || !data?.user) {
         const qp = new URLSearchParams();
         qp.set("lang", langParam === "en" || langParam === "es" ? langParam : "fr");
-        qp.set("plan", planParam ?? "free");
+        if (planParam) qp.set("plan", planParam);
         router.push(`/signup?${qp.toString()}`);
         return;
       }
@@ -315,46 +317,25 @@ export default function CreateAmoriaPage() {
   const relationOptions = RELATION_OPTIONS[locale];
   const toneOptions = TONE_OPTIONS[locale];
 
-  const handleCategoryChange = (value: string) => {
-    if (!value) {
-      setCategory("");
-      setAvatarUrl("/amoria-avatar-preview.png");
-      return;
-    }
-    const typed = value as PersonaType;
-    setCategory(typed);
-    setAvatarUrl(randomAvatar(typed));
-  };
-
   const handleBackHome = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
     router.push("/?" + params.toString());
   };
 
+  const isFormValid =
+    name.trim().length > 0 &&
+    relationType.trim().length > 0 &&
+    tone.trim().length > 0 &&
+    category !== "" &&
+    expectation.trim().length > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!name.trim()) {
-      setErrorMsg(
-        locale === "fr"
-          ? "Donne un prénom à ton AmorIAI."
-          : locale === "en"
-          ? "Please give your AmorIAI a name."
-          : "Ponle un nombre a tu AmorIAI."
-      );
-      return;
-    }
-
-    if (!category) {
-      setErrorMsg(
-        locale === "fr"
-          ? "Choisis la catégorie de ton AmorIAI."
-          : locale === "en"
-          ? "Please choose your AmorIAI category."
-          : "Elige la categoría de tu AmorIAI."
-      );
+    if (!isFormValid || !category) {
+      setErrorMsg(t.formError);
       return;
     }
 
@@ -372,10 +353,10 @@ export default function CreateAmoriaPage() {
       }
 
       const userId = userData.user.id;
-      const personaForDB: PersonaType = category as PersonaType;
-      const catOption = CATEGORY_OPTIONS.find((c) => c.value === personaForDB);
+      const personaType = category as PersonaType;
       const categoryLabel =
-        catOption?.label[locale] ?? personaForDB.toString();
+        CATEGORY_OPTIONS.find((c) => c.value === personaType)?.label[locale] ??
+        personaType;
 
       const systemPrompt = `
 Tu es ${name}, une AmorIAI de type "${categoryLabel}".
@@ -387,10 +368,12 @@ Ta mission est d’apporter soutien, écoute et accompagnement bienveillant,
 sans jugement, en respectant les limites de l’utilisateur.
       `.trim();
 
+      const avatarUrl = randomAvatar(personaType);
+
       const { error } = await supabase.from("user_amoria").insert({
         user_id: userId,
         name,
-        persona_type: personaForDB,
+        persona_type: personaType,
         main_language: locale,
         avatar_image_url: avatarUrl,
         accent_color: "#fb37ff",
@@ -405,9 +388,6 @@ sans jugement, en respectant les limites de l’utilisateur.
         setSaving(false);
         return;
       }
-
-      // Petite pause pour laisser l’animation visible
-      await new Promise((resolve) => setTimeout(resolve, 1200));
 
       const params = new URLSearchParams();
       params.set("lang", locale);
@@ -433,8 +413,6 @@ sans jugement, en respectant les limites de l’utilisateur.
     );
   }
 
-  const isDisabled = saving;
-
   return (
     <main className="amoria-create-root">
       <div className="amoria-create-wrapper">
@@ -448,176 +426,146 @@ sans jugement, en respectant les limites de l’utilisateur.
                 <p className="amoria-create-subtitle">{t.pageSubtitle}</p>
               </div>
               <div className="amoria-plan-pill">
-                <span className="amoria-plan-label">{t.currentPlanLabel}</span>
-                <span className="amoria-plan-name">{t.planName(plan)}</span>
+                <span className="amoria-plan-label">
+                  {t.currentPlanLabel}
+                </span>
+                <span className="amoria-plan-name">
+                  {t.planName(plan)}
+                </span>
               </div>
             </div>
           </header>
 
-          {saving ? (
-            <section className="amoria-creating">
-              <div className="amoria-creating-orb">
-                <div className="amoria-creating-inner" />
-              </div>
-              <p className="amoria-creating-title">{t.creatingTitle}</p>
-              <p className="amoria-creating-subtitle">
-                {t.creatingSubtitle}
-              </p>
-            </section>
-          ) : (
-            <>
-              {errorMsg && (
-                <div className="amoria-banner amoria-banner--error">
-                  {errorMsg}
-                </div>
-              )}
-
-              <form className="amoria-grid" onSubmit={handleSubmit} noValidate>
-                <div className="amoria-left">
-                  <label className="amoria-field">
-                    <span className="amoria-label">{t.nameLabel}</span>
-                    <input
-                      type="text"
-                      className="amoria-input"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder={
-                        locale === "fr"
-                          ? "Ex. : Léo, Amélia, Nova…"
-                          : locale === "en"
-                          ? "e.g. Leo, Amelia, Nova…"
-                          : "Ej.: Leo, Amelia, Nova…"
-                      }
-                    />
-                  </label>
-
-                  <label className="amoria-field">
-                    <span className="amoria-label">{t.relationLabel}</span>
-                    <select
-                      className="amoria-select"
-                      value={relationType}
-                      onChange={(e) => setRelationType(e.target.value)}
-                    >
-                      <option value="">
-                        {locale === "fr"
-                          ? "Choisir…"
-                          : locale === "en"
-                          ? "Choose…"
-                          : "Elegir…"}
-                      </option>
-                      {relationOptions.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="amoria-field">
-                    <span className="amoria-label">{t.toneLabel}</span>
-                    <select
-                      className="amoria-select"
-                      value={tone}
-                      onChange={(e) => setTone(e.target.value)}
-                    >
-                      <option value="">
-                        {locale === "fr"
-                          ? "Choisir…"
-                          : locale === "en"
-                          ? "Choose…"
-                          : "Elegir…"}
-                      </option>
-                      {toneOptions.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="amoria-field">
-                    <span className="amoria-label">{t.categoryLabel}</span>
-                    <select
-                      className="amoria-select"
-                      value={category || ""}
-                      onChange={(e) => handleCategoryChange(e.target.value)}
-                    >
-                      <option value="">
-                        {locale === "fr"
-                          ? "Choisir la catégorie…"
-                          : locale === "en"
-                          ? "Choose a category…"
-                          : "Elegir categoría…"}
-                      </option>
-                      {CATEGORY_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label[locale]}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                <div className="amoria-right">
-                  <div className="amoria-avatar-frame">
-                    {hasPreview ? (
-                      <img
-                        src={avatarUrl}
-                        alt="Aperçu AmorIAI"
-                        className="amoria-avatar-img"
-                      />
-                    ) : (
-                      <div className="amoria-avatar-placeholder">
-                        <div className="amoria-avatar-glow" />
-                        <p className="amoria-avatar-placeholder-text">
-                          {locale === "fr" &&
-                            "Ton AmorIAI apparaîtra ici dès que tu auras rempli le nom, le type de relation, le ton et la catégorie."}
-                          {locale === "en" &&
-                            "Your AmorIAI will appear here once you’ve filled in the name, relationship type, tone and category."}
-                          {locale === "es" &&
-                            "Tu AmorIAI aparecerá aquí cuando completes el nombre, el tipo de relación, el tono y la categoría."}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <label className="amoria-field amoria-field--textarea">
-                    <span className="amoria-label">{t.expectationLabel}</span>
-                    <textarea
-                      className="amoria-textarea"
-                      value={expectation}
-                      onChange={(e) => setExpectation(e.target.value)}
-                      placeholder={t.expectationPlaceholder}
-                      rows={5}
-                    />
-                  </label>
-                </div>
-              </form>
-
-              <footer className="amoria-footer">
-                <p className="amoria-helper">{t.helperText}</p>
-
-                <div className="amoria-actions">
-                  <button
-                    type="button"
-                    className="amoria-btn amoria-btn--secondary"
-                    onClick={handleBackHome}
-                  >
-                    {t.backHome}
-                  </button>
-
-                  <button
-                    type="submit"
-                    className="amoria-btn amoria-btn--primary"
-                    onClick={handleSubmit}
-                    disabled={isDisabled}
-                  >
-                    {saving ? t.saving : t.createButton}
-                  </button>
-                </div>
-              </footer>
-            </>
+          {errorMsg && (
+            <div className="amoria-banner amoria-banner--error">
+              {errorMsg}
+            </div>
           )}
+
+          <form className="amoria-grid" onSubmit={handleSubmit} noValidate>
+            <div className="amoria-left">
+              <label className="amoria-field">
+                <span className="amoria-label">{t.nameLabel}</span>
+                <input
+                  type="text"
+                  className="amoria-input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={
+                    locale === "fr"
+                      ? "Ex. : Léo, Amélia, Nova…"
+                      : locale === "en"
+                      ? "e.g. Leo, Amelia, Nova…"
+                      : "Ej.: Leo, Amelia, Nova…"
+                  }
+                />
+              </label>
+
+              <label className="amoria-field">
+                <span className="amoria-label">{t.relationLabel}</span>
+                <select
+                  className="amoria-select"
+                  value={relationType}
+                  onChange={(e) => setRelationType(e.target.value)}
+                >
+                  <option value="">
+                    {locale === "fr"
+                      ? "Choisir…"
+                      : locale === "en"
+                      ? "Choose…"
+                      : "Elegir…"}
+                  </option>
+                  {relationOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="amoria-field">
+                <span className="amoria-label">{t.toneLabel}</span>
+                <select
+                  className="amoria-select"
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value)}
+                >
+                  <option value="">
+                    {locale === "fr"
+                      ? "Choisir…"
+                      : locale === "en"
+                      ? "Choose…"
+                      : "Elegir…"}
+                  </option>
+                  {toneOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="amoria-field">
+                <span className="amoria-label">{t.categoryLabel}</span>
+                <select
+                  className="amoria-select"
+                  value={category}
+                  onChange={(e) =>
+                    setCategory(e.target.value as PersonaType | "")
+                  }
+                >
+                  <option value="">{t.categoryPlaceholder}</option>
+                  {CATEGORY_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label[locale]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="amoria-right">
+              <div className="amoria-preview-card">
+                <p className="amoria-preview-title">{t.previewTitle}</p>
+                <p className="amoria-preview-text">{t.previewText}</p>
+              </div>
+
+              <label className="amoria-field amoria-field--textarea">
+                <span className="amoria-label">{t.expectationLabel}</span>
+                <textarea
+                  className="amoria-textarea"
+                  value={expectation}
+                  onChange={(e) => setExpectation(e.target.value)}
+                  placeholder={t.expectationPlaceholder}
+                  rows={5}
+                />
+              </label>
+            </div>
+          </form>
+
+          <footer className="amoria-footer">
+            <p className="amoria-helper">{t.helperText}</p>
+
+            <div className="amoria-actions">
+              <button
+                type="button"
+                className="amoria-btn amoria-btn--secondary"
+                onClick={handleBackHome}
+                disabled={saving}
+              >
+                {t.backHome}
+              </button>
+
+              <button
+                type="submit"
+                className="amoria-btn amoria-btn--primary"
+                onClick={handleSubmit}
+                disabled={saving || !isFormValid}
+              >
+                {saving ? t.saving : t.createButton}
+              </button>
+            </div>
+          </footer>
         </div>
       </div>
 
@@ -768,78 +716,23 @@ sans jugement, en respectant les limites de l’utilisateur.
           box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.4);
         }
 
-        .amoria-avatar-frame {
+        .amoria-preview-card {
           border-radius: 1.2rem;
-          padding: 0.25rem;
+          padding: 1rem 1.1rem;
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #38bdf8);
           display: flex;
-          justify-content: center;
+          flex-direction: column;
+          gap: 0.25rem;
+          color: #f9fafb;
         }
 
-        .amoria-avatar-img {
-          width: 100%;
-          max-width: 210px;
-          border-radius: 1rem;
-          object-fit: cover;
-          display: block;
-          animation: amoria-avatar-fade 0.35s ease-out;
+        .amoria-preview-title {
+          font-size: 0.9rem;
+          font-weight: 600;
         }
 
-        .amoria-avatar-placeholder {
-          position: relative;
-          width: 100%;
-          min-height: 210px;
-          border-radius: 1rem;
-          overflow: hidden;
-          background: radial-gradient(circle at top, #1f2937, #020617 70%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 1.4rem;
-        }
-
-        .amoria-avatar-glow {
-          position: absolute;
-          inset: -40%;
-          background: conic-gradient(
-            from 0deg,
-            #fb37ff,
-            #ff6b9c,
-            #f97316,
-            #38bdf8,
-            #fb37ff
-          );
-          opacity: 0.25;
-          filter: blur(30px);
-          animation: amoria-glow-rotate 5s linear infinite;
-        }
-
-        .amoria-avatar-placeholder-text {
-          position: relative;
-          font-size: 0.82rem;
-          color: #e5e7eb;
-          text-align: center;
-          max-width: 260px;
-        }
-
-        @keyframes amoria-glow-rotate {
-          0% {
-            transform: rotate(0deg);
-          }
-          100% {
-            transform: rotate(360deg);
-          }
-        }
-
-        @keyframes amoria-avatar-fade {
-          from {
-            opacity: 0;
-            transform: translateY(8px) scale(0.98);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
+        .amoria-preview-text {
+          font-size: 0.8rem;
         }
 
         .amoria-footer {
@@ -878,7 +771,7 @@ sans jugement, en respectant les limites de l’utilisateur.
         }
 
         .amoria-btn--primary:disabled {
-          opacity: 0.6;
+          opacity: 0.55;
           cursor: default;
         }
 
@@ -886,70 +779,6 @@ sans jugement, en respectant les limites de l’utilisateur.
           background: rgba(15, 23, 42, 0.9);
           color: #e5e7eb;
           border-color: rgba(148, 163, 184, 0.7);
-        }
-
-        /* Écran de création live */
-        .amoria-creating {
-          padding: 2rem 1rem 1.2rem;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-          gap: 1rem;
-        }
-
-        .amoria-creating-orb {
-          width: 120px;
-          height: 120px;
-          border-radius: 999px;
-          background: radial-gradient(circle at top, #fb37ff, #020617 70%);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 0 40px rgba(251, 55, 255, 0.45);
-          animation: amoria-orb-pulse 1.6s ease-in-out infinite;
-        }
-
-        .amoria-creating-inner {
-          width: 64px;
-          height: 64px;
-          border-radius: 999px;
-          background: conic-gradient(
-            from 0deg,
-            #fb37ff,
-            #ff6b9c,
-            #f97316,
-            #38bdf8,
-            #fb37ff
-          );
-          filter: blur(2px);
-          opacity: 0.9;
-        }
-
-        .amoria-creating-title {
-          font-size: 1.05rem;
-          font-weight: 500;
-        }
-
-        .amoria-creating-subtitle {
-          font-size: 0.85rem;
-          color: #9ca3af;
-          max-width: 420px;
-        }
-
-        @keyframes amoria-orb-pulse {
-          0% {
-            transform: scale(1);
-            opacity: 0.9;
-          }
-          50% {
-            transform: scale(1.06);
-            opacity: 1;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 0.9;
-          }
         }
 
         @media (max-width: 820px) {
@@ -984,4 +813,4 @@ sans jugement, en respectant les limites de l’utilisateur.
       `}</style>
     </main>
   );
-    }
+      }
