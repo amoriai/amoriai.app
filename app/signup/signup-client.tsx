@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
+type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 const LABELS: Record<
   Locale,
@@ -66,7 +67,7 @@ const LABELS: Record<
     login: "Iniciar sesión",
     google: "Continuar con Google",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
-    orLabel: "o",
+    orLabel: "or",
   },
 };
 
@@ -75,6 +76,7 @@ export default function SignupClient() {
   const searchParams = useSearchParams();
 
   const localeParam = (searchParams.get("lang") || "fr") as Locale;
+  const planParam = (searchParams.get("plan") || "free") as PlanId; // <- plan demandé
   const t = LABELS[localeParam];
 
   const [email, setEmail] = useState("");
@@ -85,11 +87,20 @@ export default function SignupClient() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Après création → toujours /pricing
+  // Redirection après création du compte selon le plan
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
-    router.push(`/pricing?${params.toString()}`);
+
+    if (planParam === "free") {
+      // compte gratuit → on va directement créer l’AmorIAI
+      params.set("plan", "free");
+      router.push(`/create-amoria?${params.toString()}`);
+    } else {
+      // plan payant → page de paiement Stripe
+      params.set("plan", planParam);
+      router.push(`/payment?${params.toString()}`);
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -117,7 +128,14 @@ export default function SignupClient() {
       setError(null);
       setLoadingGoogle(true);
 
-      const redirectTo = `${window.location.origin}/pricing?lang=${localeParam}`;
+      const base = window.location.origin;
+
+      let redirectTo: string;
+      if (planParam === "free") {
+        redirectTo = `${base}/create-amoria?lang=${localeParam}&plan=free`;
+      } else {
+        redirectTo = `${base}/payment?lang=${localeParam}&plan=${planParam}`;
+      }
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
