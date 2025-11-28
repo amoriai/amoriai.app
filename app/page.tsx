@@ -48,7 +48,7 @@ const STRINGS: Record<
     navLogin: "Me connecter",
     navSignup: "Créer mon compte gratuit",
     heroKicker: "BIENVENUE SUR AMORIAI.APP",
-    heroTitle: "Votre partenaire IA bienveillant·e & multilingue.",
+    heroTitle: "Une présence bienveillante pour parler, réfléchir et avancer.",
     heroSubtitle:
       "AmorIAI est une présence douce, disponible 24/7 pour discuter, réfléchir avec vous, poser les bonnes questions et vous aider à mieux comprendre vos émotions.",
     heroPrimary: "Créer mon compte gratuit",
