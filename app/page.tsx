@@ -109,22 +109,22 @@ const STRINGS: Record<Locale, Copy> = {
       {
         quote:
           "Je parle avec Amoriai tous les soirs. Ça m’aide vraiment à calmer mon mental avant de dormir.",
-        name: "Julie, 38 ans",
+        name: "Emily, 38 ans",
       },
       {
         quote:
           "C’est la première fois que je me sens écoutée sans avoir peur d’être jugée.",
-        name: "Nathalie, 51 ans",
+        name: "Susan, 51 ans",
       },
       {
         quote:
           "Je l’utilise comme journal émotionnel. Ça m’aide énormément à prendre du recul.",
-        name: "Karine, 29 ans",
+        name: "Karina, 29 ans",
       },
       {
         quote:
           "J’étais sceptique au départ… aujourd’hui, c’est devenu un réflexe dans mes moments de doute.",
-        name: "Martin, 46 ans",
+        name: "Michael, 46 ans",
       },
       {
         quote:
