@@ -53,7 +53,7 @@ const STRINGS: Record<
       "Amoriai est une présence douce, disponible 24/7, pour parler librement, réfléchir ensemble, poser les bonnes questions et t’aider à mieux comprendre ce que tu ressens, sans jugement.",
     heroPrimary: "Créer mon compte gratuit",
     heroSupport:
-      "Optimisée pour les échanges profonds, les journaux émotionnels et le coaching doux du quotidien.",
+      "Sans engagement • Gratuit pour commencer • Annulation en tout temps",
     langNote: "AmorIAI vous accueille en français, anglais ou espagnol.",
     personasTitle: "Commence gratuitement avec AmorIAI (en texte)",
     personasSubtitle:
