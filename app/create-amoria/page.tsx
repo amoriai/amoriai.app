@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -245,27 +245,27 @@ export default function CreateAmoriaPage() {
 
   const [locale, setLocale] = useState<Locale>("fr");
   const [plan, setPlan] = useState<PlanId>("free");
-  const [ready, setReady] = useState(false); // on attend la vérif de session
+  const [ready, setReady] = useState(false);
 
   const [name, setName] = useState("");
   const [relationType, setRelationType] = useState("");
   const [tone, setTone] = useState("");
-  const [category, setCategory] = useState<PersonaType>("woman");
+  // catégorie : vide au début → on force à choisir
+  const [category, setCategory] = useState<PersonaType | "">("");
   const [expectation, setExpectation] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState<string>(randomAvatar("woman"));
+  const [avatarUrl, setAvatarUrl] = useState<string>("/amoria-avatar-preview.png");
 
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // 👉 Nouveau : contrôle de l’affichage de l’aperçu
+  // contrôle de l’affichage de l’aperçu
   const [hasPreview, setHasPreview] = useState(false);
 
-  // Quand les infos de base sont remplies, on “débloque” l’avatar
   useEffect(() => {
     const hasCoreInfo =
-      name.trim().length > 0 && !!relationType && !!tone;
+      name.trim().length > 0 && !!relationType && !!tone && !!category;
     setHasPreview(hasCoreInfo);
-  }, [name, relationType, tone]);
+  }, [name, relationType, tone, category]);
 
   // Lire les query params et vérifier la session
   useEffect(() => {
@@ -288,7 +288,6 @@ export default function CreateAmoriaPage() {
 
       const { data, error } = await supabase.auth.getUser();
 
-      // si pas de user → on renvoie vers signup
       if (error || !data?.user) {
         const qp = new URLSearchParams();
         qp.set("lang", langParam === "en" || langParam === "es" ? langParam : "fr");
@@ -307,15 +306,16 @@ export default function CreateAmoriaPage() {
   const relationOptions = RELATION_OPTIONS[locale];
   const toneOptions = TONE_OPTIONS[locale];
 
-  const handleCategoryChange = (value: PersonaType) => {
-    setCategory(value);
-    setAvatarUrl(randomAvatar(value));
+  const handleCategoryChange = (value: string) => {
+    if (!value) {
+      setCategory("");
+      setAvatarUrl("/amoria-avatar-preview.png");
+      return;
+    }
+    const typed = value as PersonaType;
+    setCategory(typed);
+    setAvatarUrl(randomAvatar(typed));
   };
-
-  const categoryLabel = useMemo(() => {
-    const found = CATEGORY_OPTIONS.find((c) => c.value === category);
-    return found ? found.label[locale] : category;
-  }, [category, locale]);
 
   const handleBackHome = () => {
     const params = new URLSearchParams();
@@ -338,13 +338,23 @@ export default function CreateAmoriaPage() {
       return;
     }
 
+    if (!category) {
+      setErrorMsg(
+        locale === "fr"
+          ? "Choisis la catégorie de ton AmorIAI."
+          : locale === "en"
+          ? "Please choose your AmorIAI category."
+          : "Elige la categoría de tu AmorIAI."
+      );
+      return;
+    }
+
     setSaving(true);
 
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
 
       if (userError || !userData?.user) {
-        // sécurité : si la session est tombée, on renvoie vers signup
         const params = new URLSearchParams();
         params.set("lang", locale);
         params.set("plan", plan);
@@ -353,6 +363,10 @@ export default function CreateAmoriaPage() {
       }
 
       const userId = userData.user.id;
+      const personaForDB: PersonaType = category as PersonaType;
+      const catOption = CATEGORY_OPTIONS.find((c) => c.value === personaForDB);
+      const categoryLabel =
+        catOption?.label[locale] ?? personaForDB.toString();
 
       const systemPrompt = `
 Tu es ${name}, une AmorIAI de type "${categoryLabel}".
@@ -367,7 +381,7 @@ sans jugement, en respectant les limites de l’utilisateur.
       const { error } = await supabase.from("user_amoria").insert({
         user_id: userId,
         name,
-        persona_type: category,
+        persona_type: personaForDB,
         main_language: locale,
         avatar_image_url: avatarUrl,
         accent_color: "#fb37ff",
@@ -394,7 +408,6 @@ sans jugement, en respectant les limites de l’utilisateur.
   };
 
   if (!ready) {
-    // petit écran d’attente pendant la vérif de session
     return (
       <main className="amoria-create-root">
         <div className="amoria-create-wrapper">
@@ -502,11 +515,16 @@ sans jugement, en respectant les limites de l’utilisateur.
                 <span className="amoria-label">{t.categoryLabel}</span>
                 <select
                   className="amoria-select"
-                  value={category}
-                  onChange={(e) =>
-                    handleCategoryChange(e.target.value as PersonaType)
-                  }
+                  value={category || ""}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
                 >
+                  <option value="">
+                    {locale === "fr"
+                      ? "Choisir la catégorie…"
+                      : locale === "en"
+                      ? "Choose a category…"
+                      : "Elegir categoría…"}
+                  </option>
                   {CATEGORY_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label[locale]}
@@ -529,11 +547,11 @@ sans jugement, en respectant les limites de l’utilisateur.
                     <div className="amoria-avatar-glow" />
                     <p className="amoria-avatar-placeholder-text">
                       {locale === "fr" &&
-                        "Ton AmorIAI apparaîtra ici dès que tu auras rempli les informations à gauche."}
+                        "Ton AmorIAI apparaîtra ici dès que tu auras rempli le nom, le type de relation, le ton et la catégorie."}
                       {locale === "en" &&
-                        "Your AmorIAI will appear here once you’ve filled in the information on the left."}
+                        "Your AmorIAI will appear here once you’ve filled in the name, relationship type, tone and category."}
                       {locale === "es" &&
-                        "Tu AmorIAI aparecerá aquí cuando completes la información de la izquierda."}
+                        "Tu AmorIAI aparecerá aquí cuando completes el nombre, el tipo de relación, el tono y la categoría."}
                     </p>
                   </div>
                 )}
@@ -738,9 +756,8 @@ sans jugement, en respectant les limites de l’utilisateur.
           border-radius: 1rem;
           object-fit: cover;
           display: block;
+          animation: amoria-avatar-fade 0.35s ease-out;
         }
-
-        /* 🆕 Placeholder “création en cours” */
 
         .amoria-avatar-placeholder {
           position: relative;
@@ -785,6 +802,17 @@ sans jugement, en respectant les limites de l’utilisateur.
           }
           100% {
             transform: rotate(360deg);
+          }
+        }
+
+        @keyframes amoria-avatar-fade {
+          from {
+            opacity: 0;
+            transform: translateY(8px) scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
           }
         }
 
@@ -866,4 +894,4 @@ sans jugement, en respectant les limites de l’utilisateur.
       `}</style>
     </main>
   );
-    }
+            }
