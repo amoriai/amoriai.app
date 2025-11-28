@@ -406,10 +406,10 @@ export default function MyAIPage() {
         }
 
         .amoria-avatar-ring {
-          width: 240px;
-          height: 240px;
+          width: 190px;
+          height: 190px;
           border-radius: 999px;
-          padding: 4px;
+          padding: 3px;
           background: conic-gradient(
             from 180deg,
             #fb37ff,
@@ -422,24 +422,23 @@ export default function MyAIPage() {
           justify-content: center;
           overflow: hidden;
           box-shadow:
-            0 0 35px rgba(251, 55, 255, 0.6),
-            0 0 70px rgba(56, 189, 248, 0.4);
-          animation: amoriaPulse 4s ease-in-out infinite;
+            0 0 45px rgba(248, 113, 113, 0.5),
+            0 0 90px rgba(59, 130, 246, 0.4);
         }
 
         .amoria-avatar-img {
-          width: 232px;
-          height: 232px;
+          width: 182px;
+          height: 182px;
           border-radius: 999px;
           object-fit: cover;
           background: #020617;
-          transform: scale(0.92); /* léger dézoom pour voir visage + cheveux */
-          object-position: 50% 20%; /* remonte un peu pour les cheveux */
+          transform: scale(0.9); /* léger dézoom pour voir plus de cheveux/épaules */
+          object-position: 50% 25%; /* remonte légèrement le cadre pour les cheveux */
         }
 
         .amoria-avatar-placeholder {
-          width: 232px;
-          height: 232px;
+          width: 182px;
+          height: 182px;
           border-radius: 999px;
           background: #1e293b;
           display: flex;
@@ -454,7 +453,7 @@ export default function MyAIPage() {
           margin-top: 0.4rem;
           font-weight: 600;
           letter-spacing: 0.04em;
-          text-transform: lowercase;
+          text-transform: capitalize; /* affiche "Ali", "Nina", etc. même si l'user tape en minuscule */
         }
 
         .amoria-chip-row {
@@ -518,7 +517,7 @@ export default function MyAIPage() {
         }
 
         .amoria-ai-actions {
-          margin-top: 1.6rem;
+          margin-top: 1.8rem;
           display: flex;
           justify-content: center;
         }
@@ -559,34 +558,13 @@ export default function MyAIPage() {
             padding-inline: 1.1rem;
           }
           .amoria-avatar-ring {
-            width: 210px;
-            height: 210px;
+            width: 170px;
+            height: 170px;
           }
           .amoria-avatar-img,
           .amoria-avatar-placeholder {
-            width: 202px;
-            height: 202px;
-          }
-        }
-
-        @keyframes amoriaPulse {
-          0% {
-            transform: scale(1);
-            box-shadow:
-              0 0 35px rgba(251, 55, 255, 0.6),
-              0 0 70px rgba(56, 189, 248, 0.4);
-          }
-          50% {
-            transform: scale(1.03);
-            box-shadow:
-              0 0 45px rgba(251, 55, 255, 0.8),
-              0 0 90px rgba(56, 189, 248, 0.5);
-          }
-          100% {
-            transform: scale(1);
-            box-shadow:
-              0 0 35px rgba(251, 55, 255, 0.6),
-              0 0 70px rgba(56, 189, 248, 0.4);
+            width: 164px;
+            height: 164px;
           }
         }
       `}</style>
