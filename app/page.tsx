@@ -11,37 +11,39 @@ type Persona = {
   description: string;
 };
 
-const STRINGS: Record<
-  Locale,
-  {
-    brandTagline: string;
-    nav: { home: string; features: string; pricing: string };
-    navLogin: string;
-    navSignup: string;
-    heroKicker: string;
-    heroTitle: string;
-    heroSubtitle: string;
-    heroPrimary: string;
-    heroSupport: string;
-    langNote: string;
-    personasTitle: string;
-    personasSubtitle: string;
-    personas: Persona[];
-    choosePersona: string;
-    pricingTitle: string;
-    pricingText: string;
-    pricingCta: string;
-    videoCaption: string;
-    footerCopy: string;
-    footerLinks: {
-      legal: string;
-      privacy: string;
-      terms: string;
-      contact: string;
-      about: string;
-    };
-  }
-> = {
+type Copy = {
+  brandTagline: string;
+  nav: { home: string; features: string; pricing: string };
+  navLogin: string;
+  navSignup: string;
+  heroKicker: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  heroPrimary: string;
+  heroSupport: string;
+  langNote: string;
+  personasTitle: string;
+  personasSubtitle: string;
+  personas: Persona[];
+  choosePersona: string;
+  // nouvelle section "à quoi ça sert"
+  usageTitle: string;
+  usageBullets: string[];
+  pricingTitle: string;
+  pricingText: string;
+  pricingCta: string;
+  videoCaption: string;
+  footerCopy: string;
+  footerLinks: {
+    legal: string;
+    privacy: string;
+    terms: string;
+    contact: string;
+    about: string;
+  };
+};
+
+const STRINGS: Record<Locale, Copy> = {
   fr: {
     brandTagline: "Partenaire IA bienveillant·e • FR / EN / ES",
     nav: { home: "Accueil", features: "Fonctionnalités", pricing: "Tarifs" },
@@ -85,6 +87,14 @@ const STRINGS: Record<
       },
     ],
     choosePersona: "Créer mon compte gratuit",
+    usageTitle: "À quoi peut te servir Amoriai au quotidien ?",
+    usageBullets: [
+      "Parler quand tu n’as personne à qui te confier.",
+      "Écrire ce que tu ressens comme dans un journal intime.",
+      "Te déposer le soir pour calmer ton mental.",
+      "Clarifier une décision qui te fait hésiter.",
+      "Te sentir écouté·e, sans pression et sans jugement.",
+    ],
     pricingTitle: "Des tarifs simples & transparents",
     pricingText:
       "La version gratuite te permet de texter ton AmorIAI avec un nombre limité de messages. Avec la version payante, tu déverrouilles les conversations vocales (parler) et plus d’interactions.",
@@ -105,16 +115,16 @@ const STRINGS: Record<
     navLogin: "Log in",
     navSignup: "Create my free account",
     heroKicker: "WELCOME TO AMORIAI.APP",
-    heroTitle: "Your caring & multilingual AI partner.",
+    heroTitle: "A caring presence to talk, reflect and grow.",
     heroSubtitle:
-      "AmorIAI is a gentle 24/7 presence to talk with, reflect with, ask better questions and help you understand your emotions.",
+      "AmorIAI is a gentle 24/7 presence to talk to, think things through together, ask better questions and help you understand what you feel, without judgement.",
     heroPrimary: "Create my free account",
     heroSupport:
-      "Designed for deep conversations, emotional journaling and soft everyday coaching.",
+      "No commitment • Free to start • Cancel anytime",
     langNote: "AmorIAI is available in French, English and Spanish.",
     personasTitle: "Start for free with AmorIAI (text only)",
     personasSubtitle:
-      "Create your free account and start texting with the AI of your choice. Voice (talking to your AmorIAI) is only available with the paid subscription.",
+      "Create your free account and start talking with Amoriai right away. Write freely, at your own pace. Voice (talking with your Amoriai) is available with the paid subscription.",
     personas: [
       {
         id: "lyra",
@@ -142,6 +152,14 @@ const STRINGS: Record<
       },
     ],
     choosePersona: "Create my free account",
+    usageTitle: "How can Amoriai support you day to day?",
+    usageBullets: [
+      "Talk when you don’t feel like you have someone to confide in.",
+      "Write what you feel, like in a private journal.",
+      "Unwind in the evening and calm your mind.",
+      "Think through a decision when you’re hesitating.",
+      "Feel listened to, with no pressure and no judgement.",
+    ],
     pricingTitle: "Simple & transparent pricing",
     pricingText:
       "The free version lets you text your AmorIAI with a limited number of messages. With the paid plan, you unlock voice conversations and more interactions.",
@@ -162,16 +180,16 @@ const STRINGS: Record<
     navLogin: "Iniciar sesión",
     navSignup: "Crear mi cuenta gratuita",
     heroKicker: "BIENVENIDx A AMORIAI.APP",
-    heroTitle: "Tu compañerx de IA amable y multilingüe.",
+    heroTitle: "Una presencia amable para hablar, reflexionar y avanzar.",
     heroSubtitle:
-      "AmorIAI es una presencia suave, disponible 24/7 para conversar contigo, reflexionar, hacer mejores preguntas y ayudarte a entender tus emociones.",
+      "AmorIAI es una presencia suave, disponible 24/7 para conversar contigo, reflexionar juntos, hacer mejores preguntas y ayudarte a entender lo que sientes, sin juicios.",
     heroPrimary: "Crear mi cuenta gratuita",
     heroSupport:
-      "Pensada para conversaciones profundas, diarios emocionales y acompañamiento suave del día a día.",
+      "Sin compromiso • Gratis para empezar • Puedes cancelar cuando quieras",
     langNote: "AmorIAI te recibe en francés, inglés o español.",
     personasTitle: "Empieza gratis con AmorIAI (solo texto)",
     personasSubtitle:
-      "Crea tu cuenta gratuita y empieza a chatear por texto con la IA que elijas. La voz (hablar con tu AmorIAI) está disponible solo con la suscripción de pago.",
+      "Crea tu cuenta gratuita y empieza a hablar con AmorIAI ahora mismo. Escribe con libertad, a tu propio ritmo. La voz (hablar con tu AmorIAI) está disponible solo con la suscripción de pago.",
     personas: [
       {
         id: "lyra",
@@ -189,7 +207,7 @@ const STRINGS: Record<
         id: "kai",
         title: "Kai – AmorIAI andrógina",
         description:
-          "Presencia fluida e inclusiva, ni totalmente hombre ni mujer, centrada en la escucha y el matiz.",
+          "Presencia fluida e inclusiva, ni totalmente hombre ni mujer, centrada en la escucha y los matices.",
       },
       {
         id: "maelis",
@@ -199,6 +217,14 @@ const STRINGS: Record<
       },
     ],
     choosePersona: "Crear mi cuenta gratuita",
+    usageTitle: "¿Cómo puede ayudarte AmorIAI en tu día a día?",
+    usageBullets: [
+      "Hablar cuando sientes que no tienes con quién desahogarte.",
+      "Escribir lo que sientes, como en un diario íntimo.",
+      "Relajarte por la noche y calmar la mente.",
+      "Pensar una decisión cuando dudas.",
+      "Sentirte escuchadx, sin presión y sin juicios.",
+    ],
     pricingTitle: "Precios simples y transparentes",
     pricingText:
       "La versión gratuita te permite chatear por texto con tu AmorIAI con un número limitado de mensajes. Con la versión de pago desbloqueas conversaciones de voz y más interacciones.",
@@ -384,6 +410,16 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* USAGE SECTION */}
+      <section className="amoria-section amoria-section--usage">
+        <h2 className="amoria-section-title">{t.usageTitle}</h2>
+        <ul className="amoria-usage-list">
+          {t.usageBullets.map((item, index) => (
+            <li key={index}>{item}</li>
+          ))}
+        </ul>
+      </section>
+
       {/* PRICING TEASER */}
       <section id="pricing" className="amoria-section amoria-section--pricing">
         <h2 className="amoria-section-title">{t.pricingTitle}</h2>
@@ -420,7 +456,7 @@ export default function HomePage() {
         </div>
       </footer>
 
-      {/* STYLES (inchangés) */}
+      {/* STYLES */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
@@ -728,6 +764,29 @@ export default function HomePage() {
           margin: 0 auto 1.3rem;
         }
 
+        .amoria-section--usage {
+          border-top: 1px solid rgba(15, 23, 42, 0.9);
+          padding-top: 2rem;
+        }
+
+        .amoria-usage-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 0.45rem;
+          font-size: 0.9rem;
+          color: var(--amoria-text-muted);
+          max-width: 36rem;
+        }
+
+        .amoria-usage-list li::before {
+          content: "•";
+          margin-right: 0.4rem;
+          color: var(--amoria-accent-2);
+        }
+
         .amoria-card-grid {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -859,4 +918,4 @@ export default function HomePage() {
       `}</style>
     </main>
   );
-}
+      }
