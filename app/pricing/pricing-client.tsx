@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
@@ -244,22 +245,44 @@ export default function PricingClient() {
   const localeParam = (searchParams.get("lang") || "fr") as Locale;
   const t = LABELS[localeParam];
 
-  // Sélection d’un plan (free → création, payant → paiement)
-  const handleChoosePlan = (plan: PlanId) => {
+  // ➜ Clic sur une carte (plan)
+  const handleChoosePlan = async (planId: PlanId) => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
-    params.set("plan", plan);
+    params.set("plan", planId);
 
-    if (plan === "free") {
+    // On vérifie si l’utilisateur est loggé
+    const { data } = await supabase.auth.getUser();
+
+    // Pas connecté → on l’envoie d’abord créer / se connecter
+    if (!data?.user) {
+      router.push(`/signup?${params.toString()}`);
+      return;
+    }
+
+    // Connecté → on suit le flux normal
+    if (planId === "free") {
       router.push(`/create-amoria?${params.toString()}`);
     } else {
       router.push(`/payment?${params.toString()}`);
     }
   };
 
-  // Gros bouton hero = équivalent de "choisir le plan gratuit"
-  const handleHeroCta = () => {
-    handleChoosePlan("free");
+  // ➜ Gros bouton en haut
+  const handleHeroCta = async () => {
+    const params = new URLSearchParams();
+    params.set("lang", localeParam);
+
+    const { data } = await supabase.auth.getUser();
+
+    if (data?.user) {
+      // Déjà connectée → on l’envoie direct créer son AmorIAI gratuit
+      params.set("plan", "free");
+      router.push(`/create-amoria?${params.toString()}`);
+    } else {
+      // Pas connectée → on l’envoie au signup
+      router.push(`/signup?${params.toString()}`);
+    }
   };
 
   return (
@@ -276,7 +299,9 @@ export default function PricingClient() {
       </section>
 
       <section className="amoria-pricing-section">
-        <h2 className="amoria-pricing-section-title">{t.simplePricing}</h2>
+        <h2 className="amoria-pricing-section-title">
+          {t.simplePricing}
+        </h2>
         <p className="amoria-pricing-section-note">{t.usdNote}</p>
 
         <div className="amoria-pricing-grid">
@@ -288,8 +313,12 @@ export default function PricingClient() {
               }`}
             >
               <header className="amoria-pricing-card-header">
-                <h3 className="amoria-pricing-card-name">{plan.name}</h3>
-                <p className="amoria-pricing-card-price">{plan.price}</p>
+                <h3 className="amoria-pricing-card-name">
+                  {plan.name}
+                </h3>
+                <p className="amoria-pricing-card-price">
+                  {plan.price}
+                </p>
                 <p className="amoria-pricing-card-tagline">
                   {plan.tagline}
                 </p>
@@ -322,6 +351,8 @@ export default function PricingClient() {
           flex-direction: column;
           align-items: center;
           gap: 2.5rem;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont,
+            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
         }
 
         .amoria-pricing-hero {
@@ -453,4 +484,4 @@ export default function PricingClient() {
       `}</style>
     </main>
   );
-          }
+}
