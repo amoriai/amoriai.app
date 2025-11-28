@@ -370,14 +370,15 @@ export default function MyAIPage() {
           border: 1px solid rgba(148, 163, 184, 0.45);
           background: radial-gradient(
             circle at top,
-            #020617 0,
-            #020617 35%,
-            #020617 40%,
-            #000 100%
+            rgba(2, 6, 23, 0.95) 0,
+            rgba(2, 6, 23, 0.9) 35%,
+            rgba(15, 23, 42, 0.98) 40%,
+            rgba(0, 0, 0, 0.98) 100%
           );
           box-shadow: 0 26px 70px rgba(15, 23, 42, 0.95);
           padding: 2.1rem 2rem 1.9rem;
           text-align: center;
+          backdrop-filter: blur(18px);
         }
 
         .amoria-ai-header-main {
@@ -409,11 +410,20 @@ export default function MyAIPage() {
           height: 190px;
           border-radius: 999px;
           padding: 3px;
-          background: conic-gradient(from 180deg, #fb37ff, #ff6b9c, #38bdf8, #fb37ff);
+          background: conic-gradient(
+            from 180deg,
+            #fb37ff,
+            #ff6b9c,
+            #38bdf8,
+            #fb37ff
+          );
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 0 45px rgba(248, 113, 113, 0.5);
+          overflow: hidden;
+          box-shadow:
+            0 0 45px rgba(248, 113, 113, 0.5),
+            0 0 90px rgba(59, 130, 246, 0.4);
         }
 
         .amoria-avatar-img {
@@ -422,6 +432,8 @@ export default function MyAIPage() {
           border-radius: 999px;
           object-fit: cover;
           background: #020617;
+          transform: scale(0.9); /* dézoom léger */
+          object-position: 50% 20%; /* remonte un peu pour voir les cheveux */
         }
 
         .amoria-avatar-placeholder {
