@@ -57,7 +57,7 @@ const STRINGS: Record<
     langNote: "AmorIAI vous accueille en français, anglais ou espagnol.",
     personasTitle: "Commence gratuitement avec AmorIAI (en texte)",
     personasSubtitle:
-      "Crée ton compte gratuitement et commence à texter avec l’IA de ton choix. La voix (parler avec ton AmorIAI) est disponible uniquement avec l’abonnement payant.",
+      "Crée ton compte gratuitement et commence à parler avec Amoriai dès maintenant. Écris librement, à ton rythme. La voix (parler avec ton Amoriai) est disponible avec l’abonnement payant.",
     personas: [
       {
         id: "lyra",
