@@ -257,6 +257,16 @@ export default function CreateAmoriaPage() {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // 👉 Nouveau : contrôle de l’affichage de l’aperçu
+  const [hasPreview, setHasPreview] = useState(false);
+
+  // Quand les infos de base sont remplies, on “débloque” l’avatar
+  useEffect(() => {
+    const hasCoreInfo =
+      name.trim().length > 0 && !!relationType && !!tone;
+    setHasPreview(hasCoreInfo);
+  }, [name, relationType, tone]);
+
   // Lire les query params et vérifier la session
   useEffect(() => {
     const init = async () => {
@@ -508,11 +518,25 @@ sans jugement, en respectant les limites de l’utilisateur.
 
             <div className="amoria-right">
               <div className="amoria-avatar-frame">
-                <img
-                  src={avatarUrl}
-                  alt="Aperçu AmorIAI"
-                  className="amoria-avatar-img"
-                />
+                {hasPreview ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Aperçu AmorIAI"
+                    className="amoria-avatar-img"
+                  />
+                ) : (
+                  <div className="amoria-avatar-placeholder">
+                    <div className="amoria-avatar-glow" />
+                    <p className="amoria-avatar-placeholder-text">
+                      {locale === "fr" &&
+                        "Ton AmorIAI apparaîtra ici dès que tu auras rempli les informations à gauche."}
+                      {locale === "en" &&
+                        "Your AmorIAI will appear here once you’ve filled in the information on the left."}
+                      {locale === "es" &&
+                        "Tu AmorIAI aparecerá aquí cuando completes la información de la izquierda."}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <label className="amoria-field amoria-field--textarea">
@@ -716,6 +740,54 @@ sans jugement, en respectant les limites de l’utilisateur.
           display: block;
         }
 
+        /* 🆕 Placeholder “création en cours” */
+
+        .amoria-avatar-placeholder {
+          position: relative;
+          width: 100%;
+          min-height: 210px;
+          border-radius: 1rem;
+          overflow: hidden;
+          background: radial-gradient(circle at top, #1f2937, #020617 70%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1.4rem;
+        }
+
+        .amoria-avatar-glow {
+          position: absolute;
+          inset: -40%;
+          background: conic-gradient(
+            from 0deg,
+            #fb37ff,
+            #ff6b9c,
+            #f97316,
+            #38bdf8,
+            #fb37ff
+          );
+          opacity: 0.25;
+          filter: blur(30px);
+          animation: amoria-glow-rotate 5s linear infinite;
+        }
+
+        .amoria-avatar-placeholder-text {
+          position: relative;
+          font-size: 0.82rem;
+          color: #e5e7eb;
+          text-align: center;
+          max-width: 260px;
+        }
+
+        @keyframes amoria-glow-rotate {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+
         .amoria-footer {
           display: flex;
           justify-content: space-between;
@@ -794,4 +866,4 @@ sans jugement, en respectant les limites de l’utilisateur.
       `}</style>
     </main>
   );
-}
+    }
