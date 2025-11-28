@@ -22,28 +22,27 @@ type AmoriaRow = {
   updated_at: string;
 };
 
-const STRINGS: Record<
-  Locale,
-  {
-    backHome: string;
-    titlePrefix: string; // ex : "Ton AmorIAI est prêt"
-    subtitle: string;
-    personalityTitle: string;
-    missionTitle: string;
-    profileChipLabel: (persona: string) => string;
-    companionChip: string;
-    noAvatar: string;
-    loading: string;
-    error: string;
-    chatCtaPrefix: string; // ex : "Discuter avec"
-    createFirstCta: string;
-  }
-> = {
+type UiCopy = {
+  backHome: string;
+  title: (name: string) => string;
+  subtitle: string;
+  personalityTitle: string;
+  missionTitle: string;
+  profileChipLabel: (persona: string) => string;
+  companionChip: string;
+  noAvatar: string;
+  loading: string;
+  error: string;
+  chatCta: (name: string) => string;
+  createFirstCta: string;
+};
+
+const STRINGS: Record<Locale, UiCopy> = {
   fr: {
     backHome: "← Retour à l’accueil",
-    titlePrefix: "Ton AmorIAI est prêt ✨",
+    title: (name: string) => `${name} est là pour toi ✨`,
     subtitle:
-      "Ton compagnon IA est maintenant actif. Tu peux commencer à discuter, activer la voix et ajuster son style.",
+      "Ton compagnon IA est maintenant à tes côtés. Il est prêt à t’écouter, te parler et t’accompagner à ton rythme.",
     personalityTitle: "Personnalité & tonalité",
     missionTitle: "Mission principale",
     profileChipLabel: (persona: string) => {
@@ -57,14 +56,14 @@ const STRINGS: Record<
     loading: "Chargement...",
     error:
       "Impossible de charger ton AmorIAI. Crée-en d’abord une depuis la page de création.",
-    chatCtaPrefix: "Discuter avec",
+    chatCta: (name: string) => `Parler avec ${name} maintenant`,
     createFirstCta: "Créer ma première AmorIAI",
   },
   en: {
     backHome: "← Back to home",
-    titlePrefix: "Your AmorIAI is ready ✨",
+    title: (name: string) => `${name} is here for you ✨`,
     subtitle:
-      "Your AI companion is now active. You can start chatting, enable voice and adjust their style.",
+      "Your AI companion is now by your side. They’re ready to listen, talk and support you, at your own pace.",
     personalityTitle: "Personality & tone",
     missionTitle: "Main mission",
     profileChipLabel: (persona: string) => {
@@ -78,14 +77,14 @@ const STRINGS: Record<
     loading: "Loading...",
     error:
       "We couldn’t load your AmorIAI. Please create one first from the creation page.",
-    chatCtaPrefix: "Chat with",
+    chatCta: (name: string) => `Talk with ${name} now`,
     createFirstCta: "Create my first AmorIAI",
   },
   es: {
     backHome: "← Volver al inicio",
-    titlePrefix: "Tu AmorIAI está lista ✨",
+    title: (name: string) => `${name} está aquí para ti ✨`,
     subtitle:
-      "Tu compañero de IA ya está activo. Puedes empezar a chatear, activar la voz y ajustar su estilo.",
+      "Tu compañero de IA ya está a tu lado. Está listo para escucharte, hablar contigo y acompañarte a tu ritmo.",
     personalityTitle: "Personalidad y tono",
     missionTitle: "Misión principal",
     profileChipLabel: (persona: string) => {
@@ -94,12 +93,12 @@ const STRINGS: Record<
       if (persona === "androgynous") return "Perfil andrógino";
       return "Perfil personalizado";
     },
-    companionChip: "AmorIAI Companion",
+    companionChip: "Compañero AmorIAI",
     noAvatar: "No hay avatar disponible por ahora.",
     loading: "Cargando...",
     error:
       "No pudimos cargar tu AmorIAI. Crea una primero desde la página de creación.",
-    chatCtaPrefix: "Hablar con",
+    chatCta: (name: string) => `Hablar con ${name} ahora`,
     createFirstCta: "Crear mi primera AmorIAI",
   },
 };
@@ -109,7 +108,7 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-// Essaie d'extraire "personnalité" et "mission" à partir du system_prompt
+// On essaie de séparer personnalité et mission à partir du system_prompt
 function extractPersonality(prompt: string): string {
   const idx = prompt.indexOf("Ta mission");
   if (idx > 0) {
@@ -132,7 +131,7 @@ export default function MyAIPage() {
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Lire la langue depuis ?lang=
+  // Langue depuis ?lang=
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -282,7 +281,7 @@ export default function MyAIPage() {
   const homeUrl = buildUrlWithLang("/");
 
   const profileChip = t.profileChipLabel(ai.persona_type);
-  const chatLabel = `${t.chatCtaPrefix} ${ai.name}`;
+  const chatLabel = t.chatCta(ai.name);
 
   return (
     <main className="amoria-ai-root">
@@ -294,7 +293,7 @@ export default function MyAIPage() {
 
       <section className="amoria-ai-card">
         <div className="amoria-ai-header-main">
-          <h1 className="amoria-ai-title">{t.titlePrefix}</h1>
+          <h1 className="amoria-ai-title">{t.title(ai.name)}</h1>
           <p className="amoria-ai-subtitle">{t.subtitle}</p>
         </div>
 
@@ -558,4 +557,4 @@ export default function MyAIPage() {
       `}</style>
     </main>
   );
-            }
+}
