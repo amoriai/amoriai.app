@@ -94,7 +94,7 @@ function formatDisplayName(name: string | null | undefined): string {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
-export default function ChatPage() {
+export default function ChatClient() {
   const searchParams = useSearchParams();
   const [locale, setLocale] = useState<Locale>("fr");
   const [aiMeta, setAiMeta] = useState<AiMeta | null>(null);
@@ -113,64 +113,42 @@ export default function ChatPage() {
 
   const t = STRINGS[locale];
 
+  // ICI, chatId = ID du persona (table user_amoria)
   const chatId = searchParams.get("chatId");
-  // tu peux aussi passer l’ID de l’IA en query si tu veux
-  // const iaId = searchParams.get("iaId");
 
-  // Charger les infos IA + historique de chat
+  // Charger l’IA depuis public.user_amoria
   useEffect(() => {
-    if (!chatId) {
-      setError(t.error);
-      setLoading(false);
-      return;
-    }
+    const load = async () => {
+      if (!chatId) {
+        setError(t.error);
+        setLoading(false);
+        return;
+      }
 
-    const loadChat = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // ⚠️ À ADAPTER À TON SCHÉMA SUPABASE
-        // Exemple de pattern : une table "amoria_chats" + "amoria_messages"
-        // Remplace les noms de tables / colonnes par les tiens.
-        const { data: chatRow, error: chatError } = await supabase
-          .from("amoria_chats" as any) // <--- remplace par ta table
-          .select(
-            `
-            id,
-            ia_id,
-            ia_name,
-            ia_avatar_url,
-            messages:amoria_messages (
-              id,
-              role,
-              content,
-              created_at
-            )
-          `
-          )
+        const { data, error: supaError } = await supabase
+          .from("user_amoria")
+          .select("id, name, avatar_image_url")
           .eq("id", chatId)
           .maybeSingle();
 
-        if (chatError || !chatRow) {
+        if (supaError || !data) {
           setError(t.error);
           setLoading(false);
           return;
         }
 
         setAiMeta({
-          id: chatRow.ia_id,
-          name: chatRow.ia_name,
-          avatar_image_url: chatRow.ia_avatar_url,
+          id: data.id,
+          name: data.name,
+          avatar_image_url: data.avatar_image_url,
         });
 
-        setMessages(
-          (chatRow.messages || []).sort(
-            (a: ChatMessage, b: ChatMessage) =>
-              new Date(a.created_at).getTime() -
-              new Date(b.created_at).getTime()
-          )
-        );
+        // Pas d’historique pour l’instant
+        setMessages([]);
       } catch {
         setError(t.error);
       } finally {
@@ -178,10 +156,13 @@ export default function ChatPage() {
       }
     };
 
-    loadChat();
-  }, [chatId, t.error]);
+    load();
+    // on ne met pas t.error dans les dépendances pour éviter de relancer au changement de langue
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId]);
 
-  const displayName = formatDisplayName(aiMeta?.name || "ton AmorIA");
+  const displayName =
+    formatDisplayName(aiMeta?.name) || "ton AmorIA";
 
   // Envoi d’un message
   const handleSubmit = async (e: FormEvent) => {
@@ -203,39 +184,17 @@ export default function ChatPage() {
     setTyping(true);
 
     try {
-      // ⚠️ À ADAPTER : ici tu remets TON appel actuel
-      // à ton endpoint (Edge Function, /api/chat, etc.)
-      //
-      // Exemple générique :
-      /*
-      const res = await fetch("/api/chat-with-amoria", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chatId,
-          message: content,
-          iaId: aiMeta.id,
-          lang: locale,
-        }),
-      });
-
-      const json = await res.json();
-      */
-
-      // Pour rester honnête : je ne sais pas ton backend,
-      // donc je ne peux pas inventer la structure de la réponse.
-      // Je mets un faux message pour que l’UI reste claire.
+      // À remplacer plus tard par ton vrai backend
       const fakeAssistantReply: ChatMessage = {
         id: `local-assistant-${Date.now()}`,
         role: "assistant",
         content:
-          "☝️ Remets ici la logique de réponse de ton backend (OpenAI / Supabase). Ce message est juste un placeholder.",
+          "✨ (Réponse de démonstration) Ici, ton backend AmorIA répondra réellement à l’utilisateur.",
         created_at: new Date().toISOString(),
       };
 
       setMessages((prev) => [...prev, fakeAssistantReply]);
     } catch {
-      // En cas d’erreur réelle backend, tu peux afficher un message
       setError("Erreur lors de l’envoi du message. Réessaie.");
     } finally {
       setSending(false);
@@ -334,17 +293,19 @@ export default function ChatPage() {
             )}
           </div>
           <h1 className="amoria-chat-title">
-            {t.title(displayName || "ton AmorIA")}
+            {t.title(displayName)}
           </h1>
           <p className="amoria-chat-subtitle">
-            {t.subtitle(displayName || "ton AmorIA")}
+            {t.subtitle(displayName)}
           </p>
         </div>
 
         {/* Zone de messages */}
         <div className="amoria-chat-window">
           {messages.length === 0 ? (
-            <p className="amoria-chat-empty">{t.emptyState(displayName)}</p>
+            <p className="amoria-chat-empty">
+              {t.emptyState(displayName)}
+            </p>
           ) : (
             <div className="amoria-chat-messages">
               {messages.map((msg) => (
@@ -690,4 +651,4 @@ export default function ChatPage() {
       `}</style>
     </main>
   );
-}
+          }
