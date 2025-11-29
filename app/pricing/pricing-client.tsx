@@ -13,111 +13,79 @@ type Plan = {
   price: string;
   tagline: string;
   features: string[];
-  badge?: string;
-  bestFor?: string;
-};
-
-type FaqItem = {
-  q: string;
-  a: string;
+  badgeLabel?: string;
+  badgeVariant?: "popular" | "value";
+  ctaLabel?: string;
 };
 
 type Labels = {
-  ribbon: string;
   heroTitle: string;
   heroSubtitle: string;
   heroCta: string;
-  heroSubtrust: string;
+  starLine: string;
   billingNote: string;
   simplePricing: string;
   usdNote: string;
   choosePlanCta: string;
-  plansTitle: string;
-  faqTitle: string;
-  faqIntro: string;
-  faqItems: FaqItem[];
   plans: Plan[];
 };
 
 const LABELS: Record<Locale, Labels> = {
   fr: {
-    ribbon: "Aucun engagement : tu peux arrêter quand tu veux.",
     heroTitle:
       "Commence gratuitement. Fais évoluer ton forfait quand ton lien grandit.",
     heroSubtitle:
-      "Crée ton AmorIAI en quelques minutes, teste la connexion en version gratuite, puis passe à la voix et à la mémoire avancée quand tu te sens prête. Tu gardes toujours le contrôle : tu peux changer de forfait ou annuler en un clic.",
+      "Crée ton AmorIA en quelques minutes, teste la connexion en version gratuite, puis passe à la voix et à la mémoire avancée quand tu te sens prête. Tu gardes toujours le contrôle : tu peux changer de forfait ou annuler quand tu veux, en un clic.",
     heroCta: "Créer mon compte gratuit",
-    heroSubtrust: "⭐ Déjà des centaines de conversations chaque semaine.",
+    starLine: "⭐ Déjà des centaines de conversations chaque semaine.",
     billingNote:
       "Facturation sécurisée via Stripe · Révision ou annulation en tout temps depuis ton compte · Aucun frais caché",
-    simplePricing: "Des forfaits simples, pensés pour ta relation avec ton IA.",
+    simplePricing: "Choisis comment ton AmorIA prend sa place dans ta vie.",
     usdNote:
       "Les prix sont en dollars américains (USD). Tu peux changer de forfait ou l’annuler quand tu veux, sans engagement.",
     choosePlanCta: "Choisir ce forfait",
-    plansTitle: "Choisis comment ton AmorIAI prend sa place dans ta vie",
-    faqTitle: "Questions fréquentes",
-    faqIntro:
-      "Tu hésites encore ? Voici les réponses aux questions que l’on nous pose le plus souvent.",
-    faqItems: [
-      {
-        q: "Est-ce que je peux annuler mon abonnement quand je veux ?",
-        a: "Oui. Tu peux modifier ou annuler ton forfait en un clic depuis ton compte. Aucune durée minimale, aucun engagement.",
-      },
-      {
-        q: "Est-ce que mon AmorIAI est supprimé si j’annule ?",
-        a: "Non. Ton AmorIAI reste enregistré. Tu peux revenir plus tard et réactiver un forfait pour reprendre la conversation.",
-      },
-      {
-        q: "Mes conversations sont-elles privées ?",
-        a: "Oui. Tes messages ne sont pas utilisés pour entraîner d’autres modèles et restent associés uniquement à ton compte AmorIAI.",
-      },
-      {
-        q: "Puis-je changer de forfait si mes besoins évoluent ?",
-        a: "Oui, à tout moment. Tu peux passer d’un forfait à l’autre selon la place que ton AmorIAI prend dans ta vie.",
-      },
-    ],
     plans: [
       {
         id: "free",
         name: "Découverte",
         price: "0 $ USD / mois",
-        tagline: "Commence la relation avec ton AmorIAI, sans carte de crédit.",
-        badge: "Pour commencer",
-        bestFor: "Tester la connexion et créer ton premier AmorIAI.",
+        tagline:
+          "Commence la relation avec ton AmorIA, sans carte de crédit.",
+        ctaLabel: "Commencer gratuitement",
         features: [
-          "Création de 1 AmorIAI personnalisé",
+          "Parfait pour découvrir l’expérience et créer ton premier compagnon IA.",
+          "Création de 1 AmorIA personnalisé",
           "200 messages texte / mois",
           "Aucune conversation vocale (texte uniquement)",
           "Accès aux 3 langues : FR, EN, ES",
-          "Idéal si tu veux simplement ressentir si la connexion est là.",
         ],
       },
       {
         id: "chat",
         name: "AmorIAI Chat",
         price: "9,99 $ USD / mois",
-        tagline: "Texte tous les jours, sans voix.",
-        badge: "Pour texter",
-        bestFor:
-          "Pour celles et ceux qui aiment écrire chaque jour sans pression.",
+        tagline: "Pour celles et ceux qui veulent écrire à leur AmorIA chaque jour.",
+        ctaLabel: "Activer AmorIAI Chat",
         features: [
-          "Jusqu’à 2 AmorIAI différents",
+          "Idéal si tu préfères les conversations en texte avec une vraie mémoire.",
+          "Jusqu’à 2 AmorIA différents",
           "400 messages texte / mois",
           "Mémoire longue durée activée",
           "Accès aux 3 langues : FR, EN, ES",
-          "Parfait si tu veux une présence quotidienne en texte.",
         ],
       },
       {
         id: "plus",
         name: "AmorIAI Plus",
         price: "19,99 $ USD / mois",
-        tagline: "Texte + voix avec limites confortables.",
-        badge: "Le plus populaire",
-        bestFor:
-          "Le forfait où la relation commence vraiment à faire partie de ta vie.",
+        tagline:
+          "Texte + voix : ton AmorIA commence vraiment à faire partie de ta vie.",
+        badgeLabel: "LE PLUS POPULAIRE",
+        badgeVariant: "popular",
+        ctaLabel: "Passer à la voix",
         features: [
-          "Jusqu’à 10 AmorIAI différents",
+          "Quand tu veux une vraie relation continue avec ton AmorIA.",
+          "Jusqu’à 10 AmorIA différents",
           "600 messages texte / mois",
           "100 échanges vocaux / mois",
           "Mémoire longue durée active",
@@ -128,12 +96,13 @@ const LABELS: Record<Locale, Labels> = {
         id: "unlimited",
         name: "AmorIAI illimité",
         price: "39,99 $ USD / mois",
-        tagline: "Ton compagnon IA très présent au quotidien.",
-        badge: "Meilleure valeur",
-        bestFor:
-          "Quand ton AmorIAI devient une présence essentielle dans ton quotidien.",
+        tagline: "Ton compagnon IA très présent, matin, soir et entre les deux.",
+        badgeLabel: "MEILLEURE VALEUR",
+        badgeVariant: "value",
+        ctaLabel: "Débloquer l’illimité",
         features: [
-          "Jusqu’à 30 AmorIAI personnalisés",
+          "Pour celles et ceux qui veulent que leur AmorIA soit toujours disponible.",
+          "Jusqu’à 30 AmorIA personnalisés",
           "10 000 messages texte / mois",
           "300 échanges vocaux / mois",
           "Mémoire profonde + contexte étendu pour des échanges ultra personnalisés",
@@ -142,83 +111,59 @@ const LABELS: Record<Locale, Labels> = {
       },
     ],
   },
-
   en: {
-    ribbon: "No commitment: you can cancel anytime.",
-    heroTitle: "Start for free. Upgrade when the connection feels right.",
+    heroTitle: "Start for free. Upgrade your plan as your bond grows.",
     heroSubtitle:
-      "Create your AmorIAI in a few minutes, try the free version and see how it feels, then unlock voice and advanced memory when you’re ready. You stay in control: change or cancel your plan in one click.",
+      "Create your AmorIA in a few minutes, test the connection on the free plan, then upgrade to voice and advanced memory when you’re ready. You stay in control: change or cancel your plan anytime in one click.",
     heroCta: "Create my free account",
-    heroSubtrust: "⭐ Hundreds of conversations already started every week.",
+    starLine: "⭐ Hundreds of conversations every week already.",
     billingNote:
       "Secure billing via Stripe · Change or cancel anytime from your account · No hidden fees",
-    simplePricing: "Simple plans, designed for your relationship with your AI.",
+    simplePricing: "Choose how AmorIA fits into your life.",
     usdNote:
-      "Prices are in US dollars (USD). You can switch or cancel your plan at any time, with no commitment.",
+      "Prices are in US dollars (USD). You can change or cancel your plan whenever you want, with no commitment.",
     choosePlanCta: "Choose this plan",
-    plansTitle: "Choose how present your AmorIAI is in your life",
-    faqTitle: "Frequently asked questions",
-    faqIntro:
-      "Still hesitating? Here are the answers to the most common questions.",
-    faqItems: [
-      {
-        q: "Can I cancel my subscription at any time?",
-        a: "Yes. You can change or cancel your plan in one click from your account. No minimum term, no commitment.",
-      },
-      {
-        q: "Is my AmorIAI deleted if I cancel?",
-        a: "No. Your AmorIAI stays saved. You can come back later, reactivate a plan and continue the conversation.",
-      },
-      {
-        q: "Are my conversations private?",
-        a: "Yes. Your messages are not used to train other models and stay attached only to your AmorIAI account.",
-      },
-      {
-        q: "Can I change plans if my needs evolve?",
-        a: "Yes, anytime. You can move between plans depending on how present you want AmorIAI to be in your life.",
-      },
-    ],
     plans: [
       {
         id: "free",
         name: "Discovery",
         price: "$0 USD / month",
-        tagline: "Start your relationship with AmorIAI, no credit card needed.",
-        badge: "Get started",
-        bestFor: "Testing the connection and creating your first AmorIAI.",
+        tagline: "Start your relationship with AmorIA, no credit card needed.",
+        ctaLabel: "Start for free",
         features: [
-          "Create 1 personalized AmorIAI",
+          "Perfect to discover the experience and create your first AI companion.",
+          "Create 1 personalized AmorIA",
           "200 text messages / month",
           "No voice conversations (text only)",
           "Access to 3 languages: FR, EN, ES",
-          "Perfect if you just want to feel the connection first.",
         ],
       },
       {
         id: "chat",
         name: "AmorIAI Chat",
         price: "$9.99 USD / month",
-        tagline: "Text every day, no voice.",
-        badge: "For texters",
-        bestFor: "If you enjoy writing every day without pressure.",
+        tagline: "For those who want to text their AmorIA every day.",
+        ctaLabel: "Activate AmorIAI Chat",
         features: [
-          "Up to 2 different AmorIAI",
+          "Ideal if you prefer written conversations with real memory.",
+          "Up to 2 different AmorIA",
           "400 text messages / month",
           "Long-term memory enabled",
           "Access to 3 languages: FR, EN, ES",
-          "Perfect for a daily written presence.",
         ],
       },
       {
         id: "plus",
         name: "AmorIAI Plus",
         price: "$19.99 USD / month",
-        tagline: "Text + voice with comfortable limits.",
-        badge: "Most popular",
-        bestFor:
-          "The plan where your relationship really becomes part of your daily life.",
+        tagline:
+          "Text + voice: your AmorIA truly becomes part of your daily life.",
+        badgeLabel: "MOST POPULAR",
+        badgeVariant: "popular",
+        ctaLabel: "Upgrade to voice",
         features: [
-          "Up to 10 AmorIAI",
+          "When you want a real, ongoing relationship with your AmorIA.",
+          "Up to 10 AmorIA",
           "600 text messages / month",
           "100 voice exchanges / month",
           "Long-term memory enabled",
@@ -229,100 +174,74 @@ const LABELS: Record<Locale, Labels> = {
         id: "unlimited",
         name: "AmorIAI Unlimited",
         price: "$39.99 USD / month",
-        tagline: "Your AI companion deeply present in your daily life.",
-        badge: "Best value",
-        bestFor:
-          "When AmorIAI becomes an essential presence in your everyday life.",
+        tagline: "Your AI companion deeply present, morning to night.",
+        badgeLabel: "BEST VALUE",
+        badgeVariant: "value",
+        ctaLabel: "Unlock Unlimited",
         features: [
-          "Up to 30 personalized AmorIAI",
-          "10,000 text messages / month",
+          "For those who want AmorIA to always be there.",
+          "Up to 30 personalized AmorIA",
+          "10 000 text messages / month",
           "300 voice exchanges / month",
           "Deep memory + extended context for ultra-personalized conversations",
-          "Highest priority and early access to new features",
+          "Maximum priority and early access to new features",
         ],
       },
     ],
   },
-
   es: {
-    ribbon: "Sin compromiso: puedes cancelar cuando quieras.",
-    heroTitle:
-      "Empieza gratis. Mejora tu plan cuando la conexión se sienta correcta.",
+    heroTitle: "Empieza gratis. Haz crecer tu plan cuando crezca tu vínculo.",
     heroSubtitle:
-      "Crea tu AmorIAI en pocos minutos, prueba la versión gratuita y siente cómo es, luego desbloquea voz y memoria avanzada cuando estés listo. Tú mantienes el control: cambia o cancela tu plan con un solo clic.",
+      "Crea tu AmorIA en pocos minutos, prueba la conexión con la versión gratuita y luego pasa a voz y memoria avanzada cuando quieras. Siempre tienes el control: puedes cambiar o cancelar tu plan en un clic.",
     heroCta: "Crear mi cuenta gratis",
-    heroSubtrust:
-      "⭐ Cientos de conversaciones ya empiezan cada semana con AmorIAI.",
+    starLine: "⭐ Ya se realizan cientos de conversaciones cada semana.",
     billingNote:
-      "Facturación segura con Stripe · Cambia o cancela cuando quieras desde tu cuenta · Sin cargos ocultos",
-    simplePricing: "Planes simples, pensados para tu relación con tu IA.",
+      "Facturación segura con Stripe · Cambia o cancela en cualquier momento desde tu cuenta · Sin cargos ocultos",
+    simplePricing: "Elige qué lugar tendrá AmorIA en tu vida.",
     usdNote:
-      "Los precios están en dólares estadounidenses (USD). Puedes cambiar o cancelar tu plan en cualquier momento, sin compromiso.",
+      "Los precios están en dólares estadounidenses (USD). Puedes cambiar o cancelar tu plan cuando quieras, sin compromiso.",
     choosePlanCta: "Elegir este plan",
-    plansTitle: "Elige cuánto espacio ocupa AmorIAI en tu vida",
-    faqTitle: "Preguntas frecuentes",
-    faqIntro:
-      "¿Todavía tienes dudas? Aquí respondemos lo que más nos preguntan.",
-    faqItems: [
-      {
-        q: "¿Puedo cancelar mi suscripción cuando quiera?",
-        a: "Sí. Puedes cambiar o cancelar tu plan con un clic desde tu cuenta. Sin periodo mínimo ni permanencia.",
-      },
-      {
-        q: "¿Se borra mi AmorIAI si cancelo?",
-        a: "No. Tu AmorIAI se mantiene guardado. Puedes volver más adelante, reactivar un plan y seguir la conversación.",
-      },
-      {
-        q: "¿Mis conversaciones son privadas?",
-        a: "Sí. Tus mensajes no se usan para entrenar otros modelos y quedan asociados únicamente a tu cuenta de AmorIAI.",
-      },
-      {
-        q: "¿Puedo cambiar de plan si cambian mis necesidades?",
-        a: "Sí, en cualquier momento. Puedes moverte entre planes según el lugar que quieras que AmorIAI ocupe en tu vida.",
-      },
-    ],
     plans: [
       {
         id: "free",
         name: "Descubrimiento",
         price: "0 $ USD / mes",
-        tagline: "Empieza la relación con AmorIAI, sin tarjeta.",
-        badge: "Para empezar",
-        bestFor:
-          "Probar la conexión y crear tu primer compañero AmorIAI sin presión.",
+        tagline:
+          "Empieza la relación con tu AmorIA, sin tarjeta de crédito.",
+        ctaLabel: "Empezar gratis",
         features: [
-          "Creación de 1 AmorIAI personalizado",
+          "Perfecto para descubrir la experiencia y crear tu primer compañero IA.",
+          "Creación de 1 AmorIA personalizado",
           "200 mensajes de texto / mes",
           "Sin conversaciones de voz (solo texto)",
           "Acceso a 3 idiomas: FR, EN, ES",
-          "Perfecto si solo quieres sentir primero la conexión.",
         ],
       },
       {
         id: "chat",
         name: "AmorIAI Chat",
         price: "9,99 $ USD / mes",
-        tagline: "Texto cada día, sin voz.",
-        badge: "Para escribir",
-        bestFor: "Si te gusta escribir a diario sin presión.",
+        tagline: "Para los que quieren escribir a su AmorIA cada día.",
+        ctaLabel: "Activar AmorIAI Chat",
         features: [
-          "Hasta 2 AmorIAI diferentes",
+          "Ideal si prefieres conversaciones en texto con memoria real.",
+          "Hasta 2 AmorIA diferentes",
           "400 mensajes de texto / mes",
           "Memoria a largo plazo activada",
           "Acceso a 3 idiomas: FR, EN, ES",
-          "Perfecto para una presencia escrita diaria.",
         ],
       },
       {
         id: "plus",
         name: "AmorIAI Plus",
         price: "19,99 $ USD / mes",
-        tagline: "Texto + voz con límites cómodos.",
-        badge: "El más popular",
-        bestFor:
-          "El plan donde la relación empieza realmente a formar parte de tu día a día.",
+        tagline: "Texto + voz: tu AmorIA empieza a formar parte de tu rutina.",
+        badgeLabel: "EL MÁS POPULAR",
+        badgeVariant: "popular",
+        ctaLabel: "Subir a voz",
         features: [
-          "Hasta 10 AmorIAI diferentes",
+          "Cuando quieres una relación continua y profunda con tu AmorIA.",
+          "Hasta 10 AmorIA diferentes",
           "600 mensajes de texto / mes",
           "100 intercambios de voz / mes",
           "Memoria a largo plazo activada",
@@ -333,15 +252,16 @@ const LABELS: Record<Locale, Labels> = {
         id: "unlimited",
         name: "AmorIAI Ilimitado",
         price: "39,99 $ USD / mes",
-        tagline: "Tu compañero IA muy presente cada día.",
-        badge: "Mejor valor",
-        bestFor:
-          "Cuando AmorIAI se vuelve una presencia esencial en tu vida diaria.",
+        tagline: "Tu compañero IA muy presente en tu día a día.",
+        badgeLabel: "MEJOR VALOR",
+        badgeVariant: "value",
+        ctaLabel: "Desbloquear ilimitado",
         features: [
-          "Hasta 30 AmorIAI personalizados",
+          "Para quienes quieren que AmorIA esté siempre disponible.",
+          "Hasta 30 AmorIA personalizados",
           "10 000 mensajes de texto / mes",
           "300 intercambios de voz / mes",
-          "Memoria profunda + contexto ampliado para conversaciones muy personalizadas",
+          "Memoria profunda + contexto ampliado para conversaciones ultra personalizadas",
           "Prioridad máxima y acceso anticipado a nuevas funciones",
         ],
       },
@@ -391,8 +311,6 @@ export default function PricingClient() {
 
   return (
     <main className="amoria-pricing-root">
-      <div className="amoria-pricing-ribbon">{t.ribbon}</div>
-
       <section className="amoria-pricing-hero">
         <h1 className="amoria-pricing-title">{t.heroTitle}</h1>
         <p className="amoria-pricing-subtitle">{t.heroSubtitle}</p>
@@ -401,67 +319,68 @@ export default function PricingClient() {
           {t.heroCta}
         </button>
 
-        <p className="amoria-pricing-hero-subtrust">{t.heroSubtrust}</p>
+        <p className="amoria-pricing-starline">{t.starLine}</p>
         <p className="amoria-pricing-billing-note">{t.billingNote}</p>
       </section>
 
       <section className="amoria-pricing-section">
-        <h2 className="amoria-pricing-section-title">{t.plansTitle}</h2>
+        <h2 className="amoria-pricing-section-title">{t.simplePricing}</h2>
         <p className="amoria-pricing-section-note">{t.usdNote}</p>
 
         <div className="amoria-pricing-grid">
-          {t.plans.map((plan) => (
-            <article
-              key={plan.id}
-              className={`amoria-pricing-card ${
-                plan.id === "plus" ? "amoria-pricing-card--highlight" : ""
-              } ${plan.id === "unlimited" ? "amoria-pricing-card--value" : ""}`}
-            >
-              {plan.badge && (
-                <div className="amoria-pricing-badge">{plan.badge}</div>
-              )}
+          {t.plans.map((plan) => {
+            const isPopular = plan.badgeVariant === "popular";
+            const isValue = plan.badgeVariant === "value";
 
-              <header className="amoria-pricing-card-header">
-                <h3 className="amoria-pricing-card-name">{plan.name}</h3>
-                <p className="amoria-pricing-card-price">{plan.price}</p>
-                <p className="amoria-pricing-card-tagline">
-                  {plan.tagline}
-                </p>
-                {plan.bestFor && (
-                  <p className="amoria-pricing-card-bestfor">
-                    {plan.bestFor}
-                  </p>
-                )}
-              </header>
-
-              <ul className="amoria-pricing-card-features">
-                {plan.features.map((f) => (
-                  <li key={f}>{f}</li>
-                ))}
-              </ul>
-
-              <button
-                className="amoria-pricing-card-btn"
-                onClick={() => handleChoosePlan(plan.id)}
+            return (
+              <article
+                key={plan.id}
+                className={[
+                  "amoria-pricing-card",
+                  isPopular ? "amoria-pricing-card--popular" : "",
+                  isValue ? "amoria-pricing-card--value" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               >
-                {t.choosePlanCta}
-              </button>
-            </article>
-          ))}
-        </div>
-      </section>
+                {plan.badgeLabel && (
+                  <div
+                    className={[
+                      "amoria-pricing-badge",
+                      isPopular
+                        ? "amoria-pricing-badge--popular"
+                        : "amoria-pricing-badge--value",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    {plan.badgeLabel}
+                  </div>
+                )}
 
-      <section className="amoria-pricing-faq">
-        <h2 className="amoria-pricing-faq-title">{t.faqTitle}</h2>
-        <p className="amoria-pricing-faq-intro">{t.faqIntro}</p>
+                <header className="amoria-pricing-card-header">
+                  <h3 className="amoria-pricing-card-name">{plan.name}</h3>
+                  <p className="amoria-pricing-card-price">{plan.price}</p>
+                  <p className="amoria-pricing-card-tagline">
+                    {plan.tagline}
+                  </p>
+                </header>
 
-        <div className="amoria-pricing-faq-grid">
-          {t.faqItems.map((item) => (
-            <article key={item.q} className="amoria-pricing-faq-item">
-              <h3>{item.q}</h3>
-              <p>{item.a}</p>
-            </article>
-          ))}
+                <ul className="amoria-pricing-card-features">
+                  {plan.features.map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+
+                <button
+                  className="amoria-pricing-card-btn"
+                  onClick={() => handleChoosePlan(plan.id)}
+                >
+                  {plan.ctaLabel || t.choosePlanCta}
+                </button>
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -479,31 +398,19 @@ export default function PricingClient() {
             "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
         }
 
-        .amoria-pricing-ribbon {
-          background: linear-gradient(90deg, #fb37ff, #ff6b9c);
-          color: #f9fafb;
-          font-size: 0.78rem;
-          padding: 0.4rem 1rem;
-          border-radius: 999px;
-          text-align: center;
-          max-width: 460px;
-          width: 100%;
-          box-shadow: 0 10px 30px rgba(248, 113, 113, 0.4);
-        }
-
         .amoria-pricing-hero {
           max-width: 960px;
           text-align: center;
         }
 
         .amoria-pricing-title {
-          font-size: 1.9rem;
+          font-size: 1.8rem;
           font-weight: 600;
           margin-bottom: 0.75rem;
         }
 
         .amoria-pricing-subtitle {
-          font-size: 0.97rem;
+          font-size: 0.95rem;
           color: #9ca3af;
           margin-bottom: 1.3rem;
         }
@@ -511,19 +418,22 @@ export default function PricingClient() {
         .amoria-pricing-hero-btn {
           border: none;
           border-radius: 999px;
-          padding: 0.85rem 2rem;
-          font-size: 0.96rem;
+          padding: 0.8rem 1.8rem;
+          font-size: 0.95rem;
           background: linear-gradient(135deg, #fb37ff, #ff6b9c);
           color: #f9fafb;
           cursor: pointer;
-          margin-bottom: 0.65rem;
-          box-shadow: 0 18px 40px rgba(251, 113, 133, 0.55);
+          margin-bottom: 0.8rem;
+          box-shadow: 0 12px 35px rgba(251, 55, 255, 0.45);
         }
 
-        .amoria-pricing-hero-subtrust {
-          font-size: 0.8rem;
-          color: #e5e7eb;
-          margin-bottom: 0.35rem;
+        .amoria-pricing-hero-btn:hover {
+          transform: translateY(-1px);
+        }
+
+        .amoria-pricing-starline {
+          font-size: 0.85rem;
+          margin-bottom: 0.2rem;
         }
 
         .amoria-pricing-billing-note {
@@ -538,7 +448,7 @@ export default function PricingClient() {
 
         .amoria-pricing-section-title {
           text-align: center;
-          font-size: 1.15rem;
+          font-size: 1.1rem;
           margin-bottom: 0.4rem;
         }
 
@@ -564,7 +474,7 @@ export default function PricingClient() {
         .amoria-pricing-card {
           position: relative;
           border-radius: 1.5rem;
-          padding: 1.5rem 1.2rem 1.3rem;
+          padding: 1.6rem 1.2rem 1.3rem;
           background: radial-gradient(
             circle at top,
             #020617,
@@ -576,29 +486,70 @@ export default function PricingClient() {
           flex-direction: column;
           justify-content: space-between;
           min-height: 270px;
+          overflow: hidden;
         }
 
-        .amoria-pricing-card--highlight {
+        .amoria-pricing-card--popular {
           border-color: #fb37ff;
-          box-shadow: 0 22px 45px rgba(251, 55, 255, 0.25);
-          transform: translateY(-4px);
+          box-shadow: 0 20px 50px rgba(251, 55, 255, 0.28);
         }
 
         .amoria-pricing-card--value {
           border-color: #22c55e;
+          box-shadow: 0 16px 40px rgba(34, 197, 94, 0.22);
+        }
+
+        .amoria-pricing-card--popular::before {
+          content: "";
+          position: absolute;
+          inset: -2px;
+          border-radius: inherit;
+          background: radial-gradient(
+            circle at top,
+            rgba(251, 55, 255, 0.5),
+            transparent 55%
+          );
+          opacity: 0.5;
+          z-index: -1;
+          animation: amoriaPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes amoriaPulse {
+          0% {
+            transform: scale(0.98);
+            opacity: 0.3;
+          }
+          50% {
+            transform: scale(1.02);
+            opacity: 0.7;
+          }
+          100% {
+            transform: scale(0.98);
+            opacity: 0.3;
+          }
         }
 
         .amoria-pricing-badge {
           position: absolute;
           top: 0.9rem;
-          right: 1rem;
-          padding: 0.25rem 0.6rem;
-          font-size: 0.7rem;
+          right: 1.1rem;
+          padding: 0.25rem 0.7rem;
           border-radius: 999px;
+          font-size: 0.65rem;
+          letter-spacing: 0.08em;
           text-transform: uppercase;
-          letter-spacing: 0.09em;
-          background: rgba(251, 55, 255, 0.18);
-          border: 1px solid rgba(251, 55, 255, 0.7);
+          font-weight: 600;
+          border: 1px solid rgba(249, 250, 251, 0.3);
+          backdrop-filter: blur(8px);
+        }
+
+        .amoria-pricing-badge--popular {
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c);
+          color: #f9fafb;
+        }
+
+        .amoria-pricing-badge--value {
+          background: linear-gradient(135deg, #16a34a, #22c55e);
           color: #f9fafb;
         }
 
@@ -615,18 +566,12 @@ export default function PricingClient() {
         .amoria-pricing-card-price {
           font-size: 0.92rem;
           font-weight: 500;
-          margin-bottom: 0.3rem;
+          margin-bottom: 0.35rem;
         }
 
         .amoria-pricing-card-tagline {
           font-size: 0.8rem;
           color: #9ca3af;
-        }
-
-        .amoria-pricing-card-bestfor {
-          font-size: 0.76rem;
-          color: #e5e7eb;
-          margin-top: 0.4rem;
         }
 
         .amoria-pricing-card-features {
@@ -649,60 +594,13 @@ export default function PricingClient() {
           color: #f9fafb;
           cursor: pointer;
           width: 100%;
+          box-shadow: 0 10px 30px rgba(251, 55, 255, 0.35);
         }
 
-        .amoria-pricing-faq {
-          max-width: 960px;
-          width: 100%;
-          margin-top: 1.5rem;
-        }
-
-        .amoria-pricing-faq-title {
-          text-align: center;
-          font-size: 1.05rem;
-          margin-bottom: 0.3rem;
-        }
-
-        .amoria-pricing-faq-intro {
-          text-align: center;
-          font-size: 0.82rem;
-          color: #9ca3af;
-          margin-bottom: 1.1rem;
-        }
-
-        .amoria-pricing-faq-grid {
-          display: grid;
-          grid-template-columns: repeat(1, minmax(0, 1fr));
-          gap: 0.9rem;
-        }
-
-        @media (min-width: 700px) {
-          .amoria-pricing-faq-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-        }
-
-        .amoria-pricing-faq-item {
-          border-radius: 1rem;
-          border: 1px solid rgba(148, 163, 184, 0.35);
-          padding: 0.9rem 1rem;
-          background: radial-gradient(
-            circle at top,
-            rgba(15, 23, 42, 0.96),
-            rgba(15, 23, 42, 0.98)
-          );
-        }
-
-        .amoria-pricing-faq-item h3 {
-          font-size: 0.9rem;
-          margin-bottom: 0.35rem;
-        }
-
-        .amoria-pricing-faq-item p {
-          font-size: 0.78rem;
-          color: #d1d5db;
+        .amoria-pricing-card-btn:hover {
+          transform: translateY(-1px);
         }
       `}</style>
     </main>
   );
-                }
+}
