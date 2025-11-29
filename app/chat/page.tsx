@@ -1,9 +1,10 @@
+// app/chat/page.tsx
 import { Suspense } from "react";
 import ChatClient from "./ChatClient";
 
 export const dynamic = "force-dynamic";
 
-export default function ChatPage() {
+export default function ChatPageWrapper() {
   return (
     <Suspense
       fallback={
@@ -17,7 +18,7 @@ export default function ChatPage() {
               "radial-gradient(circle at top, #020617 0, #000 65%)",
             color: "#e5e7eb",
             fontFamily:
-              'system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif',
+              'system-ui, -apple-system, BlinkMacSystemFont,"SF Pro Text","Helvetica Neue", Arial, sans-serif',
           }}
         >
           <p style={{ fontSize: "0.95rem" }}>
