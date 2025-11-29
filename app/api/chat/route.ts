@@ -14,7 +14,7 @@ type PlanId = keyof typeof PLAN_LIMITS;
 
 export async function POST(req: Request) {
   try {
-    // 1) Récupérer l’utilisateur connecté via Supabase (auth)
+    // 1) Utilisateur connecté via Supabase
     const supabase = createRouteHandlerClient({ cookies });
 
     const {
@@ -29,12 +29,33 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2) Charger le profil Amoria lié à cet utilisateur
-    const { data: profile, error: profileError } = await supabase
+    // 2) Body de la requête (vient du ChatClient)
+    const body = await req.json();
+    const { message, iaId, systemPrompt } = body as {
+      message: string;
+      iaId?: string;
+      systemPrompt?: string;
+    };
+
+    if (!message || !message.trim()) {
+      return NextResponse.json(
+        { error: "Missing message" },
+        { status: 400 }
+      );
+    }
+
+    // 3) Charger la ligne user_amoria correspondant à CETTE IA
+    //    (et appartenant bien à cet utilisateur)
+    let query = supabase
       .from("user_amoria")
-      .select("id, plan_id, credits")
-      .eq("user_id", user.id)
-      .single();
+      .select("id, user_id, plan_id, plan, credits, system_prompt")
+      .eq("user_id", user.id);
+
+    if (iaId) {
+      query = query.eq("id", iaId);
+    }
+
+    const { data: profile, error: profileError } = await query.maybeSingle();
 
     if (profileError || !profile) {
       console.error("Profile error:", profileError);
@@ -44,11 +65,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const planId = (profile.plan_id || "free") as PlanId;
+    // 4) Déterminer le plan et la limite
+    const planId = (profile.plan_id || profile.plan || "free") as PlanId;
     const plan = PLAN_LIMITS[planId] ?? PLAN_LIMITS.free;
 
-    // 3) Vérifier la limite de messages texte
-    if ((profile.credits ?? 0) >= plan.maxText) {
+    // 5) Vérifier la limite de messages texte pour CETTE IA
+    const currentCredits = profile.credits ?? 0;
+    if (currentCredits >= plan.maxText) {
       return NextResponse.json(
         {
           error: "text_quota_reached",
@@ -61,21 +84,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4) Lire le body (message + éventuel systemPrompt)
-    const body = await req.json();
-    const { message, systemPrompt } = body as {
-      message: string;
-      systemPrompt?: string;
-    };
+    // 6) Construire le system prompt
+    const mergedSystemPrompt =
+      systemPrompt ||
+      profile.system_prompt ||
+      "Tu es une IA de compagnie bienveillante.";
 
-    if (!message) {
-      return NextResponse.json(
-        { error: "Missing message" },
-        { status: 400 }
-      );
-    }
-
-    // 5) Appel à l’API OpenAI
+    // 7) Appel OpenAI
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
@@ -93,7 +108,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: "gpt-5.1-mini",
         input: message,
-        system: systemPrompt || "Tu es une IA de compagnie bienveillante.",
+        system: mergedSystemPrompt,
       }),
     });
 
@@ -110,8 +125,8 @@ export async function POST(req: Request) {
     const text =
       data?.output?.[0]?.content?.[0]?.text ?? "Je ne sais pas.";
 
-    // 6) Incrémenter le compteur de messages (credits)
-    const newCredits = (profile.credits ?? 0) + 1;
+    // 8) Incrémenter les crédits de CETTE IA
+    const newCredits = currentCredits + 1;
 
     const { error: updateError } = await supabase
       .from("user_amoria")
@@ -120,15 +135,15 @@ export async function POST(req: Request) {
 
     if (updateError) {
       console.error("Error updating credits:", updateError);
-      // On continue quand même à renvoyer la réponse à l’utilisateur
+      // on continue quand même
     }
 
-    // 7) Réponse finale au frontend
+    // 9) Réponse envoyée au frontend
     return NextResponse.json({
       reply: text,
       planId,
       credits_used: newCredits,
-      credits_remaining: plan.maxText - newCredits,
+      credits_remaining: Math.max(plan.maxText - newCredits, 0),
     });
   } catch (e) {
     console.error(e);
