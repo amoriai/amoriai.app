@@ -221,11 +221,12 @@ function ChatClient() {
 
     try {
       // 🔗 On garde ta route actuelle : /api/chat/send
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ iaId, message: content, lang: locale }),
-      });
+     const res = await fetch("/api/chat", {
+  method: "POST",
+  credentials: "include",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ iaId, message: content, lang: locale }),
+});
 
       if (!res.ok) {
         throw new Error("Réponse invalide du serveur.");
