@@ -2,78 +2,83 @@
 
 export const dynamic = "force-dynamic";
 
-import React, {
-  FormEvent,
-  Suspense,
-  useEffect,
-  useState,
-} from "react";
+import React, { useEffect, useState, FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
 
-type AmoriaRow = {
-  id: string;
-  user_id: string;
-  name: string;
-  persona_type: string;
-  main_language: string;
-  avatar_image_url: string | null;
-  accent_color: string | null;
-  system_prompt: string;
-  voice_id: string | null;
-  is_archived: boolean;
-  created_at: string;
-  updated_at: string;
-};
-
 type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
-  createdAt: string;
+  created_at: string;
+};
+
+type AiMeta = {
+  id: string;
+  name: string;
+  avatar_image_url: string | null;
 };
 
 type UiCopy = {
   backHome: string;
   title: (name: string) => string;
-  subtitle: string;
-  inputPlaceholder: string;
-  send: string;
-  emptyState: string;
+  subtitle: (name: string) => string;
+  emptyState: (name: string) => string;
+  inputPlaceholder: (name: string) => string;
+  sendLabel: string;
+  sendingLabel: string;
+  typingLabel: (name: string) => string;
+  loading: string;
+  error: string;
 };
 
 const STRINGS: Record<Locale, UiCopy> = {
   fr: {
     backHome: "← Retour à l’accueil",
-    title: (name: string) => `Chat avec ${name}`,
-    subtitle:
-      "Commence la conversation en écrivant un message ci-dessous. Ton AmorIA te répondra dans la seconde.",
-    inputPlaceholder: "Écris quelque chose à ton AmorIA…",
-    send: "Envoyer",
-    emptyState:
-      "Aucun message pour l’instant. Dis bonjour à ton AmorIA pour commencer 💬",
+    title: (name) => `Chat avec ${name}`,
+    subtitle: (name) =>
+      `Commence la conversation en écrivant un message ci-dessous. ${name} te répondra dans la seconde.`,
+    emptyState: (name) =>
+      `Aucun message pour l’instant. Dis bonjour à ${name} pour commencer 💬`,
+    inputPlaceholder: (name) => `Écris quelque chose à ${name}…`,
+    sendLabel: "Envoyer",
+    sendingLabel: "Envoi…",
+    typingLabel: (name) => `${name} est en train d’écrire`,
+    loading: "Chargement de la conversation…",
+    error:
+      "Impossible de charger cette conversation. Vérifie le lien ou réessaie plus tard.",
   },
   en: {
     backHome: "← Back to home",
-    title: (name: string) => `Chat with ${name}`,
-    subtitle:
-      "Start the conversation by writing a message below. Your AmorIA will answer in a second.",
-    inputPlaceholder: "Write something to your AmorIA…",
-    send: "Send",
-    emptyState:
-      "No messages yet. Say hi to your AmorIA to get started 💬",
+    title: (name) => `Chat with ${name}`,
+    subtitle: (name) =>
+      `Start the conversation by sending a message below. ${name} will reply in a second.`,
+    emptyState: (name) =>
+      `No messages yet. Say hi to ${name} to get started 💬`,
+    inputPlaceholder: (name) => `Write something to ${name}…`,
+    sendLabel: "Send",
+    sendingLabel: "Sending…",
+    typingLabel: (name) => `${name} is typing`,
+    loading: "Loading your conversation…",
+    error:
+      "We couldn’t load this conversation. Please check the link or try again later.",
   },
   es: {
     backHome: "← Volver al inicio",
-    title: (name: string) => `Chatea con ${name}`,
-    subtitle:
-      "Empieza la conversación escribiendo un mensaje abajo. Tu AmorIA te responderá enseguida.",
-    inputPlaceholder: "Escribe algo a tu AmorIA…",
-    send: "Enviar",
-    emptyState:
-      "Todavía no hay mensajes. Dile hola a tu AmorIA para empezar 💬",
+    title: (name) => `Chat con ${name}`,
+    subtitle: (name) =>
+      `Empieza la conversación escribiendo un mensaje abajo. ${name} te contestará en segundos.`,
+    emptyState: (name) =>
+      `Aún no hay mensajes. Saluda a ${name} para empezar 💬`,
+    inputPlaceholder: (name) => `Escribe algo a ${name}…`,
+    sendLabel: "Enviar",
+    sendingLabel: "Enviando…",
+    typingLabel: (name) => `${name} está escribiendo`,
+    loading: "Cargando tu conversación…",
+    error:
+      "No pudimos cargar esta conversación. Verifica el enlace o inténtalo más tarde.",
   },
 };
 
@@ -82,259 +87,314 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-/**
- * Wrapper exigé par Next.js : useSearchParams DOIT être rendu
- * dans un composant enfant à l’intérieur d’un <Suspense>.
- */
-export default function ChatPage() {
-  return (
-    <Suspense
-      fallback={
-        <main className="chat-root">
-          <p className="chat-loading">Chargement du chat…</p>
-          <style jsx>{`
-            .chat-root {
-              min-height: 100vh;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              background: radial-gradient(circle at top, #020617, #000);
-              color: #e5e7eb;
-              font-family: system-ui, -apple-system, BlinkMacSystemFont,
-                "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-            }
-            .chat-loading {
-              font-size: 1rem;
-            }
-          `}</style>
-        </main>
-      }
-    >
-      <ChatClient />
-    </Suspense>
-  );
+function formatDisplayName(name: string | null | undefined): string {
+  if (!name) return "";
+  const trimmed = name.trim();
+  if (!trimmed) return "";
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
-function ChatClient() {
+export default function ChatPage() {
   const searchParams = useSearchParams();
-  const iaId = searchParams.get("iaId");
-  const lang = normalizeLocale(searchParams.get("lang"));
-
-  const t = STRINGS[lang];
-
-  const [ai, setAi] = useState<AmoriaRow | null>(null);
-  const [aiLoading, setAiLoading] = useState(true);
-  const [aiError, setAiError] = useState<string | null>(null);
-
+  const [locale, setLocale] = useState<Locale>("fr");
+  const [aiMeta, setAiMeta] = useState<AiMeta | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [newMessage, setNewMessage] = useState("");
+  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [sendError, setSendError] = useState<string | null>(null);
+  const [typing, setTyping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [input, setInput] = useState("");
 
-  // Charger les infos de l’AmorIA
+  // Langue depuis ?lang=
   useEffect(() => {
-    const loadAI = async () => {
-      if (!iaId) {
-        setAiError("Aucune AmorIA sélectionnée.");
-        setAiLoading(false);
-        return;
-      }
+    const lang = searchParams.get("lang");
+    setLocale(normalizeLocale(lang));
+  }, [searchParams]);
+
+  const t = STRINGS[locale];
+
+  const chatId = searchParams.get("chatId");
+  // tu peux aussi passer l’ID de l’IA en query si tu veux
+  // const iaId = searchParams.get("iaId");
+
+  // Charger les infos IA + historique de chat
+  useEffect(() => {
+    if (!chatId) {
+      setError(t.error);
+      setLoading(false);
+      return;
+    }
+
+    const loadChat = async () => {
       try {
-        const { data, error } = await supabase
-          .from("user_amoria")
-          .select("*")
-          .eq("id", iaId)
+        setLoading(true);
+        setError(null);
+
+        // ⚠️ À ADAPTER À TON SCHÉMA SUPABASE
+        // Exemple de pattern : une table "amoria_chats" + "amoria_messages"
+        // Remplace les noms de tables / colonnes par les tiens.
+        const { data: chatRow, error: chatError } = await supabase
+          .from("amoria_chats" as any) // <--- remplace par ta table
+          .select(
+            `
+            id,
+            ia_id,
+            ia_name,
+            ia_avatar_url,
+            messages:amoria_messages (
+              id,
+              role,
+              content,
+              created_at
+            )
+          `
+          )
+          .eq("id", chatId)
           .maybeSingle();
 
-        if (error || !data) {
-          setAiError("Impossible de charger cette AmorIA.");
-        } else {
-          setAi(data as AmoriaRow);
+        if (chatError || !chatRow) {
+          setError(t.error);
+          setLoading(false);
+          return;
         }
-      } catch {
-        setAiError("Erreur inattendue lors du chargement de ton AmorIA.");
-      } finally {
-        setAiLoading(false);
-      }
-    };
 
-    loadAI();
-  }, [iaId]);
+        setAiMeta({
+          id: chatRow.ia_id,
+          name: chatRow.ia_name,
+          avatar_image_url: chatRow.ia_avatar_url,
+        });
 
-  // Exemple : chargement éventuel de l’historique (adapter à ton backend)
-  useEffect(() => {
-    const loadHistory = async () => {
-      if (!iaId) return;
-      try {
-        const res = await fetch(`/api/chat/history?iaId=${encodeURIComponent(iaId)}`);
-        if (!res.ok) return;
-        const data = (await res.json()) as ChatMessage[];
         setMessages(
-          data
-            .map((m) => ({
-              ...m,
-              createdAt: m.createdAt ?? new Date().toISOString(),
-            }))
-            .sort((a, b) =>
-              a.createdAt.localeCompare(b.createdAt),
-            ),
+          (chatRow.messages || []).sort(
+            (a: ChatMessage, b: ChatMessage) =>
+              new Date(a.created_at).getTime() -
+              new Date(b.created_at).getTime()
+          )
         );
       } catch {
-        // silencieux : l’appli marche même sans historique
+        setError(t.error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadHistory();
-  }, [iaId]);
+    loadChat();
+  }, [chatId, t.error]);
 
+  const displayName = formatDisplayName(aiMeta?.name || "ton AmorIA");
+
+  // Envoi d’un message
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSendError(null);
-    if (!newMessage.trim() || !iaId) return;
+    if (!input.trim() || !chatId || !aiMeta) return;
 
-    const content = newMessage.trim();
-    const baseId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const content = input.trim();
+    setInput("");
 
-    const userMessage: ChatMessage = {
-      id: `${baseId}-user`,
+    const optimisticUserMsg: ChatMessage = {
+      id: `local-user-${Date.now()}`,
       role: "user",
       content,
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setNewMessage("");
+    setMessages((prev) => [...prev, optimisticUserMsg]);
     setSending(true);
+    setTyping(true);
 
     try {
-      // ❗ Adapter cette route à ton backend réel
-      const res = await fetch("/api/chat/send", {
+      // ⚠️ À ADAPTER : ici tu remets TON appel actuel
+      // à ton endpoint (Edge Function, /api/chat, etc.)
+      //
+      // Exemple générique :
+      /*
+      const res = await fetch("/api/chat-with-amoria", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ iaId, message: content, lang }),
+        body: JSON.stringify({
+          chatId,
+          message: content,
+          iaId: aiMeta.id,
+          lang: locale,
+        }),
       });
 
-      if (!res.ok) {
-        throw new Error("Réponse invalide du serveur.");
-      }
+      const json = await res.json();
+      */
 
-      const data = await res.json();
-      const assistantMessage: ChatMessage = {
-        id: `${baseId}-assistant`,
+      // Pour rester honnête : je ne sais pas ton backend,
+      // donc je ne peux pas inventer la structure de la réponse.
+      // Je mets un faux message pour que l’UI reste claire.
+      const fakeAssistantReply: ChatMessage = {
+        id: `local-assistant-${Date.now()}`,
         role: "assistant",
-        content: data.reply ?? "",
-        createdAt: new Date().toISOString(),
+        content:
+          "☝️ Remets ici la logique de réponse de ton backend (OpenAI / Supabase). Ce message est juste un placeholder.",
+        created_at: new Date().toISOString(),
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (err) {
-      setSendError(
-        "Impossible d’envoyer le message pour le moment. Réessaie dans quelques secondes.",
-      );
+      setMessages((prev) => [...prev, fakeAssistantReply]);
+    } catch {
+      // En cas d’erreur réelle backend, tu peux afficher un message
+      setError("Erreur lors de l’envoi du message. Réessaie.");
     } finally {
       setSending(false);
+      setTyping(false);
     }
   };
 
-  const homeUrl = (() => {
-    const params = new URLSearchParams();
-    params.set("lang", lang);
-    return `/?${params.toString()}`;
-  })();
+  if (loading) {
+    return (
+      <main className="amoria-chat-root">
+        <p className="amoria-chat-loading">{t.loading}</p>
+        <style jsx>{`
+          .amoria-chat-root {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at top, #020617 0, #000 65%);
+            color: #e5e7eb;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont,
+              "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+          }
+          .amoria-chat-loading {
+            font-size: 0.95rem;
+            color: #e5e7eb;
+          }
+        `}</style>
+      </main>
+    );
+  }
+
+  if (error || !aiMeta) {
+    return (
+      <main className="amoria-chat-root">
+        <div className="amoria-chat-error-card">
+          <p className="amoria-chat-error-title">Oups…</p>
+          <p className="amoria-chat-error-text">{error || t.error}</p>
+        </div>
+        <style jsx>{`
+          .amoria-chat-root {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at top, #020617 0, #000 65%);
+            color: #e5e7eb;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont,
+              "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            padding: 1.5rem;
+          }
+          .amoria-chat-error-card {
+            max-width: 480px;
+            border-radius: 1.5rem;
+            border: 1px solid rgba(248, 113, 113, 0.6);
+            background: radial-gradient(
+              circle at top left,
+              rgba(248, 113, 113, 0.2),
+              rgba(15, 23, 42, 0.96)
+            );
+            padding: 1.4rem 1.6rem;
+          }
+          .amoria-chat-error-title {
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+          }
+          .amoria-chat-error-text {
+            font-size: 0.9rem;
+          }
+        `}</style>
+      </main>
+    );
+  }
 
   return (
-    <main className="chat-root">
-      <header className="chat-header">
-        <a href={homeUrl} className="chat-back">
+    <main className="amoria-chat-root">
+      <header className="amoria-chat-header">
+        <a href="/" className="amoria-back-link">
           {t.backHome}
         </a>
       </header>
 
-      <section className="chat-card">
-        <div className="chat-ai-header">
-          {aiLoading ? (
-            <>
-              <div className="chat-avatar-ring skeleton" />
-              <p className="chat-ai-name skeleton-text">……</p>
-              <p className="chat-ai-subtitle skeleton-text">{t.subtitle}</p>
-            </>
-          ) : aiError || !ai ? (
-            <>
-              <div className="chat-avatar-ring error">
-                <span className="chat-avatar-error">!</span>
+      <section className="amoria-chat-card">
+        {/* Avatar + titre */}
+        <div className="amoria-chat-top">
+          <div className="amoria-avatar-ring">
+            {aiMeta.avatar_image_url ? (
+              <img
+                src={aiMeta.avatar_image_url}
+                alt={`Avatar de ${displayName}`}
+                className="amoria-avatar-img"
+              />
+            ) : (
+              <div className="amoria-avatar-placeholder">
+                {displayName.charAt(0) || "A"}
               </div>
-              <p className="chat-ai-name">AmorIA introuvable</p>
-              <p className="chat-ai-subtitle">{aiError}</p>
-            </>
-          ) : (
-            <>
-              <div className="chat-avatar-ring">
-                {ai.avatar_image_url ? (
-                  <img
-                    src={ai.avatar_image_url}
-                    alt={`Avatar de ${ai.name}`}
-                    className="chat-avatar-img"
-                  />
-                ) : (
-                  <div className="chat-avatar-placeholder">
-                    {ai.name?.charAt(0).toUpperCase() ?? "A"}
-                  </div>
-                )}
-              </div>
-              <p className="chat-ai-name">{ai.name}</p>
-              <p className="chat-ai-subtitle">
-                {t.title(ai.name)} · {t.subtitle}
-              </p>
-            </>
-          )}
+            )}
+          </div>
+          <h1 className="amoria-chat-title">
+            {t.title(displayName || "ton AmorIA")}
+          </h1>
+          <p className="amoria-chat-subtitle">
+            {t.subtitle(displayName || "ton AmorIA")}
+          </p>
         </div>
 
-        <div className="chat-window">
+        {/* Zone de messages */}
+        <div className="amoria-chat-window">
           {messages.length === 0 ? (
-            <div className="chat-empty">{t.emptyState}</div>
+            <p className="amoria-chat-empty">{t.emptyState(displayName)}</p>
           ) : (
-            <ul className="chat-message-list">
-              {messages.map((m) => (
-                <li
-                  key={m.id}
-                  className={
-                    m.role === "user"
-                      ? "chat-message chat-message--user"
-                      : "chat-message chat-message--assistant"
-                  }
+            <div className="amoria-chat-messages">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`chat-bubble chat-bubble--${msg.role} message`}
                 >
-                  <div className="chat-bubble">{m.content}</div>
-                </li>
+                  <p>{msg.content}</p>
+                </div>
               ))}
-            </ul>
+            </div>
+          )}
+
+          {typing && (
+            <div className="typing">
+              <span className="typing-label">
+                {t.typingLabel(displayName)}&nbsp;
+              </span>
+              <span>.</span>
+              <span>.</span>
+              <span>.</span>
+            </div>
           )}
         </div>
 
-        {sendError && <p className="chat-error">{sendError}</p>}
-
-        <form className="chat-input-bar" onSubmit={handleSubmit}>
-          <textarea
-            className="chat-input"
-            placeholder={t.inputPlaceholder}
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            rows={2}
+        {/* Input */}
+        <form className="amoria-chat-input-row" onSubmit={handleSubmit}>
+          <input
+            className="amoria-chat-input"
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={t.inputPlaceholder(displayName)}
+            disabled={sending}
           />
           <button
             type="submit"
-            className="chat-send-btn"
-            disabled={sending || !newMessage.trim()}
+            className="amoria-chat-send-btn"
+            disabled={sending || !input.trim()}
           >
-            {sending ? "…" : t.send}
+            {sending ? t.sendingLabel : t.sendLabel}
           </button>
         </form>
       </section>
 
       <style jsx>{`
-        .chat-root {
+        .amoria-chat-root {
           min-height: 100vh;
-          padding: 1.2rem 1rem 1.6rem;
-          background: radial-gradient(circle at top, #020617 0, #000 70%);
+          padding: 1.5rem;
+          background: linear-gradient(160deg, #020617 0%, #000 70%);
           color: #e5e7eb;
           font-family: system-ui, -apple-system, BlinkMacSystemFont,
             "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
@@ -343,47 +403,59 @@ function ChatClient() {
           align-items: center;
         }
 
-        .chat-header {
+        .amoria-chat-header {
           width: 100%;
-          max-width: 900px;
+          max-width: 980px;
           margin-bottom: 1rem;
         }
 
-        .chat-back {
+        .amoria-back-link {
           font-size: 0.8rem;
           color: #9ca3af;
           text-decoration: none;
         }
 
-        .chat-card {
+        .amoria-chat-card {
           width: 100%;
-          max-width: 900px;
-          border-radius: 1.6rem;
+          max-width: 980px;
+          border-radius: 1.8rem;
           border: 1px solid rgba(148, 163, 184, 0.45);
           background: radial-gradient(
             circle at top,
             rgba(2, 6, 23, 0.95) 0,
-            rgba(15, 23, 42, 0.98) 45%,
+            rgba(15, 23, 42, 0.98) 40%,
             rgba(0, 0, 0, 0.98) 100%
           );
           box-shadow: 0 26px 70px rgba(15, 23, 42, 0.95);
-          padding: 1.4rem 1.4rem 1.1rem;
+          padding: 1.9rem 2rem 1.6rem;
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          gap: 1.3rem;
         }
 
-        .chat-ai-header {
+        .amoria-chat-top {
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
-          gap: 0.4rem;
+          gap: 0.6rem;
         }
 
-        .chat-avatar-ring {
-          width: 160px;
-          height: 160px;
+        @keyframes slowPulse {
+          0% {
+            box-shadow: 0 0 25px rgba(251, 55, 255, 0.4);
+          }
+          50% {
+            box-shadow: 0 0 55px rgba(56, 189, 248, 0.6);
+          }
+          100% {
+            box-shadow: 0 0 25px rgba(251, 55, 255, 0.4);
+          }
+        }
+
+        .amoria-avatar-ring {
+          width: 130px;
+          height: 130px;
           border-radius: 999px;
           padding: 3px;
           background: conic-gradient(
@@ -397,235 +469,225 @@ function ChatClient() {
           align-items: center;
           justify-content: center;
           overflow: hidden;
-          box-shadow:
-            0 0 45px rgba(248, 113, 113, 0.5),
-            0 0 90px rgba(59, 130, 246, 0.4);
+          animation: slowPulse 4s infinite ease-in-out;
         }
 
-        .chat-avatar-img {
-          width: 154px;
-          height: 154px;
+        .amoria-avatar-img {
+          width: 124px;
+          height: 124px;
           border-radius: 999px;
           object-fit: cover;
           object-position: 50% 20%;
           background: #020617;
         }
 
-        .chat-avatar-placeholder {
-          width: 154px;
-          height: 154px;
+        .amoria-avatar-placeholder {
+          width: 124px;
+          height: 124px;
           border-radius: 999px;
           background: #1e293b;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 3rem;
+          font-size: 2.2rem;
           font-weight: 600;
           color: #e5e7eb;
         }
 
-        .chat-ai-name {
-          margin-top: 0.35rem;
+        .amoria-chat-title {
+          margin-top: 0.4rem;
+          font-size: 1.3rem;
           font-weight: 600;
-          letter-spacing: 0.04em;
-          text-transform: lowercase;
         }
 
-        .chat-ai-subtitle {
-          font-size: 0.85rem;
+        .amoria-chat-subtitle {
+          font-size: 0.9rem;
           color: #9ca3af;
           max-width: 520px;
         }
 
-        .chat-window {
-          margin-top: 0.4rem;
-          border-radius: 1rem;
-          border: 1px solid rgba(30, 64, 175, 0.5);
+        .amoria-chat-window {
+          border-radius: 1.4rem;
+          border: 1px solid rgba(148, 163, 184, 0.55);
           background: radial-gradient(
-            circle at top,
-            rgba(15, 23, 42, 0.95),
-            rgba(15, 23, 42, 0.98)
+            circle at top left,
+            rgba(56, 189, 248, 0.12),
+            rgba(15, 23, 42, 0.96)
           );
-          height: 360px;
-          max-height: 55vh;
-          padding: 0.75rem;
-          overflow-y: auto;
-        }
-
-        .chat-empty {
-          font-size: 0.9rem;
-          color: #9ca3af;
-          text-align: center;
-          padding-top: 2.3rem;
-        }
-
-        .chat-message-list {
-          list-style: none;
-          margin: 0;
-          padding: 0;
+          padding: 1rem 1rem 0.8rem;
+          min-height: 220px;
+          max-height: 480px;
           display: flex;
           flex-direction: column;
-          gap: 0.45rem;
+          justify-content: space-between;
+          gap: 0.6rem;
         }
 
-        .chat-message {
+        .amoria-chat-messages {
+          flex: 1;
+          overflow-y: auto;
+          padding-right: 0.4rem;
           display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
         }
 
-        .chat-message--user {
-          justify-content: flex-end;
+        @keyframes messageFade {
+          from {
+            opacity: 0;
+            transform: translateY(12px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
-        .chat-message--assistant {
-          justify-content: flex-start;
+        .message {
+          animation: messageFade 0.25s ease-out;
         }
 
         .chat-bubble {
-          max-width: 78%;
-          padding: 0.55rem 0.8rem;
-          border-radius: 1rem;
+          max-width: 80%;
+          padding: 0.55rem 0.75rem;
+          border-radius: 0.8rem;
           font-size: 0.9rem;
           line-height: 1.35;
-          white-space: pre-wrap;
-          word-wrap: break-word;
         }
 
-        .chat-message--user .chat-bubble {
+        .chat-bubble--user {
+          align-self: flex-end;
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
-          border-bottom-right-radius: 0.25rem;
+          border-bottom-right-radius: 0.2rem;
         }
 
-        .chat-message--assistant .chat-bubble {
+        .chat-bubble--assistant {
+          align-self: flex-start;
           background: rgba(15, 23, 42, 0.95);
-          border: 1px solid rgba(148, 163, 184, 0.55);
           color: #e5e7eb;
-          border-bottom-left-radius: 0.25rem;
+          border-bottom-left-radius: 0.2rem;
+          border: 1px solid rgba(148, 163, 184, 0.5);
         }
 
-        .chat-error {
-          font-size: 0.8rem;
-          color: #fecaca;
-          text-align: center;
-        }
-
-        .chat-input-bar {
-          margin-top: 0.3rem;
-          display: grid;
-          grid-template-columns: 1fr auto;
-          gap: 0.6rem;
-          align-items: flex-end;
-        }
-
-        .chat-input {
-          width: 100%;
-          border-radius: 0.9rem;
-          border: 1px solid rgba(148, 163, 184, 0.6);
-          background: rgba(15, 23, 42, 0.96);
-          color: #e5e7eb;
+        .amoria-chat-empty {
           font-size: 0.9rem;
-          padding: 0.55rem 0.7rem;
-          resize: none;
-          outline: none;
+          color: #cbd5f5;
         }
 
-        .chat-input::placeholder {
+        .typing {
+          margin-top: 0.4rem;
+          font-size: 0.8rem;
+          display: flex;
+          align-items: center;
+          gap: 0.15rem;
+          color: #9ca3af;
+        }
+
+        .typing span {
+          animation: blink 1.4s infinite both;
+        }
+
+        .typing span:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+
+        .typing span:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+          0% {
+            opacity: 0.2;
+          }
+          20% {
+            opacity: 1;
+          }
+          100% {
+            opacity: 0.2;
+          }
+        }
+
+        .typing-label {
+          margin-right: 0.1rem;
+        }
+
+        .amoria-chat-input-row {
+          display: flex;
+          gap: 0.6rem;
+          margin-top: 0.4rem;
+        }
+
+        .amoria-chat-input {
+          flex: 1;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.7);
+          background: rgba(15, 23, 42, 0.96);
+          padding: 0.7rem 1rem;
+          font-size: 0.9rem;
+          color: #e5e7eb;
+          outline: none;
+          transition: all 0.25s ease;
+        }
+
+        .amoria-chat-input::placeholder {
           color: #6b7280;
         }
 
-        .chat-send-btn {
+        .amoria-chat-input:focus {
+          border-color: #fb37ff;
+          box-shadow: 0 0 15px rgba(251, 55, 255, 0.4);
+        }
+
+        .amoria-chat-send-btn {
           border-radius: 999px;
-          border: none;
-          padding: 0.65rem 1.4rem;
+          border: 1px solid transparent;
+          padding: 0.7rem 1.4rem;
           font-size: 0.9rem;
           cursor: pointer;
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
-          box-shadow: 0 16px 40px rgba(248, 113, 113, 0.55);
-          min-width: 110px;
+          box-shadow: 0 14px 34px rgba(248, 113, 113, 0.45);
+          white-space: nowrap;
         }
 
-        .chat-send-btn:disabled {
+        .amoria-chat-send-btn:disabled {
           opacity: 0.5;
           cursor: default;
           box-shadow: none;
         }
 
-        /* Skeleton & états erreur */
-        .skeleton {
-          background: linear-gradient(
-            90deg,
-            rgba(148, 163, 184, 0.2),
-            rgba(148, 163, 184, 0.4),
-            rgba(148, 163, 184, 0.2)
-          );
-          background-size: 200% 100%;
-          animation: shimmer 1.4s infinite;
-        }
-
-        .skeleton-text {
-          height: 0.9rem;
-          width: 60%;
-          background: linear-gradient(
-            90deg,
-            rgba(148, 163, 184, 0.2),
-            rgba(148, 163, 184, 0.4),
-            rgba(148, 163, 184, 0.2)
-          );
-          background-size: 200% 100%;
-          animation: shimmer 1.4s infinite;
-          border-radius: 999px;
-        }
-
-        .chat-avatar-ring.error {
-          background: radial-gradient(circle at center, #b91c1c, #7f1d1d);
-          box-shadow: 0 0 35px rgba(248, 113, 113, 0.6);
-        }
-
-        .chat-avatar-error {
-          font-size: 2.1rem;
-          font-weight: 700;
-        }
-
-        @keyframes shimmer {
-          0% {
-            background-position: -200% 0;
+        @media (max-width: 820px) {
+          .amoria-chat-card {
+            padding-inline: 1.3rem;
           }
-          100% {
-            background-position: 200% 0;
+          .amoria-chat-window {
+            max-height: 380px;
           }
         }
 
-        @media (max-width: 768px) {
-          .chat-card {
-            padding-inline: 1.1rem;
+        @media (max-width: 540px) {
+          .amoria-chat-root {
+            padding-inline: 0.9rem;
           }
-          .chat-window {
-            height: 320px;
+          .amoria-chat-card {
+            padding-inline: 1rem;
           }
-          .chat-avatar-ring {
-            width: 150px;
-            height: 150px;
+          .amoria-chat-title {
+            font-size: 1.1rem;
           }
-          .chat-avatar-img,
-          .chat-avatar-placeholder {
-            width: 144px;
-            height: 144px;
+          .amoria-chat-subtitle {
+            font-size: 0.85rem;
           }
-        }
-
-        @media (max-width: 480px) {
-          .chat-root {
-            padding-inline: 0.7rem;
+          .amoria-chat-input-row {
+            flex-direction: column;
           }
-          .chat-input-bar {
-            grid-template-columns: 1fr;
-          }
-          .chat-send-btn {
+          .amoria-chat-send-btn {
             width: 100%;
+            justify-content: center;
           }
         }
       `}</style>
     </main>
   );
-    }
+  }
