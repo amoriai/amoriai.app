@@ -31,13 +31,10 @@ type Copy = {
   personasSubtitle: string;
   personas: Persona[];
   choosePersona: string;
-  // à quoi ça sert
   usageTitle: string;
   usageBullets: string[];
-  // nouvelle section témoignages
   testimonialsTitle: string;
   testimonials: Testimonial[];
-  // pricing
   pricingTitle: string;
   pricingText: string;
   pricingCta: string;
@@ -780,12 +777,14 @@ export default function HomePage() {
           gap: 0.6rem;
         }
 
+        /* ---- IA d'accueil avec PULSE ---- */
         .amoria-video-frame {
           border-radius: 1.6rem;
           padding: 0.22rem;
           background: linear-gradient(135deg, #f97316, #fb37ff, #38bdf8);
           max-width: 340px;
           width: 100%;
+          animation: amoriaPulse 4s ease-in-out infinite;
         }
 
         .amoria-video {
@@ -798,6 +797,21 @@ export default function HomePage() {
         .amoria-video-caption {
           font-size: 0.78rem;
           color: var(--amoria-text-muted);
+        }
+
+        @keyframes amoriaPulse {
+          0% {
+            box-shadow: 0 0 0 0 rgba(251, 55, 255, 0.0);
+            transform: translateY(0);
+          }
+          50% {
+            box-shadow: 0 0 32px 0 rgba(251, 55, 255, 0.55);
+            transform: translateY(-2px);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(251, 55, 255, 0.0);
+            transform: translateY(0);
+          }
         }
 
         .amoria-btn {
@@ -1066,8 +1080,17 @@ export default function HomePage() {
             grid-template-columns: minmax(0, 1fr);
           }
 
-          .amoria-nav-right a.amoria-nav-btn--ghost {
-            display: none;
+          /* NAV mobile : on garde login + signup visibles */
+          .amoria-nav-right {
+            width: 100%;
+            justify-content: space-between;
+            gap: 0.5rem;
+          }
+
+          .amoria-nav-right .amoria-nav-btn {
+            flex: 1;
+            text-align: center;
+            padding-block: 0.55rem;
           }
 
           .amoria-video-frame {
@@ -1077,4 +1100,4 @@ export default function HomePage() {
       `}</style>
     </main>
   );
-          }
+}
