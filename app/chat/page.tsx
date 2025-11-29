@@ -50,7 +50,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     backHome: "← Retour à l’accueil",
     title: (name) => `Chat avec ${name}`,
     subtitle: (name) =>
-      `Commence la conversation en écrivant un message ci-dessous. ${name} te répondra dans la seconde.`,
+      `${name} est là pour t’écouter et t’aider à mettre des mots sur ce que tu vis.`,
     emptyState: (name) =>
       `Aucun message pour l’instant. Dis bonjour à ${name} pour commencer 💬`,
     inputPlaceholder: (name) => `Écris quelque chose à ${name}…`,
@@ -69,7 +69,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     backHome: "← Back to home",
     title: (name) => `Chat with ${name}`,
     subtitle: (name) =>
-      `Start the conversation by sending a message below. ${name} will reply in a second.`,
+      `${name} is here to listen and help you put words on what you’re feeling.`,
     emptyState: (name) =>
       `No messages yet. Say hi to ${name} to get started 💬`,
     inputPlaceholder: (name) => `Write something to ${name}…`,
@@ -88,7 +88,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     backHome: "← Volver al inicio",
     title: (name) => `Chat con ${name}`,
     subtitle: (name) =>
-      `Empieza la conversación escribiendo un mensaje abajo. ${name} te responderá enseguida.`,
+      `${name} está aquí para escucharte y ayudarte a poner en palabras lo que sientes.`,
     emptyState: (name) =>
       `Todavía no hay mensajes. Saluda a ${name} para empezar 💬`,
     inputPlaceholder: (name) => `Escribe algo a ${name}…`,
@@ -384,9 +384,17 @@ function ChatClient() {
             className="chat-send-btn"
             disabled={sending || !newMessage.trim()}
           >
-            {sending ? t.sending : t.send}
+            <span className="chat-send-label">
+              {sending ? t.sending : t.send}
+            </span>
+            <span className="chat-send-icon">➤</span>
           </button>
         </form>
+
+        <p className="chat-privacy-note">
+          Tes messages sont privés et ne sont jamais visibles par les autres
+          utilisateurs.
+        </p>
       </section>
 
       <style jsx>{`
@@ -430,7 +438,7 @@ function ChatClient() {
             rgba(0, 0, 0, 0.98) 100%
           );
           box-shadow: 0 26px 70px rgba(15, 23, 42, 0.95);
-          padding: 1.6rem 1.6rem 1.2rem;
+          padding: 1.6rem 1.6rem 1.1rem;
           display: flex;
           flex-direction: column;
           gap: 1rem;
@@ -441,7 +449,7 @@ function ChatClient() {
           flex-direction: column;
           align-items: center;
           text-align: center;
-          gap: 0.4rem;
+          gap: 0.35rem;
         }
 
         @keyframes slowPulse {
@@ -512,7 +520,7 @@ function ChatClient() {
         }
 
         .chat-ai-subtitle {
-          font-size: 0.85rem;
+          font-size: 0.84rem;
           color: #9ca3af;
           max-width: 560px;
         }
@@ -623,12 +631,28 @@ function ChatClient() {
           color: #f9fafb;
           box-shadow: 0 16px 40px rgba(248, 113, 113, 0.55);
           min-width: 120px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.45rem;
+        }
+
+        .chat-send-icon {
+          font-size: 0.9rem;
+          transform: translateY(0.5px);
         }
 
         .chat-send-btn:disabled {
           opacity: 0.5;
           cursor: default;
           box-shadow: none;
+        }
+
+        .chat-privacy-note {
+          margin-top: 0.2rem;
+          font-size: 0.78rem;
+          color: #6b7280;
+          text-align: right;
         }
 
         .skeleton {
@@ -703,8 +727,11 @@ function ChatClient() {
           .chat-send-btn {
             width: 100%;
           }
+          .chat-privacy-note {
+            text-align: center;
+          }
         }
       `}</style>
     </main>
   );
-    }
+}
