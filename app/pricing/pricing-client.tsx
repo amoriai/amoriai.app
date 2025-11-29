@@ -18,6 +18,11 @@ type Plan = {
   ctaLabel?: string;
 };
 
+type FaqItem = {
+  q: string;
+  a: string;
+};
+
 type Labels = {
   heroTitle: string;
   heroSubtitle: string;
@@ -27,6 +32,8 @@ type Labels = {
   simplePricing: string;
   usdNote: string;
   choosePlanCta: string;
+  faqTitle: string;
+  faqItems: FaqItem[];
   plans: Plan[];
 };
 
@@ -44,6 +51,21 @@ const LABELS: Record<Locale, Labels> = {
     usdNote:
       "Les prix sont en dollars américains (USD). Tu peux changer de forfait ou l’annuler quand tu veux, sans engagement.",
     choosePlanCta: "Choisir ce forfait",
+    faqTitle: "Questions fréquentes",
+    faqItems: [
+      {
+        q: "Puis-je changer de forfait ou annuler quand je veux ?",
+        a: "Oui. Tu peux changer de forfait ou annuler en tout temps depuis ton compte, sans engagement ni frais caché.",
+      },
+      {
+        q: "Est-ce que je dois entrer ma carte pour le forfait Découverte ?",
+        a: "Non. Le forfait Découverte est entièrement gratuit et ne demande aucune carte de crédit.",
+      },
+      {
+        q: "Que se passe-t-il si j’atteins ma limite de messages ?",
+        a: "Ton AmorIA t’informe que tu as atteint la limite de ton forfait. Tu peux alors patienter jusqu’au prochain mois ou passer à un forfait plus élevé.",
+      },
+    ],
     plans: [
       {
         id: "free",
@@ -123,6 +145,21 @@ const LABELS: Record<Locale, Labels> = {
     usdNote:
       "Prices are in US dollars (USD). You can change or cancel your plan whenever you want, with no commitment.",
     choosePlanCta: "Choose this plan",
+    faqTitle: "Frequently asked questions",
+    faqItems: [
+      {
+        q: "Can I change or cancel my plan anytime?",
+        a: "Yes. You can change or cancel your plan from your account at any time, with no commitment and no hidden fees.",
+      },
+      {
+        q: "Do I need a credit card for the Discovery plan?",
+        a: "No. The Discovery plan is completely free and doesn’t require any credit card.",
+      },
+      {
+        q: "What happens if I hit my message limit?",
+        a: "Your AmorIA will let you know you’ve reached the limit. You can wait for the next month or upgrade to a higher plan.",
+      },
+    ],
     plans: [
       {
         id: "free",
@@ -201,6 +238,21 @@ const LABELS: Record<Locale, Labels> = {
     usdNote:
       "Los precios están en dólares estadounidenses (USD). Puedes cambiar o cancelar tu plan cuando quieras, sin compromiso.",
     choosePlanCta: "Elegir este plan",
+    faqTitle: "Preguntas frecuentes",
+    faqItems: [
+      {
+        q: "¿Puedo cambiar o cancelar mi plan cuando quiera?",
+        a: "Sí. Puedes cambiar o cancelar tu plan desde tu cuenta en cualquier momento, sin compromiso y sin cargos ocultos.",
+      },
+      {
+        q: "¿Necesito tarjeta para el plan Descubrimiento?",
+        a: "No. El plan Descubrimiento es totalmente gratuito y no requiere tarjeta de crédito.",
+      },
+      {
+        q: "¿Qué pasa si llego al límite de mensajes?",
+        a: "Tu AmorIA te avisará cuando hayas alcanzado el límite. Puedes esperar al mes siguiente o pasar a un plan superior.",
+      },
+    ],
     plans: [
       {
         id: "free",
@@ -384,6 +436,18 @@ export default function PricingClient() {
         </div>
       </section>
 
+      <section className="amoria-pricing-faq">
+        <h3 className="amoria-pricing-faq-title">{t.faqTitle}</h3>
+        <div className="amoria-pricing-faq-grid">
+          {t.faqItems.map((item) => (
+            <article key={item.q} className="amoria-pricing-faq-item">
+              <h4>{item.q}</h4>
+              <p>{item.a}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <style jsx global>{`
         .amoria-pricing-root {
           min-height: 100vh;
@@ -474,7 +538,7 @@ export default function PricingClient() {
         .amoria-pricing-card {
           position: relative;
           border-radius: 1.5rem;
-          padding: 1.6rem 1.2rem 1.3rem;
+          padding: 2.2rem 1.2rem 1.3rem; /* + espace en haut pour le badge */
           background: radial-gradient(
             circle at top,
             #020617,
@@ -509,7 +573,7 @@ export default function PricingClient() {
             rgba(251, 55, 255, 0.5),
             transparent 55%
           );
-          opacity: 0.5;
+          opacity: 0.4;
           z-index: -1;
           animation: amoriaPulse 3s ease-in-out infinite;
         }
@@ -517,7 +581,7 @@ export default function PricingClient() {
         @keyframes amoriaPulse {
           0% {
             transform: scale(0.98);
-            opacity: 0.3;
+            opacity: 0.25;
           }
           50% {
             transform: scale(1.02);
@@ -525,15 +589,16 @@ export default function PricingClient() {
           }
           100% {
             transform: scale(0.98);
-            opacity: 0.3;
+            opacity: 0.25;
           }
         }
 
         .amoria-pricing-badge {
           position: absolute;
-          top: 0.9rem;
-          right: 1.1rem;
-          padding: 0.25rem 0.7rem;
+          top: 0.8rem;
+          left: 50%;
+          transform: translateX(-50%); /* centré, plus au-dessus du texte */
+          padding: 0.25rem 0.9rem;
           border-radius: 999px;
           font-size: 0.65rem;
           letter-spacing: 0.08em;
@@ -541,6 +606,7 @@ export default function PricingClient() {
           font-weight: 600;
           border: 1px solid rgba(249, 250, 251, 0.3);
           backdrop-filter: blur(8px);
+          white-space: nowrap;
         }
 
         .amoria-pricing-badge--popular {
@@ -599,6 +665,54 @@ export default function PricingClient() {
 
         .amoria-pricing-card-btn:hover {
           transform: translateY(-1px);
+        }
+
+        /* FAQ */
+        .amoria-pricing-faq {
+          max-width: 900px;
+          width: 100%;
+          margin-top: 2.5rem;
+        }
+
+        .amoria-pricing-faq-title {
+          text-align: center;
+          font-size: 1.05rem;
+          margin-bottom: 1.1rem;
+        }
+
+        .amoria-pricing-faq-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 0.9rem;
+        }
+
+        @media (min-width: 800px) {
+          .amoria-pricing-faq-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+
+        .amoria-pricing-faq-item {
+          border-radius: 1rem;
+          border: 1px solid rgba(148, 163, 184, 0.4);
+          background: radial-gradient(
+            circle at top,
+            rgba(15, 23, 42, 0.98),
+            rgba(15, 23, 42, 0.96)
+          );
+          padding: 0.9rem 1rem;
+          font-size: 0.82rem;
+        }
+
+        .amoria-pricing-faq-item h4 {
+          margin: 0 0 0.35rem;
+          font-size: 0.86rem;
+          font-weight: 600;
+        }
+
+        .amoria-pricing-faq-item p {
+          margin: 0;
+          color: #d1d5db;
         }
       `}</style>
     </main>
