@@ -581,13 +581,23 @@ export default function HomePage() {
           padding: 0;
           font-family: system-ui, -apple-system, BlinkMacSystemFont,
             "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
+          background: radial-gradient(
+            circle at top,
+            #020617 0,
+            #020617 40%,
+            #000 100%
+          );
           color: var(--amoria-text-main);
         }
 
         .amoria-root {
           min-height: 100vh;
-          background: radial-gradient(circle at top left, #111827 0, #020617 55%, #000 100%);
+          background: radial-gradient(
+            circle at top left,
+            #111827 0,
+            #020617 55%,
+            #000 100%
+          );
           color: var(--amoria-text-main);
           padding-bottom: 3rem;
         }
@@ -801,7 +811,7 @@ export default function HomePage() {
 
         @keyframes amoriaPulse {
           0% {
-            box-shadow: 0 0 0 0 rgba(251, 55, 255, 0.0);
+            box-shadow: 0 0 0 0 rgba(251, 55, 255, 0);
             transform: translateY(0);
           }
           50% {
@@ -809,7 +819,7 @@ export default function HomePage() {
             transform: translateY(-2px);
           }
           100% {
-            box-shadow: 0 0 0 0 rgba(251, 55, 255, 0.0);
+            box-shadow: 0 0 0 0 rgba(251, 55, 255, 0);
             transform: translateY(0);
           }
         }
@@ -924,7 +934,12 @@ export default function HomePage() {
         }
 
         .amoria-testimonial-card {
-          background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
+          background: radial-gradient(
+            circle at top,
+            #020617,
+            #020617 40%,
+            #000 100%
+          );
           border-radius: 1.1rem;
           border: 1px solid var(--amoria-border-subtle);
           padding: 1rem;
@@ -959,7 +974,12 @@ export default function HomePage() {
         }
 
         .amoria-card {
-          background: radial-gradient(circle at top, #020617, #020617 40%, #000 100%);
+          background: radial-gradient(
+            circle at top,
+            #020617,
+            #020617 40%,
+            #000 100%
+          );
           border-radius: 1.2rem;
           border: 1px solid var(--amoria-border-subtle);
           overflow: hidden;
@@ -1080,17 +1100,23 @@ export default function HomePage() {
             grid-template-columns: minmax(0, 1fr);
           }
 
-          /* NAV mobile : on garde login + signup visibles */
+          /* NAV mobile : langue sur une ligne, boutons dessous en full width */
           .amoria-nav-right {
             width: 100%;
-            justify-content: space-between;
-            gap: 0.5rem;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.4rem;
+          }
+
+          .amoria-lang-switch {
+            align-self: center;
           }
 
           .amoria-nav-right .amoria-nav-btn {
-            flex: 1;
-            text-align: center;
+            width: 100%;
+            justify-content: center;
             padding-block: 0.55rem;
+            font-size: 0.76rem;
           }
 
           .amoria-video-frame {
@@ -1100,4 +1126,4 @@ export default function HomePage() {
       `}</style>
     </main>
   );
-}
+  }
