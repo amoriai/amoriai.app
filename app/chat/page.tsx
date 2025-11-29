@@ -2,8 +2,15 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { FormEvent, useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient"; // adapte le chemin si besoin
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  FormEvent,
+  KeyboardEvent,
+} from "react";
+import { useSearchParams } from "next/navigation";
+import { supabase } from "../../lib/supabaseClient"; // ⬅ IMPORTANT : chemin corrigé
 
 type Locale = "fr" | "en" | "es";
 
@@ -22,17 +29,63 @@ type AmoriaRow = {
   updated_at: string;
 };
 
+type Message = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: number;
+};
+
 type UiCopy = {
   backHome: string;
-  pageTitle: (name: string) => string;
-  subtitle: (name: string) => string;
-  statusOnline: string;
-  suggestionTitle: string;
-  suggestions: string[];
-  textareaPlaceholder: string;
+  pageTitle: string;
+  introEmpty: (name?: string) => string;
+  inputPlaceholder: string;
   sendLabel: string;
   loading: string;
-  errorNoIA: string;
+  error: string;
+};
+
+const STRINGS: Record<Locale, UiCopy> = {
+  fr: {
+    backHome: "← Retour à l’accueil",
+    pageTitle: "Chat avec ton AmorIA",
+    introEmpty: (name?: string) =>
+      name
+        ? `Commence la conversation avec ${name} en écrivant un message ci-dessous.`
+        : "Commence la conversation en écrivant un message ci-dessous.",
+    inputPlaceholder: "Écris quelque chose à ton AmorIA…",
+    sendLabel: "Envoyer",
+    loading: "Chargement de ton AmorIA…",
+    error:
+      "Impossible de charger ton AmorIA. Reviens à l’accueil et crée d’abord ton compagnon.",
+  },
+  en: {
+    backHome: "← Back to home",
+    pageTitle: "Chat with your AmorIA",
+    introEmpty: (name?: string) =>
+      name
+        ? `Start the conversation with ${name} by sending a first message.`
+        : "Start the conversation by sending a first message.",
+    inputPlaceholder: "Write something to your AmorIA…",
+    sendLabel: "Send",
+    loading: "Loading your AmorIA…",
+    error:
+      "We couldn’t load your AmorIA. Go back home and create your companion first.",
+  },
+  es: {
+    backHome: "← Volver al inicio",
+    pageTitle: "Chat con tu AmorIA",
+    introEmpty: (name?: string) =>
+      name
+        ? `Empieza a hablar con ${name} enviando tu primer mensaje.`
+        : "Empieza la conversación enviando tu primer mensaje.",
+    inputPlaceholder: "Escribe algo a tu AmorIA…",
+    sendLabel: "Enviar",
+    loading: "Cargando tu AmorIA…",
+    error:
+      "No pudimos cargar tu AmorIA. Vuelve al inicio y crea primero tu compañero.",
+  },
 };
 
 function normalizeLocale(raw: string | null): Locale {
@@ -40,126 +93,79 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-const STRINGS: Record<Locale, UiCopy> = {
-  fr: {
-    backHome: "← Retour à l’accueil",
-    pageTitle: (name) => `Chat avec ${name}`,
-    subtitle: (name) =>
-      `${name} est en ligne. Tu peux lui écrire librement, il ou elle s’adapte à ton humeur.`,
-    statusOnline: "En ligne",
-    suggestionTitle: "Tu peux commencer par lui dire…",
-    suggestions: [
-      "« Aujourd’hui, j’ai besoin de ventiler… »",
-      "« J’aimerais que tu me motives pour mes projets. »",
-      "« Est-ce que tu peux juste m’écouter ce soir ? »",
-    ],
-    textareaPlaceholder: "Écris quelque chose à ton AmorIA…",
-    sendLabel: "Envoyer",
-    loading: "Chargement de ton AmorIA…",
-    errorNoIA:
-      "Impossible de charger ton AmorIA. Crée-en d’abord une depuis la page d’accueil.",
-  },
-  en: {
-    backHome: "← Back to home",
-    pageTitle: (name) => `Chat with ${name}`,
-    subtitle: (name) =>
-      `${name} is online. You can talk freely, they’ll adapt to your mood.`,
-    statusOnline: "Online",
-    suggestionTitle: "You can start by saying…",
-    suggestions: [
-      "“Today I just need to vent…”",
-      "“I’d love you to motivate me for my projects.”",
-      "“Can you just listen to me tonight?”",
-    ],
-    textareaPlaceholder: "Write something to your AmorIA…",
-    sendLabel: "Send",
-    loading: "Loading your AmorIA…",
-    errorNoIA:
-      "We couldn’t load your AmorIA. Please create one first from the home page.",
-  },
-  es: {
-    backHome: "← Volver al inicio",
-    pageTitle: (name) => `Chat con ${name}`,
-    subtitle: (name) =>
-      `${name} está en línea. Puedes escribirle con total libertad, se adaptará a tu estado de ánimo.`,
-    statusOnline: "En línea",
-    suggestionTitle: "Puedes empezar diciéndole…",
-    suggestions: [
-      "« Hoy solo necesito desahogarme… »",
-      "« Me gustaría que me motives con mis proyectos. »",
-      "« ¿Puedes simplemente escucharme esta noche? »",
-    ],
-    textareaPlaceholder: "Escribe algo a tu AmorIA…",
-    sendLabel: "Enviar",
-    loading: "Cargando tu AmorIA…",
-    errorNoIA:
-      "No pudimos cargar tu AmorIA. Crea una primero desde la página de inicio.",
-  },
-};
-
-type Message = {
-  id: string;
-  role: "user" | "ai";
-  content: string;
-};
-
 export default function ChatPage() {
+  const searchParams = useSearchParams();
   const [locale, setLocale] = useState<Locale>("fr");
-  const [ia, setIa] = useState<AmoriaRow | null>(null);
+
+  const [ai, setAi] = useState<AmoriaRow | null>(null);
+  const [loadingAI, setLoadingAI] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [loadingIA, setLoadingIA] = useState(true);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
 
-  // Langue + iaId depuis l’URL
-  const [iaId, setIaId] = useState<string | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
+  // Langue depuis ?lang=
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const lang = params.get("lang");
-      setLocale(normalizeLocale(lang));
-      const id = params.get("iaId");
-      if (id) setIaId(id);
-    } catch {
-      // on garde fr
-    }
-  }, []);
+    const lang = searchParams.get("lang");
+    setLocale(normalizeLocale(lang));
+  }, [searchParams]);
 
   const t = STRINGS[locale];
 
-  // Charger l’AmorIA depuis Supabase
+  // Scroll automatique vers le bas quand une réponse arrive
   useEffect(() => {
-    const loadIA = async () => {
-      if (!iaId) {
-        setError(t.errorNoIA);
-        setLoadingIA(false);
-        return;
-      }
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages.length]);
 
+  // Charger la dernière AmorIA de l’utilisateur
+  useEffect(() => {
+    const loadAI = async () => {
       try {
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError || !authData?.user) {
+          setError(t.error);
+          setLoadingAI(false);
+          return;
+        }
+
         const { data, error } = await supabase
           .from("user_amoria")
           .select("*")
-          .eq("id", iaId)
+          .eq("user_id", authData.user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (error || !data) {
-          setError(t.errorNoIA);
-        } else {
-          setIa(data as AmoriaRow);
+          setError(t.error);
+          setLoadingAI(false);
+          return;
         }
+
+        setAi(data as AmoriaRow);
+
+        // Message d’accueil de l’IA (local uniquement)
+        const welcome: Message = {
+          id: "welcome",
+          role: "assistant",
+          content: `Bonjour, je suis ${data.name}. Je suis là pour t'écouter et t'accompagner. Qu’est-ce qui te ferait du bien de partager en ce moment ?`,
+          createdAt: Date.now(),
+        };
+        setMessages([welcome]);
       } catch {
-        setError(t.errorNoIA);
+        setError(t.error);
       } finally {
-        setLoadingIA(false);
+        setLoadingAI(false);
       }
     };
 
-    if (iaId) loadIA();
-  }, [iaId, t.errorNoIA]);
+    loadAI();
+  }, [t.error]);
 
   const buildUrlWithLang = (path: string) => {
     const params = new URLSearchParams();
@@ -167,43 +173,76 @@ export default function ChatPage() {
     return `${path}?${params.toString()}`;
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  async function handleSend(e: FormEvent) {
     e.preventDefault();
-    if (!input.trim() || sending) return;
+    if (!input.trim() || !ai || sending) return;
 
-    const text = input.trim();
+    const userMsg: Message = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content: input.trim(),
+      createdAt: Date.now(),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
     setInput("");
-
-    // On affiche tout de suite le message utilisateur
-    setMessages((prev) => [
-      ...prev,
-      { id: `${Date.now()}-user`, role: "user", content: text },
-    ]);
-
-    // Ici tu pourras brancher ton vrai endpoint de chat plus tard.
-    // Pour l’instant, on met juste une réponse simulée pour tester l’UI.
     setSending(true);
+
     try {
-      await new Promise((r) => setTimeout(r, 800));
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `${Date.now()}-ai`,
-          role: "ai",
-          content:
-            locale === "fr"
-              ? "Merci de t’être confié à moi. Dis-moi en un peu plus, je t’écoute. 💬"
-              : locale === "en"
-              ? "Thank you for opening up. Tell me a bit more, I’m listening. 💬"
-              : "Gracias por abrirte conmigo. Cuéntame un poco más, te escucho. 💬",
-        },
-      ]);
+      // À adapter à ton API réelle.
+      // Ici on suppose un endpoint POST /api/chat qui prend { iaId, message, history }
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          iaId: ai.id,
+          message: userMsg.content,
+          history: messages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Chat API error");
+      }
+
+      const data = await res.json();
+
+      const assistantMsg: Message = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        content: data.reply ?? "",
+        createdAt: Date.now(),
+      };
+
+      setMessages((prev) => [...prev, assistantMsg]);
+    } catch {
+      const errorMsg: Message = {
+        id: `error-${Date.now()}`,
+        role: "assistant",
+        content:
+          "Oups… je n’arrive pas à répondre pour le moment. Essaie de renvoyer ton message dans quelques instants.",
+        createdAt: Date.now(),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setSending(false);
     }
+  }
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      // Simule un submit du formulaire
+      const fake = { preventDefault() {} } as unknown as FormEvent;
+      handleSend(fake);
+    }
   };
 
-  if (loadingIA) {
+  // États de chargement / erreur
+  if (loadingAI) {
     return (
       <main className="chat-root">
         <p className="chat-loading">{t.loading}</p>
@@ -226,7 +265,7 @@ export default function ChatPage() {
     );
   }
 
-  if (error || !ia) {
+  if (error || !ai) {
     const homeUrl = buildUrlWithLang("/");
     return (
       <main className="chat-root">
@@ -234,9 +273,8 @@ export default function ChatPage() {
           <a href={homeUrl} className="chat-back">
             {t.backHome}
           </a>
-          <p className="chat-error-text">{t.errorNoIA}</p>
+          <p className="chat-error-text">{t.error}</p>
         </div>
-
         <style jsx>{`
           .chat-root {
             min-height: 100vh;
@@ -247,7 +285,7 @@ export default function ChatPage() {
               "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
           }
           .chat-error-card {
-            max-width: 480px;
+            max-width: 520px;
             margin: 4rem auto 0;
           }
           .chat-back {
@@ -256,7 +294,7 @@ export default function ChatPage() {
             text-decoration: none;
           }
           .chat-error-text {
-            margin-top: 1rem;
+            margin-top: 1.2rem;
             font-size: 0.95rem;
           }
         `}</style>
@@ -275,48 +313,30 @@ export default function ChatPage() {
       </header>
 
       <section className="chat-shell">
-        {/* HEADER IA */}
+        {/* Header IA avec avatar */}
         <div className="chat-ia-header">
           <div className="chat-avatar-ring">
-            {ia.avatar_image_url ? (
+            {ai.avatar_image_url ? (
               <img
-                src={ia.avatar_image_url}
-                alt={`Avatar de ${ia.name}`}
+                src={ai.avatar_image_url}
+                alt={`Avatar de ${ai.name}`}
                 className="chat-avatar-img"
               />
             ) : (
-              <div className="chat-avatar-placeholder">{ia.name[0] ?? "A"}</div>
+              <div className="chat-avatar-placeholder">{ai.name[0] ?? "A"}</div>
             )}
           </div>
-
-          <div className="chat-ia-text">
-            <h1 className="chat-title">{t.pageTitle(ia.name)}</h1>
-            <p className="chat-subtitle">{t.subtitle(ia.name)}</p>
-
-            <div className="chat-status-row">
-              <span className="chat-status-dot" />
-              <span className="chat-status-label">{t.statusOnline}</span>
-            </div>
+          <div className="chat-ia-meta">
+            <h1 className="chat-title">{t.pageTitle}</h1>
+            <p className="chat-subtitle">{t.introEmpty(ai.name)}</p>
           </div>
         </div>
 
-        {/* ZONE DE MESSAGES */}
+        {/* Zone de messages */}
         <div className="chat-window">
           {messages.length === 0 ? (
             <div className="chat-empty">
-              <p className="chat-empty-title">{t.suggestionTitle}</p>
-              <div className="chat-empty-suggestions">
-                {t.suggestions.map((s, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    className="chat-suggestion-chip"
-                    onClick={() => setInput(s.replace(/^[«"\s]+|[»"\s]+$/g, ""))}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
+              <p>{t.introEmpty(ai.name)}</p>
             </div>
           ) : (
             <div className="chat-messages">
@@ -326,41 +346,34 @@ export default function ChatPage() {
                   className={
                     m.role === "user"
                       ? "chat-bubble-row chat-bubble-row--user"
-                      : "chat-bubble-row chat-bubble-row--ai"
+                      : "chat-bubble-row chat-bubble-row--assistant"
                   }
                 >
-                  {m.role === "ai" && (
-                    <div className="chat-bubble-avatar">
-                      <img
-                        src={ia.avatar_image_url ?? ""}
-                        alt={ia.name}
-                        className="chat-bubble-avatar-img"
-                      />
-                    </div>
-                  )}
                   <div
                     className={
                       m.role === "user"
                         ? "chat-bubble chat-bubble--user"
-                        : "chat-bubble chat-bubble--ai"
+                        : "chat-bubble chat-bubble--assistant"
                     }
                   >
                     {m.content}
                   </div>
                 </div>
               ))}
+              <div ref={bottomRef} />
             </div>
           )}
         </div>
 
-        {/* INPUT */}
-        <form className="chat-input-row" onSubmit={handleSubmit}>
+        {/* Input */}
+        <form className="chat-input-row" onSubmit={handleSend}>
           <textarea
-            className="chat-textarea"
-            rows={2}
+            className="chat-input"
+            placeholder={t.inputPlaceholder}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={t.textareaPlaceholder}
+            onKeyDown={handleKeyDown}
+            rows={1}
           />
           <button
             type="submit"
@@ -375,8 +388,8 @@ export default function ChatPage() {
       <style jsx>{`
         .chat-root {
           min-height: 100vh;
-          padding: 1.25rem 1.25rem 1.75rem;
-          background: radial-gradient(circle at top, #020617 0, #000 65%);
+          padding: 1.2rem 1rem;
+          background: radial-gradient(circle at top, #020617 0, #000 70%);
           color: #e5e7eb;
           font-family: system-ui, -apple-system, BlinkMacSystemFont,
             "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
@@ -387,45 +400,45 @@ export default function ChatPage() {
 
         .chat-header {
           width: 100%;
-          max-width: 960px;
-          margin-bottom: 0.75rem;
+          max-width: 900px;
+          margin-bottom: 1.1rem;
         }
 
         .chat-back {
-          font-size: 0.8rem;
+          font-size: 0.85rem;
           color: #9ca3af;
           text-decoration: none;
         }
 
         .chat-shell {
           width: 100%;
-          max-width: 960px;
-          border-radius: 1.6rem;
+          max-width: 900px;
+          border-radius: 1.8rem;
           border: 1px solid rgba(148, 163, 184, 0.45);
           background: radial-gradient(
             circle at top,
-            rgba(15, 23, 42, 0.98) 0,
-            rgba(15, 23, 42, 0.97) 35%,
-            rgba(0, 0, 0, 0.98) 100%
+            rgba(15, 23, 42, 0.96),
+            rgba(3, 7, 18, 0.98)
           );
-          box-shadow: 0 26px 70px rgba(15, 23, 42, 0.9);
-          padding: 1.5rem 1.4rem 1.25rem;
+          box-shadow: 0 26px 70px rgba(15, 23, 42, 0.95);
+          padding: 1.6rem 1.5rem 1.2rem;
           display: flex;
           flex-direction: column;
-          gap: 1.1rem;
+          gap: 1rem;
+          backdrop-filter: blur(18px);
         }
 
         .chat-ia-header {
           display: flex;
-          gap: 1.1rem;
+          gap: 1rem;
           align-items: center;
         }
 
         .chat-avatar-ring {
-          width: 80px;
-          height: 80px;
-          border-radius: 999px;
+          width: 72px;
+          height: 72px;
           padding: 2px;
+          border-radius: 999px;
           background: conic-gradient(
             from 180deg,
             #fb37ff,
@@ -436,242 +449,173 @@ export default function ChatPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 0 35px rgba(248, 113, 113, 0.5);
+          box-shadow: 0 0 28px rgba(248, 113, 113, 0.55);
           flex-shrink: 0;
+          overflow: hidden;
         }
 
         .chat-avatar-img {
-          width: 74px;
-          height: 74px;
+          width: 100%;
+          height: 100%;
           border-radius: 999px;
           object-fit: cover;
           object-position: 50% 20%;
-          background: #020617;
         }
 
         .chat-avatar-placeholder {
-          width: 74px;
-          height: 74px;
+          width: 100%;
+          height: 100%;
           border-radius: 999px;
-          background: #1e293b;
           display: flex;
           align-items: center;
           justify-content: center;
+          background: #020617;
           font-weight: 600;
-          font-size: 1.3rem;
+          font-size: 1.2rem;
         }
 
-        .chat-ia-text {
+        .chat-ia-meta {
           flex: 1;
         }
 
         .chat-title {
           font-size: 1.25rem;
-          margin: 0 0 0.15rem;
+          margin: 0 0 0.2rem;
         }
 
         .chat-subtitle {
           margin: 0;
-          font-size: 0.85rem;
+          font-size: 0.9rem;
           color: #9ca3af;
         }
 
-        .chat-status-row {
-          margin-top: 0.45rem;
-          display: inline-flex;
-          align-items: center;
-          gap: 0.35rem;
-          padding: 0.15rem 0.6rem;
-          border-radius: 999px;
-          background: rgba(22, 163, 74, 0.14);
-        }
-
-        .chat-status-dot {
-          width: 7px;
-          height: 7px;
-          border-radius: 999px;
-          background: #22c55e;
-          box-shadow: 0 0 12px rgba(34, 197, 94, 0.85);
-        }
-
-        .chat-status-label {
-          font-size: 0.78rem;
-          color: #bbf7d0;
-        }
-
         .chat-window {
-          flex: 1;
-          min-height: 320px;
-          max-height: 60vh;
-          border-radius: 1.2rem;
-          border: 1px solid rgba(30, 64, 175, 0.6);
+          margin-top: 0.4rem;
+          border-radius: 1.4rem;
+          border: 1px solid rgba(31, 41, 55, 0.95);
           background: radial-gradient(
             circle at top left,
-            rgba(56, 189, 248, 0.12),
-            rgba(15, 23, 42, 0.96)
+            rgba(15, 23, 42, 0.96),
+            rgba(3, 7, 18, 0.98)
           );
-          padding: 0.9rem 0.85rem;
-          overflow-y: auto;
-        }
-
-        .chat-empty {
-          height: 100%;
+          padding: 0.9rem 0.9rem 0.8rem;
+          min-height: 280px;
+          max-height: 480px;
           display: flex;
           flex-direction: column;
-          align-items: flex-start;
-          justify-content: center;
-          gap: 0.65rem;
-        }
-
-        .chat-empty-title {
-          font-size: 0.9rem;
-          margin: 0 0 0.25rem;
-          color: #cbd5f5;
-        }
-
-        .chat-empty-suggestions {
-          display: flex;
-          flex-direction: column;
-          gap: 0.45rem;
-        }
-
-        .chat-suggestion-chip {
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.75);
-          padding: 0.45rem 0.75rem;
-          font-size: 0.82rem;
-          background: rgba(15, 23, 42, 0.95);
-          color: #e5e7eb;
-          text-align: left;
-          cursor: pointer;
-        }
-
-        .chat-suggestion-chip:hover {
-          border-color: rgba(248, 113, 113, 0.9);
         }
 
         .chat-messages {
+          flex: 1;
+          overflow-y: auto;
+          padding-right: 0.5rem;
           display: flex;
           flex-direction: column;
-          gap: 0.65rem;
+          gap: 0.5rem;
+        }
+
+        .chat-empty {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #9ca3af;
+          font-size: 0.9rem;
+          text-align: center;
+          padding: 0 1rem;
         }
 
         .chat-bubble-row {
           display: flex;
-          gap: 0.5rem;
+          width: 100%;
         }
 
         .chat-bubble-row--user {
           justify-content: flex-end;
         }
 
-        .chat-bubble-row--ai {
+        .chat-bubble-row--assistant {
           justify-content: flex-start;
-        }
-
-        .chat-bubble-avatar {
-          width: 26px;
-          height: 26px;
-          border-radius: 999px;
-          overflow: hidden;
-          flex-shrink: 0;
-        }
-
-        .chat-bubble-avatar-img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: 50% 20%;
         }
 
         .chat-bubble {
           max-width: 80%;
-          font-size: 0.86rem;
-          padding: 0.5rem 0.75rem;
-          border-radius: 0.9rem;
+          padding: 0.55rem 0.8rem;
+          border-radius: 1rem;
+          font-size: 0.9rem;
           line-height: 1.35;
+          word-wrap: break-word;
+          white-space: pre-wrap;
         }
 
         .chat-bubble--user {
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
-          border-bottom-right-radius: 0.2rem;
         }
 
-        .chat-bubble--ai {
-          background: rgba(15, 23, 42, 0.98);
-          border: 1px solid rgba(148, 163, 184, 0.7);
-          border-bottom-left-radius: 0.2rem;
+        .chat-bubble--assistant {
+          background: #020617;
+          border: 1px solid rgba(55, 65, 81, 0.9);
+          color: #e5e7eb;
         }
 
         .chat-input-row {
-          margin-top: 1rem;
+          margin-top: 0.8rem;
           display: flex;
           gap: 0.7rem;
           align-items: flex-end;
         }
 
-        .chat-textarea {
+        .chat-input {
           flex: 1;
-          border-radius: 1.1rem;
-          border: 1px solid rgba(148, 163, 184, 0.75);
-          background: rgba(15, 23, 42, 0.98);
-          padding: 0.6rem 0.9rem;
-          font-size: 0.88rem;
+          border-radius: 999px;
+          border: 1px solid rgba(55, 65, 81, 0.9);
+          background: #020617;
           color: #e5e7eb;
+          font-size: 0.9rem;
+          padding: 0.65rem 1rem;
           resize: none;
           outline: none;
+          min-height: 44px;
+          max-height: 96px;
         }
 
-        .chat-textarea::placeholder {
+        .chat-input::placeholder {
           color: #6b7280;
         }
 
         .chat-send-btn {
           border-radius: 999px;
           border: none;
-          padding: 0.7rem 1.5rem;
+          padding: 0.65rem 1.4rem;
           font-size: 0.9rem;
           cursor: pointer;
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
           box-shadow: 0 16px 40px rgba(248, 113, 113, 0.55);
-          flex-shrink: 0;
+          white-space: nowrap;
         }
 
         .chat-send-btn:disabled {
-          opacity: 0.5;
+          opacity: 0.55;
           cursor: default;
           box-shadow: none;
         }
 
-        @media (max-width: 768px) {
-          .chat-shell {
-            padding-inline: 1.1rem;
-          }
-          .chat-window {
-            max-height: 55vh;
-          }
+        .chat-error-card {
+          max-width: 520px;
+          margin: 4rem auto 0;
         }
 
-        @media (max-width: 540px) {
-          .chat-root {
-            padding-inline: 0.85rem;
-          }
+        @media (max-width: 640px) {
           .chat-shell {
-            padding-inline: 0.95rem;
-          }
-          .chat-ia-header {
-            align-items: flex-start;
-          }
-          .chat-title {
-            font-size: 1.1rem;
+            padding: 1.4rem 1.2rem 1.1rem;
           }
           .chat-window {
-            min-height: 260px;
+            max-height: 420px;
           }
         }
       `}</style>
     </main>
   );
-}
+            }
