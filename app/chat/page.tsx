@@ -221,7 +221,7 @@ function ChatClient() {
 
     try {
       // 🔗 On garde ta route actuelle : /api/chat/send
-      const res = await fetch("/api/chat/send", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ iaId, message: content, lang: locale }),
