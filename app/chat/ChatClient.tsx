@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, FormEvent } from "react";
-import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
@@ -80,7 +79,7 @@ const STRINGS: Record<Locale, UiCopy> = {
   },
 };
 
-function normalizeLocale(raw: string | null): Locale {
+function normalizeLocale(raw: string | null | undefined): Locale {
   if (raw === "en" || raw === "es" || raw === "fr") return raw;
   return "fr";
 }
@@ -92,10 +91,16 @@ function formatDisplayName(name: string | null | undefined): string {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
 }
 
-export default function ChatClient() {
-  const searchParams = useSearchParams();
-
-  const [locale, setLocale] = useState<Locale>("fr");
+export default function ChatClient({
+  aiId,
+  initialLang,
+}: {
+  aiId: string;
+  initialLang?: Locale;
+}) {
+  const [locale, setLocale] = useState<Locale>(
+    normalizeLocale(initialLang || "fr")
+  );
   const [aiMeta, setAiMeta] = useState<AiMeta | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,21 +109,11 @@ export default function ChatClient() {
   const [error, setError] = useState<string | null>(null);
   const [input, setInput] = useState("");
 
-  // 1) langue depuis ?lang=
-  useEffect(() => {
-    const lang = searchParams.get("lang");
-    setLocale(normalizeLocale(lang));
-  }, [searchParams]);
-
   const t = STRINGS[locale];
 
-  // 2) ID de l’IA (ou ancien chatId)
-  const aiId =
-    searchParams.get("aiId") ?? searchParams.get("chatId") ?? null;
-
-  // 3) Charger les infos de l’IA (nom + avatar) depuis Supabase
+  // Charger les infos de l’IA depuis public_user_amoria
   useEffect(() => {
-    const loadAiMeta = async () => {
+    const loadAi = async () => {
       if (!aiId) {
         setError(t.error);
         setLoading(false);
@@ -129,15 +124,13 @@ export default function ChatClient() {
         setLoading(true);
         setError(null);
 
-        // ⚠️ Table à adapter si besoin.
-        // Ici j’utilise ton tableau visible en capture : public_user_amoria
-        const { data, error: dbError } = await supabase
-          .from("public_user_amoria" as any)
+        const { data, error: supaError } = await supabase
+          .from("public_user_amoria")
           .select("id, name, avatar_image_url")
           .eq("id", aiId)
           .maybeSingle();
 
-        if (dbError || !data) {
+        if (supaError || !data) {
           setError(t.error);
           setLoading(false);
           return;
@@ -149,8 +142,7 @@ export default function ChatClient() {
           avatar_image_url: data.avatar_image_url,
         });
 
-        // Historique : si tu as une vraie table de messages, tu peux la charger ici.
-        // Pour l’instant, on commence vide.
+        // Si plus tard tu veux charger l’historique, tu pourras le faire ici.
         setMessages([]);
       } catch {
         setError(t.error);
@@ -159,17 +151,16 @@ export default function ChatClient() {
       }
     };
 
-    loadAiMeta();
+    loadAi();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aiId]);
 
-  const displayName =
-    formatDisplayName(aiMeta?.name) || "ton AmorIA";
+  const displayName = formatDisplayName(aiMeta?.name || "ton AmorIA");
 
-  // 4) Envoi d’un message
+  // Envoi d’un message
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !aiId || !aiMeta) return;
+    if (!input.trim() || !aiMeta) return;
 
     const content = input.trim();
     setInput("");
@@ -186,21 +177,21 @@ export default function ChatClient() {
     setTyping(true);
 
     try {
-      // 👉 REMETS ICI TON APPEL BACKEND RÉEL
-      // (Edge Function, /api/chat, etc.)
-      //
-      // Exemple de structure :
+      // 🔵 ICI tu remets EXACTEMENT ton appel backend qui marchait avant.
+      // Exemple de pattern (à adapter à TON fichier API) :
       /*
       const res = await fetch("/api/chat-with-amoria", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          aiId,
+          aiId: aiMeta.id,
           message: content,
           lang: locale,
         }),
       });
+
       const json = await res.json();
+
       const assistantReply: ChatMessage = {
         id: json.id,
         role: "assistant",
@@ -209,27 +200,24 @@ export default function ChatClient() {
       };
       */
 
-      // Placeholder honnête (à remplacer par ta logique) :
+      // Pour l’instant, on garde un message fictif pour ne pas casser ton code.
       const assistantReply: ChatMessage = {
         id: `local-assistant-${Date.now()}`,
         role: "assistant",
         content:
-          "☝️ Remets ici la vraie réponse de ton backend (OpenAI / Edge Function). Ce message est juste un exemple.",
+          "Remets ici la réponse de ton backend (OpenAI / API existante). Ce texte est juste là pour que l’UI fonctionne.",
         created_at: new Date().toISOString(),
       };
 
       setMessages((prev) => [...prev, assistantReply]);
     } catch {
-      setError(
-        "Erreur lors de l’envoi du message. Réessaie dans quelques instants."
-      );
+      setError("Erreur lors de l’envoi du message. Réessaie.");
     } finally {
       setSending(false);
       setTyping(false);
     }
   };
 
-  // 5) États de chargement / erreur
   if (loading) {
     return (
       <main className="amoria-chat-root">
@@ -247,7 +235,6 @@ export default function ChatClient() {
           }
           .amoria-chat-loading {
             font-size: 0.95rem;
-            color: #e5e7eb;
           }
         `}</style>
       </main>
@@ -296,7 +283,6 @@ export default function ChatClient() {
     );
   }
 
-  // 6) UI principale du chat
   return (
     <main className="amoria-chat-root">
       <header className="amoria-chat-header">
@@ -332,9 +318,7 @@ export default function ChatClient() {
         {/* Zone de messages */}
         <div className="amoria-chat-window">
           {messages.length === 0 ? (
-            <p className="amoria-chat-empty">
-              {t.emptyState(displayName)}
-            </p>
+            <p className="amoria-chat-empty">{t.emptyState(displayName)}</p>
           ) : (
             <div className="amoria-chat-messages">
               {messages.map((msg) => (
@@ -443,6 +427,18 @@ export default function ChatClient() {
           }
         }
 
+        @keyframes subtleBreath {
+          0% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.03);
+          }
+          100% {
+            transform: scale(1);
+          }
+        }
+
         .amoria-avatar-ring {
           width: 130px;
           height: 130px;
@@ -469,6 +465,7 @@ export default function ChatClient() {
           object-fit: cover;
           object-position: 50% 20%;
           background: #020617;
+          animation: subtleBreath 6s infinite ease-in-out;
         }
 
         .amoria-avatar-placeholder {
@@ -680,4 +677,4 @@ export default function ChatClient() {
       `}</style>
     </main>
   );
-        }
+}
