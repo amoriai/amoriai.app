@@ -14,7 +14,7 @@ type PlanId = keyof typeof PLAN_LIMITS;
 
 export async function POST(req: Request) {
   try {
-    // 1) Utilisateur connecté via Supabase
+    // 1) Utilisateur connecté
     const supabase = createRouteHandlerClient({ cookies });
 
     const {
@@ -25,52 +25,43 @@ export async function POST(req: Request) {
     if (userError || !user) {
       return NextResponse.json(
         { error: "not_authenticated" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
-    // 2) Body de la requête (vient du ChatClient)
-    const body = await req.json();
-    const { message, iaId, systemPrompt } = body as {
-      message: string;
-      iaId?: string;
-      systemPrompt?: string;
-    };
-
-    if (!message || !message.trim()) {
-      return NextResponse.json(
-        { error: "Missing message" },
-        { status: 400 }
-      );
-    }
-
-    // 3) Charger la ligne user_amoria correspondant à CETTE IA
-    //    (et appartenant bien à cet utilisateur)
-    let query = supabase
+    // 2) Profil Amoria (on gère plan / plan_id + plusieurs lignes)
+    const { data: profiles, error: profileError } = await supabase
       .from("user_amoria")
-      .select("id, user_id, plan_id, plan, credits, system_prompt")
+      .select("id, plan_id, plan, credits")
       .eq("user_id", user.id);
 
-    if (iaId) {
-      query = query.eq("id", iaId);
-    }
-
-    const { data: profile, error: profileError } = await query.maybeSingle();
-
-    if (profileError || !profile) {
+    if (profileError) {
       console.error("Profile error:", profileError);
       return NextResponse.json(
         { error: "profile_not_found" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // 4) Déterminer le plan et la limite
-    const planId = (profile.plan_id || profile.plan || "free") as PlanId;
+    const profile = profiles && profiles.length > 0 ? profiles[0] : null;
+
+    if (!profile) {
+      return NextResponse.json(
+        { error: "profile_not_found" },
+        { status: 400 },
+      );
+    }
+
+    // on accepte plan_id OU plan, sinon free
+    const rawPlan =
+      (profile as any).plan_id ?? (profile as any).plan ?? "free";
+
+    const planId = (rawPlan || "free") as PlanId;
     const plan = PLAN_LIMITS[planId] ?? PLAN_LIMITS.free;
 
-    // 5) Vérifier la limite de messages texte pour CETTE IA
-    const currentCredits = profile.credits ?? 0;
+    const currentCredits = (profile.credits ?? 0) as number;
+
+    // 3) Vérifier la limite de messages texte
     if (currentCredits >= plan.maxText) {
       return NextResponse.json(
         {
@@ -80,22 +71,31 @@ export async function POST(req: Request) {
           message:
             "Tu as atteint la limite de messages texte pour ton forfait actuel.",
         },
-        { status: 429 }
+        { status: 429 },
       );
     }
 
-    // 6) Construire le system prompt
-    const mergedSystemPrompt =
-      systemPrompt ||
-      profile.system_prompt ||
-      "Tu es une IA de compagnie bienveillante.";
+    // 4) Lire le body
+    const body = await req.json();
+    const { message, systemPrompt } = body as {
+      message: string;
+      systemPrompt?: string;
+    };
 
-    // 7) Appel OpenAI
+    if (!message || typeof message !== "string") {
+      return NextResponse.json(
+        { error: "missing_message" },
+        { status: 400 },
+      );
+    }
+
+    // 5) Appel OpenAI
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
+      console.error("Missing OPENAI_API_KEY");
       return NextResponse.json(
-        { error: "Missing OPENAI_API_KEY" },
-        { status: 500 }
+        { error: "missing_openai_key" },
+        { status: 500 },
       );
     }
 
@@ -108,7 +108,8 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: "gpt-5.1-mini",
         input: message,
-        system: mergedSystemPrompt,
+        system:
+          systemPrompt || "Tu es une IA de compagnie bienveillante.",
       }),
     });
 
@@ -116,8 +117,8 @@ export async function POST(req: Request) {
       const err = await response.text();
       console.error("OpenAI error:", err);
       return NextResponse.json(
-        { error: "OpenAI API error" },
-        { status: 500 }
+        { error: "openai_api_error" },
+        { status: 500 },
       );
     }
 
@@ -125,7 +126,7 @@ export async function POST(req: Request) {
     const text =
       data?.output?.[0]?.content?.[0]?.text ?? "Je ne sais pas.";
 
-    // 8) Incrémenter les crédits de CETTE IA
+    // 6) Incrémenter le compteur de messages (credits)
     const newCredits = currentCredits + 1;
 
     const { error: updateError } = await supabase
@@ -135,21 +136,21 @@ export async function POST(req: Request) {
 
     if (updateError) {
       console.error("Error updating credits:", updateError);
-      // on continue quand même
+      // On continue quand même
     }
 
-    // 9) Réponse envoyée au frontend
+    // 7) Réponse finale
     return NextResponse.json({
       reply: text,
       planId,
       credits_used: newCredits,
-      credits_remaining: Math.max(plan.maxText - newCredits, 0),
+      credits_remaining: plan.maxText - newCredits,
     });
   } catch (e) {
-    console.error(e);
+    console.error("Server error in /api/chat:", e);
     return NextResponse.json(
-      { error: "Server error" },
-      { status: 500 }
+      { error: "server_error" },
+      { status: 500 },
     );
   }
 }
