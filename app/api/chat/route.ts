@@ -24,18 +24,18 @@ export async function POST(req: Request) {
     if (!iaId) {
       return NextResponse.json(
         { error: "missing_iaId" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     if (!message || !message.trim()) {
       return NextResponse.json(
         { error: "missing_message" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    // 2) Client Supabase SERVEUR (service role = autorisé ici)
+    // 2) Client Supabase SERVEUR (service role)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       console.error("Missing Supabase env vars");
       return NextResponse.json(
         { error: "supabase_env_missing" },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
       console.error("IA row error:", iaError);
       return NextResponse.json(
         { error: "ia_not_found" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
           message:
             "Tu as atteint la limite de messages texte pour ton forfait actuel.",
         },
-        { status: 429 },
+        { status: 429 }
       );
     }
 
@@ -96,41 +96,54 @@ export async function POST(req: Request) {
 
     const systemPrompt = iaRow.system_prompt || defaultSystemPrompt;
 
-    // 6) Appel à l’API OpenAI
+    // 6) Appel à l’API OpenAI (chat completions, modèle stable)
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       console.error("Missing OPENAI_API_KEY");
       return NextResponse.json(
         { error: "missing_openai_key" },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-5.1-mini",
-        input: message,
-        system: systemPrompt,
-      }),
-    });
+    const response = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4.1-mini",
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            {
+              role: "user",
+              content: message,
+            },
+          ],
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errText = await response.text();
       console.error("OpenAI error:", errText);
       return NextResponse.json(
         { error: "openai_api_error" },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
     const data = await response.json();
-    const text =
-      data?.output?.[0]?.content?.[0]?.text ?? "Je ne sais pas.";
+
+    const text: string =
+      data?.choices?.[0]?.message?.content?.trim() ||
+      "Je ne sais pas.";
 
     // 7) Incrémenter le compteur de messages (credits) pour CETTE IA
     const newCredits = currentCredits + 1;
@@ -142,7 +155,7 @@ export async function POST(req: Request) {
 
     if (updateError) {
       console.error("Error updating credits:", updateError);
-      // On continue quand même
+      // On continue quand même à renvoyer la réponse
     }
 
     // 8) Réponse finale
@@ -158,7 +171,7 @@ export async function POST(req: Request) {
     console.error("Server error in /api/chat:", e);
     return NextResponse.json(
       { error: "server_error" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
