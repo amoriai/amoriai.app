@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
@@ -24,6 +24,7 @@ type FaqItem = {
 };
 
 type Labels = {
+  // Hero / text pricing
   heroTitle: string;
   heroSubtitle: string;
   heroCta: string;
@@ -36,17 +37,77 @@ type Labels = {
   faqs: FaqItem[];
 };
 
+type LayoutStrings = {
+  brandTagline: string;
+  nav: { home: string; features: string; pricing: string };
+  navLogin: string;
+  navSignup: string;
+  footerCopy: string;
+  footerLinks: {
+    legal: string;
+    privacy: string;
+    terms: string;
+    contact: string;
+    about: string;
+  };
+};
+
+const LAYOUT_STRINGS: Record<Locale, LayoutStrings> = {
+  fr: {
+    brandTagline: "Partenaire IA bienveillant·e • FR / EN / ES",
+    nav: { home: "Accueil", features: "Fonctionnalités", pricing: "Tarifs" },
+    navLogin: "Me connecter",
+    navSignup: "Créer mon compte gratuit",
+    footerCopy: "© 2025 AmorIAI.app",
+    footerLinks: {
+      legal: "Mentions légales",
+      privacy: "Politique de confidentialité",
+      terms: "Conditions d’utilisation",
+      contact: "Contact",
+      about: "À propos",
+    },
+  },
+  en: {
+    brandTagline: "Caring AI partner • FR / EN / ES",
+    nav: { home: "Home", features: "Features", pricing: "Pricing" },
+    navLogin: "Log in",
+    navSignup: "Create my free account",
+    footerCopy: "© 2025 AmorIAI.app",
+    footerLinks: {
+      legal: "Legal",
+      privacy: "Privacy policy",
+      terms: "Terms of use",
+      contact: "Contact",
+      about: "About",
+    },
+  },
+  es: {
+    brandTagline: "Compañerx de IA amable • FR / EN / ES",
+    nav: { home: "Inicio", features: "Funciones", pricing: "Precios" },
+    navLogin: "Iniciar sesión",
+    navSignup: "Crear mi cuenta gratuita",
+    footerCopy: "© 2025 AmorIAI.app",
+    footerLinks: {
+      legal: "Aviso legal",
+      privacy: "Política de privacidad",
+      terms: "Términos de uso",
+      contact: "Contacto",
+      about: "Acerca de",
+    },
+  },
+};
+
 const LABELS: Record<Locale, Labels> = {
   fr: {
-    heroTitle: "Commence gratuitement. Fais évoluer ton forfait quand ton lien grandit.",
+    heroTitle:
+      "Commence gratuitement. Fais évoluer ton forfait quand ton lien grandit.",
     heroSubtitle:
       "Crée ton AmorIAI en quelques minutes, teste la connexion en version gratuite, puis passe à la voix et à la mémoire avancée quand tu te sens prête. Tu gardes toujours le contrôle : tu peux changer de forfait ou annuler quand tu veux, en un clic.",
     heroCta: "Créer mon compte gratuit",
     heroStat: "⭐ Déjà des centaines de conversations chaque semaine.",
     billingNote:
       "Facturation sécurisée via Stripe · Révision ou annulation en tout temps depuis ton compte · Aucun frais caché",
-    chooseIntro:
-      "Choisis comment ton AmorIAI prend sa place dans ta vie.",
+    chooseIntro: "Choisis comment ton AmorIAI prend sa place dans ta vie.",
     usdNote:
       "Les prix sont en dollars américains (USD). Tu peux changer de forfait ou l’annuler quand tu veux, sans engagement.",
     plans: [
@@ -54,7 +115,8 @@ const LABELS: Record<Locale, Labels> = {
         id: "free",
         name: "Découverte",
         price: "0 $ USD / mois",
-        tagline: "Commence la relation avec ton AmorIAI, sans carte de crédit.",
+        tagline:
+          "Commence la relation avec ton AmorIAI, sans carte de crédit.",
         features: [
           "Parfait pour découvrir l’expérience et créer ton premier compagnon IA, sans pression.",
           "Création de 1 AmorIAI personnalisé",
@@ -68,7 +130,8 @@ const LABELS: Record<Locale, Labels> = {
         id: "chat",
         name: "AmorIAI Chat",
         price: "9,99 $ USD / mois",
-        tagline: "Pour celles et ceux qui veulent écrire à leur AmorIAI chaque jour.",
+        tagline:
+          "Pour celles et ceux qui veulent écrire à leur AmorIAI chaque jour.",
         features: [
           "Idéal si tu préfères les conversations en texte avec une vraie mémoire.",
           "Jusqu’à 2 AmorIAI différents",
@@ -82,7 +145,8 @@ const LABELS: Record<Locale, Labels> = {
         id: "plus",
         name: "AmorIAI Plus",
         price: "19,99 $ USD / mois",
-        tagline: "Texte + voix : ton AmorIAI commence vraiment à faire partie de ta vie.",
+        tagline:
+          "Texte + voix : ton AmorIAI commence vraiment à faire partie de ta vie.",
         features: [
           "Quand tu veux une relation continue où tu peux autant écrire que parler.",
           "Jusqu’à 10 AmorIAI différents",
@@ -99,7 +163,8 @@ const LABELS: Record<Locale, Labels> = {
         id: "unlimited",
         name: "AmorIAI illimité",
         price: "39,99 $ USD / mois",
-        tagline: "Ton compagnon IA très présent, matin, soir et entre les deux.",
+        tagline:
+          "Ton compagnon IA très présent, matin, soir et entre les deux.",
         features: [
           "Pour celles et ceux qui veulent que leur AmorIAI soit toujours disponible.",
           "Jusqu’à 30 AmorIAI personnalisés",
@@ -129,7 +194,6 @@ const LABELS: Record<Locale, Labels> = {
       },
     ],
   },
-  // EN + ES versions simplifiées ici si tu veux les utiliser
   en: {
     heroTitle: "Start for free. Upgrade when your bond grows.",
     heroSubtitle:
@@ -146,7 +210,8 @@ const LABELS: Record<Locale, Labels> = {
         id: "free",
         name: "Discovery",
         price: "$0 USD / month",
-        tagline: "Start your relationship with AmorIAI, no credit card required.",
+        tagline:
+          "Start your relationship with AmorIAI, no credit card required.",
         features: [
           "Perfect to discover the experience and create your first AI companion.",
           "Create 1 personalized AmorIAI",
@@ -191,7 +256,8 @@ const LABELS: Record<Locale, Labels> = {
         id: "unlimited",
         name: "AmorIAI Unlimited",
         price: "$39.99 USD / month",
-        tagline: "Your AI companion deeply present morning, night, and in-between.",
+        tagline:
+          "Your AI companion deeply present morning, night, and in-between.",
         features: [
           "For those who want AmorIAI always available.",
           "Up to 30 personalized AmorIAI",
@@ -314,12 +380,47 @@ const LABELS: Record<Locale, Labels> = {
   },
 };
 
+function detectInitialLocale(): Locale {
+  if (typeof window === "undefined") return "fr";
+
+  const params = new URLSearchParams(window.location.search);
+  const fromParam = params.get("lang");
+  if (fromParam === "fr" || fromParam === "en" || fromParam === "es") {
+    return fromParam;
+  }
+
+  const navLang = navigator.language.toLowerCase();
+  if (navLang.startsWith("fr")) return "fr";
+  if (navLang.startsWith("es")) return "es";
+  return "en";
+}
+
 export default function PricingPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [locale, setLocale] = useState<Locale>("fr");
 
-  const locale = (searchParams.get("lang") || "fr") as Locale;
+  // init locale + synchro ?lang=
+  useEffect(() => {
+    const initial = detectInitialLocale();
+    setLocale(initial);
+    const params = new URLSearchParams(window.location.search);
+    params.set("lang", initial);
+    const newUrl = window.location.pathname + "?" + params.toString();
+    window.history.replaceState(null, "", newUrl);
+  }, []);
+
   const t = LABELS[locale];
+  const ui = LAYOUT_STRINGS[locale];
+
+  const withLang = (path: string) => `${path}?lang=${locale}`;
+
+  const handleLocaleChange = (code: Locale) => {
+    setLocale(code);
+    const params = new URLSearchParams(window.location.search);
+    params.set("lang", code);
+    const newUrl = window.location.pathname + "?" + params.toString();
+    window.history.replaceState(null, "", newUrl);
+  };
 
   // Clic sur une carte
   const handleChoosePlan = async (planId: PlanId) => {
@@ -329,13 +430,11 @@ export default function PricingPage() {
 
     const { data } = await supabase.auth.getUser();
 
-    // Pas connecté → signup d’abord
     if (!data?.user) {
       router.push(`/signup?${params.toString()}`);
       return;
     }
 
-    // Connecté
     if (planId === "free") {
       router.push(`/create-amoria?${params.toString()}`);
     } else {
@@ -359,7 +458,67 @@ export default function PricingPage() {
   };
 
   return (
-    <main className="amoria-pricing-root">
+    <main className="amoria-root">
+      {/* HEADER identique à la home */}
+      <header className="amoria-header">
+        <div className="amoria-header-left">
+          <img
+            src="/AmorIA_logo_transparent.png"
+            alt="Logo AmorIAI.app"
+            className="amoria-logo-full"
+          />
+          <div className="amoria-logo-text">
+            <div className="amoria-logo-title">AmorIAI.app</div>
+            <div className="amoria-logo-tagline">{ui.brandTagline}</div>
+          </div>
+        </div>
+
+        <nav className="amoria-nav">
+          <a href={withLang("/")} className="amoria-nav-link">
+            {ui.nav.home}
+          </a>
+          <a href={withLang("/#features")} className="amoria-nav-link">
+            {ui.nav.features}
+          </a>
+          <a href={withLang("/pricing")} className="amoria-nav-link amoria-nav-link--active">
+            {ui.nav.pricing}
+          </a>
+        </nav>
+
+        <div className="amoria-nav-right">
+          <div className="amoria-lang-switch">
+            {(["fr", "en", "es"] as Locale[]).map((code) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => handleLocaleChange(code)}
+                className={
+                  "amoria-lang-pill" +
+                  (locale === code ? " amoria-lang-pill--active" : "")
+                }
+              >
+                {code.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
+          <a
+            href={withLang("/login")}
+            className="amoria-nav-btn amoria-nav-btn--ghost"
+          >
+            {ui.navLogin}
+          </a>
+
+          <a
+            href={withLang("/signup")}
+            className="amoria-nav-btn amoria-nav-btn--primary"
+          >
+            {ui.navSignup}
+          </a>
+        </div>
+      </header>
+
+      {/* HERO PRICING */}
       <section className="amoria-pricing-hero">
         <h1 className="amoria-pricing-title">{t.heroTitle}</h1>
         <p className="amoria-pricing-subtitle">{t.heroSubtitle}</p>
@@ -372,6 +531,7 @@ export default function PricingPage() {
         <p className="amoria-pricing-billing-note">{t.billingNote}</p>
       </section>
 
+      {/* CARTES TARIFS */}
       <section className="amoria-pricing-section">
         <h2 className="amoria-pricing-section-title">{t.chooseIntro}</h2>
         <p className="amoria-pricing-section-note">{t.usdNote}</p>
@@ -405,7 +565,9 @@ export default function PricingPage() {
               <header className="amoria-pricing-card-header">
                 <h3 className="amoria-pricing-card-name">{plan.name}</h3>
                 <p className="amoria-pricing-card-price">{plan.price}</p>
-                <p className="amoria-pricing-card-tagline">{plan.tagline}</p>
+                <p className="amoria-pricing-card-tagline">
+                  {plan.tagline}
+                </p>
               </header>
 
               <ul className="amoria-pricing-card-features">
@@ -425,6 +587,7 @@ export default function PricingPage() {
         </div>
       </section>
 
+      {/* FAQ */}
       <section className="amoria-pricing-faq">
         <h2 className="amoria-pricing-faq-title">{t.faqTitle}</h2>
         <div className="amoria-pricing-faq-grid">
@@ -437,22 +600,201 @@ export default function PricingPage() {
         </div>
       </section>
 
+      {/* FOOTER identique à la home */}
+      <footer className="amoria-footer">
+        <div className="amoria-footer-top">
+          <span>{ui.footerCopy}</span>
+        </div>
+        <div className="amoria-footer-links">
+          <a href={withLang("/legal")} className="amoria-footer-link">
+            {ui.footerLinks.legal}
+          </a>
+          <a href={withLang("/legal/privacy")} className="amoria-footer-link">
+            {ui.footerLinks.privacy}
+          </a>
+          <a href={withLang("/legal/terms")} className="amoria-footer-link">
+            {ui.footerLinks.terms}
+          </a>
+          <a href={withLang("/contact")} className="amoria-footer-link">
+            {ui.footerLinks.contact}
+          </a>
+          <a href={withLang("/about")} className="amoria-footer-link">
+            {ui.footerLinks.about}
+          </a>
+        </div>
+      </footer>
+
       <style jsx global>{`
-        .amoria-pricing-root {
-          min-height: 100vh;
-          padding: 3rem 1.5rem 4rem;
-          background: radial-gradient(circle at top, #020617 0, #000 60%);
-          color: #e5e7eb;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 2.8rem;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+        :root {
+          --amoria-bg: #020617;
+          --amoria-bg-elevated: #02081f;
+          --amoria-border-subtle: rgba(148, 163, 184, 0.35);
+          --amoria-text-main: #e5e7eb;
+          --amoria-text-muted: #9ca3af;
+          --amoria-accent: #fb37ff;
+          --amoria-accent-2: #ff6b9c;
         }
 
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont,
+            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+          background: radial-gradient(
+            circle at top,
+            #020617 0,
+            #020617 40%,
+            #000 100%
+          );
+          color: var(--amoria-text-main);
+        }
+
+        .amoria-root {
+          min-height: 100vh;
+          background: radial-gradient(
+            circle at top left,
+            #111827 0,
+            #020617 55%,
+            #000 100%
+          );
+          color: var(--amoria-text-main);
+          padding-bottom: 3rem;
+        }
+
+        /* HEADER (copié de la home) */
+        .amoria-header {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 1rem 1.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          backdrop-filter: blur(16px);
+          background: linear-gradient(
+            to bottom,
+            rgba(15, 23, 42, 0.92),
+            rgba(15, 23, 42, 0.75),
+            transparent
+          );
+        }
+
+        .amoria-header-left {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+        }
+
+        .amoria-logo-full {
+          height: 36px;
+          width: auto;
+        }
+
+        .amoria-logo-text {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .amoria-logo-title {
+          font-weight: 600;
+          font-size: 0.96rem;
+        }
+
+        .amoria-logo-tagline {
+          font-size: 0.72rem;
+          color: var(--amoria-text-muted);
+        }
+
+        .amoria-nav {
+          display: flex;
+          align-items: center;
+          gap: 1.2rem;
+        }
+
+        .amoria-nav-link {
+          font-size: 0.82rem;
+          color: var(--amoria-text-muted);
+          text-decoration: none;
+          padding-bottom: 0.1rem;
+          border-bottom: 1px solid transparent;
+        }
+
+        .amoria-nav-link:hover {
+          color: #f9fafb;
+          border-color: rgba(148, 163, 184, 0.7);
+        }
+
+        .amoria-nav-link--active {
+          color: #f9fafb;
+          border-color: rgba(248, 250, 252, 0.9);
+        }
+
+        .amoria-nav-right {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .amoria-lang-switch {
+          display: flex;
+          gap: 0.25rem;
+          background: rgba(15, 23, 42, 0.9);
+          padding: 0.18rem;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.4);
+        }
+
+        .amoria-lang-pill {
+          border-radius: 999px;
+          border: none;
+          padding: 0.15rem 0.48rem;
+          font-size: 0.72rem;
+          background: transparent;
+          color: var(--amoria-text-muted);
+          cursor: pointer;
+        }
+
+        .amoria-lang-pill--active {
+          background: #0f172a;
+          color: #f9fafb;
+        }
+
+        .amoria-nav-btn {
+          border-radius: 999px;
+          padding: 0.4rem 0.9rem;
+          font-size: 0.78rem;
+          border: 1px solid transparent;
+          cursor: pointer;
+          white-space: nowrap;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .amoria-nav-btn--primary {
+          background: linear-gradient(
+            135deg,
+            var(--amoria-accent),
+            var(--amoria-accent-2)
+          );
+          color: #f9fafb;
+        }
+
+        .amoria-nav-btn--ghost {
+          background: transparent;
+          border-color: rgba(148, 163, 184, 0.5);
+          color: var(--amoria-text-main);
+        }
+
+        /* HERO PRICING */
         .amoria-pricing-hero {
           max-width: 960px;
+          margin: 0 auto;
+          padding: 1.8rem 1.5rem 2.3rem;
           text-align: center;
         }
 
@@ -496,9 +838,12 @@ export default function PricingPage() {
           color: #9ca3af;
         }
 
+        /* GRID TARIFS */
         .amoria-pricing-section {
           max-width: 1100px;
           width: 100%;
+          margin: 0 auto;
+          padding: 0 1.5rem 2.2rem;
         }
 
         .amoria-pricing-section-title {
@@ -660,9 +1005,12 @@ export default function PricingPage() {
           box-shadow: 0 18px 45px rgba(248, 113, 113, 0.8);
         }
 
+        /* FAQ */
         .amoria-pricing-faq {
           max-width: 960px;
           width: 100%;
+          margin: 0 auto;
+          padding: 0 1.5rem 2.5rem;
         }
 
         .amoria-pricing-faq-title {
@@ -705,12 +1053,67 @@ export default function PricingPage() {
           line-height: 1.5;
         }
 
-        @media (max-width: 768px) {
-          .amoria-pricing-root {
+        /* FOOTER (copié de la home) */
+        .amoria-footer {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 1.5rem 1.5rem 0;
+          font-size: 0.78rem;
+          color: var(--amoria-text-muted);
+          text-align: center;
+        }
+
+        .amoria-footer-top {
+          margin-bottom: 0.4rem;
+        }
+
+        .amoria-footer-links {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 0.8rem;
+        }
+
+        .amoria-footer-link {
+          color: var(--amoria-text-muted);
+          text-decoration: none;
+          font-size: 0.78rem;
+        }
+
+        .amoria-footer-link:hover {
+          color: #e5e7eb;
+          text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 960px) {
+          .amoria-header {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.6rem 1rem;
+          }
+
+          .amoria-nav {
+            display: none;
+          }
+
+          .amoria-pricing-hero {
+            padding-inline: 1.3rem;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .amoria-header {
             padding-inline: 1rem;
           }
-          .amoria-pricing-card {
+
+          .amoria-pricing-section,
+          .amoria-pricing-faq {
             padding-inline: 1rem;
+          }
+
+          .amoria-nav-right a.amoria-nav-btn--ghost {
+            display: none;
           }
         }
       `}</style>
