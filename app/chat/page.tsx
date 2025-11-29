@@ -41,6 +41,8 @@ type UiCopy = {
   loading: string;
   aiNotFoundTitle: string;
   genericError: string;
+  notAuthenticated: string;
+  profileNotFound: string;
 };
 
 const STRINGS: Record<Locale, UiCopy> = {
@@ -58,6 +60,10 @@ const STRINGS: Record<Locale, UiCopy> = {
     aiNotFoundTitle: "AmorIA introuvable",
     genericError:
       "Impossible de charger cette conversation pour le moment. Vérifie le lien ou réessaie plus tard.",
+    notAuthenticated:
+      "Tu dois être connectée à ton compte AmorIA pour discuter avec ton IA.",
+    profileNotFound:
+      "Profil AmorIA introuvable. Connecte-toi, puis crée ton profil dans « Mon AmorIA ».",
   },
   en: {
     backHome: "← Back to home",
@@ -73,6 +79,10 @@ const STRINGS: Record<Locale, UiCopy> = {
     aiNotFoundTitle: "Companion not found",
     genericError:
       "We couldn’t load this conversation. Please check the link or try again later.",
+    notAuthenticated:
+      "You must be logged in to your AmorIA account to chat with your AI.",
+    profileNotFound:
+      "AmorIA profile not found. Please log in and create your profile in “My AmorIA”.",
   },
   es: {
     backHome: "← Volver al inicio",
@@ -88,6 +98,10 @@ const STRINGS: Record<Locale, UiCopy> = {
     aiNotFoundTitle: "Compañero no encontrado",
     genericError:
       "No pudimos cargar esta conversación. Verifica el enlace o inténtalo más tarde.",
+    notAuthenticated:
+      "Debes iniciar sesión en tu cuenta de AmorIA para chatear con tu IA.",
+    profileNotFound:
+      "Perfil de AmorIA no encontrado. Inicia sesión y crea tu perfil en « Mi AmorIA ».",
   },
 };
 
@@ -98,7 +112,7 @@ function normalizeLocale(raw: string | null): Locale {
 
 /**
  * Wrapper exigé par Next.js : useSearchParams doit être
- * utilisé à l’intérieur d’un composant rendu dans <Suspense>.
+ * utilisé dans un composant rendu à l’intérieur d’un <Suspense>.
  */
 export default function ChatPage() {
   return (
@@ -175,15 +189,18 @@ function ChatClient() {
     loadAI();
   }, [iaId, t.genericError]);
 
-  // Charger l’historique (si ton backend le gère)
+  // Charger l’historique (optionnel, selon ton backend)
   useEffect(() => {
     const loadHistory = async () => {
       if (!iaId) return;
-      try {
-        const res = await fetch(`/api/chat/history?iaId=${encodeURIComponent(iaId)}`);
-        if (!res.ok) return;
-        const data = (await res.json()) as ChatMessage[];
 
+      try {
+        const res = await fetch(
+          `/api/chat/history?iaId=${encodeURIComponent(iaId)}`
+        );
+        if (!res.ok) return;
+
+        const data = (await res.json()) as ChatMessage[];
         setMessages(
           data
             .map((m) => ({
@@ -220,31 +237,51 @@ function ChatClient() {
     setSending(true);
 
     try {
-      // 🔗 On garde ta route actuelle : /api/chat/send
-     const res = await fetch("/api/chat", {
-  method: "POST",
-  credentials: "include",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ iaId, message: content, lang: locale }),
-});
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ iaId, message: content, lang: locale }),
+      });
 
-      if (!res.ok) {
-        throw new Error("Réponse invalide du serveur.");
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        // pas de JSON, on laisse data = null
       }
 
-      const data = await res.json();
+      if (!res.ok) {
+        console.error("ERREUR API /api/chat:", res.status, data);
+
+        if (data?.error === "not_authenticated") {
+          setSendError(t.notAuthenticated);
+          return;
+        }
+
+        if (data?.error === "profile_not_found") {
+          setSendError(t.profileNotFound);
+          return;
+        }
+
+        setSendError(
+          "Erreur serveur : " + (data?.error ?? "Impossible d’envoyer le message.")
+        );
+        return;
+      }
 
       const assistantMessage: ChatMessage = {
         id: `${baseId}-assistant`,
         role: "assistant",
-        content: data.reply ?? "",
+        content: data?.reply ?? "",
         createdAt: new Date().toISOString(),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-    } catch {
+    } catch (err) {
+      console.error("Erreur réseau /api/chat:", err);
       setSendError(
-        "Impossible d’envoyer le message pour le moment. Réessaie dans quelques secondes."
+        "Erreur réseau. Vérifie ta connexion Internet et réessaie dans quelques secondes."
       );
     } finally {
       setSending(false);
@@ -594,7 +631,6 @@ function ChatClient() {
           box-shadow: none;
         }
 
-        /* Skeleton & état erreur */
         .skeleton {
           background: linear-gradient(
             90deg,
@@ -671,4 +707,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-          }
+    }
