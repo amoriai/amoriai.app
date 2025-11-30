@@ -117,7 +117,8 @@ function normalizeLocale(raw: string | null): Locale {
 }
 
 /**
- * Wrapper pour pouvoir utiliser useSearchParams avec Suspense.
+ * Wrapper exigé par Next.js : useSearchParams doit être
+ * utilisé dans un composant rendu à l’intérieur d’un <Suspense>.
  */
 export default function ChatPage() {
   return (
@@ -168,7 +169,7 @@ function ChatClient() {
   const [sttSupported, setSttSupported] = useState(false);
   const recognitionRef = useRef<any | null>(null);
 
-  // Détection du support STT navigateur
+  // Détection support STT navigateur
   useEffect(() => {
     if (typeof window === "undefined") return;
     const SpeechRecognition =
@@ -179,11 +180,9 @@ function ChatClient() {
 
   const startRecording = () => {
     if (typeof window === "undefined") return;
-
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
-
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
@@ -205,9 +204,7 @@ function ChatClient() {
           interim += transcript;
         }
       }
-
-      const merged =
-        (newMessage ? newMessage + " " : "") + finalText + interim;
+      const merged = (newMessage ? newMessage + " " : "") + finalText + interim;
       setNewMessage(merged.trimStart());
     };
 
@@ -242,6 +239,57 @@ function ChatClient() {
     }
   };
 
+  // ⚡️ Lecture de la voix de l’IA via /api/voice
+  const playAssistantVoice = async (text: string) => {
+    if (!iaId || !text.trim()) return;
+
+    try {
+      const res = await fetch("/api/voice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ iaId, text }),
+      });
+
+      const contentType = res.headers.get("Content-Type") || "";
+
+      if (!res.ok) {
+        if (contentType.includes("application/json")) {
+          const data = await res.json();
+          console.error("Voice API error:", data);
+
+          if (data?.error === "audio_quota_reached") {
+            setSendError(
+              "Tu as atteint la limite de messages vocaux pour ton forfait actuel."
+            );
+          }
+        } else {
+          console.error("Voice API HTTP error:", res.status);
+        }
+        return;
+      }
+
+      // Succès : on attend un flux audio (mp3, opus, etc.)
+      if (contentType.startsWith("audio/")) {
+        const arrayBuffer = await res.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: contentType });
+        const url = URL.createObjectURL(blob);
+
+        const audio = new Audio(url);
+        audio.play().catch((err) =>
+          console.error("Erreur de lecture audio:", err)
+        );
+        audio.onended = () => URL.revokeObjectURL(url);
+      } else if (contentType.includes("application/json")) {
+        // Réponse JSON non bloquante
+        const data = await res.json();
+        console.log("Voice API JSON:", data);
+      }
+    } catch (err) {
+      console.error("Erreur /api/voice:", err);
+      // On ne casse pas le chat si la voix échoue
+    }
+  };
+
   // Charger les infos de l’AmorIA
   useEffect(() => {
     const loadAI = async () => {
@@ -273,7 +321,7 @@ function ChatClient() {
     loadAI();
   }, [iaId, t.genericError]);
 
-  // Charger l’historique (si dispo côté backend)
+  // Charger l’historique (optionnel)
   useEffect(() => {
     const loadHistory = async () => {
       if (!iaId) return;
@@ -304,7 +352,6 @@ function ChatClient() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSendError(null);
-
     if (!newMessage.trim() || !iaId) return;
 
     if (isRecording) stopRecording();
@@ -366,6 +413,11 @@ function ChatClient() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+
+      // 🔊 LANCER LA VOIX ICI
+      if (assistantMessage.content) {
+        void playAssistantVoice(assistantMessage.content);
+      }
     } catch (err) {
       console.error("Erreur réseau /api/chat:", err);
       setSendError(
@@ -467,7 +519,6 @@ function ChatClient() {
             onChange={(e) => setNewMessage(e.target.value)}
             rows={2}
           />
-
           <div className="chat-actions">
             <button
               type="button"
@@ -480,7 +531,6 @@ function ChatClient() {
                 {isRecording ? "■" : "🎤"}
               </span>
             </button>
-
             <button
               type="submit"
               className="chat-send-btn"
@@ -530,7 +580,8 @@ function ChatClient() {
         }
 
         .chat-card {
-          width: 100%;
+          width: 100%
+          ;
           max-width: 900px;
           border-radius: 1.6rem;
           border: 1px solid rgba(148, 163, 184, 0.42);
@@ -870,4 +921,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-              }
+}
