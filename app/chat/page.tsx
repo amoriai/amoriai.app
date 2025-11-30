@@ -117,8 +117,7 @@ function normalizeLocale(raw: string | null): Locale {
 }
 
 /**
- * Wrapper exigé par Next.js : useSearchParams doit être
- * utilisé dans un composant rendu à l’intérieur d’un <Suspense>.
+ * Wrapper pour pouvoir utiliser useSearchParams avec Suspense.
  */
 export default function ChatPage() {
   return (
@@ -169,7 +168,7 @@ function ChatClient() {
   const [sttSupported, setSttSupported] = useState(false);
   const recognitionRef = useRef<any | null>(null);
 
-  // Détection support STT navigateur
+  // Détection du support STT navigateur
   useEffect(() => {
     if (typeof window === "undefined") return;
     const SpeechRecognition =
@@ -180,9 +179,11 @@ function ChatClient() {
 
   const startRecording = () => {
     if (typeof window === "undefined") return;
+
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
+
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
@@ -204,7 +205,9 @@ function ChatClient() {
           interim += transcript;
         }
       }
-      const merged = (newMessage ? newMessage + " " : "") + finalText + interim;
+
+      const merged =
+        (newMessage ? newMessage + " " : "") + finalText + interim;
       setNewMessage(merged.trimStart());
     };
 
@@ -270,7 +273,7 @@ function ChatClient() {
     loadAI();
   }, [iaId, t.genericError]);
 
-  // Charger l’historique (optionnel, selon ton backend)
+  // Charger l’historique (si dispo côté backend)
   useEffect(() => {
     const loadHistory = async () => {
       if (!iaId) return;
@@ -301,6 +304,7 @@ function ChatClient() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSendError(null);
+
     if (!newMessage.trim() || !iaId) return;
 
     if (isRecording) stopRecording();
@@ -463,6 +467,7 @@ function ChatClient() {
             onChange={(e) => setNewMessage(e.target.value)}
             rows={2}
           />
+
           <div className="chat-actions">
             <button
               type="button"
@@ -475,6 +480,7 @@ function ChatClient() {
                 {isRecording ? "■" : "🎤"}
               </span>
             </button>
+
             <button
               type="submit"
               className="chat-send-btn"
@@ -864,4 +870,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-                    }
+              }
