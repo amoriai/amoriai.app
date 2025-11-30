@@ -24,6 +24,7 @@ type AmoriaRow = {
   accent_color: string | null;
   system_prompt: string;
   voice_id: string | null;
+  plan_id: string | null; // "free" | "chat" | "plus" | "unlimited"
   is_archived: boolean;
   created_at: string;
   updated_at: string;
@@ -158,6 +159,8 @@ function ChatClient() {
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [aiLoading, setAiLoading] = useState(true);
   const [aiError, setAiError] = useState<string | null>(null);
+
+  const [planId, setPlanId] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -306,7 +309,9 @@ function ChatClient() {
         if (error || !data) {
           setAiError(t.genericError);
         } else {
-          setAi(data as AmoriaRow);
+          const row = data as AmoriaRow;
+          setAi(row);
+          setPlanId(row.plan_id ?? null);
         }
       } catch {
         setAiError(t.genericError);
@@ -437,6 +442,16 @@ function ChatClient() {
 
   const displayNameUpper = displayName.toUpperCase();
 
+  // Animation avatar selon le forfait
+  const avatarAnimationClass =
+    planId === "chat"
+      ? "avatar-anim-lite"
+      : planId === "plus"
+      ? "avatar-anim-medium"
+      : planId === "unlimited"
+      ? "avatar-anim-full"
+      : "";
+
   return (
     <main className="chat-root">
       <header className="chat-header">
@@ -463,7 +478,9 @@ function ChatClient() {
             </>
           ) : (
             <>
-              <div className="chat-avatar-ring live">
+              <div
+                className={`chat-avatar-ring live ${avatarAnimationClass}`}
+              >
                 {ai.avatar_image_url ? (
                   <img
                     src={ai.avatar_image_url}
@@ -603,21 +620,6 @@ function ChatClient() {
           gap: 0.35rem;
         }
 
-        @keyframes slowPulse {
-          0% {
-            box-shadow: 0 0 26px rgba(251, 55, 255, 0.35);
-            transform: scale(1);
-          }
-          50% {
-            box-shadow: 0 0 52px rgba(56, 189, 248, 0.55);
-            transform: scale(1.02);
-          }
-          100% {
-            box-shadow: 0 0 26px rgba(251, 55, 255, 0.35);
-            transform: scale(1);
-          }
-        }
-
         .chat-avatar-ring {
           width: 160px;
           height: 160px;
@@ -634,10 +636,6 @@ function ChatClient() {
           align-items: center;
           justify-content: center;
           overflow: hidden;
-        }
-
-        .chat-avatar-ring.live {
-          animation: slowPulse 4s ease-in-out infinite;
         }
 
         .chat-avatar-img {
@@ -885,6 +883,58 @@ function ChatClient() {
           }
         }
 
+        /* === Animations par forfait === */
+
+        @keyframes avatarFloatLite {
+          0% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-4px);
+          }
+          100% {
+            transform: translateY(0px);
+          }
+        }
+
+        .avatar-anim-lite {
+          animation: avatarFloatLite 4s ease-in-out infinite;
+        }
+
+        @keyframes avatarFloatMedium {
+          0% {
+            transform: translateY(0px) scale(1);
+          }
+          50% {
+            transform: translateY(-6px) scale(1.03);
+          }
+          100% {
+            transform: translateY(0px) scale(1);
+          }
+        }
+
+        .avatar-anim-medium {
+          animation: avatarFloatMedium 3s ease-in-out infinite;
+        }
+
+        @keyframes avatarGlow {
+          0% {
+            box-shadow: 0 0 20px rgba(251, 37, 118, 0.4);
+          }
+          50% {
+            box-shadow: 0 0 40px rgba(129, 140, 248, 0.9);
+          }
+          100% {
+            box-shadow: 0 0 20px rgba(251, 37, 118, 0.4);
+          }
+        }
+
+        .avatar-anim-full {
+          animation:
+            avatarFloatMedium 3s ease-in-out infinite,
+            avatarGlow 4s ease-in-out infinite;
+        }
+
         @media (max-width: 768px) {
           .chat-card {
             padding-inline: 1.2rem;
@@ -923,4 +973,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-}
+                              }
