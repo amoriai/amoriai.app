@@ -117,13 +117,12 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-// IMPORTANT : lit le tier en minuscules pour éviter les bugs de casse
+// ⚠️ Fallback généreux = unlimited (pour tes tests)
+// Quand tu brancheras Stripe → Supabase, tu pourras remettre "free" en défaut.
 function normalizeTier(raw: string | null): PlanTier {
-  const value = (raw || "").toLowerCase();
-  if (value === "chat" || value === "plus" || value === "unlimited") {
-    return value;
-  }
-  return "free";
+  if (raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited")
+    return raw;
+  return "unlimited";
 }
 
 /**
@@ -166,9 +165,10 @@ function ChatClient() {
   const tier = normalizeTier(searchParams.get("tier"));
   const t = STRINGS[locale];
 
-  // Voix & micro selon le forfait
-  const canUseVoice = tier === "plus" || tier === "unlimited";
-  const canUseMic = canUseVoice; // Découverte & Chat = pas de micro
+  // DEBUG dans la console du navigateur
+  useEffect(() => {
+    console.log("[AmorIA] Chat tier =", tier);
+  }, [tier]);
 
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [aiLoading, setAiLoading] = useState(true);
@@ -184,21 +184,21 @@ function ChatClient() {
   const [sttSupported, setSttSupported] = useState(false);
   const recognitionRef = useRef<any | null>(null);
 
-  // Détection support STT navigateur (seulement si le plan a accès au micro)
+  // Seuls les plans PLUS et UNLIMITED ont la voix + micro
+  const voiceEnabled = tier === "plus" || tier === "unlimited";
+  const micEnabled = voiceEnabled;
+
+  // Détection support STT navigateur
   useEffect(() => {
-    if (!canUseMic) {
-      setSttSupported(false);
-      return;
-    }
     if (typeof window === "undefined") return;
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
     setSttSupported(!!SpeechRecognition);
-  }, [canUseMic]);
+  }, []);
 
   const startRecording = () => {
-    if (!canUseMic) return;
+    if (!micEnabled) return;
     if (typeof window === "undefined") return;
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
@@ -251,7 +251,8 @@ function ChatClient() {
   };
 
   const handleToggleRecording = () => {
-    if (!canUseMic || !sttSupported || sending) return;
+    if (!micEnabled) return;
+    if (!sttSupported || sending) return;
     if (isRecording) {
       stopRecording();
     } else {
@@ -261,7 +262,7 @@ function ChatClient() {
 
   // Lecture de la voix de l’IA via /api/voice
   const playAssistantVoice = async (text: string) => {
-    if (!canUseVoice) return;
+    if (!voiceEnabled) return; // ❌ pas de voix sur free/chat
     if (!iaId || !text.trim()) return;
 
     try {
@@ -295,9 +296,9 @@ function ChatClient() {
         const url = URL.createObjectURL(blob);
 
         const audio = new Audio(url);
-        audio.play().catch((err) =>
-          console.error("Erreur de lecture audio:", err)
-        );
+        audio
+          .play()
+          .catch((err) => console.error("Erreur de lecture audio:", err));
         audio.onended = () => URL.revokeObjectURL(url);
       } else if (contentType.includes("application/json")) {
         const data = await res.json();
@@ -550,10 +551,8 @@ function ChatClient() {
             onChange={(e) => setNewMessage(e.target.value)}
             rows={2}
           />
-
           <div className="chat-actions">
-            {/* Micro visible seulement si le plan le permet */}
-            {canUseMic && (
+            {voiceEnabled && (
               <button
                 type="button"
                 className={`chat-mic-btn ${
@@ -658,8 +657,6 @@ function ChatClient() {
           align-items: center;
           justify-content: center;
           overflow: hidden;
-          /* Animation de base pour tous les forfaits */
-          animation: slowPulse 6s ease-in-out infinite;
         }
 
         .chat-avatar-img {
@@ -684,24 +681,26 @@ function ChatClient() {
           color: #e5e7eb;
         }
 
-        /* ---- Effets par forfait ---- */
+        /* -------- ANIMATIONS PAR FORFAIT -------- */
 
+        /* Free = statique */
         .chat-avatar-ring--free {
-          /* garde slowPulse par défaut */
+          animation: none;
         }
 
+        /* 9,99 : léger flottement doux */
         .chat-avatar-ring--chat {
-          animation:
-            floatSoft 6s ease-in-out infinite,
-            glowSoft 7s ease-in-out infinite;
+          animation: floatSoft 6s ease-in-out infinite;
         }
 
+        /* 19,99 : flottement + glow doux */
         .chat-avatar-ring--plus {
           animation:
             floatSoft 5s ease-in-out infinite,
-            glowPremium 6s ease-in-out infinite;
+            glowSoft 6s ease-in-out infinite;
         }
 
+        /* 39,99 : mouvement premium mais contrôlé */
         .chat-avatar-ring--unlimited {
           animation:
             floatPremium 4.5s ease-in-out infinite,
@@ -711,22 +710,11 @@ function ChatClient() {
         .chat-avatar-ring--error {
           background: radial-gradient(circle at center, #b91c1c, #7f1d1d);
           box-shadow: 0 0 35px rgba(248, 113, 113, 0.7);
-          animation: none;
         }
 
-        @keyframes slowPulse {
-          0% {
-            transform: translateY(0) scale(1);
-            box-shadow: 0 0 18px rgba(148, 163, 184, 0.3);
-          }
-          50% {
-            transform: translateY(-6px) scale(1.03);
-            box-shadow: 0 0 32px rgba(251, 55, 255, 0.55);
-          }
-          100% {
-            transform: translateY(0) scale(1);
-            box-shadow: 0 0 18px rgba(148, 163, 184, 0.3);
-          }
+        .chat-avatar-error {
+          font-size: 2.1rem;
+          font-weight: 700;
         }
 
         @keyframes floatSoft {
@@ -734,7 +722,7 @@ function ChatClient() {
             transform: translateY(0px) scale(1);
           }
           50% {
-            transform: translateY(-8px) scale(1.03);
+            transform: translateY(-6px) scale(1.03);
           }
           100% {
             transform: translateY(0px) scale(1);
@@ -979,11 +967,6 @@ function ChatClient() {
           background-size: 200% 100%;
           animation: shimmer 1.4s infinite;
           border-radius: 999px;
-        }
-
-        .chat-avatar-error {
-          font-size: 2.1rem;
-          font-weight: 700;
         }
 
         @keyframes shimmer {
