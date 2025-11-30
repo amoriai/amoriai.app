@@ -162,6 +162,10 @@ function ChatClient() {
   const tier = normalizeTier(searchParams.get("tier"));
   const t = STRINGS[locale];
 
+  // ⚙️ Droits selon le plan
+  const voiceEnabled = tier === "plus" || tier === "unlimited";
+  const micEnabled = tier === "plus" || tier === "unlimited";
+
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [aiLoading, setAiLoading] = useState(true);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -171,21 +175,26 @@ function ChatClient() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
-  // Micro / dictée
+  // Micro / dictée (désactivé sur free + chat)
   const [isRecording, setIsRecording] = useState(false);
   const [sttSupported, setSttSupported] = useState(false);
   const recognitionRef = useRef<any | null>(null);
 
-  // Détection support STT navigateur
+  // Détection support STT navigateur (seulement si micEnabled)
   useEffect(() => {
+    if (!micEnabled) {
+      setSttSupported(false);
+      return;
+    }
     if (typeof window === "undefined") return;
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
     setSttSupported(!!SpeechRecognition);
-  }, []);
+  }, [micEnabled]);
 
   const startRecording = () => {
+    if (!micEnabled) return;
     if (typeof window === "undefined") return;
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
@@ -238,6 +247,7 @@ function ChatClient() {
   };
 
   const handleToggleRecording = () => {
+    if (!micEnabled) return;
     if (!sttSupported || sending) return;
     if (isRecording) {
       stopRecording();
@@ -246,8 +256,9 @@ function ChatClient() {
     }
   };
 
-  // Lecture de la voix de l’IA via /api/voice
+  // Lecture de la voix de l’IA via /api/voice (désactivée si voiceEnabled = false)
   const playAssistantVoice = async (text: string) => {
+    if (!voiceEnabled) return;
     if (!iaId || !text.trim()) return;
 
     try {
@@ -281,9 +292,11 @@ function ChatClient() {
         const url = URL.createObjectURL(blob);
 
         const audio = new Audio(url);
-        audio.play().catch((err) =>
-          console.error("Erreur de lecture audio:", err)
-        );
+        audio
+          .play()
+          .catch((err) =>
+            console.error("Erreur de lecture audio:", err)
+          );
         audio.onended = () => URL.revokeObjectURL(url);
       } else if (contentType.includes("application/json")) {
         const data = await res.json();
@@ -361,7 +374,9 @@ function ChatClient() {
     if (isRecording) stopRecording();
 
     const content = newMessage.trim();
-    const baseId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const baseId = `${Date.now()}-${Math.random()
+      .toString(16)
+      .slice(2)}`;
 
     const userMessage: ChatMessage = {
       id: `${baseId}-user`,
@@ -537,19 +552,21 @@ function ChatClient() {
             rows={2}
           />
           <div className="chat-actions">
-            <button
-              type="button"
-              className={`chat-mic-btn ${
-                isRecording ? "chat-mic-btn--active" : ""
-              }`}
-              onClick={handleToggleRecording}
-              disabled={!sttSupported || sending}
-              aria-label="Dicter mon message"
-            >
-              <span className="chat-mic-icon">
-                {isRecording ? "■" : "🎤"}
-              </span>
-            </button>
+            {micEnabled && (
+              <button
+                type="button"
+                className={`chat-mic-btn ${
+                  isRecording ? "chat-mic-btn--active" : ""
+                }`}
+                onClick={handleToggleRecording}
+                disabled={!sttSupported || sending}
+                aria-label="Dicter mon message"
+              >
+                <span className="chat-mic-icon">
+                  {isRecording ? "■" : "🎤"}
+                </span>
+              </button>
+            )}
             <button
               type="submit"
               className="chat-send-btn"
@@ -999,4 +1016,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-    }
+}
