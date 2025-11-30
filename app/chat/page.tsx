@@ -13,6 +13,7 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
+type PlanTier = "free" | "chat" | "plus" | "unlimited";
 
 type AmoriaRow = {
   id: string;
@@ -24,7 +25,6 @@ type AmoriaRow = {
   accent_color: string | null;
   system_prompt: string;
   voice_id: string | null;
-  plan_id: string | null; // "free" | "chat" | "plus" | "unlimited"
   is_archived: boolean;
   created_at: string;
   updated_at: string;
@@ -117,6 +117,11 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
+function normalizeTier(raw: string | null): PlanTier {
+  if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
+  return "free";
+}
+
 /**
  * Wrapper exigé par Next.js : useSearchParams doit être
  * utilisé dans un composant rendu à l’intérieur d’un <Suspense>.
@@ -154,13 +159,12 @@ function ChatClient() {
   const searchParams = useSearchParams();
   const iaId = searchParams.get("iaId");
   const locale = normalizeLocale(searchParams.get("lang"));
+  const tier = normalizeTier(searchParams.get("tier"));
   const t = STRINGS[locale];
 
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [aiLoading, setAiLoading] = useState(true);
   const [aiError, setAiError] = useState<string | null>(null);
-
-  const [planId, setPlanId] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -309,9 +313,7 @@ function ChatClient() {
         if (error || !data) {
           setAiError(t.genericError);
         } else {
-          const row = data as AmoriaRow;
-          setAi(row);
-          setPlanId(row.plan_id ?? null);
+          setAi(data as AmoriaRow);
         }
       } catch {
         setAiError(t.genericError);
@@ -442,15 +444,19 @@ function ChatClient() {
 
   const displayNameUpper = displayName.toUpperCase();
 
-  // Animation avatar selon le forfait
-  const avatarAnimationClass =
-    planId === "chat"
-      ? "avatar-anim-lite"
-      : planId === "plus"
-      ? "avatar-anim-medium"
-      : planId === "unlimited"
-      ? "avatar-anim-full"
-      : "";
+  const avatarTierClass = (() => {
+    switch (tier) {
+      case "chat":
+        return "chat-avatar-ring--chat";
+      case "plus":
+        return "chat-avatar-ring--plus";
+      case "unlimited":
+        return "chat-avatar-ring--unlimited";
+      case "free":
+      default:
+        return "chat-avatar-ring--free";
+    }
+  })();
 
   return (
     <main className="chat-root">
@@ -470,7 +476,7 @@ function ChatClient() {
             </>
           ) : aiError || !ai ? (
             <>
-              <div className="chat-avatar-ring error">
+              <div className="chat-avatar-ring chat-avatar-ring--error">
                 <span className="chat-avatar-error">!</span>
               </div>
               <p className="chat-ai-name">{t.aiNotFoundTitle}</p>
@@ -478,9 +484,7 @@ function ChatClient() {
             </>
           ) : (
             <>
-              <div
-                className={`chat-avatar-ring live ${avatarAnimationClass}`}
-              >
+              <div className={`chat-avatar-ring ${avatarTierClass}`}>
                 {ai.avatar_image_url ? (
                   <img
                     src={ai.avatar_image_url}
@@ -658,6 +662,85 @@ function ChatClient() {
           font-size: 3rem;
           font-weight: 600;
           color: #e5e7eb;
+        }
+
+        /* -------- ANIMATIONS PAR FORFAIT -------- */
+
+        /* Free = pas d’animation */
+        .chat-avatar-ring--free {
+          animation: none;
+        }
+
+        /* 9,99 : léger flottement doux */
+        .chat-avatar-ring--chat {
+          animation: floatSoft 6s ease-in-out infinite;
+        }
+
+        /* 19,99 : flottement + glow doux */
+        .chat-avatar-ring--plus {
+          animation:
+            floatSoft 5s ease-in-out infinite,
+            glowSoft 6s ease-in-out infinite;
+        }
+
+        /* 39,99 : mouvement premium mais contrôlé */
+        .chat-avatar-ring--unlimited {
+          animation:
+            floatPremium 4.5s ease-in-out infinite,
+            glowPremium 5.5s ease-in-out infinite;
+        }
+
+        .chat-avatar-ring--error {
+          background: radial-gradient(circle at center, #b91c1c, #7f1d1d);
+          box-shadow: 0 0 35px rgba(248, 113, 113, 0.7);
+        }
+
+        @keyframes floatSoft {
+          0% {
+            transform: translateY(0px) scale(1);
+          }
+          50% {
+            transform: translateY(-6px) scale(1.03);
+          }
+          100% {
+            transform: translateY(0px) scale(1);
+          }
+        }
+
+        @keyframes floatPremium {
+          0% {
+            transform: translateY(0px) scale(1);
+          }
+          50% {
+            transform: translateY(-12px) scale(1.06);
+          }
+          100% {
+            transform: translateY(0px) scale(1);
+          }
+        }
+
+        @keyframes glowSoft {
+          0% {
+            box-shadow: 0 0 18px rgba(129, 140, 248, 0.35);
+          }
+          50% {
+            box-shadow: 0 0 30px rgba(251, 55, 255, 0.45);
+          }
+          100% {
+            box-shadow: 0 0 18px rgba(129, 140, 248, 0.35);
+          }
+        }
+
+        @keyframes glowPremium {
+          0% {
+            box-shadow: 0 0 22px rgba(129, 140, 248, 0.55);
+          }
+          50% {
+            box-shadow: 0 0 46px rgba(251, 55, 255, 0.7);
+          }
+          100% {
+            box-shadow: 0 0 22px rgba(129, 140, 248, 0.55);
+          }
         }
 
         .chat-ai-name {
@@ -864,11 +947,6 @@ function ChatClient() {
           border-radius: 999px;
         }
 
-        .chat-avatar-ring.error {
-          background: radial-gradient(circle at center, #b91c1c, #7f1d1d);
-          box-shadow: 0 0 35px rgba(248, 113, 113, 0.7);
-        }
-
         .chat-avatar-error {
           font-size: 2.1rem;
           font-weight: 700;
@@ -881,58 +959,6 @@ function ChatClient() {
           100% {
             background-position: 200% 0;
           }
-        }
-
-        /* === Animations par forfait === */
-
-        @keyframes avatarFloatLite {
-          0% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-4px);
-          }
-          100% {
-            transform: translateY(0px);
-          }
-        }
-
-        .avatar-anim-lite {
-          animation: avatarFloatLite 4s ease-in-out infinite;
-        }
-
-        @keyframes avatarFloatMedium {
-          0% {
-            transform: translateY(0px) scale(1);
-          }
-          50% {
-            transform: translateY(-6px) scale(1.03);
-          }
-          100% {
-            transform: translateY(0px) scale(1);
-          }
-        }
-
-        .avatar-anim-medium {
-          animation: avatarFloatMedium 3s ease-in-out infinite;
-        }
-
-        @keyframes avatarGlow {
-          0% {
-            box-shadow: 0 0 20px rgba(251, 37, 118, 0.4);
-          }
-          50% {
-            box-shadow: 0 0 40px rgba(129, 140, 248, 0.9);
-          }
-          100% {
-            box-shadow: 0 0 20px rgba(251, 37, 118, 0.4);
-          }
-        }
-
-        .avatar-anim-full {
-          animation:
-            avatarFloatMedium 3s ease-in-out infinite,
-            avatarGlow 4s ease-in-out infinite;
         }
 
         @media (max-width: 768px) {
@@ -973,4 +999,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-                              }
+    }
