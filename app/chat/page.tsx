@@ -13,7 +13,8 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
-type PlanTier = "free" | "chat" | "plus" | "unlimited";
+
+type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 type AmoriaRow = {
   id: string;
@@ -63,7 +64,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     inputPlaceholder: (name) => `Écris quelque chose à ${name}…`,
     send: "Envoyer",
     sending: "Envoi…",
-    loading: "Chargement du chat…",
+    loading: "Chargement de ta conversation…",
     aiNotFoundTitle: "AmorIA introuvable",
     genericError:
       "Impossible de charger cette conversation pour le moment. Vérifie le lien ou réessaie plus tard.",
@@ -117,11 +118,6 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-function normalizeTier(raw: string | null): PlanTier {
-  if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
-  return "free";
-}
-
 /**
  * Wrapper exigé par Next.js : useSearchParams doit être
  * utilisé dans un composant rendu à l’intérieur d’un <Suspense>.
@@ -159,8 +155,20 @@ function ChatClient() {
   const searchParams = useSearchParams();
   const iaId = searchParams.get("iaId");
   const locale = normalizeLocale(searchParams.get("lang"));
-  const tier = normalizeTier(searchParams.get("tier")); // ← récupère le plan
   const t = STRINGS[locale];
+
+  // Plan (provisoire via URL : ?plan=free|chat|plus|unlimited)
+  const rawPlan = searchParams.get("plan");
+  const currentPlan: PlanId =
+    rawPlan === "chat" ||
+    rawPlan === "plus" ||
+    rawPlan === "unlimited" ||
+    rawPlan === "free"
+      ? (rawPlan as PlanId)
+      : "free";
+
+  // Seuls PLUS et UNLIMITED ont accès à la voix
+  const canUseVoice = currentPlan === "plus" || currentPlan === "unlimited";
 
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [aiLoading, setAiLoading] = useState(true);
@@ -176,17 +184,24 @@ function ChatClient() {
   const [sttSupported, setSttSupported] = useState(false);
   const recognitionRef = useRef<any | null>(null);
 
-  // Détection support STT navigateur
+  // Détection support STT navigateur (uniquement si le plan a la voix)
   useEffect(() => {
+    if (!canUseVoice) {
+      setSttSupported(false);
+      return;
+    }
     if (typeof window === "undefined") return;
+
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
     setSttSupported(!!SpeechRecognition);
-  }, []);
+  }, [canUseVoice]);
 
   const startRecording = () => {
+    if (!canUseVoice) return;
     if (typeof window === "undefined") return;
+
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
@@ -194,6 +209,7 @@ function ChatClient() {
 
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
+
     recognition.lang =
       locale === "fr" ? "fr-FR" : locale === "es" ? "es-ES" : "en-US";
     recognition.interimResults = true;
@@ -211,7 +227,8 @@ function ChatClient() {
           interim += transcript;
         }
       }
-      const merged = (newMessage ? newMessage + " " : "") + finalText + interim;
+      const merged =
+        (newMessage ? newMessage + " " : "") + finalText + interim;
       setNewMessage(merged.trimStart());
     };
 
@@ -238,7 +255,7 @@ function ChatClient() {
   };
 
   const handleToggleRecording = () => {
-    if (!sttSupported || sending) return;
+    if (!canUseVoice || !sttSupported || sending) return;
     if (isRecording) {
       stopRecording();
     } else {
@@ -248,15 +265,16 @@ function ChatClient() {
 
   // Lecture de la voix de l’IA via /api/voice
   const playAssistantVoice = async (text: string) => {
-    // ❌ pas de voix pour FREE + CHAT
-    if (tier === "free" || tier === "chat") return;
-
+    // Pas de voix pour FREE et CHAT
+    if (!canUseVoice) return;
     if (!iaId || !text.trim()) return;
 
     try {
       const res = await fetch("/api/voice", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ iaId, text }),
       });
 
@@ -266,7 +284,6 @@ function ChatClient() {
         if (contentType.includes("application/json")) {
           const data = await res.json();
           console.error("Voice API error:", data);
-
           if (data?.error === "audio_limit_reached") {
             setSendError(
               "Tu as atteint la limite de messages vocaux pour ton forfait actuel."
@@ -282,11 +299,11 @@ function ChatClient() {
         const arrayBuffer = await res.arrayBuffer();
         const blob = new Blob([arrayBuffer], { type: contentType });
         const url = URL.createObjectURL(blob);
-
         const audio = new Audio(url);
-        audio.play().catch((err) =>
-          console.error("Erreur de lecture audio:", err)
-        );
+
+        audio
+          .play()
+          .catch((err) => console.error("Erreur de lecture audio:", err));
         audio.onended = () => URL.revokeObjectURL(url);
       } else if (contentType.includes("application/json")) {
         const data = await res.json();
@@ -359,9 +376,12 @@ function ChatClient() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSendError(null);
+
     if (!newMessage.trim() || !iaId) return;
 
-    if (isRecording) stopRecording();
+    if (isRecording) {
+      stopRecording();
+    }
 
     const content = newMessage.trim();
     const baseId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -381,7 +401,9 @@ function ChatClient() {
       const res = await fetch("/api/chat", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ iaId, message: content, lang: locale }),
       });
 
@@ -394,17 +416,14 @@ function ChatClient() {
 
       if (!res.ok) {
         console.error("ERREUR API /api/chat:", res.status, data);
-
         if (data?.error === "not_authenticated") {
           setSendError(t.notAuthenticated);
           return;
         }
-
         if (data?.error === "profile_not_found") {
           setSendError(t.profileNotFound);
           return;
         }
-
         setSendError(
           "Erreur serveur : " +
             (data?.error ?? "Impossible d’envoyer le message.")
@@ -526,19 +545,22 @@ function ChatClient() {
             rows={2}
           />
           <div className="chat-actions">
-            <button
-              type="button"
-              className={`chat-mic-btn ${
-                isRecording ? "chat-mic-btn--active" : ""
-              }`}
-              onClick={handleToggleRecording}
-              disabled={!sttSupported || sending}
-              aria-label="Dicter mon message"
-            >
-              <span className="chat-mic-icon">
-                {isRecording ? "■" : "🎤"}
-              </span>
-            </button>
+            {canUseVoice && (
+              <button
+                type="button"
+                className={`chat-mic-btn ${
+                  isRecording ? "chat-mic-btn--active" : ""
+                }`}
+                onClick={handleToggleRecording}
+                disabled={!sttSupported || sending}
+                aria-label="Dicter mon message"
+              >
+                <span className="chat-mic-icon">
+                  {isRecording ? "■" : "🎤"}
+                </span>
+              </button>
+            )}
+
             <button
               type="submit"
               className="chat-send-btn"
@@ -570,23 +592,19 @@ function ChatClient() {
           flex-direction: column;
           align-items: center;
         }
-
         .chat-header {
           width: 100%;
           max-width: 900px;
           margin-bottom: 1rem;
         }
-
         .chat-back {
           font-size: 0.8rem;
           color: #9ca3af;
           text-decoration: none;
         }
-
         .chat-back:hover {
           color: #e5e7eb;
         }
-
         .chat-card {
           width: 100%;
           max-width: 900px;
@@ -604,7 +622,6 @@ function ChatClient() {
           flex-direction: column;
           gap: 1rem;
         }
-
         .chat-ai-header {
           display: flex;
           flex-direction: column;
@@ -612,7 +629,6 @@ function ChatClient() {
           text-align: center;
           gap: 0.35rem;
         }
-
         @keyframes slowPulse {
           0% {
             box-shadow: 0 0 26px rgba(251, 55, 255, 0.35);
@@ -627,7 +643,6 @@ function ChatClient() {
             transform: scale(1);
           }
         }
-
         .chat-avatar-ring {
           width: 160px;
           height: 160px;
@@ -645,11 +660,9 @@ function ChatClient() {
           justify-content: center;
           overflow: hidden;
         }
-
         .chat-avatar-ring.live {
           animation: slowPulse 4s ease-in-out infinite;
         }
-
         .chat-avatar-img {
           width: 154px;
           height: 154px;
@@ -658,7 +671,6 @@ function ChatClient() {
           object-position: 50% 20%;
           background: #020617;
         }
-
         .chat-avatar-placeholder {
           width: 154px;
           height: 154px;
@@ -671,7 +683,6 @@ function ChatClient() {
           font-weight: 600;
           color: #e5e7eb;
         }
-
         .chat-ai-name {
           margin-top: 0.35rem;
           font-weight: 700;
@@ -679,13 +690,11 @@ function ChatClient() {
           text-transform: uppercase;
           font-size: 0.9rem;
         }
-
         .chat-ai-subtitle {
           font-size: 0.84rem;
           color: #9ca3af;
           max-width: 560px;
         }
-
         .chat-window {
           margin-top: 0.4rem;
           border-radius: 1rem;
@@ -700,14 +709,12 @@ function ChatClient() {
           padding: 0.7rem;
           overflow-y: auto;
         }
-
         .chat-empty {
           font-size: 0.9rem;
           color: #9ca3af;
           text-align: center;
           padding-top: 2.1rem;
         }
-
         .chat-message-list {
           list-style: none;
           margin: 0;
@@ -716,19 +723,15 @@ function ChatClient() {
           flex-direction: column;
           gap: 0.45rem;
         }
-
         .chat-message {
           display: flex;
         }
-
         .chat-message--user {
           justify-content: flex-end;
         }
-
         .chat-message--assistant {
           justify-content: flex-start;
         }
-
         .chat-bubble {
           max-width: 78%;
           padding: 0.55rem 0.85rem;
@@ -738,26 +741,27 @@ function ChatClient() {
           white-space: pre-wrap;
           word-wrap: break-word;
         }
-
         .chat-message--user .chat-bubble {
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
+          background: linear-gradient(
+            135deg,
+            #fb37ff,
+            #ff6b9c,
+            #f97316
+          );
           color: #f9fafb;
           border-bottom-right-radius: 0.24rem;
         }
-
         .chat-message--assistant .chat-bubble {
           background: rgba(15, 23, 42, 0.96);
           border: 1px solid rgba(148, 163, 184, 0.55);
           color: #e5e7eb;
           border-bottom-left-radius: 0.24rem;
         }
-
         .chat-error {
           font-size: 0.8rem;
           color: #fecaca;
           text-align: center;
         }
-
         .chat-input-bar {
           margin-top: 0.3rem;
           display: grid;
@@ -765,7 +769,6 @@ function ChatClient() {
           gap: 0.6rem;
           align-items: flex-end;
         }
-
         .chat-input {
           width: 100%;
           border-radius: 0.9rem;
@@ -777,18 +780,15 @@ function ChatClient() {
           resize: none;
           outline: none;
         }
-
         .chat-input::placeholder {
           color: #6b7280;
         }
-
         .chat-actions {
           display: flex;
           flex-direction: column;
           gap: 0.4rem;
           align-items: stretch;
         }
-
         .chat-mic-btn {
           border-radius: 999px;
           border: 1px solid rgba(148, 163, 184, 0.7);
@@ -802,28 +802,29 @@ function ChatClient() {
           cursor: pointer;
           font-size: 1.1rem;
         }
-
         .chat-mic-btn--active {
           border-color: #fb37ff;
           box-shadow: 0 0 18px rgba(251, 55, 255, 0.6);
         }
-
         .chat-mic-btn:disabled {
           opacity: 0.4;
           cursor: default;
         }
-
         .chat-mic-icon {
           transform: translateY(1px);
         }
-
         .chat-send-btn {
           border-radius: 999px;
           border: none;
           padding: 0.65rem 1.4rem;
           font-size: 0.9rem;
           cursor: pointer;
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
+          background: linear-gradient(
+            135deg,
+            #fb37ff,
+            #ff6b9c,
+            #f97316
+          );
           color: #f9fafb;
           box-shadow: 0 16px 40px rgba(248, 113, 113, 0.55);
           min-width: 120px;
@@ -832,25 +833,21 @@ function ChatClient() {
           justify-content: center;
           gap: 0.45rem;
         }
-
         .chat-send-icon {
           font-size: 0.9rem;
           transform: translateY(0.5px);
         }
-
         .chat-send-btn:disabled {
           opacity: 0.5;
           cursor: default;
           box-shadow: none;
         }
-
         .chat-privacy-note {
           margin-top: 0.2rem;
           font-size: 0.78rem;
           color: #6b7280;
           text-align: right;
         }
-
         .skeleton {
           background: linear-gradient(
             90deg,
@@ -861,7 +858,6 @@ function ChatClient() {
           background-size: 200% 100%;
           animation: shimmer 1.4s infinite;
         }
-
         .skeleton-text {
           height: 0.9rem;
           width: 60%;
@@ -875,17 +871,14 @@ function ChatClient() {
           animation: shimmer 1.4s infinite;
           border-radius: 999px;
         }
-
         .chat-avatar-ring.error {
           background: radial-gradient(circle at center, #b91c1c, #7f1d1d);
           box-shadow: 0 0 35px rgba(248, 113, 113, 0.7);
         }
-
         .chat-avatar-error {
           font-size: 2.1rem;
           font-weight: 700;
         }
-
         @keyframes shimmer {
           0% {
             background-position: -200% 0;
@@ -894,7 +887,6 @@ function ChatClient() {
             background-position: 200% 0;
           }
         }
-
         @media (max-width: 768px) {
           .chat-card {
             padding-inline: 1.2rem;
@@ -912,7 +904,6 @@ function ChatClient() {
             height: 144px;
           }
         }
-
         @media (max-width: 480px) {
           .chat-root {
             padding-inline: 0.7rem;
