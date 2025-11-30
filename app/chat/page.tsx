@@ -2,7 +2,13 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { FormEvent, Suspense, useEffect, useState } from "react";
+import React, {
+  FormEvent,
+  Suspense,
+  useEffect,
+  useState,
+  useRef,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -158,6 +164,81 @@ function ChatClient() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
+  // Micro / dictée
+  const [isRecording, setIsRecording] = useState(false);
+  const [sttSupported, setSttSupported] = useState(false);
+  const recognitionRef = useRef<any | null>(null);
+
+  // Détection support STT navigateur
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+    setSttSupported(!!SpeechRecognition);
+  }, []);
+
+  const startRecording = () => {
+    if (typeof window === "undefined") return;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang =
+      locale === "fr" ? "fr-FR" : locale === "es" ? "es-ES" : "en-US";
+    recognition.interimResults = true;
+    recognition.continuous = false;
+
+    let finalText = "";
+
+    recognition.onresult = (event: any) => {
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalText += transcript + " ";
+        } else {
+          interim += transcript;
+        }
+      }
+      const merged = (newMessage ? newMessage + " " : "") + finalText + interim;
+      setNewMessage(merged.trimStart());
+    };
+
+    recognition.onerror = () => {
+      setIsRecording(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+      recognitionRef.current = null;
+    };
+
+    setIsRecording(true);
+    recognition.start();
+  };
+
+  const stopRecording = () => {
+    const r = recognitionRef.current;
+    if (r) {
+      r.stop();
+    }
+    setIsRecording(false);
+  };
+
+  const handleToggleRecording = () => {
+    if (!sttSupported || sending) return;
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
   // Charger les infos de l’AmorIA
   useEffect(() => {
     const loadAI = async () => {
@@ -210,7 +291,7 @@ function ChatClient() {
             .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
         );
       } catch {
-        // silencieux : l’app fonctionne même sans historique
+        // silencieux
       }
     };
 
@@ -221,6 +302,8 @@ function ChatClient() {
     e.preventDefault();
     setSendError(null);
     if (!newMessage.trim() || !iaId) return;
+
+    if (isRecording) stopRecording();
 
     const content = newMessage.trim();
     const baseId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -248,7 +331,7 @@ function ChatClient() {
       try {
         data = await res.json();
       } catch {
-        // pas de JSON, on laisse data = null
+        // pas de JSON
       }
 
       if (!res.ok) {
@@ -265,7 +348,8 @@ function ChatClient() {
         }
 
         setSendError(
-          "Erreur serveur : " + (data?.error ?? "Impossible d’envoyer le message.")
+          "Erreur serveur : " +
+            (data?.error ?? "Impossible d’envoyer le message.")
         );
         return;
       }
@@ -379,16 +463,29 @@ function ChatClient() {
             onChange={(e) => setNewMessage(e.target.value)}
             rows={2}
           />
-          <button
-            type="submit"
-            className="chat-send-btn"
-            disabled={sending || !newMessage.trim()}
-          >
-            <span className="chat-send-label">
-              {sending ? t.sending : t.send}
-            </span>
-            <span className="chat-send-icon">➤</span>
-          </button>
+          <div className="chat-actions">
+            <button
+              type="button"
+              className="chat-mic-btn"
+              onClick={handleToggleRecording}
+              disabled={!sttSupported || sending}
+              aria-label="Dicter mon message"
+            >
+              <span className="chat-mic-icon">
+                {isRecording ? "■" : "🎤"}
+              </span>
+            </button>
+            <button
+              type="submit"
+              className="chat-send-btn"
+              disabled={sending || !newMessage.trim()}
+            >
+              <span className="chat-send-label">
+                {sending ? t.sending : t.send}
+              </span>
+              <span className="chat-send-icon">➤</span>
+            </button>
+          </div>
         </form>
 
         <p className="chat-privacy-note">
@@ -621,6 +718,36 @@ function ChatClient() {
           color: #6b7280;
         }
 
+        .chat-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+          align-items: stretch;
+        }
+
+        .chat-mic-btn {
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.7);
+          background: rgba(15, 23, 42, 0.96);
+          color: #e5e7eb;
+          width: 44px;
+          height: 44px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 1.1rem;
+        }
+
+        .chat-mic-btn:disabled {
+          opacity: 0.4;
+          cursor: default;
+        }
+
+        .chat-mic-icon {
+          transform: translateY(1px);
+        }
+
         .chat-send-btn {
           border-radius: 999px;
           border: none;
@@ -724,8 +851,11 @@ function ChatClient() {
           .chat-input-bar {
             grid-template-columns: 1fr;
           }
+          .chat-actions {
+            flex-direction: row;
+          }
           .chat-send-btn {
-            width: 100%;
+            flex: 1;
           }
           .chat-privacy-note {
             text-align: center;
@@ -734,4 +864,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-}
+                    }
