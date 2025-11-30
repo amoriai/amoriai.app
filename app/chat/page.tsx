@@ -13,7 +13,6 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
-
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 type AmoriaRow = {
@@ -157,17 +156,17 @@ function ChatClient() {
   const locale = normalizeLocale(searchParams.get("lang"));
   const t = STRINGS[locale];
 
-  // Plan (provisoire via URL : ?plan=free|chat|plus|unlimited)
+  // Plan : free / chat / plus / unlimited
   const rawPlan = searchParams.get("plan");
+  // Si rien n'est passé, on considère unlimited (toi).
   const currentPlan: PlanId =
     rawPlan === "chat" ||
     rawPlan === "plus" ||
     rawPlan === "unlimited" ||
     rawPlan === "free"
       ? (rawPlan as PlanId)
-      : "free";
+      : "unlimited";
 
-  // Seuls PLUS et UNLIMITED ont accès à la voix
   const canUseVoice = currentPlan === "plus" || currentPlan === "unlimited";
 
   const [ai, setAi] = useState<AmoriaRow | null>(null);
@@ -184,7 +183,7 @@ function ChatClient() {
   const [sttSupported, setSttSupported] = useState(false);
   const recognitionRef = useRef<any | null>(null);
 
-  // Détection support STT navigateur (uniquement si le plan a la voix)
+  // Détection support STT (seulement si plan avec voix)
   useEffect(() => {
     if (!canUseVoice) {
       setSttSupported(false);
@@ -263,9 +262,8 @@ function ChatClient() {
     }
   };
 
-  // Lecture de la voix de l’IA via /api/voice
+  // Lecture de la voix de l’IA via /api/voice (plus/unlimited seulement)
   const playAssistantVoice = async (text: string) => {
-    // Pas de voix pour FREE et CHAT
     if (!canUseVoice) return;
     if (!iaId || !text.trim()) return;
 
