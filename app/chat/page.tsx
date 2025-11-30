@@ -63,7 +63,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     inputPlaceholder: (name) => `Écris quelque chose à ${name}…`,
     send: "Envoyer",
     sending: "Envoi…",
-    loading: "Chargement de ta conversation…",
+    loading: "Chargement du chat…",
     aiNotFoundTitle: "AmorIA introuvable",
     genericError:
       "Impossible de charger cette conversation pour le moment. Vérifie le lien ou réessaie plus tard.",
@@ -122,7 +122,10 @@ function normalizeTier(raw: string | null): PlanTier {
   return "free";
 }
 
-/** Wrapper pour Suspense */
+/**
+ * Wrapper exigé par Next.js : useSearchParams doit être
+ * utilisé dans un composant rendu à l’intérieur d’un <Suspense>.
+ */
 export default function ChatPage() {
   return (
     <Suspense
@@ -156,13 +159,8 @@ function ChatClient() {
   const searchParams = useSearchParams();
   const iaId = searchParams.get("iaId");
   const locale = normalizeLocale(searchParams.get("lang"));
-  const tier = normalizeTier(searchParams.get("tier"));
-
+  const tier = normalizeTier(searchParams.get("tier")); // ← récupère le plan
   const t = STRINGS[locale];
-
-  // Droits par forfait
-  const canUseVoice = tier === "plus" || tier === "unlimited";
-  const canUseMic = canUseVoice;
 
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [aiLoading, setAiLoading] = useState(true);
@@ -178,7 +176,7 @@ function ChatClient() {
   const [sttSupported, setSttSupported] = useState(false);
   const recognitionRef = useRef<any | null>(null);
 
-  // Détection STT navigateur
+  // Détection support STT navigateur
   useEffect(() => {
     if (typeof window === "undefined") return;
     const SpeechRecognition =
@@ -188,9 +186,7 @@ function ChatClient() {
   }, []);
 
   const startRecording = () => {
-    if (!canUseMic) return;
     if (typeof window === "undefined") return;
-
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
@@ -235,20 +231,26 @@ function ChatClient() {
 
   const stopRecording = () => {
     const r = recognitionRef.current;
-    if (r) r.stop();
+    if (r) {
+      r.stop();
+    }
     setIsRecording(false);
   };
 
   const handleToggleRecording = () => {
-    if (!canUseMic) return;
     if (!sttSupported || sending) return;
-    if (isRecording) stopRecording();
-    else startRecording();
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
   };
 
-  // Lecture de la voix via /api/voice
+  // Lecture de la voix de l’IA via /api/voice
   const playAssistantVoice = async (text: string) => {
-    if (!canUseVoice) return; // ❗ jamais de voix sur free + chat
+    // ❌ pas de voix pour FREE + CHAT
+    if (tier === "free" || tier === "chat") return;
+
     if (!iaId || !text.trim()) return;
 
     try {
@@ -264,6 +266,7 @@ function ChatClient() {
         if (contentType.includes("application/json")) {
           const data = await res.json();
           console.error("Voice API error:", data);
+
           if (data?.error === "audio_limit_reached") {
             setSendError(
               "Tu as atteint la limite de messages vocaux pour ton forfait actuel."
@@ -279,6 +282,7 @@ function ChatClient() {
         const arrayBuffer = await res.arrayBuffer();
         const blob = new Blob([arrayBuffer], { type: contentType });
         const url = URL.createObjectURL(blob);
+
         const audio = new Audio(url);
         audio.play().catch((err) =>
           console.error("Erreur de lecture audio:", err)
@@ -293,7 +297,7 @@ function ChatClient() {
     }
   };
 
-  // Charger l’AmorIA
+  // Charger les infos de l’AmorIA
   useEffect(() => {
     const loadAI = async () => {
       if (!iaId) {
@@ -324,7 +328,7 @@ function ChatClient() {
     loadAI();
   }, [iaId, t.genericError]);
 
-  // Charger l’historique
+  // Charger l’historique (optionnel, ignore 404)
   useEffect(() => {
     const loadHistory = async () => {
       if (!iaId) return;
@@ -436,23 +440,12 @@ function ChatClient() {
     return `/?${params.toString()}`;
   })();
 
-  const displayName = (ai?.name?.trim() || "AmorIA") as string;
-  const displayNameUpper = displayName.toUpperCase();
-
-  // classe CSS selon le forfait
-  const avatarTierClass = (() => {
-    switch (tier) {
-      case "chat":
-        return "chat-avatar-ring--chat";
-      case "plus":
-        return "chat-avatar-ring--plus";
-      case "unlimited":
-        return "chat-avatar-ring--unlimited";
-      case "free":
-      default:
-        return "chat-avatar-ring--free";
-    }
+  const displayName = (() => {
+    const raw = ai?.name?.trim() || "AmorIA";
+    return raw;
   })();
+
+  const displayNameUpper = displayName.toUpperCase();
 
   return (
     <main className="chat-root">
@@ -472,7 +465,7 @@ function ChatClient() {
             </>
           ) : aiError || !ai ? (
             <>
-              <div className="chat-avatar-ring chat-avatar-ring--error">
+              <div className="chat-avatar-ring error">
                 <span className="chat-avatar-error">!</span>
               </div>
               <p className="chat-ai-name">{t.aiNotFoundTitle}</p>
@@ -480,7 +473,7 @@ function ChatClient() {
             </>
           ) : (
             <>
-              <div className={`chat-avatar-ring ${avatarTierClass}`}>
+              <div className="chat-avatar-ring live">
                 {ai.avatar_image_url ? (
                   <img
                     src={ai.avatar_image_url}
@@ -532,24 +525,20 @@ function ChatClient() {
             onChange={(e) => setNewMessage(e.target.value)}
             rows={2}
           />
-
           <div className="chat-actions">
-            {canUseMic ? (
-              <button
-                type="button"
-                className={`chat-mic-btn ${
-                  isRecording ? "chat-mic-btn--active" : ""
-                }`}
-                onClick={handleToggleRecording}
-                disabled={!sttSupported || sending}
-                aria-label="Dicter mon message"
-              >
-                <span className="chat-mic-icon">
-                  {isRecording ? "■" : "🎤"}
-                </span>
-              </button>
-            ) : null}
-
+            <button
+              type="button"
+              className={`chat-mic-btn ${
+                isRecording ? "chat-mic-btn--active" : ""
+              }`}
+              onClick={handleToggleRecording}
+              disabled={!sttSupported || sending}
+              aria-label="Dicter mon message"
+            >
+              <span className="chat-mic-icon">
+                {isRecording ? "■" : "🎤"}
+              </span>
+            </button>
             <button
               type="submit"
               className="chat-send-btn"
@@ -624,6 +613,21 @@ function ChatClient() {
           gap: 0.35rem;
         }
 
+        @keyframes slowPulse {
+          0% {
+            box-shadow: 0 0 26px rgba(251, 55, 255, 0.35);
+            transform: scale(1);
+          }
+          50% {
+            box-shadow: 0 0 52px rgba(56, 189, 248, 0.55);
+            transform: scale(1.02);
+          }
+          100% {
+            box-shadow: 0 0 26px rgba(251, 55, 255, 0.35);
+            transform: scale(1);
+          }
+        }
+
         .chat-avatar-ring {
           width: 160px;
           height: 160px;
@@ -640,6 +644,10 @@ function ChatClient() {
           align-items: center;
           justify-content: center;
           overflow: hidden;
+        }
+
+        .chat-avatar-ring.live {
+          animation: slowPulse 4s ease-in-out infinite;
         }
 
         .chat-avatar-img {
@@ -662,85 +670,6 @@ function ChatClient() {
           font-size: 3rem;
           font-weight: 600;
           color: #e5e7eb;
-        }
-
-        /* -------- ANIMATIONS PAR FORFAIT -------- */
-
-        /* Free = avatar statique */
-        .chat-avatar-ring--free {
-          animation: none;
-        }
-
-        /* Chat 9,99 : léger flottement seulement */
-        .chat-avatar-ring--chat {
-          animation: floatSoft 6s ease-in-out infinite;
-        }
-
-        /* Plus 19,99 : flottement + glow doux */
-        .chat-avatar-ring--plus {
-          animation:
-            floatSoft 5s ease-in-out infinite,
-            glowSoft 6s ease-in-out infinite;
-        }
-
-        /* Unlimited 39,99 : mouvement + glow plus intenses */
-        .chat-avatar-ring--unlimited {
-          animation:
-            floatPremium 4.5s ease-in-out infinite,
-            glowPremium 5.5s ease-in-out infinite;
-        }
-
-        .chat-avatar-ring--error {
-          background: radial-gradient(circle at center, #b91c1c, #7f1d1d);
-          box-shadow: 0 0 35px rgba(248, 113, 113, 0.7);
-        }
-
-        @keyframes floatSoft {
-          0% {
-            transform: translateY(0px) scale(1);
-          }
-          50% {
-            transform: translateY(-6px) scale(1.03);
-          }
-          100% {
-            transform: translateY(0px) scale(1);
-          }
-        }
-
-        @keyframes floatPremium {
-          0% {
-            transform: translateY(0px) scale(1);
-          }
-          50% {
-            transform: translateY(-12px) scale(1.06);
-          }
-          100% {
-            transform: translateY(0px) scale(1);
-          }
-        }
-
-        @keyframes glowSoft {
-          0% {
-            box-shadow: 0 0 18px rgba(129, 140, 248, 0.35);
-          }
-          50% {
-            box-shadow: 0 0 30px rgba(251, 55, 255, 0.45);
-          }
-          100% {
-            box-shadow: 0 0 18px rgba(129, 140, 248, 0.35);
-          }
-        }
-
-        @keyframes glowPremium {
-          0% {
-            box-shadow: 0 0 22px rgba(129, 140, 248, 0.55);
-          }
-          50% {
-            box-shadow: 0 0 46px rgba(251, 55, 255, 0.7);
-          }
-          100% {
-            box-shadow: 0 0 22px rgba(129, 140, 248, 0.55);
-          }
         }
 
         .chat-ai-name {
@@ -870,12 +799,18 @@ function ChatClient() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
+          cursor: pointer;
           font-size: 1.1rem;
         }
 
         .chat-mic-btn--active {
           border-color: #fb37ff;
           box-shadow: 0 0 18px rgba(251, 55, 255, 0.6);
+        }
+
+        .chat-mic-btn:disabled {
+          opacity: 0.4;
+          cursor: default;
         }
 
         .chat-mic-icon {
@@ -939,6 +874,11 @@ function ChatClient() {
           background-size: 200% 100%;
           animation: shimmer 1.4s infinite;
           border-radius: 999px;
+        }
+
+        .chat-avatar-ring.error {
+          background: radial-gradient(circle at center, #b91c1c, #7f1d1d);
+          box-shadow: 0 0 35px rgba(248, 113, 113, 0.7);
         }
 
         .chat-avatar-error {
