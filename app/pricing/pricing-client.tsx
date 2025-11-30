@@ -150,7 +150,7 @@ const LABELS: Record<Locale, Labels> = {
         features: [
           "Quand tu veux une relation continue où tu peux autant écrire que parler.",
           "Jusqu’à 10 AmorIAI différents",
-          "600 messages texte / mois",
+          "1000 messages texte / mois",
           "100 échanges vocaux / mois",
           "Mémoire longue durée active",
           "Priorité légère dans le fil de traitement",
@@ -243,7 +243,7 @@ const LABELS: Record<Locale, Labels> = {
         features: [
           "When you want an ongoing relationship where you can both write and talk.",
           "Up to 10 AmorIAI",
-          "600 text messages / month",
+          "1000 text messages / month",
           "100 voice exchanges / month",
           "Long-term memory enabled",
           "Light processing priority",
@@ -335,7 +335,7 @@ const LABELS: Record<Locale, Labels> = {
         features: [
           "Cuando quieres una relación continua, por texto y por voz.",
           "Hasta 10 AmorIAI diferentes",
-          "600 mensajes de texto / mes",
+          "1000 mensajes de texto / mes",
           "100 intercambios de voz / mes",
           "Memoria a largo plazo activada",
           "Prioridad ligera en la cola de procesamiento",
