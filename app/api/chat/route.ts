@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// Limites de messages texte par mois selon le plan
 const PLAN_LIMITS = {
   free: { maxText: 200 },
   chat: { maxText: 400 },
@@ -13,29 +12,24 @@ type PlanId = keyof typeof PLAN_LIMITS;
 
 export async function POST(req: Request) {
   try {
-    // 1) Lire le body envoyé par le frontend
+    // 1) Body venant du frontend
     const body = await req.json();
-    const { iaId, message, lang } = body as {
+    const { iaId, message, lang, withAudio } = body as {
       iaId?: string;
       message?: string;
       lang?: string;
+      withAudio?: boolean; // <- nouveau flag
     };
 
     if (!iaId) {
-      return NextResponse.json(
-        { error: "missing_iaId" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "missing_iaId" }, { status: 400 });
     }
 
     if (!message || !message.trim()) {
-      return NextResponse.json(
-        { error: "missing_message" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "missing_message" }, { status: 400 });
     }
 
-    // 2) Client Supabase SERVEUR (service role)
+    // 2) Supabase service
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -49,26 +43,23 @@ export async function POST(req: Request) {
 
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // 3) Charger la ligne de l’IA (user_amoria) via iaId
+    // 3) IA row
     const { data: iaRow, error: iaError } = await supabase
       .from("user_amoria")
-      .select("id, name, system_prompt, plan_id, credits")
+      .select("id, name, system_prompt, plan_id, credits, voice_id")
       .eq("id", iaId)
       .maybeSingle();
 
     if (iaError || !iaRow) {
       console.error("IA row error:", iaError);
-      return NextResponse.json(
-        { error: "ia_not_found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "ia_not_found" }, { status: 404 });
     }
 
     const planId = (iaRow.plan_id || "free") as PlanId;
     const plan = PLAN_LIMITS[planId] ?? PLAN_LIMITS.free;
     const currentCredits = iaRow.credits ?? 0;
 
-    // 4) Vérifier la limite de messages texte
+    // 4) Limite de messages texte
     if (currentCredits >= plan.maxText) {
       return NextResponse.json(
         {
@@ -82,7 +73,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 5) Préparer le system prompt
+    // 5) System prompt par langue
     const defaultSystemPromptFr =
       "Tu es une IA de compagnie bienveillante et chaleureuse. Tu réponds en français avec un ton naturel, doux et empathique.";
     const defaultSystemPromptEn =
@@ -96,7 +87,7 @@ export async function POST(req: Request) {
 
     const systemPrompt = iaRow.system_prompt || defaultSystemPrompt;
 
-    // 6) Appel à l’API OpenAI (chat completions, modèle stable)
+    // 6) Appel OpenAI pour le TEXTE
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
       console.error("Missing OPENAI_API_KEY");
@@ -106,46 +97,77 @@ export async function POST(req: Request) {
       );
     }
 
-    const response = await fetch(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "gpt-4.1-mini",
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt,
-            },
-            {
-              role: "user",
-              content: message,
-            },
-          ],
-        }),
-      }
-    );
+    const chatRes = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4.1-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message },
+        ],
+      }),
+    });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("OpenAI error:", errText);
+    if (!chatRes.ok) {
+      const errText = await chatRes.text();
+      console.error("OpenAI chat error:", errText);
       return NextResponse.json(
         { error: "openai_api_error" },
         { status: 500 }
       );
     }
 
-    const data = await response.json();
-
+    const chatData = await chatRes.json();
     const text: string =
-      data?.choices?.[0]?.message?.content?.trim() ||
-      "Je ne sais pas.";
+      chatData?.choices?.[0]?.message?.content?.trim() || "Je ne sais pas.";
 
-    // 7) Incrémenter le compteur de messages (credits) pour CETTE IA
+    // 7) Optionnel : génération AUDIO (TTS)
+    //    ici, on autorise la voix seulement pour plus / unlimited
+    const allowAudio =
+      !!withAudio && (planId === "plus" || planId === "unlimited");
+
+    let audioBase64: string | null = null;
+    let audioMimeType: string | null = null;
+
+    if (allowAudio) {
+      try {
+        const voice = iaRow.voice_id || "alloy"; // voix par défaut
+
+        const ttsRes = await fetch(
+          "https://api.openai.com/v1/audio/speech",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "tts-1", // modèle TTS OpenAI 0
+              voice,
+              input: text,
+              format: "mp3",
+            }),
+          }
+        );
+
+        if (!ttsRes.ok) {
+          const ttsErr = await ttsRes.text();
+          console.error("OpenAI TTS error:", ttsErr);
+        } else {
+          const audioBuffer = await ttsRes.arrayBuffer();
+          audioBase64 = Buffer.from(audioBuffer).toString("base64");
+          audioMimeType = "audio/mpeg";
+        }
+      } catch (e) {
+        console.error("TTS generation error:", e);
+      }
+    }
+
+    // 8) Incrémenter crédits texte (tu peux ajouter plus tard des crédits audio si tu veux)
     const newCredits = currentCredits + 1;
 
     const { error: updateError } = await supabase
@@ -155,12 +177,13 @@ export async function POST(req: Request) {
 
     if (updateError) {
       console.error("Error updating credits:", updateError);
-      // On continue quand même à renvoyer la réponse
     }
 
-    // 8) Réponse finale
+    // 9) Réponse au frontend
     return NextResponse.json({
       reply: text,
+      audioBase64, // null si pas de voix ou plan non autorisé
+      audioMimeType,
       planId,
       credits_used: newCredits,
       credits_remaining: plan.maxText - newCredits,
@@ -169,9 +192,6 @@ export async function POST(req: Request) {
     });
   } catch (e) {
     console.error("Server error in /api/chat:", e);
-    return NextResponse.json(
-      { error: "server_error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
 }
