@@ -117,18 +117,12 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-// ⚠️ Fallback généreux = unlimited (pour tes tests)
-// Quand tu brancheras Stripe → Supabase, tu pourras remettre "free" en défaut.
 function normalizeTier(raw: string | null): PlanTier {
-  if (raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited")
-    return raw;
-  return "unlimited";
+  if (raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
+  return "free";
 }
 
-/**
- * Wrapper exigé par Next.js : useSearchParams doit être
- * utilisé dans un composant rendu à l’intérieur d’un <Suspense>.
- */
+/** Wrapper pour Suspense */
 export default function ChatPage() {
   return (
     <Suspense
@@ -163,12 +157,12 @@ function ChatClient() {
   const iaId = searchParams.get("iaId");
   const locale = normalizeLocale(searchParams.get("lang"));
   const tier = normalizeTier(searchParams.get("tier"));
+
   const t = STRINGS[locale];
 
-  // DEBUG dans la console du navigateur
-  useEffect(() => {
-    console.log("[AmorIA] Chat tier =", tier);
-  }, [tier]);
+  // Droits par forfait
+  const canUseVoice = tier === "plus" || tier === "unlimited";
+  const canUseMic = canUseVoice;
 
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [aiLoading, setAiLoading] = useState(true);
@@ -184,11 +178,7 @@ function ChatClient() {
   const [sttSupported, setSttSupported] = useState(false);
   const recognitionRef = useRef<any | null>(null);
 
-  // Seuls les plans PLUS et UNLIMITED ont la voix + micro
-  const voiceEnabled = tier === "plus" || tier === "unlimited";
-  const micEnabled = voiceEnabled;
-
-  // Détection support STT navigateur
+  // Détection STT navigateur
   useEffect(() => {
     if (typeof window === "undefined") return;
     const SpeechRecognition =
@@ -198,8 +188,9 @@ function ChatClient() {
   }, []);
 
   const startRecording = () => {
-    if (!micEnabled) return;
+    if (!canUseMic) return;
     if (typeof window === "undefined") return;
+
     const SpeechRecognition =
       (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
@@ -244,25 +235,20 @@ function ChatClient() {
 
   const stopRecording = () => {
     const r = recognitionRef.current;
-    if (r) {
-      r.stop();
-    }
+    if (r) r.stop();
     setIsRecording(false);
   };
 
   const handleToggleRecording = () => {
-    if (!micEnabled) return;
+    if (!canUseMic) return;
     if (!sttSupported || sending) return;
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
+    if (isRecording) stopRecording();
+    else startRecording();
   };
 
-  // Lecture de la voix de l’IA via /api/voice
+  // Lecture de la voix via /api/voice
   const playAssistantVoice = async (text: string) => {
-    if (!voiceEnabled) return; // ❌ pas de voix sur free/chat
+    if (!canUseVoice) return; // ❗ jamais de voix sur free + chat
     if (!iaId || !text.trim()) return;
 
     try {
@@ -278,7 +264,6 @@ function ChatClient() {
         if (contentType.includes("application/json")) {
           const data = await res.json();
           console.error("Voice API error:", data);
-
           if (data?.error === "audio_limit_reached") {
             setSendError(
               "Tu as atteint la limite de messages vocaux pour ton forfait actuel."
@@ -294,11 +279,10 @@ function ChatClient() {
         const arrayBuffer = await res.arrayBuffer();
         const blob = new Blob([arrayBuffer], { type: contentType });
         const url = URL.createObjectURL(blob);
-
         const audio = new Audio(url);
-        audio
-          .play()
-          .catch((err) => console.error("Erreur de lecture audio:", err));
+        audio.play().catch((err) =>
+          console.error("Erreur de lecture audio:", err)
+        );
         audio.onended = () => URL.revokeObjectURL(url);
       } else if (contentType.includes("application/json")) {
         const data = await res.json();
@@ -309,7 +293,7 @@ function ChatClient() {
     }
   };
 
-  // Charger les infos de l’AmorIA
+  // Charger l’AmorIA
   useEffect(() => {
     const loadAI = async () => {
       if (!iaId) {
@@ -340,7 +324,7 @@ function ChatClient() {
     loadAI();
   }, [iaId, t.genericError]);
 
-  // Charger l’historique (optionnel, ignore 404)
+  // Charger l’historique
   useEffect(() => {
     const loadHistory = async () => {
       if (!iaId) return;
@@ -452,13 +436,10 @@ function ChatClient() {
     return `/?${params.toString()}`;
   })();
 
-  const displayName = (() => {
-    const raw = ai?.name?.trim() || "AmorIA";
-    return raw;
-  })();
-
+  const displayName = (ai?.name?.trim() || "AmorIA") as string;
   const displayNameUpper = displayName.toUpperCase();
 
+  // classe CSS selon le forfait
   const avatarTierClass = (() => {
     switch (tier) {
       case "chat":
@@ -551,8 +532,9 @@ function ChatClient() {
             onChange={(e) => setNewMessage(e.target.value)}
             rows={2}
           />
+
           <div className="chat-actions">
-            {voiceEnabled && (
+            {canUseMic ? (
               <button
                 type="button"
                 className={`chat-mic-btn ${
@@ -566,7 +548,8 @@ function ChatClient() {
                   {isRecording ? "■" : "🎤"}
                 </span>
               </button>
-            )}
+            ) : null}
+
             <button
               type="submit"
               className="chat-send-btn"
@@ -683,24 +666,24 @@ function ChatClient() {
 
         /* -------- ANIMATIONS PAR FORFAIT -------- */
 
-        /* Free = statique */
+        /* Free = avatar statique */
         .chat-avatar-ring--free {
           animation: none;
         }
 
-        /* 9,99 : léger flottement doux */
+        /* Chat 9,99 : léger flottement seulement */
         .chat-avatar-ring--chat {
           animation: floatSoft 6s ease-in-out infinite;
         }
 
-        /* 19,99 : flottement + glow doux */
+        /* Plus 19,99 : flottement + glow doux */
         .chat-avatar-ring--plus {
           animation:
             floatSoft 5s ease-in-out infinite,
             glowSoft 6s ease-in-out infinite;
         }
 
-        /* 39,99 : mouvement premium mais contrôlé */
+        /* Unlimited 39,99 : mouvement + glow plus intenses */
         .chat-avatar-ring--unlimited {
           animation:
             floatPremium 4.5s ease-in-out infinite,
@@ -710,11 +693,6 @@ function ChatClient() {
         .chat-avatar-ring--error {
           background: radial-gradient(circle at center, #b91c1c, #7f1d1d);
           box-shadow: 0 0 35px rgba(248, 113, 113, 0.7);
-        }
-
-        .chat-avatar-error {
-          font-size: 2.1rem;
-          font-weight: 700;
         }
 
         @keyframes floatSoft {
@@ -892,18 +870,12 @@ function ChatClient() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          cursor: pointer;
           font-size: 1.1rem;
         }
 
         .chat-mic-btn--active {
           border-color: #fb37ff;
           box-shadow: 0 0 18px rgba(251, 55, 255, 0.6);
-        }
-
-        .chat-mic-btn:disabled {
-          opacity: 0.4;
-          cursor: default;
         }
 
         .chat-mic-icon {
@@ -967,6 +939,11 @@ function ChatClient() {
           background-size: 200% 100%;
           animation: shimmer 1.4s infinite;
           border-radius: 999px;
+        }
+
+        .chat-avatar-error {
+          font-size: 2.1rem;
+          font-weight: 700;
         }
 
         @keyframes shimmer {
