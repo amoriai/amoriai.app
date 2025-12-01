@@ -355,6 +355,20 @@ export default function HomePage({ searchParams }: PageProps) {
     query: { lang: locale },
   });
 
+  // Texte sous le gros bouton (hero)
+  const alreadyAccountText =
+    locale === "fr"
+      ? "Déjà un compte ?"
+      : locale === "en"
+      ? "Already have an account?"
+      : "¿Ya tienes una cuenta?";
+  const loginInlineLabel =
+    locale === "fr"
+      ? "Me connecter"
+      : locale === "en"
+      ? "Log in"
+      : "Iniciar sesión";
+
   return (
     <main
       className="min-h-screen pb-12 text-slate-100"
@@ -403,6 +417,7 @@ export default function HomePage({ searchParams }: PageProps) {
           </nav>
 
           <div className="flex items-center gap-2">
+            {/* LANG SWITCHER */}
             <div className="flex items-center gap-0.5 rounded-full border border-slate-600/70 bg-slate-900/80 px-0.5 py-0.5 text-[0.7rem]">
               {(["fr", "en", "es"] as Locale[]).map((code) => (
                 <Link
@@ -419,16 +434,18 @@ export default function HomePage({ searchParams }: PageProps) {
               ))}
             </div>
 
+            {/* LOGIN visible mobile + desktop */}
             <Link
               href={withLang("/login")}
-              className="hidden items-center justify-center rounded-full border border-slate-500/70 px-3 py-1.5 text-[0.75rem] text-slate-100 transition hover:bg-slate-900/80 sm:inline-flex"
+              className="inline-flex items-center justify-center rounded-full border border-slate-500/70 px-3 py-1.5 text-[0.75rem] text-slate-100 transition hover:bg-slate-900/80"
             >
               {t.navLogin}
             </Link>
 
+            {/* SIGNUP uniquement à partir de sm (pas le gros bouton rose sur mobile) */}
             <Link
               href={withLang("/signup")}
-              className="inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3.5 py-1.5 text-[0.78rem] font-medium text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110"
+              className="hidden items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3.5 py-1.5 text-[0.78rem] font-medium text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110 sm:inline-flex"
             >
               {t.navSignup}
             </Link>
@@ -452,16 +469,27 @@ export default function HomePage({ searchParams }: PageProps) {
             {t.heroSubtitle}
           </p>
 
-          <div className="mt-3 flex flex-wrap gap-3">
+          <div className="mt-3 flex flex-col gap-2">
             <Link
               href={withLang("/signup")}
               className="inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-6 py-2.5 text-[0.96rem] font-medium text-white shadow-xl shadow-rose-400/40 transition hover:brightness-110"
             >
               {t.heroPrimary}
             </Link>
+
+            {/* Lien 'Déjà un compte ? Me connecter' sous le bouton */}
+            <div className="text-[0.8rem] text-slate-300">
+              {alreadyAccountText}{" "}
+              <Link
+                href={withLang("/login")}
+                className="font-semibold text-rose-300 hover:text-rose-200"
+              >
+                {loginInlineLabel}
+              </Link>
+            </div>
           </div>
 
-          <p className="text-[0.82rem] text-slate-400">{t.heroSupport}</p>
+          <p className="mt-1 text-[0.82rem] text-slate-400">{t.heroSupport}</p>
           <p className="text-[0.8rem] text-slate-200">{t.langNote}</p>
         </div>
 
@@ -619,4 +647,4 @@ export default function HomePage({ searchParams }: PageProps) {
       </footer>
     </main>
   );
-                               }
+        }
