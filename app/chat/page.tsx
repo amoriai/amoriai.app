@@ -156,18 +156,12 @@ function ChatClient() {
   const locale = normalizeLocale(searchParams.get("lang"));
   const t = STRINGS[locale];
 
-  // Plan : free / chat / plus / unlimited
+  // Plan passé dans l'URL (utile pour tes tests, fallback si pas d'abonnement en base)
   const rawPlan = searchParams.get("plan");
-  // Si rien n'est passé, on considère unlimited (toi).
-  const currentPlan: PlanId =
-    rawPlan === "chat" ||
-    rawPlan === "plus" ||
-    rawPlan === "unlimited" ||
-    rawPlan === "free"
-      ? (rawPlan as PlanId)
-      : "unlimited";
 
-  const canUseVoice = currentPlan === "plus" || currentPlan === "unlimited";
+  const [planId, setPlanId] = useState<PlanId>("free");
+  const [canUseVoice, setCanUseVoice] = useState(false);
+  const [planLoading, setPlanLoading] = useState(true);
 
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [aiLoading, setAiLoading] = useState(true);
@@ -182,6 +176,73 @@ function ChatClient() {
   const [isRecording, setIsRecording] = useState(false);
   const [sttSupported, setSttSupported] = useState(false);
   const recognitionRef = useRef<any | null>(null);
+
+  // 🔐 Charger le plan depuis Supabase (user_subscriptions + pricing_plans.has_voice)
+  useEffect(() => {
+    const loadPlan = async () => {
+      try {
+        // 1) Récupère l'utilisateur connecté
+        const { data: authData, error: authError } =
+          await supabase.auth.getUser();
+
+        if (authError || !authData?.user) {
+          // Pas connecté → fallback sur l'URL (?plan=...) ou free par défaut
+          if (
+            rawPlan === "chat" ||
+            rawPlan === "plus" ||
+            rawPlan === "unlimited" ||
+            rawPlan === "free"
+          ) {
+            const p = rawPlan as PlanId;
+            setPlanId(p);
+            setCanUseVoice(p === "plus" || p === "unlimited");
+          } else {
+            setPlanId("free");
+            setCanUseVoice(false);
+          }
+          return;
+        }
+
+        const user = authData.user;
+
+        // 2) Abonnement en base
+        const { data: sub, error: subError } = await supabase
+          .from("user_subscriptions")
+          .select("pricing_plans(has_voice)")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (subError || !sub) {
+          // Aucun abonnement trouvé → fallback URL ou free
+          if (
+            rawPlan === "chat" ||
+            rawPlan === "plus" ||
+            rawPlan === "unlimited" ||
+            rawPlan === "free"
+          ) {
+            const p = rawPlan as PlanId;
+            setPlanId(p);
+            setCanUseVoice(p === "plus" || p === "unlimited");
+          } else {
+            setPlanId("free");
+            setCanUseVoice(false);
+          }
+        } else {
+          const hasVoice = sub?.pricing_plans?.has_voice === true;
+          setCanUseVoice(hasVoice);
+
+          // Optionnel si tu veux un jour afficher le nom du plan :
+          // setPlanId(hasVoice ? "plus" ou "unlimited" : "free/chat");
+          // Pour l'instant, on ne l'utilise pas plus loin.
+        }
+      } finally {
+        setPlanLoading(false);
+      }
+    };
+
+    void loadPlan();
+    // rawPlan en dépend, comme ça si tu changes ?plan= pour tester, ça se met à jour
+  }, [rawPlan]);
 
   // Détection support STT (seulement si plan avec voix)
   useEffect(() => {
@@ -340,7 +401,7 @@ function ChatClient() {
       }
     };
 
-    loadAI();
+    void loadAI();
   }, [iaId, t.genericError]);
 
   // Charger l’historique (optionnel, ignore 404)
@@ -368,7 +429,7 @@ function ChatClient() {
       }
     };
 
-    loadHistory();
+    void loadHistory();
   }, [iaId]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -543,6 +604,7 @@ function ChatClient() {
             rows={2}
           />
           <div className="chat-actions">
+            {/* Mic visible uniquement si plan avec voix */}
             {canUseVoice && (
               <button
                 type="button"
@@ -550,7 +612,7 @@ function ChatClient() {
                   isRecording ? "chat-mic-btn--active" : ""
                 }`}
                 onClick={handleToggleRecording}
-                disabled={!sttSupported || sending}
+                disabled={!sttSupported || sending || planLoading}
                 aria-label="Dicter mon message"
               >
                 <span className="chat-mic-icon">
@@ -740,12 +802,7 @@ function ChatClient() {
           word-wrap: break-word;
         }
         .chat-message--user .chat-bubble {
-          background: linear-gradient(
-            135deg,
-            #fb37ff,
-            #ff6b9c,
-            #f97316
-          );
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
           border-bottom-right-radius: 0.24rem;
         }
@@ -817,12 +874,7 @@ function ChatClient() {
           padding: 0.65rem 1.4rem;
           font-size: 0.9rem;
           cursor: pointer;
-          background: linear-gradient(
-            135deg,
-            #fb37ff,
-            #ff6b9c,
-            #f97316
-          );
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
           box-shadow: 0 16px 40px rgba(248, 113, 113, 0.55);
           min-width: 120px;
