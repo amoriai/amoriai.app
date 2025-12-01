@@ -2,11 +2,12 @@
 
 export const dynamic = "force-dynamic";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function PaymentSuccessPage() {
+function PaymentContent() {
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get("session_id");
+  const plan = searchParams.get("plan") ?? "chat";
 
   return (
     <main
@@ -16,50 +17,30 @@ export default function PaymentSuccessPage() {
         alignItems: "center",
         justifyContent: "center",
         padding: "2rem",
-        background:
-          "radial-gradient(circle at top, #020617 0, #000000 65%, #020617 100%)",
-        color: "#e5e7eb",
+        color: "white",
+        textAlign: "center",
       }}
     >
-      <section
-        style={{
-          maxWidth: 480,
-          width: "100%",
-          padding: "2rem",
-          borderRadius: "1.5rem",
-          background: "#020617",
-          border: "1px solid rgba(148,163,184,0.5)",
-          textAlign: "center",
-        }}
-      >
-        <h1>✅ Paiement réussi</h1>
-
-        <p>
-          Merci d’avoir choisi <strong>AmorIAI</strong> 💖  
-          Ton abonnement est maintenant actif.
+      <div>
+        <h1>Finaliser mon abonnement AmorIAI</h1>
+        <p style={{ opacity: 0.8, marginTop: "0.75rem" }}>
+          Tu es sur le point de t’abonner au forfait{" "}
+          <strong>{plan}</strong>.
         </p>
 
-        {sessionId && (
-          <p style={{ fontSize: "0.75rem", opacity: 0.6 }}>
-            Session Stripe : {sessionId}
-          </p>
-        )}
-
-        <a
-          href="/my-amoria"
-          style={{
-            display: "inline-block",
-            marginTop: "1.5rem",
-            padding: "0.8rem 1.5rem",
-            borderRadius: "999px",
-            background: "#fb37ff",
-            color: "white",
-            textDecoration: "none",
-          }}
-        >
-          Accéder à mon AmorIAI
-        </a>
-      </section>
+        <p style={{ marginTop: "1.5rem", fontSize: "0.9rem", opacity: 0.7 }}>
+          Une fois le paiement complété sur Stripe, tu seras
+          automatiquement redirigé(e) vers ton espace AmorIAI.
+        </p>
+      </div>
     </main>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div style={{ color: "white" }}>Chargement…</div>}>
+      <PaymentContent />
+    </Suspense>
   );
 }
