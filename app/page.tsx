@@ -355,7 +355,6 @@ export default function HomePage({ searchParams }: PageProps) {
     query: { lang: locale },
   });
 
-  // Texte sous le gros bouton (hero)
   const alreadyAccountText =
     locale === "fr"
       ? "Déjà un compte ?"
@@ -380,6 +379,7 @@ export default function HomePage({ searchParams }: PageProps) {
       {/* HEADER */}
       <header className="sticky top-0 z-20 bg-gradient-to-b from-slate-950/95 via-slate-950/80 to-transparent backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+          {/* Logo */}
           <div className="flex items-center gap-2.5">
             <img
               src="/AmorIA_logo_transparent.png"
@@ -395,6 +395,7 @@ export default function HomePage({ searchParams }: PageProps) {
             </div>
           </div>
 
+          {/* Nav desktop */}
           <nav className="hidden items-center gap-5 text-xs text-slate-300 md:flex">
             <a
               href="#hero"
@@ -416,8 +417,9 @@ export default function HomePage({ searchParams }: PageProps) {
             </Link>
           </nav>
 
+          {/* Lang + login + (signup desktop) */}
           <div className="flex items-center gap-2">
-            {/* LANG SWITCHER */}
+            {/* Lang switcher */}
             <div className="flex items-center gap-0.5 rounded-full border border-slate-600/70 bg-slate-900/80 px-0.5 py-0.5 text-[0.7rem]">
               {(["fr", "en", "es"] as Locale[]).map((code) => (
                 <Link
@@ -434,7 +436,7 @@ export default function HomePage({ searchParams }: PageProps) {
               ))}
             </div>
 
-            {/* LOGIN visible mobile + desktop */}
+            {/* Login pill – visible partout */}
             <Link
               href={withLang("/login")}
               className="inline-flex items-center justify-center rounded-full border border-slate-500/70 px-3 py-1 text-[0.7rem] text-slate-100 transition hover:bg-slate-900/80"
@@ -442,7 +444,7 @@ export default function HomePage({ searchParams }: PageProps) {
               {t.navLogin}
             </Link>
 
-            {/* SIGNUP uniquement à partir de sm (pas le gros bouton rose sur mobile) */}
+            {/* Signup header – desktop seulement */}
             <Link
               href={withLang("/signup")}
               className="hidden items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3.5 py-1.5 text-[0.78rem] font-medium text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110 sm:inline-flex"
@@ -477,7 +479,6 @@ export default function HomePage({ searchParams }: PageProps) {
               {t.heroPrimary}
             </Link>
 
-            {/* Lien 'Déjà un compte ? Me connecter' sous le bouton */}
             <div className="text-[0.8rem] text-slate-300">
               {alreadyAccountText}{" "}
               <Link
@@ -647,4 +648,4 @@ export default function HomePage({ searchParams }: PageProps) {
       </footer>
     </main>
   );
-        }
+}
