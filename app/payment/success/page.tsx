@@ -1,36 +1,34 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
-export default function PaymentSuccessPage() {
+function SuccessContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
 
   return (
-    <div style={{ padding: "40px", textAlign: "center" }}>
+    <main style={{ color: "white", textAlign: "center", padding: "3rem" }}>
       <h1>✅ Paiement réussi</h1>
-      <p>Merci pour ton abonnement !</p>
+      <p>Merci d’avoir choisi <strong>AmorIAI</strong></p>
 
       {sessionId && (
-        <p style={{ fontSize: "12px", opacity: 0.7 }}>
+        <p style={{ fontSize: "12px", opacity: 0.6 }}>
           Session Stripe : {sessionId}
         </p>
       )}
 
-      <a
-        href="/my-amoriai"
-        style={{
-          display: "inline-block",
-          marginTop: "20px",
-          padding: "12px 20px",
-          background: "#000",
-          color: "#fff",
-          borderRadius: "8px",
-          textDecoration: "none",
-        }}
-      >
-        Accéder à mon Amoriai
-      </a>
-    </div>
+      <a href="/my-amoria">Accéder à mon AmorIAI</a>
+    </main>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<div>Chargement…</div>}>
+      <SuccessContent />
+    </Suspense>
   );
 }
