@@ -71,7 +71,7 @@ function normalizeLocale(raw: string | null): Locale {
 // URL de destination après connexion (email ou Google)
 function buildRedirectUrl(locale: Locale): string {
   if (typeof window === "undefined") return "/";
-  // ⬇️ si ta page principale connectée s'appelle /chat, remplace "/my-amoria" par "/chat"
+  // si un jour tu veux une autre page, change "/my-amoria" ici
   const url = new URL("/my-amoria", window.location.origin);
   url.searchParams.set("lang", locale);
   return url.toString();
@@ -84,14 +84,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // lire ?lang= côté client
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const lang = normalizeLocale(params.get("lang"));
       setLocale(lang);
     } catch {
-      // on ignore, on garde "fr"
+      // on garde "fr"
     }
   }, []);
 
@@ -114,7 +113,7 @@ export default function LoginPage() {
         setError(t.errorGeneric);
         setIsSubmitting(false);
       }
-      // Supabase redirige automatiquement vers redirectTo si tout va bien
+      // si tout va bien, Supabase redirige vers redirectTo
     } catch (e) {
       console.error(e);
       setError(t.errorGeneric);
@@ -140,7 +139,7 @@ export default function LoginPage() {
         return;
       }
 
-      // redirection après login par mot de passe
+      // redirection après login email/mot de passe
       window.location.href = buildRedirectUrl(locale);
     } catch (e) {
       console.error(e);
@@ -150,51 +149,63 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="amoria-auth-root">
-      <section className="amoria-auth-card">
-        <h1 className="amoria-auth-title">{t.title}</h1>
-        <p className="amoria-auth-subtitle">{t.subtitle}</p>
+    <main
+      className="flex min-h-screen items-center justify-center px-5 py-10 text-slate-100"
+      style={{
+        background:
+          "radial-gradient(circle at top,#020617 0,#020617 40%,#000 100%)",
+      }}
+    >
+      <section className="w-full max-w-md rounded-2xl border border-slate-600/60 bg-gradient-to-b from-slate-950 via-slate-950 to-black/95 p-7 shadow-2xl shadow-slate-950/90">
+        <h1 className="mb-1 text-xl font-semibold">{t.title}</h1>
+        <p className="mb-5 text-sm text-slate-300">{t.subtitle}</p>
 
         <button
           type="button"
-          className="amoria-auth-google"
           onClick={handleGoogleLogin}
           disabled={isSubmitting}
+          className="mb-4 w-full rounded-full border border-slate-500/80 bg-slate-950 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
         >
           {t.google}
         </button>
 
-        <p className="amoria-auth-or">{t.or}</p>
+        <p className="my-3 text-center text-[0.78rem] text-slate-500">
+          {t.or}
+        </p>
 
-        <form onSubmit={handleSubmit} className="amoria-auth-form">
-          <label className="amoria-auth-label">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1 text-[0.8rem]">
             {t.emailLabel}
             <input
               type="email"
-              className="amoria-auth-input"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
+              className="rounded-xl border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none ring-0 transition placeholder:text-slate-500 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-500/40"
             />
           </label>
 
-          <label className="amoria-auth-label">
+          <label className="flex flex-col gap-1 text-[0.8rem]">
             {t.passwordLabel}
             <input
               type="password"
-              className="amoria-auth-input"
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
+              className="rounded-xl border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none ring-0 transition placeholder:text-slate-500 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-500/40"
             />
           </label>
 
-          {error && <p className="amoria-auth-error">{error}</p>}
+          {error && (
+            <p className="text-[0.8rem] text-rose-400">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"
-            className="amoria-auth-submit"
             disabled={isSubmitting}
+            className="mt-1 w-full rounded-full bg-gradient-to-tr from-fuchsia-500 via-rose-400 to-orange-400 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-rose-400/60 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSubmitting ? t.submitting : t.submit}
           </button>
@@ -202,120 +213,11 @@ export default function LoginPage() {
 
         <a
           href={`/signup?lang=${locale}`}
-          className="amoria-auth-secondary-link"
+          className="mt-4 block text-center text-[0.8rem] text-slate-400 hover:text-slate-100"
         >
           {t.backToSignup}
         </a>
       </section>
-
-      <style jsx global>{`
-        .amoria-auth-root {
-          min-height: 100vh;
-          margin: 0;
-          padding: 2.5rem 1.25rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: radial-gradient(circle at top, #020617 0, #000 70%);
-          color: #e5e7eb;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-        }
-
-        .amoria-auth-card {
-          width: 100%;
-          max-width: 420px;
-          background: radial-gradient(circle at top, #020617, #020617 40%, #000);
-          border-radius: 1.5rem;
-          padding: 1.8rem 1.7rem 2rem;
-          border: 1px solid rgba(148, 163, 184, 0.45);
-          box-shadow: 0 24px 60px rgba(15, 23, 42, 0.85);
-        }
-
-        .amoria-auth-title {
-          font-size: 1.5rem;
-          font-weight: 600;
-          margin-bottom: 0.4rem;
-        }
-
-        .amoria-auth-subtitle {
-          font-size: 0.9rem;
-          color: #9ca3af;
-          margin-bottom: 1.2rem;
-        }
-
-        .amoria-auth-google {
-          width: 100%;
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.8);
-          background: #0f172a;
-          color: #e5e7eb;
-          font-size: 0.9rem;
-          padding: 0.7rem 1rem;
-          cursor: pointer;
-        }
-
-        .amoria-auth-or {
-          text-align: center;
-          font-size: 0.78rem;
-          color: #6b7280;
-          margin: 1rem 0;
-        }
-
-        .amoria-auth-form {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-        }
-
-        .amoria-auth-label {
-          font-size: 0.8rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.3rem;
-        }
-
-        .amoria-auth-input {
-          border-radius: 0.9rem;
-          border: 1px solid rgba(148, 163, 184, 0.7);
-          background: #020617;
-          color: #e5e7eb;
-          padding: 0.6rem 0.8rem;
-          font-size: 0.9rem;
-        }
-
-        .amoria-auth-error {
-          font-size: 0.8rem;
-          color: #f97373;
-          margin-top: 0.2rem;
-        }
-
-        .amoria-auth-submit {
-          margin-top: 0.4rem;
-          width: 100%;
-          border-radius: 999px;
-          border: none;
-          padding: 0.7rem 1rem;
-          font-size: 0.9rem;
-          cursor: pointer;
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
-          color: #f9fafb;
-          box-shadow: 0 14px 34px rgba(248, 113, 113, 0.45);
-        }
-
-        .amoria-auth-secondary-link {
-          display: block;
-          margin-top: 1rem;
-          font-size: 0.8rem;
-          color: #9ca3af;
-          text-align: center;
-          text-decoration: none;
-        }
-
-        .amoria-auth-secondary-link:hover {
-          color: #e5e7eb;
-        }
-      `}</style>
     </main>
   );
 }
