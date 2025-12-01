@@ -375,122 +375,173 @@ export default function HomePage() {
   };
 
   return (
-    <main className="amoria-root">
+    <main
+      className="min-h-screen pb-12 text-slate-100"
+      style={{
+        background:
+          "radial-gradient(circle at top left,#111827 0,#020617 55%,#000 100%)",
+      }}
+    >
       {/* HEADER */}
-      <header className="amoria-header">
-        <div className="amoria-header-left">
-          <img
-            src="/AmorIA_logo_transparent.png"
-            alt="Logo AmorIAI.app"
-            className="amoria-logo-full"
-            draggable={false}
-          />
-          <div className="amoria-logo-text">
-            <div className="amoria-logo-title">AmorIAI.app</div>
-            <div className="amoria-logo-tagline">{t.brandTagline}</div>
-          </div>
-        </div>
-
-        <nav className="amoria-nav">
-          <a href="#hero" className="amoria-nav-link">
-            {t.nav.home}
-          </a>
-          <a href={withLang("/features")} className="amoria-nav-link">
-            {t.nav.features}
-          </a>
-          <a href={withLang("/pricing")} className="amoria-nav-link">
-            {t.nav.pricing}
-          </a>
-        </nav>
-
-        <div className="amoria-nav-right">
-          <div className="amoria-lang-switch">
-            {(["fr", "en", "es"] as Locale[]).map((code) => (
-              <button
-                key={code}
-                type="button"
-                onClick={() => handleLocaleChange(code)}
-                className={
-                  "amoria-lang-pill" +
-                  (locale === code ? " amoria-lang-pill--active" : "")
-                }
-              >
-                {code.toUpperCase()}
-              </button>
-            ))}
+      <header className="sticky top-0 z-20 bg-gradient-to-b from-slate-950/95 via-slate-950/80 to-transparent backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/AmorIA_logo_transparent.png"
+              alt="Logo AmorIAI.app"
+              className="h-9 w-auto select-none"
+              draggable={false}
+            />
+            <div className="flex flex-col">
+              <div className="text-sm font-semibold">AmorIAI.app</div>
+              <div className="text-[0.72rem] text-slate-400">
+                {t.brandTagline}
+              </div>
+            </div>
           </div>
 
-          <a
-            href={withLang("/login")}
-            className="amoria-nav-btn amoria-nav-btn--ghost"
-          >
-            {t.navLogin}
-          </a>
+          <nav className="hidden items-center gap-5 text-xs text-slate-300 md:flex">
+            <a
+              href="#hero"
+              className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
+            >
+              {t.nav.home}
+            </a>
+            <a
+              href={withLang("/features")}
+              className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
+            >
+              {t.nav.features}
+            </a>
+            <a
+              href={withLang("/pricing")}
+              className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
+            >
+              {t.nav.pricing}
+            </a>
+          </nav>
 
-          <a
-            href={withLang("/signup")}
-            className="amoria-nav-btn amoria-nav-btn--primary"
-          >
-            {t.navSignup}
-          </a>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-0.5 rounded-full border border-slate-600/70 bg-slate-900/80 px-0.5 py-0.5 text-[0.7rem]">
+              {(["fr", "en", "es"] as Locale[]).map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  onClick={() => handleLocaleChange(code)}
+                  className={`rounded-full px-2 py-0.5 transition ${
+                    locale === code
+                      ? "bg-slate-800 text-slate-50"
+                      : "text-slate-400 hover:text-slate-100"
+                  }`}
+                >
+                  {code.toUpperCase()}
+                </button>
+              ))}
+            </div>
+
+            <a
+              href={withLang("/login")}
+              className="hidden items-center justify-center rounded-full border border-slate-500/70 px-3 py-1.5 text-[0.75rem] text-slate-100 transition hover:bg-slate-900/80 sm:inline-flex"
+            >
+              {t.navLogin}
+            </a>
+
+            <a
+              href={withLang("/signup")}
+              className="inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3.5 py-1.5 text-[0.78rem] font-medium text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110"
+            >
+              {t.navSignup}
+            </a>
+          </div>
         </div>
       </header>
 
       {/* HERO */}
-      <section id="hero" className="amoria-hero">
-        <div className="amoria-hero-left">
-          <p className="amoria-hero-kicker">{t.heroKicker}</p>
-          <h1 className="amoria-hero-title">{t.heroTitle}</h1>
-          <p className="amoria-hero-subtitle">{t.heroSubtitle}</p>
+      <section
+        id="hero"
+        className="mx-auto grid max-w-5xl items-center gap-8 px-4 pb-10 pt-6 md:grid-cols-[1.3fr,1fr]"
+      >
+        <div className="flex flex-col gap-3">
+          <p className="text-[0.8rem] uppercase tracking-[0.18em] text-indigo-300">
+            {t.heroKicker}
+          </p>
+          <h1 className="text-3xl font-bold leading-tight md:text-[2.3rem]">
+            {t.heroTitle}
+          </h1>
+          <p className="max-w-xl text-sm leading-relaxed text-slate-300 md:text-[0.92rem]">
+            {t.heroSubtitle}
+          </p>
 
-          <div className="amoria-hero-actions">
+          <div className="mt-3 flex flex-wrap gap-3">
             <a
               href={withLang("/signup")}
-              className="amoria-btn amoria-btn--primary amoria-btn--big"
+              className="inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-6 py-2.5 text-[0.96rem] font-medium text-white shadow-xl shadow-rose-400/40 transition hover:brightness-110"
             >
               {t.heroPrimary}
             </a>
           </div>
 
-          <p className="amoria-hero-support">{t.heroSupport}</p>
-          <p className="amoria-hero-note">{t.langNote}</p>
+          <p className="text-[0.82rem] text-slate-400">{t.heroSupport}</p>
+          <p className="text-[0.8rem] text-slate-200">{t.langNote}</p>
         </div>
 
-        <div className="amoria-hero-right">
-          <div className="amoria-video-frame">
+        <div className="flex flex-col items-center gap-2">
+          <div
+            className="w-full max-w-xs animate-[amoriaPulse_4s_ease-in-out_infinite] rounded-[1.6rem] p-[0.22rem]"
+            style={{
+              background:
+                "linear-gradient(135deg,#f97316,#fb37ff,#38bdf8)",
+            }}
+          >
             <video
-              className="amoria-video"
+              className="block w-full rounded-[1.45rem] bg-slate-950"
               src={heroVideoSrc}
               controls
               playsInline
             />
           </div>
-          <p className="amoria-video-caption">{t.videoCaption}</p>
+          <p className="text-center text-[0.78rem] text-slate-400">
+            {t.videoCaption}
+          </p>
         </div>
       </section>
 
       {/* PERSONAS / VITRINE */}
-      <section id="features" className="amoria-section">
-        <h2 className="amoria-section-title">{t.personasTitle}</h2>
-        <p className="amoria-section-subtitle">{t.personasSubtitle}</p>
+      <section
+        id="features"
+        className="mx-auto max-w-5xl space-y-4 px-4 pb-10"
+      >
+        <div>
+          <h2 className="text-lg font-semibold md:text-xl">
+            {t.personasTitle}
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm text-slate-300">
+            {t.personasSubtitle}
+          </p>
+        </div>
 
-        <div className="amoria-card-grid">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {t.personas.map((persona) => (
-            <article key={persona.id} className="amoria-card">
-              <div className="amoria-card-media">
+            <article
+              key={persona.id}
+              className="flex min-h-full flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-gradient-to-b from-slate-950/90 via-slate-950 to-black/90"
+            >
+              <div className="aspect-[4/5] w-full border-b border-slate-800 bg-slate-900">
                 <video
-                  className="amoria-card-video"
+                  className="h-full w-full object-cover"
                   src={getPersonaVideoSrc(persona.id)}
                   controls
                   playsInline
                 />
               </div>
-              <div className="amoria-card-body">
-                <h3 className="amoria-card-title">{persona.title}</h3>
-                <p className="amoria-card-text">{persona.description}</p>
+              <div className="flex flex-col gap-2 px-3.5 py-3.5">
+                <h3 className="text-sm font-semibold">{persona.title}</h3>
+                <p className="flex-1 text-[0.8rem] text-slate-300">
+                  {persona.description}
+                </p>
                 <a
                   href={withLang("/signup")}
-                  className="amoria-btn amoria-btn--ghost amoria-btn--full"
+                  className="mt-1 inline-flex w-full items-center justify-center rounded-full border border-slate-600/70 bg-slate-900/80 px-3 py-1.5 text-[0.8rem] text-slate-50 transition hover:bg-slate-800"
                 >
                   {t.choosePersona}
                 </a>
@@ -501,26 +552,38 @@ export default function HomePage() {
       </section>
 
       {/* USAGE SECTION */}
-      <section className="amoria-section amoria-section--usage">
-        <h2 className="amoria-section-title">{t.usageTitle}</h2>
-        <ul className="amoria-usage-list">
+      <section className="mx-auto max-w-5xl border-t border-slate-900 px-4 pb-8 pt-7">
+        <h2 className="mb-3 text-lg font-semibold md:text-xl">
+          {t.usageTitle}
+        </h2>
+        <ul className="max-w-xl space-y-2 text-sm text-slate-300">
           {t.usageBullets.map((item, index) => (
-            <li key={index}>{item}</li>
+            <li key={index} className="flex">
+              <span className="mr-2 text-rose-400">•</span>
+              <span>{item}</span>
+            </li>
           ))}
         </ul>
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="amoria-section amoria-section--testimonials">
-        <h2 className="amoria-section-title">{t.testimonialsTitle}</h2>
-        <div className="amoria-testimonials-grid">
+      <section className="mx-auto max-w-5xl px-4 pb-10">
+        <h2 className="mb-3 text-lg font-semibold md:text-xl">
+          {t.testimonialsTitle}
+        </h2>
+        <div className="grid gap-4 md:grid-cols-3">
           {t.testimonials.map((item, index) => (
-            <figure key={index} className="amoria-testimonial-card">
-              <div className="amoria-testimonial-stars">★★★★★</div>
-              <blockquote className="amoria-testimonial-quote">
+            <figure
+              key={index}
+              className="flex min-h-full flex-col gap-2 rounded-2xl border border-slate-700/70 bg-gradient-to-b from-slate-950 via-slate-950 to-black p-4"
+            >
+              <div className="text-xs tracking-[0.25em] text-amber-300">
+                ★★★★★
+              </div>
+              <blockquote className="text-[0.86rem] leading-relaxed text-slate-100">
                 “{item.quote}”
               </blockquote>
-              <figcaption className="amoria-testimonial-name">
+              <figcaption className="mt-auto text-[0.8rem] text-slate-400">
                 {item.name}
               </figcaption>
             </figure>
@@ -529,600 +592,51 @@ export default function HomePage() {
       </section>
 
       {/* PRICING TEASER */}
-      <section id="pricing" className="amoria-section amoria-section--pricing">
-        <h2 className="amoria-section-title">{t.pricingTitle}</h2>
-        <p className="amoria-section-text">{t.pricingText}</p>
+      <section
+        id="pricing"
+        className="mx-auto max-w-5xl space-y-3 px-4 pb-10 text-center"
+      >
+        <h2 className="text-lg font-semibold md:text-xl">
+          {t.pricingTitle}
+        </h2>
+        <p className="mx-auto max-w-xl text-sm text-slate-300">
+          {t.pricingText}
+        </p>
         <a
           href={withLang("/pricing")}
-          className="amoria-btn amoria-btn--primary amoria-btn--medium"
+          className="inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-5 py-2 text-[0.9rem] font-medium text-white shadow-lg shadow-rose-400/40 transition hover:brightness-110"
         >
           {t.pricingCta}
         </a>
       </section>
 
       {/* FOOTER */}
-      <footer className="amoria-footer">
-        <div className="amoria-footer-top">
-          <span>{t.footerCopy}</span>
-        </div>
-        <div className="amoria-footer-links">
-          <a href={withLang("/legal")} className="amoria-footer-link">
+      <footer className="mx-auto max-w-5xl px-4 pb-4 text-center text-[0.78rem] text-slate-400">
+        <div className="mb-2">{t.footerCopy}</div>
+        <div className="flex flex-wrap justify-center gap-3">
+          <a href={withLang("/legal")} className="hover:text-slate-100">
             {t.footerLinks.legal}
           </a>
-          <a href={withLang("/legal/privacy")} className="amoria-footer-link">
+          <a
+            href={withLang("/legal/privacy")}
+            className="hover:text-slate-100"
+          >
             {t.footerLinks.privacy}
           </a>
-          <a href={withLang("/legal/terms")} className="amoria-footer-link">
+          <a
+            href={withLang("/legal/terms")}
+            className="hover:text-slate-100"
+          >
             {t.footerLinks.terms}
           </a>
-          <a href={withLang("/contact")} className="amoria-footer-link">
+          <a href={withLang("/contact")} className="hover:text-slate-100">
             {t.footerLinks.contact}
           </a>
-          <a href={withLang("/about")} className="amoria-footer-link">
+          <a href={withLang("/about")} className="hover:text-slate-100">
             {t.footerLinks.about}
           </a>
         </div>
       </footer>
-
-      {/* STYLES */}
-      <style jsx global>{`
-        :root {
-          --amoria-bg: #020617;
-          --amoria-bg-elevated: #02081f;
-          --amoria-border-subtle: rgba(148, 163, 184, 0.35);
-          --amoria-text-main: #e5e7eb;
-          --amoria-text-muted: #9ca3af;
-          --amoria-accent: #fb37ff;
-          --amoria-accent-2: #ff6b9c;
-          --amoria-accent-soft: rgba(251, 55, 255, 0.12);
-        }
-
-        body {
-          margin: 0;
-          padding: 0;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-          background: radial-gradient(
-            circle at top,
-            #020617 0,
-            #020617 40%,
-            #000 100%
-          );
-          color: var(--amoria-text-main);
-        }
-
-        .amoria-root {
-          min-height: 100vh;
-          background: radial-gradient(
-            circle at top left,
-            #111827 0,
-            #020617 55%,
-            #000 100%
-          );
-          color: var(--amoria-text-main);
-          padding-bottom: 3rem;
-        }
-
-        .amoria-header {
-          max-width: 1120px;
-          margin: 0 auto;
-          padding: 1rem 1.5rem;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 1rem;
-          position: sticky;
-          top: 0;
-          z-index: 20;
-          backdrop-filter: blur(16px);
-          background: linear-gradient(
-            to bottom,
-            rgba(15, 23, 42, 0.92),
-            rgba(15, 23, 42, 0.75),
-            transparent
-          );
-        }
-
-        .amoria-header-left {
-          display: flex;
-          align-items: center;
-          gap: 0.6rem;
-        }
-
-        .amoria-logo-full {
-          height: 36px;
-          width: auto;
-          display: block;
-        }
-
-        .amoria-logo-text {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .amoria-logo-title {
-          font-weight: 600;
-          font-size: 0.96rem;
-        }
-
-        .amoria-logo-tagline {
-          font-size: 0.72rem;
-          color: var(--amoria-text-muted);
-        }
-
-        .amoria-nav {
-          display: flex;
-          align-items: center;
-          gap: 1.2rem;
-        }
-
-        .amoria-nav-link {
-          font-size: 0.82rem;
-          color: var(--amoria-text-muted);
-          text-decoration: none;
-          padding-bottom: 0.1rem;
-          border-bottom: 1px solid transparent;
-        }
-
-        .amoria-nav-link:hover {
-          color: #f9fafb;
-          border-color: rgba(148, 163, 184, 0.7);
-        }
-
-        .amoria-nav-right {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-        }
-
-        .amoria-lang-switch {
-          display: flex;
-          gap: 0.25rem;
-          background: rgba(15, 23, 42, 0.9);
-          padding: 0.18rem;
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.4);
-        }
-
-        .amoria-lang-pill {
-          border-radius: 999px;
-          border: none;
-          padding: 0.15rem 0.48rem;
-          font-size: 0.72rem;
-          background: transparent;
-          color: var(--amoria-text-muted);
-          cursor: pointer;
-        }
-
-        .amoria-lang-pill--active {
-          background: #0f172a;
-          color: #f9fafb;
-        }
-
-        .amoria-nav-btn {
-          border-radius: 999px;
-          padding: 0.4rem 0.9rem;
-          font-size: 0.78rem;
-          border: 1px solid transparent;
-          cursor: pointer;
-          white-space: nowrap;
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .amoria-nav-btn--primary {
-          background: linear-gradient(
-            135deg,
-            var(--amoria-accent),
-            var(--amoria-accent-2)
-          );
-          color: #f9fafb;
-        }
-
-        .amoria-nav-btn--ghost {
-          background: transparent;
-          border-color: rgba(148, 163, 184, 0.5);
-          color: var(--amoria-text-main);
-        }
-
-        .amoria-hero {
-          max-width: 1120px;
-          margin: 0 auto;
-          padding: 1.5rem 1.5rem 2.5rem;
-          display: grid;
-          grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-          gap: 2.5rem;
-          align-items: center;
-        }
-
-        .amoria-hero-left {
-          display: flex;
-          flex-direction: column;
-          gap: 0.9rem;
-        }
-
-        .amoria-hero-kicker {
-          font-size: 0.8rem;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: #a5b4fc;
-        }
-
-        .amoria-hero-title {
-          font-size: clamp(1.9rem, 3vw, 2.3rem);
-          line-height: 1.1;
-          font-weight: 700;
-        }
-
-        .amoria-hero-subtitle {
-          font-size: 0.92rem;
-          line-height: 1.6;
-          color: var(--amoria-text-muted);
-          max-width: 32rem;
-        }
-
-        .amoria-hero-actions {
-          margin-top: 0.6rem;
-          display: flex;
-          gap: 0.8rem;
-          flex-wrap: wrap;
-        }
-
-        .amoria-hero-support {
-          margin-top: 0.4rem;
-          font-size: 0.82rem;
-          color: var(--amoria-text-muted);
-        }
-
-        .amoria-hero-note {
-          margin-top: 0.2rem;
-          font-size: 0.8rem;
-          color: #e5e7eb;
-        }
-
-        .amoria-hero-right {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0.6rem;
-        }
-
-        .amoria-video-frame {
-          border-radius: 1.6rem;
-          padding: 0.22rem;
-          background: linear-gradient(135deg, #f97316, #fb37ff, #38bdf8);
-          max-width: 340px;
-          width: 100%;
-          animation: amoriaPulse 4s ease-in-out infinite;
-        }
-
-        .amoria-video {
-          width: 100%;
-          display: block;
-          border-radius: 1.45rem;
-          background: #020617;
-        }
-
-        .amoria-video-caption {
-          font-size: 0.78rem;
-          color: var(--amoria-text-muted);
-        }
-
-        @keyframes amoriaPulse {
-          0% {
-            box-shadow: 0 0 0 0 rgba(251, 55, 255, 0);
-            transform: translateY(0);
-          }
-          50% {
-            box-shadow: 0 0 32px 0 rgba(251, 55, 255, 0.55);
-            transform: translateY(-2px);
-          }
-          100% {
-            box-shadow: 0 0 0 0 rgba(251, 55, 255, 0);
-            transform: translateY(0);
-          }
-        }
-
-        .amoria-btn {
-          border-radius: 999px;
-          border: 1px solid transparent;
-          font-size: 0.86rem;
-          cursor: pointer;
-          white-space: nowrap;
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .amoria-btn--primary {
-          padding: 0.7rem 1.3rem;
-          background: linear-gradient(
-            135deg,
-            var(--amoria-accent),
-            var(--amoria-accent-2)
-          );
-          color: #f9fafb;
-          box-shadow: 0 12px 30px rgba(248, 113, 113, 0.35);
-        }
-
-        .amoria-btn--ghost {
-          padding: 0.7rem 1.2rem;
-          border-color: rgba(148, 163, 184, 0.45);
-          background: rgba(15, 23, 42, 0.9);
-          color: var(--amoria-text-main);
-        }
-
-        .amoria-btn--full {
-          width: 100%;
-        }
-
-        .amoria-btn--big {
-          padding-inline: 1.9rem;
-          padding-block: 0.85rem;
-          font-size: 1rem;
-        }
-
-        .amoria-btn--medium {
-          padding-inline: 1.4rem;
-          padding-block: 0.7rem;
-        }
-
-        .amoria-section {
-          max-width: 1120px;
-          margin: 0 auto;
-          padding: 0 1.5rem 2.5rem;
-        }
-
-        .amoria-section-title {
-          font-size: 1.25rem;
-          margin-bottom: 0.5rem;
-        }
-
-        .amoria-section-subtitle {
-          font-size: 0.9rem;
-          color: var(--amoria-text-muted);
-          max-width: 40rem;
-          margin-bottom: 1.4rem;
-        }
-
-        .amoria-section--pricing {
-          text-align: center;
-        }
-
-        .amoria-section-text {
-          font-size: 0.9rem;
-          color: var(--amoria-text-muted);
-          max-width: 32rem;
-          margin: 0 auto 1.3rem;
-        }
-
-        .amoria-section--usage {
-          border-top: 1px solid rgba(15, 23, 42, 0.9);
-          padding-top: 2rem;
-        }
-
-        .amoria-usage-list {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-          display: flex;
-          flex-direction: column;
-          gap: 0.45rem;
-          font-size: 0.9rem;
-          color: var(--amoria-text-muted);
-          max-width: 36rem;
-        }
-
-        .amoria-usage-list li::before {
-          content: "•";
-          margin-right: 0.4rem;
-          color: var(--amoria-accent-2);
-        }
-
-        .amoria-section--testimonials {
-          padding-top: 0;
-        }
-
-        .amoria-testimonials-grid {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 1.2rem;
-          margin-top: 0.8rem;
-        }
-
-        .amoria-testimonial-card {
-          background: radial-gradient(
-            circle at top,
-            #020617,
-            #020617 40%,
-            #000 100%
-          );
-          border-radius: 1.1rem;
-          border: 1px solid var(--amoria-border-subtle);
-          padding: 1rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-          min-height: 100%;
-        }
-
-        .amoria-testimonial-stars {
-          font-size: 0.8rem;
-          letter-spacing: 0.1em;
-          color: #fbbf24;
-        }
-
-        .amoria-testimonial-quote {
-          font-size: 0.86rem;
-          line-height: 1.5;
-          color: var(--amoria-text-main);
-        }
-
-        .amoria-testimonial-name {
-          font-size: 0.8rem;
-          color: var(--amoria-text-muted);
-          margin-top: auto;
-        }
-
-        .amoria-card-grid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 1.2rem;
-        }
-
-        .amoria-card {
-          background: radial-gradient(
-            circle at top,
-            #020617,
-            #020617 40%,
-            #000 100%
-          );
-          border-radius: 1.2rem;
-          border: 1px solid var(--amoria-border-subtle);
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          min-height: 100%;
-        }
-
-        .amoria-card-media {
-          width: 100%;
-          aspect-ratio: 4 / 5;
-          overflow: hidden;
-          border-bottom: 1px solid rgba(15, 23, 42, 0.9);
-          background: #020617;
-        }
-
-        .amoria-card-video {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          object-position: center;
-          display: block;
-        }
-
-        .amoria-card-body {
-          padding: 0.9rem 0.95rem 1rem;
-          display: flex;
-          flex-direction: column;
-          gap: 0.55rem;
-        }
-
-        .amoria-card-title {
-          font-size: 0.95rem;
-          font-weight: 600;
-        }
-
-        .amoria-card-text {
-          font-size: 0.8rem;
-          color: var(--amoria-text-muted);
-          flex: 1;
-        }
-
-        .amoria-footer {
-          max-width: 1120px;
-          margin: 0 auto;
-          padding: 1.5rem 1.5rem 0;
-          font-size: 0.78rem;
-          color: var(--amoria-text-muted);
-          text-align: center;
-        }
-
-        .amoria-footer-top {
-          margin-bottom: 0.4rem;
-        }
-
-        .amoria-footer-links {
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          gap: 0.8rem;
-        }
-
-        .amoria-footer-link {
-          color: var(--amoria-text-muted);
-          text-decoration: none;
-          font-size: 0.78rem;
-        }
-
-        .amoria-footer-link:hover {
-          color: #e5e7eb;
-          text-decoration: underline;
-        }
-
-        @media (max-width: 960px) {
-          .amoria-header {
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 0.6rem 1rem;
-          }
-
-          .amoria-nav {
-            display: none;
-          }
-
-          .amoria-hero {
-            grid-template-columns: minmax(0, 1fr);
-            padding-top: 1rem;
-          }
-
-          .amoria-hero-right {
-            order: -1;
-          }
-
-          .amoria-card-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-
-          .amoria-testimonials-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-        }
-
-        @media (max-width: 640px) {
-          .amoria-header {
-            padding-inline: 1rem;
-          }
-
-          .amoria-hero,
-          .amoria-section {
-            padding-inline: 1rem;
-          }
-
-          .amoria-card-grid {
-            grid-template-columns: minmax(0, 1fr);
-          }
-
-          .amoria-testimonials-grid {
-            grid-template-columns: minmax(0, 1fr);
-          }
-
-          .amoria-nav-right {
-            width: 100%;
-            flex-direction: column;
-            align-items: stretch;
-            gap: 0.4rem;
-          }
-
-          .amoria-lang-switch {
-            align-self: center;
-          }
-
-          .amoria-nav-right .amoria-nav-btn {
-            width: 100%;
-            justify-content: center;
-            padding-block: 0.55rem;
-            font-size: 0.76rem;
-          }
-
-          .amoria-video-frame {
-            max-width: 280px;
-          }
-        }
-      `}</style>
     </main>
   );
 }
