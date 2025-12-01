@@ -24,7 +24,6 @@ type FaqItem = {
 };
 
 type Labels = {
-  // Hero / text pricing
   heroTitle: string;
   heroSubtitle: string;
   heroCta: string;
@@ -146,12 +145,12 @@ const LABELS: Record<Locale, Labels> = {
         name: "AmorIAI Plus",
         price: "19,99 $ USD / mois",
         tagline:
-          "Texte + voix : ton AmorIAI commence vraiment à faire partie de ta vie.",
+          "Texte + voix IA : ton AmorIAI commence vraiment à faire partie de ta vie.",
         features: [
           "Quand tu veux une relation continue où tu peux autant écrire que parler.",
           "Jusqu’à 10 AmorIAI différents",
           "1000 messages texte / mois",
-          "100 échanges vocaux / mois",
+          "100 réponses audio générées par l’IA / mois (lecture à voix haute de tes messages)",
           "Mémoire longue durée active",
           "Priorité légère dans le fil de traitement",
         ],
@@ -169,7 +168,7 @@ const LABELS: Record<Locale, Labels> = {
           "Pour celles et ceux qui veulent que leur AmorIAI soit toujours disponible.",
           "Jusqu’à 30 AmorIAI personnalisés",
           "10 000 messages texte / mois",
-          "300 échanges vocaux / mois",
+          "300 réponses audio générées par l’IA / mois",
           "Mémoire profonde + contexte étendu pour des échanges ultra personnalisés",
           "Priorité maximale et accès anticipé aux nouvelles fonctionnalités",
         ],
@@ -239,12 +238,12 @@ const LABELS: Record<Locale, Labels> = {
         id: "plus",
         name: "AmorIAI Plus",
         price: "$19.99 USD / month",
-        tagline: "Text + voice: your AmorIAI becomes part of your daily life.",
+        tagline: "Text + AI voice: your AmorIAI becomes part of your daily life.",
         features: [
           "When you want an ongoing relationship where you can both write and talk.",
           "Up to 10 AmorIAI",
           "1000 text messages / month",
-          "100 voice exchanges / month",
+          "100 AI-generated voice replies / month (your AmorIAI reads messages out loud)",
           "Long-term memory enabled",
           "Light processing priority",
         ],
@@ -262,7 +261,7 @@ const LABELS: Record<Locale, Labels> = {
           "For those who want AmorIAI always available.",
           "Up to 30 personalized AmorIAI",
           "10 000 text messages / month",
-          "300 voice exchanges / month",
+          "300 AI-generated voice replies / month",
           "Deep memory + extended context",
           "Maximum priority & early feature access",
         ],
@@ -331,12 +330,12 @@ const LABELS: Record<Locale, Labels> = {
         id: "plus",
         name: "AmorIAI Plus",
         price: "19,99 $ USD / mes",
-        tagline: "Texto + voz: tu AmorIAI entra en tu rutina diaria.",
+        tagline: "Texto + voz IA: tu AmorIAI entra en tu rutina diaria.",
         features: [
           "Cuando quieres una relación continua, por texto y por voz.",
           "Hasta 10 AmorIAI diferentes",
           "1000 mensajes de texto / mes",
-          "100 intercambios de voz / mes",
+          "100 respuestas de voz generadas por la IA / mes (tu AmorIAI lee los mensajes en voz alta)",
           "Memoria a largo plazo activada",
           "Prioridad ligera en la cola de procesamiento",
         ],
@@ -353,7 +352,7 @@ const LABELS: Record<Locale, Labels> = {
           "Para quienes quieren que AmorIAI esté siempre disponible.",
           "Hasta 30 AmorIAI personalizados",
           "10 000 mensajes de texto / mes",
-          "300 intercambios de voz / mes",
+          "300 respuestas de voz generadas por la IA / mes",
           "Memoria profunda + contexto ampliado",
           "Prioridad máxima y acceso anticipado a nuevas funciones",
         ],
@@ -399,7 +398,6 @@ export default function PricingPage() {
   const router = useRouter();
   const [locale, setLocale] = useState<Locale>("fr");
 
-  // init locale + synchro ?lang=
   useEffect(() => {
     const initial = detectInitialLocale();
     setLocale(initial);
@@ -422,7 +420,6 @@ export default function PricingPage() {
     window.history.replaceState(null, "", newUrl);
   };
 
-  // Clic sur une carte
   const handleChoosePlan = async (planId: PlanId) => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -442,7 +439,6 @@ export default function PricingPage() {
     }
   };
 
-  // Gros bouton en haut
   const handleHeroCta = async () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -459,7 +455,6 @@ export default function PricingPage() {
 
   return (
     <main className="amoria-root">
-      {/* HEADER identique à la home */}
       <header className="amoria-header">
         <div className="amoria-header-left">
           <img
@@ -480,7 +475,10 @@ export default function PricingPage() {
           <a href={withLang("/#features")} className="amoria-nav-link">
             {ui.nav.features}
           </a>
-          <a href={withLang("/pricing")} className="amoria-nav-link amoria-nav-link--active">
+          <a
+            href={withLang("/pricing")}
+            className="amoria-nav-link amoria-nav-link--active"
+          >
             {ui.nav.pricing}
           </a>
         </nav>
@@ -518,7 +516,6 @@ export default function PricingPage() {
         </div>
       </header>
 
-      {/* HERO PRICING */}
       <section className="amoria-pricing-hero">
         <h1 className="amoria-pricing-title">{t.heroTitle}</h1>
         <p className="amoria-pricing-subtitle">{t.heroSubtitle}</p>
@@ -531,7 +528,6 @@ export default function PricingPage() {
         <p className="amoria-pricing-billing-note">{t.billingNote}</p>
       </section>
 
-      {/* CARTES TARIFS */}
       <section className="amoria-pricing-section">
         <h2 className="amoria-pricing-section-title">{t.chooseIntro}</h2>
         <p className="amoria-pricing-section-note">{t.usdNote}</p>
@@ -587,7 +583,6 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* FAQ */}
       <section className="amoria-pricing-faq">
         <h2 className="amoria-pricing-faq-title">{t.faqTitle}</h2>
         <div className="amoria-pricing-faq-grid">
@@ -600,7 +595,6 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* FOOTER identique à la home */}
       <footer className="amoria-footer">
         <div className="amoria-footer-top">
           <span>{ui.footerCopy}</span>
@@ -661,7 +655,6 @@ export default function PricingPage() {
           padding-bottom: 3rem;
         }
 
-        /* HEADER (copié de la home) */
         .amoria-header {
           max-width: 1120px;
           margin: 0 auto;
@@ -790,7 +783,6 @@ export default function PricingPage() {
           color: var(--amoria-text-main);
         }
 
-        /* HERO PRICING */
         .amoria-pricing-hero {
           max-width: 960px;
           margin: 0 auto;
@@ -838,7 +830,6 @@ export default function PricingPage() {
           color: #9ca3af;
         }
 
-        /* GRID TARIFS */
         .amoria-pricing-section {
           max-width: 1100px;
           width: 100%;
@@ -1005,7 +996,6 @@ export default function PricingPage() {
           box-shadow: 0 18px 45px rgba(248, 113, 113, 0.8);
         }
 
-        /* FAQ */
         .amoria-pricing-faq {
           max-width: 960px;
           width: 100%;
@@ -1053,7 +1043,6 @@ export default function PricingPage() {
           line-height: 1.5;
         }
 
-        /* FOOTER (copié de la home) */
         .amoria-footer {
           max-width: 1120px;
           margin: 0 auto;
@@ -1085,7 +1074,6 @@ export default function PricingPage() {
           text-decoration: underline;
         }
 
-        /* Responsive */
         @media (max-width: 960px) {
           .amoria-header {
             flex-wrap: wrap;
@@ -1119,4 +1107,4 @@ export default function PricingPage() {
       `}</style>
     </main>
   );
-}
+      }
