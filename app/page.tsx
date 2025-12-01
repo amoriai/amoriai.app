@@ -383,6 +383,7 @@ export default function HomePage() {
             src="/AmorIA_logo_transparent.png"
             alt="Logo AmorIAI.app"
             className="amoria-logo-full"
+            draggable={false}
           />
           <div className="amoria-logo-text">
             <div className="amoria-logo-title">AmorIAI.app</div>
@@ -631,6 +632,7 @@ export default function HomePage() {
         .amoria-logo-full {
           height: 36px;
           width: auto;
+          display: block;
         }
 
         .amoria-logo-text {
@@ -787,7 +789,6 @@ export default function HomePage() {
           gap: 0.6rem;
         }
 
-        /* ---- IA d'accueil avec PULSE ---- */
         .amoria-video-frame {
           border-radius: 1.6rem;
           padding: 0.22rem;
@@ -921,7 +922,6 @@ export default function HomePage() {
           color: var(--amoria-accent-2);
         }
 
-        /* Témoignages */
         .amoria-section--testimonials {
           padding-top: 0;
         }
@@ -1100,7 +1100,6 @@ export default function HomePage() {
             grid-template-columns: minmax(0, 1fr);
           }
 
-          /* NAV mobile : langue sur une ligne, boutons dessous en full width */
           .amoria-nav-right {
             width: 100%;
             flex-direction: column;
@@ -1126,4 +1125,4 @@ export default function HomePage() {
       `}</style>
     </main>
   );
-  }
+}
