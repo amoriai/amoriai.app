@@ -1,6 +1,5 @@
-"use client";
-
-import React, { useState, useEffect } from "react";
+// app/page.tsx
+import Link from "next/link";
 
 type Locale = "fr" | "en" | "es";
 type PersonaId = "lyra" | "orion" | "kai" | "maelis";
@@ -330,49 +329,31 @@ const STRINGS: Record<Locale, Copy> = {
   },
 };
 
-function detectInitialLocale(): Locale {
-  if (typeof window === "undefined") return "fr";
-
-  const params = new URLSearchParams(window.location.search);
-  const fromParam = params.get("lang");
-  if (fromParam === "fr" || fromParam === "en" || fromParam === "es") {
-    return fromParam;
-  }
-
-  const navLang = navigator.language.toLowerCase();
-  if (navLang.startsWith("fr")) return "fr";
-  if (navLang.startsWith("es")) return "es";
-  return "en";
+function getLocaleFromSearchParams(
+  searchParams: { [key: string]: string | string[] | undefined }
+): Locale {
+  const raw = searchParams["lang"];
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (value === "en" || value === "es" || value === "fr") return value;
+  return "fr";
 }
 
-export default function HomePage() {
-  const [locale, setLocale] = useState<Locale>("fr");
+type PageProps = {
+  searchParams: { [key: string]: string | string[] | undefined };
+};
 
-  useEffect(() => {
-    const initial = detectInitialLocale();
-    setLocale(initial);
-
-    const params = new URLSearchParams(window.location.search);
-    params.set("lang", initial);
-    const newUrl = window.location.pathname + "?" + params.toString();
-    window.history.replaceState(null, "", newUrl);
-  }, []);
-
+export default function HomePage({ searchParams }: PageProps) {
+  const locale = getLocaleFromSearchParams(searchParams);
   const t = STRINGS[locale];
 
   const heroVideoSrc = `/amoria_${locale}.mp4`;
   const getPersonaVideoSrc = (id: PersonaId) =>
     `/amoria_${id}_${locale}.mp4`;
 
-  const withLang = (path: string) => `${path}?lang=${locale}`;
-
-  const handleLocaleChange = (code: Locale) => {
-    setLocale(code);
-    const params = new URLSearchParams(window.location.search);
-    params.set("lang", code);
-    const newUrl = window.location.pathname + "?" + params.toString();
-    window.history.replaceState(null, "", newUrl);
-  };
+  const withLang = (path: string) => ({
+    pathname: path,
+    query: { lang: locale },
+  });
 
   return (
     <main
@@ -407,27 +388,26 @@ export default function HomePage() {
             >
               {t.nav.home}
             </a>
-            <a
+            <Link
               href={withLang("/features")}
               className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
             >
               {t.nav.features}
-            </a>
-            <a
+            </Link>
+            <Link
               href={withLang("/pricing")}
               className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
             >
               {t.nav.pricing}
-            </a>
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-0.5 rounded-full border border-slate-600/70 bg-slate-900/80 px-0.5 py-0.5 text-[0.7rem]">
               {(["fr", "en", "es"] as Locale[]).map((code) => (
-                <button
+                <Link
                   key={code}
-                  type="button"
-                  onClick={() => handleLocaleChange(code)}
+                  href={{ pathname: "/", query: { lang: code } }}
                   className={`rounded-full px-2 py-0.5 transition ${
                     locale === code
                       ? "bg-slate-800 text-slate-50"
@@ -435,23 +415,23 @@ export default function HomePage() {
                   }`}
                 >
                   {code.toUpperCase()}
-                </button>
+                </Link>
               ))}
             </div>
 
-            <a
+            <Link
               href={withLang("/login")}
               className="hidden items-center justify-center rounded-full border border-slate-500/70 px-3 py-1.5 text-[0.75rem] text-slate-100 transition hover:bg-slate-900/80 sm:inline-flex"
             >
               {t.navLogin}
-            </a>
+            </Link>
 
-            <a
+            <Link
               href={withLang("/signup")}
               className="inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3.5 py-1.5 text-[0.78rem] font-medium text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110"
             >
               {t.navSignup}
-            </a>
+            </Link>
           </div>
         </div>
       </header>
@@ -473,12 +453,12 @@ export default function HomePage() {
           </p>
 
           <div className="mt-3 flex flex-wrap gap-3">
-            <a
+            <Link
               href={withLang("/signup")}
               className="inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-6 py-2.5 text-[0.96rem] font-medium text-white shadow-xl shadow-rose-400/40 transition hover:brightness-110"
             >
               {t.heroPrimary}
-            </a>
+            </Link>
           </div>
 
           <p className="text-[0.82rem] text-slate-400">{t.heroSupport}</p>
@@ -506,7 +486,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* PERSONAS / VITRINE */}
+      {/* PERSONAS */}
       <section
         id="features"
         className="mx-auto max-w-5xl space-y-4 px-4 pb-10"
@@ -539,19 +519,19 @@ export default function HomePage() {
                 <p className="flex-1 text-[0.8rem] text-slate-300">
                   {persona.description}
                 </p>
-                <a
+                <Link
                   href={withLang("/signup")}
                   className="mt-1 inline-flex w-full items-center justify-center rounded-full border border-slate-600/70 bg-slate-900/80 px-3 py-1.5 text-[0.8rem] text-slate-50 transition hover:bg-slate-800"
                 >
                   {t.choosePersona}
-                </a>
+                </Link>
               </div>
             </article>
           ))}
         </div>
       </section>
 
-      {/* USAGE SECTION */}
+      {/* USAGE */}
       <section className="mx-auto max-w-5xl border-t border-slate-900 px-4 pb-8 pt-7">
         <h2 className="mb-3 text-lg font-semibold md:text-xl">
           {t.usageTitle}
@@ -602,41 +582,41 @@ export default function HomePage() {
         <p className="mx-auto max-w-xl text-sm text-slate-300">
           {t.pricingText}
         </p>
-        <a
+        <Link
           href={withLang("/pricing")}
           className="inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-5 py-2 text-[0.9rem] font-medium text-white shadow-lg shadow-rose-400/40 transition hover:brightness-110"
         >
           {t.pricingCta}
-        </a>
+        </Link>
       </section>
 
       {/* FOOTER */}
       <footer className="mx-auto max-w-5xl px-4 pb-4 text-center text-[0.78rem] text-slate-400">
         <div className="mb-2">{t.footerCopy}</div>
         <div className="flex flex-wrap justify-center gap-3">
-          <a href={withLang("/legal")} className="hover:text-slate-100">
+          <Link href={withLang("/legal")} className="hover:text-slate-100">
             {t.footerLinks.legal}
-          </a>
-          <a
+          </Link>
+          <Link
             href={withLang("/legal/privacy")}
             className="hover:text-slate-100"
           >
             {t.footerLinks.privacy}
-          </a>
-          <a
+          </Link>
+          <Link
             href={withLang("/legal/terms")}
             className="hover:text-slate-100"
           >
             {t.footerLinks.terms}
-          </a>
-          <a href={withLang("/contact")} className="hover:text-slate-100">
+          </Link>
+          <Link href={withLang("/contact")} className="hover:text-slate-100">
             {t.footerLinks.contact}
-          </a>
-          <a href={withLang("/about")} className="hover:text-slate-100">
+          </Link>
+          <Link href={withLang("/about")} className="hover:text-slate-100">
             {t.footerLinks.about}
-          </a>
+          </Link>
         </div>
       </footer>
     </main>
   );
-}
+                               }
