@@ -4,7 +4,6 @@ import Stripe from "stripe";
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL; // ex. https://amoriai.app
 
-// Vérifications minimales au démarrage
 if (!stripeSecretKey) {
   throw new Error("STRIPE_SECRET_KEY is not defined in environment variables.");
 }
@@ -17,6 +16,28 @@ const stripe = new Stripe(stripeSecretKey, {
 });
 
 type PlanId = "chat" | "plus" | "unlimited";
+
+// 🔗 Mapping entre TON code, les prices Stripe et les plans Supabase
+const PLAN_CONFIG: Record<
+  PlanId,
+  { priceId?: string; pricingPlanId?: string }
+> = {
+  chat: {
+    priceId: process.env.STRIPE_PRICE_CHAT,
+    // UUID du plan "AmorIA Chat" dans public.pricing_plans
+    pricingPlanId: process.env.PRICING_PLAN_CHAT_ID,
+  },
+  plus: {
+    priceId: process.env.STRIPE_PRICE_PLUS,
+    // UUID du plan "AmorIA Plus"
+    pricingPlanId: process.env.PRICING_PLAN_PLUS_ID,
+  },
+  unlimited: {
+    priceId: process.env.STRIPE_PRICE_UNLIMITED,
+    // UUID du plan "AmorIA Illimité"
+    pricingPlanId: process.env.PRICING_PLAN_UNLIMITED_ID,
+  },
+};
 
 export async function POST(req: Request) {
   try {
@@ -40,37 +61,39 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2) Mapping des prix Stripe (IDs des price_xxx de ton Dashboard)
-    const PRICE_MAP: Record<PlanId, string | undefined> = {
-      chat: process.env.STRIPE_PRICE_CHAT,
-      plus: process.env.STRIPE_PRICE_PLUS,
-      unlimited: process.env.STRIPE_PRICE_UNLIMITED,
-    };
+    // 2) Récupérer la config du plan
+    const cfg = PLAN_CONFIG[plan];
 
-    const priceId = PRICE_MAP[plan];
-
-    if (!priceId) {
+    if (!cfg || !cfg.priceId) {
       return NextResponse.json(
         { error: "Aucun price Stripe configuré pour ce plan." },
         { status: 500 }
       );
     }
 
-    // 3) Création de la session de checkout Stripe
+    if (!cfg.pricingPlanId) {
+      return NextResponse.json(
+        { error: "Aucun PRICING_PLAN_*_ID configuré pour ce plan." },
+        { status: 500 }
+      );
+    }
+
+    // 3) Créer la session de checkout Stripe
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [
         {
-          price: priceId,
+          price: cfg.priceId,
           quantity: 1,
         },
       ],
       success_url: `${siteUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/payment/cancel`,
       metadata: {
-        user_id,
-        plan,
+        user_id,                     // id Supabase de l'utilisateur
+        plan_code: plan,             // "chat" | "plus" | "unlimited"
+        pricing_plan_id: cfg.pricingPlanId, // UUID de public.pricing_plans
       },
     });
 
@@ -81,7 +104,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4) On renvoie l’URL au front
+    // 4) Retourner l’URL au frontend
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("Stripe checkout error:", err);
