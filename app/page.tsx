@@ -436,13 +436,13 @@ export default function HomePage({ searchParams }: PageProps) {
               ))}
             </div>
 
-            {/* Login pill – visible partout */}
-            <Link
-              href={withLang("/login")}
-              className="inline-flex items-center justify-center rounded-full border border-slate-500/70 px-3 py-1 text-[0.7rem] text-slate-100 transition hover:bg-slate-900/80"
-            >
-              {t.navLogin}
-            </Link>
+           {/* Login – seulement sur écran moyen et plus (desktop/tablette), pas sur mobile */}
+<Link
+  href={withLang("/login")}
+  className="hidden items-center justify-center rounded-full border border-slate-500/70 px-3 py-1 text-[0.7rem] text-slate-100 transition hover:bg-slate-900/80 md:inline-flex"
+>
+  {t.navLogin}
+</Link>
 
             {/* Signup header – desktop seulement */}
             <Link
