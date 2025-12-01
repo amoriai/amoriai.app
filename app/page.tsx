@@ -57,14 +57,14 @@ const STRINGS: Record<Locale, Copy> = {
     heroKicker: "BIENVENUE SUR AMORIAI.APP",
     heroTitle: "Une présence bienveillante pour parler, réfléchir et avancer.",
     heroSubtitle:
-      "Amoriai est une présence douce, disponible 24/7, pour parler librement, réfléchir ensemble, poser les bonnes questions et t’aider à mieux comprendre ce que tu ressens, sans jugement.",
+      "AmorIAI est une présence douce, disponible 24/7, pour parler librement, réfléchir ensemble, poser les bonnes questions et t’aider à mieux comprendre ce que tu ressens, sans jugement.",
     heroPrimary: "Créer mon compte gratuit",
     heroSupport:
       "Sans engagement • Gratuit pour commencer • Annulation en tout temps",
     langNote: "AmorIAI vous accueille en français, anglais ou espagnol.",
     personasTitle: "Commence gratuitement avec AmorIAI (en texte)",
     personasSubtitle:
-      "Crée ton compte gratuitement et commence à parler avec Amoriai dès maintenant. Écris librement, à ton rythme. La voix (parler avec ton Amoriai) est disponible avec l’abonnement payant.",
+      "Crée ton compte gratuitement et commence à parler avec AmorIAI dès maintenant. Écris librement, à ton rythme. La voix (parler avec ton AmorIAI) est disponible avec l’abonnement payant.",
     personas: [
       {
         id: "lyra",
@@ -92,7 +92,7 @@ const STRINGS: Record<Locale, Copy> = {
       },
     ],
     choosePersona: "Créer mon compte gratuit",
-    usageTitle: "À quoi peut te servir Amoriai au quotidien ?",
+    usageTitle: "À quoi peut te servir AmorIAI au quotidien ?",
     usageBullets: [
       "Parler quand tu n’as personne à qui te confier.",
       "Écrire ce que tu ressens comme dans un journal intime.",
@@ -100,7 +100,7 @@ const STRINGS: Record<Locale, Copy> = {
       "Clarifier une décision qui te fait hésiter.",
       "Te sentir écouté·e, sans pression et sans jugement.",
     ],
-    testimonialsTitle: "Ce que les utilisateurs ressentent avec Amoriai",
+    testimonialsTitle: "Ce que les utilisateurs ressentent avec AmorIAI",
     testimonials: [
       {
         quote:
@@ -156,7 +156,7 @@ const STRINGS: Record<Locale, Copy> = {
     langNote: "AmorIAI is available in French, English and Spanish.",
     personasTitle: "Start for free with AmorIAI (text only)",
     personasSubtitle:
-      "Create your free account and start talking with Amoriai right away. Write freely, at your own pace. Voice (talking with your Amoriai) is available with the paid subscription.",
+      "Create your free account and start talking with AmorIAI right away. Write freely, at your own pace. Voice (talking with your AmorIAI) is available with the paid subscription.",
     personas: [
       {
         id: "lyra",
@@ -184,7 +184,7 @@ const STRINGS: Record<Locale, Copy> = {
       },
     ],
     choosePersona: "Create my free account",
-    usageTitle: "How can Amoriai support you day to day?",
+    usageTitle: "How can AmorIAI support you day to day?",
     usageBullets: [
       "Talk when you don’t feel like you have someone to confide in.",
       "Write what you feel, like in a private journal.",
@@ -192,7 +192,7 @@ const STRINGS: Record<Locale, Copy> = {
       "Think through a decision when you’re hesitating.",
       "Feel listened to, with no pressure and no judgement.",
     ],
-    testimonialsTitle: "What people say about Amoriai",
+    testimonialsTitle: "What people say about AmorIAI",
     testimonials: [
       {
         quote:
@@ -437,7 +437,7 @@ export default function HomePage({ searchParams }: PageProps) {
             {/* LOGIN visible mobile + desktop */}
             <Link
               href={withLang("/login")}
-              className="inline-flex items-center justify-center rounded-full border border-slate-500/70 px-3 py-1.5 text-[0.75rem] text-slate-100 transition hover:bg-slate-900/80"
+              className="inline-flex items-center justify-center rounded-full border border-slate-500/70 px-3 py-1 text-[0.7rem] text-slate-100 transition hover:bg-slate-900/80"
             >
               {t.navLogin}
             </Link>
