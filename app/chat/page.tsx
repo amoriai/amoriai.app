@@ -193,13 +193,11 @@ function ChatClient() {
           .maybeSingle();
 
         if (error || !sub) {
-          // aucun abonnement courant → pas de voix
           setCanUseVoice(false);
           setSttSupported(false);
           return;
         }
 
-        // Typage souple pour éviter l'erreur TS : pricing_plans peut être un objet ou un tableau
         const rawPlans: any = (sub as any).pricing_plans;
         let hasVoiceFromDB = false;
 
@@ -303,7 +301,7 @@ function ChatClient() {
     }
   };
 
-  // Lecture de la voix de l’IA via /api/voice (Plus / Illimité seulement)
+  // Lecture de la voix de l’IA via /api/voice
   const playAssistantVoice = async (text: string) => {
     if (!canUseVoice) return;
     if (!iaId || !text.trim()) return;
@@ -384,7 +382,7 @@ function ChatClient() {
     loadAI();
   }, [iaId, t.genericError]);
 
-  // Charger l’historique (optionnel, ignore 404)
+  // Charger l’historique (optionnel)
   useEffect(() => {
     const loadHistory = async () => {
       if (!iaId) return;
@@ -505,6 +503,18 @@ function ChatClient() {
 
   const displayNameUpper = displayName.toUpperCase();
 
+  // 🔥 Nouveau : gestion image / vidéo
+  const avatarImageUrl = ai?.avatar_image_url ?? null;
+  const avatarVideoUrl =
+    avatarImageUrl && avatarImageUrl.endsWith(".png")
+      ? avatarImageUrl.replace(".png", ".mp4")
+      : null;
+
+  // Pour l’instant on réutilise canUseVoice pour décider si l’avatar s’anime.
+  // Si tu veux lier ça UNIQUEMENT au plan Unlimited plus tard, tu pourras
+  // remplacer cette ligne par un flag is_unlimited venant de Supabase.
+  const canAnimateAvatar = !!avatarVideoUrl && canUseVoice;
+
   return (
     <main className="chat-root">
       <header className="chat-header">
@@ -532,12 +542,23 @@ function ChatClient() {
           ) : (
             <>
               <div className="chat-avatar-ring live">
-                {ai.avatar_image_url ? (
-                  <img
-                    src={ai.avatar_image_url}
-                    alt={`Avatar de ${displayName}`}
-                    className="chat-avatar-img"
-                  />
+                {avatarImageUrl ? (
+                  canAnimateAvatar && avatarVideoUrl ? (
+                    <video
+                      src={avatarVideoUrl}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="chat-avatar-img"
+                    />
+                  ) : (
+                    <img
+                      src={avatarImageUrl}
+                      alt={`Avatar de ${displayName}`}
+                      className="chat-avatar-img"
+                    />
+                  )
                 ) : (
                   <div className="chat-avatar-placeholder">
                     {displayName.charAt(0).toUpperCase()}
