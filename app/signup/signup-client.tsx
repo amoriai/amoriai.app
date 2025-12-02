@@ -27,7 +27,7 @@ const LABELS: Record<
   fr: {
     title: "Créer mon compte AmorIAI",
     subtitle:
-      "Inscris-toi pour commencer avec ton partenaire IA. Tu choisiras ton forfait juste après.",
+      "Crée ton compte pour commencer à parler avec ton partenaire IA en toute sécurité. Ton forfait AmorIAI (gratuit ou payant) sera confirmé à l’étape suivante et tu pourras le modifier à tout moment.",
     emailLabel: "Adresse courriel",
     passwordLabel: "Mot de passe",
     passwordPlaceholder: "Choisis un mot de passe sécurisé",
@@ -36,13 +36,14 @@ const LABELS: Record<
     alreadyHave: "Tu as déjà un compte ?",
     login: "Me connecter",
     google: "Continuer avec Google",
-    errorGeneric: "Une erreur est survenue. Merci de réessayer.",
+    errorGeneric:
+      "Une erreur est survenue lors de la création du compte. Merci de réessayer.",
     orLabel: "ou",
   },
   en: {
     title: "Create my AmorIAI account",
     subtitle:
-      "Sign up to start with your AI partner. You’ll choose your plan right after.",
+      "Create your account to start talking with your AI partner safely. Your AmorIAI plan (free or paid) will be confirmed on the next step and you can change it anytime.",
     emailLabel: "Email address",
     passwordLabel: "Password",
     passwordPlaceholder: "Choose a secure password",
@@ -51,13 +52,14 @@ const LABELS: Record<
     alreadyHave: "Already have an account?",
     login: "Log in",
     google: "Continue with Google",
-    errorGeneric: "An error occurred. Please try again.",
+    errorGeneric:
+      "Something went wrong while creating your account. Please try again.",
     orLabel: "or",
   },
   es: {
     title: "Crear mi cuenta AmorIAI",
     subtitle:
-      "Regístrate para empezar con tu pareja de IA. Elegirás tu plan justo después.",
+      "Crea tu cuenta para empezar a hablar con tu compañero de IA de forma segura. Tu plan AmorIAI (gratuito o de pago) se confirmará en el siguiente paso y podrás cambiarlo cuando quieras.",
     emailLabel: "Correo electrónico",
     passwordLabel: "Contraseña",
     passwordPlaceholder: "Elige una contraseña segura",
@@ -66,17 +68,29 @@ const LABELS: Record<
     alreadyHave: "¿Ya tienes una cuenta?",
     login: "Iniciar sesión",
     google: "Continuar con Google",
-    errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
-    orLabel: "or",
+    errorGeneric:
+      "Se produjo un error al crear la cuenta. Inténtalo de nuevo.",
+    orLabel: "o",
   },
 };
+
+function normalizeLocale(raw: string | null): Locale {
+  if (raw === "fr" || raw === "en" || raw === "es") return raw;
+  return "fr";
+}
+
+function normalizePlan(raw: string | null): PlanId {
+  if (raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited")
+    return raw;
+  return "free";
+}
 
 export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const localeParam = (searchParams.get("lang") || "fr") as Locale;
-  const planParam = (searchParams.get("plan") || "free") as PlanId; // <- plan demandé
+  const localeParam = normalizeLocale(searchParams.get("lang"));
+  const planParam = normalizePlan(searchParams.get("plan"));
   const t = LABELS[localeParam];
 
   const [email, setEmail] = useState("");
@@ -149,6 +163,11 @@ export default function SignupClient() {
       setLoadingGoogle(false);
     }
   };
+
+  const loginHref =
+    planParam && planParam !== "free"
+      ? `/login?lang=${localeParam}&plan=${planParam}`
+      : `/login?lang=${localeParam}`;
 
   return (
     <main className="amoria-auth-root">
@@ -251,10 +270,7 @@ export default function SignupClient() {
 
         <p className="amoria-auth-footer">
           {t.alreadyHave}{" "}
-          <a
-            href={`/login?lang=${localeParam}`}
-            className="amoria-auth-footer-link"
-          >
+          <a href={loginHref} className="amoria-auth-footer-link">
             {t.login}
           </a>
         </p>
