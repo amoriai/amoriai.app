@@ -74,12 +74,13 @@ export default function MyAmoriaPage() {
       if (g) setGoal(g);
       if (avatar) setAvatarUrl(avatar);
     } catch {
-      // ignore
+      // rien, on laisse en mode démo
     }
   }, []);
 
   const t = STRINGS[locale];
 
+  // ⚠️ Ici il manquait les backticks dans ta version
   const homeUrl = (() => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -130,6 +131,7 @@ export default function MyAmoriaPage() {
             gap: "2rem",
           }}
         >
+          {/* Bloc texte / infos IA */}
           <div
             style={{
               background:
@@ -189,13 +191,19 @@ export default function MyAmoriaPage() {
                 >
                   {t.goalLabel}
                 </h2>
-                <p style={{ fontSize: "0.9rem", color: "#e5e7eb" }}>
+                <p
+                  style={{
+                    fontSize: "0.9rem",
+                    color: "#e5e7eb",
+                  }}
+                >
                   {goal}
                 </p>
               </div>
             )}
           </div>
 
+          {/* Bloc avatar (statique ici) */}
           <aside>
             <div
               style={{
