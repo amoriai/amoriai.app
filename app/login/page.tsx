@@ -4,6 +4,7 @@ import React, { useEffect, useState, FormEvent } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
+type PlanId = "free" | "chat" | "plus" | "unlimited" | null;
 
 const STRINGS: Record<
   Locale,
@@ -23,7 +24,7 @@ const STRINGS: Record<
   fr: {
     title: "Me connecter",
     subtitle:
-      "Connecte-toi pour retrouver ton AmorIA et continuer à discuter.",
+      "Connecte-toi pour retrouver ton AmorIAI et continuer la conversation là où tu l’avais laissée.",
     emailLabel: "Adresse courriel",
     passwordLabel: "Mot de passe",
     or: "— OU —",
@@ -32,11 +33,12 @@ const STRINGS: Record<
     submitting: "Connexion en cours…",
     backToSignup: "Pas encore de compte ? Créer mon compte",
     errorGeneric:
-      "Impossible de te connecter. Vérifie tes informations ou essaie à nouveau.",
+      "Connexion impossible. Vérifie ton courriel et ton mot de passe, puis réessaie.",
   },
   en: {
     title: "Log in",
-    subtitle: "Log in to find your AmorIA and continue chatting.",
+    subtitle:
+      "Log in to find your AmorIAI again and pick up the conversation where you left off.",
     emailLabel: "Email address",
     passwordLabel: "Password",
     or: "— OR —",
@@ -45,12 +47,12 @@ const STRINGS: Record<
     submitting: "Signing you in…",
     backToSignup: "No account yet? Create my account",
     errorGeneric:
-      "Unable to log you in. Check your credentials or try again.",
+      "We couldn’t log you in. Check your email and password, then try again.",
   },
   es: {
     title: "Iniciar sesión",
     subtitle:
-      "Conéctate para reencontrar tu AmorIA y seguir conversando.",
+      "Inicia sesión para reencontrar tu AmorIAI y seguir la conversación donde la dejaste.",
     emailLabel: "Correo electrónico",
     passwordLabel: "Contraseña",
     or: "— O —",
@@ -59,7 +61,7 @@ const STRINGS: Record<
     submitting: "Conectando…",
     backToSignup: "¿Aún no tienes cuenta? Crear mi cuenta",
     errorGeneric:
-      "No se pudo iniciar sesión. Verifica tus datos o inténtalo de nuevo.",
+      "No se pudo iniciar sesión. Verifica tu correo y tu contraseña e inténtalo de nuevo.",
   },
 };
 
@@ -68,10 +70,25 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-// URL de destination après connexion (email ou Google)
-function buildRedirectUrl(locale: Locale): string {
+function normalizePlan(raw: string | null): PlanId {
+  if (raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited")
+    return raw;
+  return null;
+}
+
+// Construit l’URL où on envoie l’utilisateur après connexion
+function buildRedirectUrl(locale: Locale, plan: PlanId): string {
   if (typeof window === "undefined") return "/";
-  // si un jour tu veux une autre page, change "/my-amoria" ici
+
+  // Si un plan payant a été choisi → on redirige vers la page de paiement
+  if (plan && plan !== "free") {
+    const url = new URL("/payment", window.location.origin);
+    url.searchParams.set("lang", locale);
+    url.searchParams.set("plan", plan);
+    return url.toString();
+  }
+
+  // Sinon → espace AmorIAI (version gratuite / utilisation normale)
   const url = new URL("/my-amoria", window.location.origin);
   url.searchParams.set("lang", locale);
   return url.toString();
@@ -79,18 +96,23 @@ function buildRedirectUrl(locale: Locale): string {
 
 export default function LoginPage() {
   const [locale, setLocale] = useState<Locale>("fr");
+  const [plan, setPlan] = useState<PlanId>(null);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Lecture des paramètres ?lang= et ?plan=
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const lang = normalizeLocale(params.get("lang"));
+      const planParam = normalizePlan(params.get("plan"));
       setLocale(lang);
+      setPlan(planParam);
     } catch {
-      // on garde "fr"
+      // on garde les valeurs par défaut
     }
   }, []);
 
@@ -101,10 +123,12 @@ export default function LoginPage() {
       setIsSubmitting(true);
       setError(null);
 
+      const redirectTo = buildRedirectUrl(locale, plan);
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: buildRedirectUrl(locale),
+          redirectTo,
         },
       });
 
@@ -113,7 +137,7 @@ export default function LoginPage() {
         setError(t.errorGeneric);
         setIsSubmitting(false);
       }
-      // si tout va bien, Supabase redirige vers redirectTo
+      // En cas de succès, Supabase redirige directement vers redirectTo
     } catch (e) {
       console.error(e);
       setError(t.errorGeneric);
@@ -139,14 +163,20 @@ export default function LoginPage() {
         return;
       }
 
-      // redirection après login email/mot de passe
-      window.location.href = buildRedirectUrl(locale);
+      // Redirection après login email/mot de passe
+      window.location.href = buildRedirectUrl(locale, plan);
     } catch (e) {
       console.error(e);
       setError(t.errorGeneric);
       setIsSubmitting(false);
     }
   };
+
+  // URL vers signup en conservant le plan choisi
+  const signupHref =
+    plan && plan !== "free"
+      ? `/signup?lang=${locale}&plan=${plan}`
+      : `/signup?lang=${locale}`;
 
   return (
     <main
@@ -212,7 +242,7 @@ export default function LoginPage() {
         </form>
 
         <a
-          href={`/signup?lang=${locale}`}
+          href={signupHref}
           className="mt-4 block text-center text-[0.8rem] text-slate-400 hover:text-slate-100"
         >
           {t.backToSignup}
