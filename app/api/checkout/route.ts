@@ -17,25 +17,16 @@ const stripe = new Stripe(stripeSecretKey, {
 
 type PlanId = "chat" | "plus" | "unlimited";
 
-// 🔗 Mapping entre TON code, les prices Stripe et les plans Supabase
-const PLAN_CONFIG: Record<
-  PlanId,
-  { priceId?: string; pricingPlanId?: string }
-> = {
+// 🔗 Mapping entre TON code et les prices Stripe (UNIQUEMENT les priceId)
+const PLAN_CONFIG: Record<PlanId, { priceId?: string }> = {
   chat: {
     priceId: process.env.STRIPE_PRICE_CHAT,
-    // UUID du plan "AmorIA Chat" dans public.pricing_plans
-    pricingPlanId: process.env.PRICING_PLAN_CHAT_ID,
   },
   plus: {
     priceId: process.env.STRIPE_PRICE_PLUS,
-    // UUID du plan "AmorIA Plus"
-    pricingPlanId: process.env.PRICING_PLAN_PLUS_ID,
   },
   unlimited: {
     priceId: process.env.STRIPE_PRICE_UNLIMITED,
-    // UUID du plan "AmorIA Illimité"
-    pricingPlanId: process.env.PRICING_PLAN_UNLIMITED_ID,
   },
 };
 
@@ -71,13 +62,6 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!cfg.pricingPlanId) {
-      return NextResponse.json(
-        { error: "Aucun PRICING_PLAN_*_ID configuré pour ce plan." },
-        { status: 500 }
-      );
-    }
-
     // 3) Créer la session de checkout Stripe
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -91,9 +75,8 @@ export async function POST(req: Request) {
       success_url: `${siteUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/payment/cancel`,
       metadata: {
-        user_id,                     // id Supabase de l'utilisateur
-        plan_code: plan,             // "chat" | "plus" | "unlimited"
-        pricing_plan_id: cfg.pricingPlanId, // UUID de public.pricing_plans
+        user_id,          // id Supabase de l'utilisateur
+        plan_code: plan,  // "chat" | "plus" | "unlimited"
       },
     });
 
