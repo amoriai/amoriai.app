@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
-type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 const LABELS: Record<
   Locale,
@@ -22,14 +21,14 @@ const LABELS: Record<
     alreadyHave: string;
     login: string;
     errorGeneric: string;
-    noPlanInfo: string;
-    planPrefix: string;
+    orEmail: string;
+    legal: string;
   }
 > = {
   fr: {
     title: "Créer mon compte AmorIAI",
     subtitle:
-      "Étape 1 : crée ton compte. Tu choisiras ton forfait (gratuit ou payant) juste après.",
+      "Étape 1 : crée ton compte. À l’étape suivante, tu choisiras ton forfait (gratuit ou payant).",
     emailLabel: "Adresse courriel",
     passwordLabel: "Mot de passe",
     passwordPlaceholder: "Choisis un mot de passe sécurisé",
@@ -40,13 +39,14 @@ const LABELS: Record<
     alreadyHave: "Tu as déjà un compte ?",
     login: "Me connecter",
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
-    noPlanInfo: "Tu pourras choisir ton forfait à l’étape suivante.",
-    planPrefix: "Forfait sélectionné : ",
+    orEmail: "ou avec ton adresse courriel",
+    legal:
+      "En continuant, tu confirmes accepter les Conditions d’utilisation et la Politique de confidentialité d’AmorIAI.",
   },
   en: {
     title: "Create my AmorIAI account",
     subtitle:
-      "Step 1: create your account. You’ll choose your plan (free or paid) right after.",
+      "Step 1: create your account. On the next step, you’ll choose your plan (free or paid).",
     emailLabel: "Email address",
     passwordLabel: "Password",
     passwordPlaceholder: "Choose a secure password",
@@ -57,13 +57,14 @@ const LABELS: Record<
     alreadyHave: "Already have an account?",
     login: "Log in",
     errorGeneric: "An error occurred. Please try again.",
-    noPlanInfo: "You’ll choose your plan on the next step.",
-    planPrefix: "Selected plan: ",
+    orEmail: "or with your email",
+    legal:
+      "By continuing, you agree to AmorIAI’s Terms of Use and Privacy Policy.",
   },
   es: {
     title: "Crear mi cuenta AmorIAI",
     subtitle:
-      "Paso 1: crea tu cuenta. Podrás elegir tu plan (gratis o de pago) justo después.",
+      "Paso 1: crea tu cuenta. En el siguiente paso elegirás tu plan (gratis o de pago).",
     emailLabel: "Correo electrónico",
     passwordLabel: "Contraseña",
     passwordPlaceholder: "Elige una contraseña segura",
@@ -74,29 +75,9 @@ const LABELS: Record<
     alreadyHave: "¿Ya tienes una cuenta?",
     login: "Iniciar sesión",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
-    noPlanInfo: "Elegirás tu plan en el siguiente paso.",
-    planPrefix: "Plan seleccionado: ",
-  },
-};
-
-const PLAN_NAMES: Record<Locale, Record<PlanId, string>> = {
-  fr: {
-    free: "Découverte (gratuit)",
-    chat: "Chat",
-    plus: "AmorIAI Plus",
-    unlimited: "AmorIAI illimité",
-  },
-  en: {
-    free: "Discovery (free)",
-    chat: "Chat",
-    plus: "AmorIAI Plus",
-    unlimited: "AmorIAI Unlimited",
-  },
-  es: {
-    free: "Descubrimiento (gratis)",
-    chat: "Chat",
-    plus: "AmorIAI Plus",
-    unlimited: "AmorIAI Ilimitado",
+    orEmail: "o con tu correo",
+    legal:
+      "Al continuar, confirmas que aceptas los Términos de uso y la Política de privacidad de AmorIAI.",
   },
 };
 
@@ -105,7 +86,6 @@ export default function SignupPage() {
   const searchParams = useSearchParams();
 
   const localeParam = (searchParams.get("lang") as Locale) || "fr";
-  const planParam = searchParams.get("plan") as PlanId | null;
   const t = LABELS[localeParam];
 
   const [email, setEmail] = useState("");
@@ -116,10 +96,8 @@ export default function SignupPage() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const planLabel = planParam ? PLAN_NAMES[localeParam][planParam] : null;
-
-  // Après la création du compte → toujours vers la page des forfaits
-  const redirectAfterSignup = () => {
+  // Après création du compte → TOUJOURS la page des forfaits
+  const goToPricing = () => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
     router.push(`/pricing?${params.toString()}`);
@@ -142,7 +120,8 @@ export default function SignupPage() {
       return;
     }
 
-    redirectAfterSignup();
+    // Succès → page des forfaits
+    goToPricing();
   };
 
   const handleGoogleSignup = async () => {
@@ -154,7 +133,6 @@ export default function SignupPage() {
       const params = new URLSearchParams();
       params.set("lang", localeParam);
 
-      // Même logique que pour email : retour sur /pricing
       const redirectTo = `${base}/pricing?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -199,16 +177,6 @@ export default function SignupPage() {
         <h1 className="mb-1 text-xl font-semibold">{t.title}</h1>
         <p className="mb-3 text-sm text-slate-300">{t.subtitle}</p>
 
-        {planLabel ? (
-          <p className="mb-4 inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
-            <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            {t.planPrefix}
-            <span className="ml-1 font-semibold">{planLabel}</span>
-          </p>
-        ) : (
-          <p className="mb-4 text-xs text-slate-400">{t.noPlanInfo}</p>
-        )}
-
         {/* Bouton Google */}
         <button
           type="button"
@@ -220,16 +188,10 @@ export default function SignupPage() {
         </button>
 
         <p className="mb-3 text-center text-[0.78rem] text-slate-500">
-          —{" "}
-          {localeParam === "fr"
-            ? "ou avec ton adresse courriel"
-            : localeParam === "en"
-            ? "or with your email"
-            : "o con tu correo"}{" "}
-          —
+          — {t.orEmail} —
         </p>
 
-        {/* FORMULAIRE */}
+        {/* Formulaire email + mot de passe */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <label className="flex flex-col gap-1 text-[0.8rem]">
             {t.emailLabel}
@@ -265,6 +227,7 @@ export default function SignupPage() {
                     : "Afficher le mot de passe"
                 }
               >
+                {/* Icône œil */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -312,38 +275,9 @@ export default function SignupPage() {
           </a>
         </p>
 
-        {/* Mentions */}
+        {/* Mentions légales */}
         <p className="mt-3 text-center text-[0.68rem] text-slate-500">
-          {localeParam === "fr" && (
-            <>
-              En continuant, tu confirmes accepter les{" "}
-              <span className="text-slate-300">
-                Conditions d’utilisation
-              </span>{" "}
-              et la{" "}
-              <span className="text-slate-300">
-                Politique de confidentialité
-              </span>{" "}
-              d’AmorIAI.
-            </>
-          )}
-          {localeParam === "en" && (
-            <>
-              By continuing, you agree to AmorIAI’s{" "}
-              <span className="text-slate-300">Terms of Use</span> and{" "}
-              <span className="text-slate-300">Privacy Policy</span>.
-            </>
-          )}
-          {localeParam === "es" && (
-            <>
-              Al continuar, confirmas que aceptas los{" "}
-              <span className="text-slate-300">Términos de uso</span> y la{" "}
-              <span className="text-slate-300">
-                Política de privacidad
-              </span>{" "}
-              de AmorIAI.
-            </>
-          )}
+          {t.legal}
         </p>
       </section>
     </main>
