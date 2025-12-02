@@ -105,7 +105,7 @@ export default function SignupPage() {
   const searchParams = useSearchParams();
 
   const localeParam = (searchParams.get("lang") as Locale) || "fr";
-  const planParam = searchParams.get("plan") as PlanId | null; // peut être null
+  const planParam = searchParams.get("plan") as PlanId | null;
   const t = LABELS[localeParam];
 
   const [email, setEmail] = useState("");
@@ -116,30 +116,13 @@ export default function SignupPage() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const planLabel =
-    planParam ? PLAN_NAMES[localeParam][planParam] : null;
+  const planLabel = planParam ? PLAN_NAMES[localeParam][planParam] : null;
 
-  // Où aller APRÈS la création du compte (email + password)
+  // Après la création du compte → toujours vers la page des forfaits
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
-
-    // Aucun plan dans l’URL : on envoie vers la page des forfaits
-    if (!planParam) {
-      router.push(`/pricing?${params.toString()}`);
-      return;
-    }
-
-    // Plan gratuit : on va directement créer l’AmorIAI
-    if (planParam === "free") {
-      params.set("plan", "free");
-      router.push(`/create-amoria?${params.toString()}`);
-      return;
-    }
-
-    // Plan payant : on va vers la page de paiement
-    params.set("plan", planParam);
-    router.push(`/payment?${params.toString()}`);
+    router.push(`/pricing?${params.toString()}`);
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -171,17 +154,8 @@ export default function SignupPage() {
       const params = new URLSearchParams();
       params.set("lang", localeParam);
 
-      let redirectTo: string;
-
-      if (!planParam) {
-        redirectTo = `${base}/pricing?${params.toString()}`;
-      } else if (planParam === "free") {
-        params.set("plan", "free");
-        redirectTo = `${base}/create-amoria?${params.toString()}`;
-      } else {
-        params.set("plan", planParam);
-        redirectTo = `${base}/payment?${params.toString()}`;
-      }
+      // Même logique que pour email : retour sur /pricing
+      const redirectTo = `${base}/pricing?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -246,11 +220,13 @@ export default function SignupPage() {
         </button>
 
         <p className="mb-3 text-center text-[0.78rem] text-slate-500">
-          — {localeParam === "fr"
+          —{" "}
+          {localeParam === "fr"
             ? "ou avec ton adresse courriel"
             : localeParam === "en"
             ? "or with your email"
-            : "o con tu correo"} —
+            : "o con tu correo"}{" "}
+          —
         </p>
 
         {/* FORMULAIRE */}
@@ -289,7 +265,6 @@ export default function SignupPage() {
                     : "Afficher le mot de passe"
                 }
               >
-                {/* Icône œil simple */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -337,7 +312,7 @@ export default function SignupPage() {
           </a>
         </p>
 
-        {/* Petites mentions */}
+        {/* Mentions */}
         <p className="mt-3 text-center text-[0.68rem] text-slate-500">
           {localeParam === "fr" && (
             <>
