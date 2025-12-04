@@ -494,12 +494,13 @@ export default function PricingPage() {
     }
   };
 
-  /* ============
+   /* ============
      CLICK SUR UNE CARTE DE PRIX
   ============ */
 
-   const handleChoosePlan = async (planId: PlanId) => {
+  const handleChoosePlan = async (planId: PlanId) => {
     setSessionLoading(true);
+
     try {
       const { data, error } = await supabase.auth.getSession();
       const currentSession = data?.session;
@@ -508,25 +509,27 @@ export default function PricingPage() {
         console.error("getSession error", error);
       }
 
-      // 1) Pas connecté → on va au signup avec le bon plan
+      // 1) Pas connecté → signup avec le bon plan
       if (!currentSession?.user) {
         goToSignupWithPlan(planId);
         return;
       }
 
-      // 2) Connecté + plan PAYANT → toujours Stripe/payment
+      // 2) Connecté + plan PAYANT → Stripe/payment
       if (planId !== "free") {
         goToPayment(planId);
         return;
       }
 
-      // 3) Connecté + plan FREE → création d’AmorIAI gratuit
+      // 3) Connecté + plan GRATUIT → création d’AmorIAI
       goToCreateAmoria("free");
     } finally {
       setSessionLoading(false);
     }
   };
 
+  return (
+    <main className="amoria-root">
 
       // 3) Connecté + plan payant → Stripe/payment
       goToPayment(planId);
