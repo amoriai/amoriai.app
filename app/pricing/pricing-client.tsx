@@ -418,33 +418,43 @@ export default function PricingPage() {
     window.history.replaceState(null, "", newUrl);
   };
 
+  // ✅ NOUVELLE VERSION
   const handleChoosePlan = async (planId: PlanId) => {
     const params = new URLSearchParams();
     params.set("lang", locale);
     params.set("plan", planId);
 
-    const { data } = await supabase.auth.getUser();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    if (!data?.user) {
+    // Pas connecté → signup
+    if (!session?.user) {
       router.push(`/signup?${params.toString()}`);
       return;
     }
 
+    // Connecté + plan gratuit → direct create-amoria
     if (planId === "free") {
       router.push(`/create-amoria?${params.toString()}`);
-    } else {
-      router.push(`/payment?${params.toString()}`);
+      return;
     }
+
+    // Connecté + plan payant → Stripe/payment
+    router.push(`/payment?${params.toString()}`);
   };
 
+  // ✅ NOUVELLE VERSION
   const handleHeroCta = async () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
+    params.set("plan", "free");
 
-    const { data } = await supabase.auth.getUser();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    if (data?.user) {
-      params.set("plan", "free");
+    if (session?.user) {
       router.push(`/create-amoria?${params.toString()}`);
     } else {
       router.push(`/signup?${params.toString()}`);
