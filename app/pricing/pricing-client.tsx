@@ -494,7 +494,7 @@ export default function PricingPage() {
     }
   };
 
-   /* ============
+  /* ============
      CLICK SUR UNE CARTE DE PRIX
   ============ */
 
@@ -523,16 +523,6 @@ export default function PricingPage() {
 
       // 3) Connecté + plan GRATUIT → création d’AmorIAI
       goToCreateAmoria("free");
-    } finally {
-      setSessionLoading(false);
-    }
-  };
-
-  return (
-    <main className="amoria-root">
-
-      // 3) Connecté + plan payant → Stripe/payment
-      goToPayment(planId);
     } finally {
       setSessionLoading(false);
     }
@@ -1205,4 +1195,4 @@ export default function PricingPage() {
       `}</style>
     </main>
   );
-  }
+            }
