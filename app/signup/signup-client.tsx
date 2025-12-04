@@ -11,7 +11,7 @@ export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // On récupère ce qui vient de /pricing?lang=...&plan=...
+  // Ce qui arrive de /pricing?lang=...&plan=...
   const localeParam = (searchParams.get("lang") as Locale) || "fr";
   const initialPlan = (searchParams.get("plan") as PlanId) || "free";
 
@@ -22,22 +22,17 @@ export default function SignupClient() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  /**
-   * Redirection APRÈS création du compte
-   * → on va TOUJOURS sur la page de prix, avec les bons paramètres
-   * On utilise window.location.href pour éviter les 404 de Next en prod.
-   */
+  /** Après création par email → retour sur /pricing */
   const redirectAfterSignup = () => {
     const lang = localeParam || "fr";
     const plan = initialPlan || "free";
 
-    const url = `https://amoriai.app/pricing?lang=${lang}&plan=${plan}`;
+    const url = `/pricing?lang=${lang}&plan=${plan}`;
 
     if (typeof window !== "undefined") {
       window.location.href = url;
     } else {
-      // fallback (dev / SSR)
-      router.replace(`/pricing?lang=${lang}&plan=${plan}`);
+      router.replace(url);
     }
   };
 
@@ -59,10 +54,13 @@ export default function SignupClient() {
       return;
     }
 
-    // Succès → on envoie vers pricing avec les bons paramètres
     redirectAfterSignup();
   };
 
+  /**
+   * Google OAuth
+   * → retour direct sur /pricing (PAS /auth/callback, qui n'existe pas)
+   */
   const handleGoogle = async () => {
     setLoading(true);
     setErrorMsg("");
@@ -70,12 +68,15 @@ export default function SignupClient() {
     const lang = localeParam || "fr";
     const plan = initialPlan || "free";
 
-    // Après Google, Supabase reviendra sur /auth/callback
-    // et /auth/callback devra lui aussi rediriger vers /pricing?lang=...&plan=...
+    const redirectUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/pricing?lang=${lang}&plan=${plan}`
+        : `/pricing?lang=${lang}&plan=${plan}`;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?lang=${lang}&plan=${plan}`,
+        redirectTo: redirectUrl,
       },
     });
 
@@ -141,7 +142,7 @@ export default function SignupClient() {
             <div className="h-px flex-1 bg-slate-700" />
           </div>
 
-          {/* Formulaire */}
+          {/* Formulaire email */}
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-medium uppercase tracking-wide text-slate-300">
