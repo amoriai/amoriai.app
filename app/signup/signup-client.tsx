@@ -1,10 +1,11 @@
 "use client";
 
-import React, { FormEvent, useState } from "react";
+import React, { FormEvent, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
+type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 /* ===========================
    LABELS
@@ -87,6 +88,17 @@ export default function SignupPage() {
   const searchParams = useSearchParams();
 
   const localeParam = (searchParams.get("lang") as Locale) || "fr";
+
+  // on récupère le plan passé depuis /pricing (ou on force "free")
+  const planParam = searchParams.get("plan");
+  const initialPlan: PlanId =
+    planParam === "chat" ||
+    planParam === "plus" ||
+    planParam === "unlimited" ||
+    planParam === "free"
+      ? (planParam as PlanId)
+      : "free";
+
   const t = LABELS[localeParam];
 
   const [email, setEmail] = useState("");
@@ -97,13 +109,31 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
 
   /* ===========================
-     ✅ REDIRECTION SIMPLE
-     → toujours vers /pricing
+     ✅ SI DÉJÀ CONNECTÉ → PRICING
+  =========================== */
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user) {
+        const params = new URLSearchParams();
+        params.set("lang", localeParam);
+        params.set("plan", initialPlan);
+        router.replace(`/pricing?${params.toString()}`);
+      }
+    };
+    checkSession();
+  }, [localeParam, initialPlan, router]);
+
+  /* ===========================
+     ✅ REDIRECTION APRÈS SIGNUP
+     → toujours vers /pricing?lang=..&plan=..
   =========================== */
 
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
+    params.set("plan", initialPlan);
     router.replace(`/pricing?${params.toString()}`);
   };
 
@@ -143,6 +173,7 @@ export default function SignupPage() {
       const base = window.location.origin;
       const params = new URLSearchParams();
       params.set("lang", localeParam);
+      params.set("plan", initialPlan);
 
       const redirectTo = `${base}/pricing?${params.toString()}`;
 
@@ -164,14 +195,14 @@ export default function SignupPage() {
   =========================== */
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-8 text-slate-100"
+    <main
+      className="flex min-h-screen items-center justify-center px-4 py-8 text-slate-100"
       style={{
         background:
           "radial-gradient(circle at top,#020617 0,#020617 45%,#000 100%)",
       }}
     >
       <section className="w-full max-w-md rounded-3xl border border-slate-700/70 bg-gradient-to-b from-slate-950 via-slate-950 to-black/95 p-6 shadow-2xl shadow-slate-950/90">
-
         {/* Titre */}
         <h1 className="mb-1 text-xl font-semibold">{t.title}</h1>
         <p className="mb-2 text-sm text-slate-300">{t.subtitle}</p>
@@ -254,3 +285,4 @@ export default function SignupPage() {
     </main>
   );
 }
+
