@@ -301,7 +301,10 @@ export default function CreateAmoriaPage() {
 
       if (error || !data?.user) {
         const qp = new URLSearchParams();
-        qp.set("lang", langParam === "en" || langParam === "es" ? langParam : "fr");
+        qp.set(
+          "lang",
+          langParam === "en" || langParam === "es" ? langParam : "fr"
+        );
         if (planParam) qp.set("plan", planParam);
         router.push(`/signup?${qp.toString()}`);
         return;
@@ -342,7 +345,9 @@ export default function CreateAmoriaPage() {
     setSaving(true);
 
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      // Vérifier que l'utilisateur est encore logué
+      const { data: userData, error: userError } =
+        await supabase.auth.getUser();
 
       if (userError || !userData?.user) {
         const params = new URLSearchParams();
@@ -385,7 +390,6 @@ sans jugement, en respectant les limites de l’utilisateur.
       if (error) {
         console.error("insert error", error);
         setErrorMsg(t.genericError);
-        setSaving(false);
         return;
       }
 
@@ -395,6 +399,7 @@ sans jugement, en respectant les limites de l’utilisateur.
     } catch (err) {
       console.error(err);
       setErrorMsg(t.genericError);
+    } finally {
       setSaving(false);
     }
   };
@@ -558,8 +563,8 @@ sans jugement, en respectant les limites de l’utilisateur.
 
               <button
                 type="submit"
+                formAction={undefined}
                 className="amoria-btn amoria-btn--primary"
-                onClick={handleSubmit}
                 disabled={saving || !isFormValid}
               >
                 {saving ? t.saving : t.createButton}
@@ -813,4 +818,4 @@ sans jugement, en respectant les limites de l’utilisateur.
       `}</style>
     </main>
   );
-      }
+    }
