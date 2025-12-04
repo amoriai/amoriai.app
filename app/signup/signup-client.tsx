@@ -32,7 +32,7 @@ const LABELS: Record<
   fr: {
     title: "Créer mon compte AmorIAI",
     subtitle:
-      "Étape 1 : crée ton compte. Ensuite tu choisiras ton forfait sur la page des tarifs.",
+      "Étape 1 : crée ton compte. Ensuite tu choisis ton forfait sur la page des tarifs.",
     emailLabel: "Adresse courriel",
     passwordLabel: "Mot de passe",
     passwordPlaceholder: "Choisis un mot de passe sécurisé",
@@ -92,7 +92,7 @@ export default function SignupPage() {
 
   const localeParam = (searchParams.get("lang") as Locale) || "fr";
 
-  // plan passé depuis /pricing (ou "free" par défaut)
+  // plan éventuel passé dans l’URL, sinon "free"
   const planParam = searchParams.get("plan");
   const initialPlan: PlanId =
     planParam === "chat" ||
@@ -113,13 +113,13 @@ export default function SignupPage() {
 
   /* ===========================
      REDIRECTION APRÈS SIGNUP
-     → toujours /pricing?lang=..&plan=..
+     → TOUJOURS vers /pricing
   =========================== */
 
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
-    params.set("plan", initialPlan);
+    params.set("plan", initialPlan); // on garde l’info si elle existait
 
     router.replace(`/pricing?${params.toString()}`);
   };
