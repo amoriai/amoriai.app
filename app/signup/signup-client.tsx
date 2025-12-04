@@ -11,29 +11,34 @@ export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // langue + plan passés dans l’URL (ex : /signup?lang=fr&plan=free)
-  const rawLang = (searchParams.get("lang") || "fr").toLowerCase();
-  const localeParam: Locale =
-    rawLang === "en" || rawLang === "es" ? (rawLang as Locale) : "fr";
-
-  const rawPlan = (searchParams.get("plan") || "free").toLowerCase();
-  const initialPlan: PlanId =
-    rawPlan === "chat" || rawPlan === "plus" || rawPlan === "unlimited"
-      ? (rawPlan as PlanId)
-      : "free";
+  // On récupère ce qui vient de /pricing?lang=...&plan=...
+  const localeParam = (searchParams.get("lang") as Locale) || "fr";
+  const initialPlan = (searchParams.get("plan") as PlanId) || "free";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // après création de compte → toujours vers la page pricing, avec lang + plan
+  /**
+   * Redirection APRÈS création du compte
+   * → on va TOUJOURS sur la page de prix, avec les bons paramètres
+   * On utilise window.location.href pour éviter les 404 de Next en prod.
+   */
   const redirectAfterSignup = () => {
-    const params = new URLSearchParams();
-    params.set("lang", localeParam);
-    params.set("plan", initialPlan);
-    router.replace(`/pricing?${params.toString()}`);
+    const lang = localeParam || "fr";
+    const plan = initialPlan || "free";
+
+    const url = `https://amoriai.app/pricing?lang=${lang}&plan=${plan}`;
+
+    if (typeof window !== "undefined") {
+      window.location.href = url;
+    } else {
+      // fallback (dev / SSR)
+      router.replace(`/pricing?lang=${lang}&plan=${plan}`);
+    }
   };
 
   const handleSignup = async (e: FormEvent) => {
@@ -54,6 +59,7 @@ export default function SignupClient() {
       return;
     }
 
+    // Succès → on envoie vers pricing avec les bons paramètres
     redirectAfterSignup();
   };
 
@@ -61,10 +67,15 @@ export default function SignupClient() {
     setLoading(true);
     setErrorMsg("");
 
+    const lang = localeParam || "fr";
+    const plan = initialPlan || "free";
+
+    // Après Google, Supabase reviendra sur /auth/callback
+    // et /auth/callback devra lui aussi rediriger vers /pricing?lang=...&plan=...
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?lang=${lang}&plan=${plan}`,
       },
     });
 
@@ -77,9 +88,8 @@ export default function SignupClient() {
   };
 
   const goToLogin = () => {
-    const params = new URLSearchParams();
-    params.set("lang", localeParam);
-    router.push(`/login?${params.toString()}`);
+    const lang = localeParam || "fr";
+    router.push(`/login?lang=${lang}`);
   };
 
   return (
