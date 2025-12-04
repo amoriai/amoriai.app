@@ -1,3 +1,5 @@
+// app/pricing/page.tsx
+
 import { Suspense } from "react";
 import PricingClient from "./pricing-client";
 
