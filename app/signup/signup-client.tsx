@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FormEvent, useState } from "react";
+import React, { FormEvent, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -32,8 +32,7 @@ const LABELS: Record<
 > = {
   fr: {
     title: "Créer mon compte AmorIAI",
-    subtitle:
-      "Étape 1 : crée ton compte. Ton AmorIAI sera prêt juste après.",
+    subtitle: "Étape 1 : crée ton compte. Ton AmorIAI sera prêt juste après.",
     emailLabel: "Adresse courriel",
     passwordLabel: "Mot de passe",
     passwordPlaceholder: "Choisis un mot de passe sécurisé",
@@ -44,7 +43,7 @@ const LABELS: Record<
     alreadyHave: "Tu as déjà un compte ?",
     login: "Me connecter",
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
-    noPlanInfo: "Ton AmorIAI sera créé dans l’instant.",
+    noPlanInfo: "Ton AmorIAI sera créé automatiquement.",
     planPrefix: "Forfait sélectionné : ",
   },
   en: {
@@ -114,7 +113,9 @@ export default function SignupPage() {
 
   const localeParam = (searchParams.get("lang") as Locale) || "fr";
   const planParam = searchParams.get("plan") as PlanId | null;
+
   const t = LABELS[localeParam];
+  const planLabel = planParam ? PLAN_NAMES[localeParam][planParam] : null;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -123,32 +124,50 @@ export default function SignupPage() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const planLabel = planParam
-    ? PLAN_NAMES[localeParam][planParam]
-    : null;
+  /* =====================================================
+     ✅ PROTECTION SI DÉJÀ CONNECTÉ (ANTI-BOUCLE)
+  ===================================================== */
 
-  /* ===========================
-     ✅ REDIRECTION PROPRE
-  =========================== */
+  useEffect(() => {
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        const params = new URLSearchParams();
+        params.set("lang", localeParam);
+
+        if (!planParam || planParam === "free") {
+          params.set("plan", "free");
+          router.replace(`/create-amoria?${params.toString()}`);
+        } else {
+          params.set("plan", planParam);
+          router.replace(`/payment?${params.toString()}`);
+        }
+      }
+    })();
+  }, [localeParam, planParam, router]);
+
+  /* =====================================================
+     ✅ REDIRECTION PROPRE APRÈS SIGNUP
+  ===================================================== */
 
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
 
-    // ✅ FREE OU AUCUN PLAN = CRÉATION IA
     if (!planParam || planParam === "free") {
       params.set("plan", "free");
       router.replace(`/create-amoria?${params.toString()}`);
-      return;
+    } else {
+      params.set("plan", planParam);
+      router.replace(`/payment?${params.toString()}`);
     }
-
-    // ✅ PLAN PAYANT = STRIPE
-    params.set("plan", planParam);
-    router.replace(`/payment?${params.toString()}`);
   };
 
   /* ===========================
-     EMAIL SIGNUP
+     ✅ EMAIL / PASSWORD SIGNUP
   =========================== */
 
   const handleSubmit = async (e: FormEvent) => {
@@ -172,7 +191,7 @@ export default function SignupPage() {
   };
 
   /* ===========================
-     ✅ GOOGLE OAUTH SÉCURISÉ
+     ✅ GOOGLE OAUTH PROPRE
   =========================== */
 
   const handleGoogleSignup = async () => {
@@ -186,7 +205,6 @@ export default function SignupPage() {
 
       let redirectTo: string;
 
-      // ✅ FREE OU AUCUN PLAN = CREATE
       if (!planParam || planParam === "free") {
         params.set("plan", "free");
         redirectTo = `${base}/create-amoria?${params.toString()}`;
@@ -209,7 +227,7 @@ export default function SignupPage() {
   };
 
   /* ===========================
-     UI
+     ✅ UI (INCHANGÉ)
   =========================== */
 
   return (
