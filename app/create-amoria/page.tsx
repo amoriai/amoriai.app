@@ -141,7 +141,7 @@ const STRINGS: Record<Locale, Copy> = {
     categoryPlaceholder: "Choose a category…",
     expectationLabel: "What you expect most from your AmorIAI",
     expectationPlaceholder:
-      `"Help me feel less alone at night", "Motivate me for my projects", "Emotionally coach me"…`,
+      '"Help me feel less alone at night", "Motivate me for my projects", "Emotionally coach me"…',
     helperText:
       "You’ll be able to adjust personality, style and voice later from your space.",
     createButton: "Create my AmorIAI",
@@ -345,7 +345,8 @@ export default function CreateAmoriaPage() {
     setSaving(true);
 
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const { data: userData, error: userError } =
+        await supabase.auth.getUser();
 
       if (userError || !userData?.user) {
         const params = new URLSearchParams();
@@ -387,7 +388,6 @@ sans jugement, en respectant les limites de l’utilisateur.
 
       if (error) {
         console.error("insert error", error);
-        // On affiche le message supabase s'il existe pour t'aider à débug
         setErrorMsg(error.message || t.genericError);
         return;
       }
@@ -446,6 +446,7 @@ sans jugement, en respectant les limites de l’utilisateur.
             </div>
           )}
 
+          {/* TOUT le formulaire + le footer sont dans le <form> */}
           <form className="amoria-grid" onSubmit={handleSubmit} noValidate>
             <div className="amoria-left">
               <label className="amoria-field">
@@ -545,31 +546,31 @@ sans jugement, en respectant les limites de l’utilisateur.
                 />
               </label>
             </div>
-          </form>
 
-          <footer className="amoria-footer">
-            <p className="amoria-helper">{t.helperText}</p>
+            {/* FOOTER DANS LE FORM */}
+            <div className="amoria-footer">
+              <p className="amoria-helper">{t.helperText}</p>
 
-            <div className="amoria-actions">
-              <button
-                type="button"
-                className="amoria-btn amoria-btn--secondary"
-                onClick={handleBackHome}
-                disabled={saving}
-              >
-                {t.backHome}
-              </button>
+              <div className="amoria-actions">
+                <button
+                  type="button"
+                  className="amoria-btn amoria-btn--secondary"
+                  onClick={handleBackHome}
+                  disabled={saving}
+                >
+                  {t.backHome}
+                </button>
 
-              <button
-                type="submit"
-                formAction=""
-                className="amoria-btn amoria-btn--primary"
-                disabled={saving || !isFormValid}
-              >
-                {saving ? t.saving : t.createButton}
-              </button>
+                <button
+                  type="submit"
+                  className="amoria-btn amoria-btn--primary"
+                  disabled={saving || !isFormValid}
+                >
+                  {saving ? t.saving : t.createButton}
+                </button>
+              </div>
             </div>
-          </footer>
+          </form>
         </div>
       </div>
 
@@ -817,4 +818,4 @@ sans jugement, en respectant les limites de l’utilisateur.
       `}</style>
     </main>
   );
-}
+         }
