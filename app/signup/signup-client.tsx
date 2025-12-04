@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FormEvent, useState, useEffect } from "react";
+import React, { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -32,7 +32,7 @@ const LABELS: Record<
   fr: {
     title: "Créer mon compte AmorIAI",
     subtitle:
-      "Étape 1 : crée ton compte. Ensuite tu choisiras ton forfait sur la page des tarifs.",
+      "Étape 1 : crée ton compte. Ensuite tu arrives directement à la prochaine étape.",
     emailLabel: "Adresse courriel",
     passwordLabel: "Mot de passe",
     passwordPlaceholder: "Choisis un mot de passe sécurisé",
@@ -43,12 +43,13 @@ const LABELS: Record<
     alreadyHave: "Tu as déjà un compte ?",
     login: "Me connecter",
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
-    noPlanInfo: "Tu choisiras ton forfait (gratuit ou payant) à l’étape suivante.",
+    noPlanInfo:
+      "Ton forfait (gratuit ou payant) sera appliqué automatiquement après la création du compte.",
   },
   en: {
     title: "Create my AmorIAI account",
     subtitle:
-      "Step 1: create your account. Then you’ll choose your plan on the pricing page.",
+      "Step 1: create your account. Then you go directly to the next step.",
     emailLabel: "Email address",
     passwordLabel: "Password",
     passwordPlaceholder: "Choose a secure password",
@@ -59,12 +60,13 @@ const LABELS: Record<
     alreadyHave: "Already have an account?",
     login: "Log in",
     errorGeneric: "An error occurred. Please try again.",
-    noPlanInfo: "You’ll choose your plan (free or paid) on the next step.",
+    noPlanInfo:
+      "Your plan (free or paid) will be applied automatically after signup.",
   },
   es: {
     title: "Crear mi cuenta AmorIAI",
     subtitle:
-      "Paso 1: crea tu cuenta. Luego elegirás tu plan en la página de precios.",
+      "Paso 1: crea tu cuenta. Luego irás directamente al siguiente paso.",
     emailLabel: "Correo electrónico",
     passwordLabel: "Contraseña",
     passwordPlaceholder: "Elige una contraseña segura",
@@ -75,7 +77,8 @@ const LABELS: Record<
     alreadyHave: "¿Ya tienes una cuenta?",
     login: "Iniciar sesión",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
-    noPlanInfo: "Elegirás tu plan (gratis o de pago) en el siguiente paso.",
+    noPlanInfo:
+      "Tu plan (gratis o de pago) se aplicará automáticamente después del registro.",
   },
 };
 
@@ -89,7 +92,7 @@ export default function SignupPage() {
 
   const localeParam = (searchParams.get("lang") as Locale) || "fr";
 
-  // on récupère le plan passé depuis /pricing (ou on force "free")
+  // plan passé depuis /pricing (ou "free" par défaut)
   const planParam = searchParams.get("plan");
   const initialPlan: PlanId =
     planParam === "chat" ||
@@ -109,32 +112,17 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
 
   /* ===========================
-     ✅ SI DÉJÀ CONNECTÉ → PRICING
-  =========================== */
-
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session?.user) {
-        const params = new URLSearchParams();
-        params.set("lang", localeParam);
-        params.set("plan", initialPlan);
-        router.replace(`/pricing?${params.toString()}`);
-      }
-    };
-    checkSession();
-  }, [localeParam, initialPlan, router]);
-
-  /* ===========================
-     ✅ REDIRECTION APRÈS SIGNUP
-     → toujours vers /pricing?lang=..&plan=..
+     REDIRECTION APRÈS SIGNUP
+     → free : /create-amoria
+       payant : /payment
   =========================== */
 
   const redirectAfterSignup = () => {
-    const params = new URLSearchParams();
-    params.set("lang", localeParam);
-    params.set("plan", initialPlan);
-    router.replace(`/pricing?${params.toString()}`);
+    if (initialPlan === "free") {
+      router.replace(`/create-amoria?lang=${localeParam}&plan=free`);
+    } else {
+      router.replace(`/payment?plan=${initialPlan}&lang=${localeParam}`);
+    }
   };
 
   /* ===========================
@@ -175,7 +163,10 @@ export default function SignupPage() {
       params.set("lang", localeParam);
       params.set("plan", initialPlan);
 
-      const redirectTo = `${base}/pricing?${params.toString()}`;
+      const redirectTo =
+        initialPlan === "free"
+          ? `${base}/create-amoria?${params.toString()}`
+          : `${base}/payment?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -285,4 +276,3 @@ export default function SignupPage() {
     </main>
   );
 }
-
