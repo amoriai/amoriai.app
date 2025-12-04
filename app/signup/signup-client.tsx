@@ -113,8 +113,8 @@ export default function SignupPage() {
 
   /* ===========================
      REDIRECTION APRÈS SIGNUP
-     → free : /create-amoria
-       payant : /payment
+     free → /create-amoria
+     payant → /payment
   =========================== */
 
   const redirectAfterSignup = () => {
