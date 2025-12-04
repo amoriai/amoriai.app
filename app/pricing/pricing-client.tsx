@@ -498,7 +498,7 @@ export default function PricingPage() {
      CLICK SUR UNE CARTE DE PRIX
   ============ */
 
-  const handleChoosePlan = async (planId: PlanId) => {
+   const handleChoosePlan = async (planId: PlanId) => {
     setSessionLoading(true);
     try {
       const { data, error } = await supabase.auth.getSession();
@@ -514,11 +514,19 @@ export default function PricingPage() {
         return;
       }
 
-      // 2) Connecté + free → page création AmorIAI
-      if (planId === "free") {
-        goToCreateAmoria("free");
+      // 2) Connecté + plan PAYANT → toujours Stripe/payment
+      if (planId !== "free") {
+        goToPayment(planId);
         return;
       }
+
+      // 3) Connecté + plan FREE → création d’AmorIAI gratuit
+      goToCreateAmoria("free");
+    } finally {
+      setSessionLoading(false);
+    }
+  };
+
 
       // 3) Connecté + plan payant → Stripe/payment
       goToPayment(planId);
