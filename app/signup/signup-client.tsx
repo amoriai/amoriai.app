@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FormEvent, useEffect, useState } from "react";
+import React, { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -113,9 +113,11 @@ export default function SignupPage() {
 
   const localeParam = (searchParams.get("lang") as Locale) || "fr";
   const planParam = searchParams.get("plan") as PlanId | null;
-
   const t = LABELS[localeParam];
-  const planLabel = planParam ? PLAN_NAMES[localeParam][planParam] : null;
+
+  const planLabel = planParam
+    ? PLAN_NAMES[localeParam][planParam]
+    : null;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -124,34 +126,9 @@ export default function SignupPage() {
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /* =====================================================
-     ✅ PROTECTION SI DÉJÀ CONNECTÉ (ANTI-BOUCLE)
-  ===================================================== */
-
-  useEffect(() => {
-    (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        const params = new URLSearchParams();
-        params.set("lang", localeParam);
-
-        if (!planParam || planParam === "free") {
-          params.set("plan", "free");
-          router.replace(`/create-amoria?${params.toString()}`);
-        } else {
-          params.set("plan", planParam);
-          router.replace(`/payment?${params.toString()}`);
-        }
-      }
-    })();
-  }, [localeParam, planParam, router]);
-
-  /* =====================================================
-     ✅ REDIRECTION PROPRE APRÈS SIGNUP
-  ===================================================== */
+  /* ===========================
+     ✅ REDIRECTION APRÈS SIGINUP (SANS BOUCLE)
+  =========================== */
 
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
@@ -174,6 +151,9 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
     setLoadingEmail(true);
+
+    // ✅ On nettoie toute session fantôme avant un signup
+    await supabase.auth.signOut();
 
     const { error } = await supabase.auth.signUp({
       email,
@@ -198,6 +178,9 @@ export default function SignupPage() {
     try {
       setError(null);
       setLoadingGoogle(true);
+
+      // ✅ Nettoyage session avant OAuth
+      await supabase.auth.signOut();
 
       const base = window.location.origin;
       const params = new URLSearchParams();
@@ -227,7 +210,7 @@ export default function SignupPage() {
   };
 
   /* ===========================
-     ✅ UI (INCHANGÉ)
+     ✅ UI
   =========================== */
 
   return (
