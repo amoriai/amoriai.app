@@ -8,7 +8,7 @@ type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 /* ===========================
-   LABELS
+   LABELS PAR LANGUE
 =========================== */
 
 const LABELS: Record<
@@ -16,263 +16,322 @@ const LABELS: Record<
   {
     title: string;
     subtitle: string;
+    step: string;
     emailLabel: string;
+    emailPlaceholder: string;
     passwordLabel: string;
     passwordPlaceholder: string;
     passwordHint: string;
+    showPassword: string;
+    hidePassword: string;
     submit: string;
     submitting: string;
     google: string;
     alreadyHave: string;
     login: string;
     errorGeneric: string;
-    noPlanInfo: string;
   }
 > = {
   fr: {
     title: "Créer mon compte AmorIAI",
     subtitle:
-      "Étape 1 : crée ton compte. Ensuite tu arrives directement à la prochaine étape.",
+      "Étape 1 : crée ton compte. Ensuite tu arrives directement à la page des forfaits pour choisir ton plan.",
+    step: "Étape 1",
     emailLabel: "Adresse courriel",
+    emailPlaceholder: "ex. mon.adresse@email.com",
     passwordLabel: "Mot de passe",
     passwordPlaceholder: "Choisis un mot de passe sécurisé",
     passwordHint: "Minimum 6 caractères.",
+    showPassword: "Afficher",
+    hidePassword: "Cacher",
     submit: "Créer mon compte",
-    submitting: "Création du compte…",
+    submitting: "Création du compte...",
     google: "Continuer avec Google",
     alreadyHave: "Tu as déjà un compte ?",
     login: "Me connecter",
-    errorGeneric: "Une erreur est survenue. Merci de réessayer.",
-    noPlanInfo:
-      "Ton forfait (gratuit ou payant) sera appliqué automatiquement après la création du compte.",
+    errorGeneric: "Une erreur est survenue. Merci de réessayer."
   },
   en: {
     title: "Create my AmorIAI account",
     subtitle:
-      "Step 1: create your account. Then you go directly to the next step.",
+      "Step 1: create your account. Then you’ll be redirected to the pricing page to choose your plan.",
+    step: "Step 1",
     emailLabel: "Email address",
+    emailPlaceholder: "e.g. my.email@example.com",
     passwordLabel: "Password",
     passwordPlaceholder: "Choose a secure password",
-    passwordHint: "At least 6 characters.",
+    passwordHint: "Minimum 6 characters.",
+    showPassword: "Show",
+    hidePassword: "Hide",
     submit: "Create my account",
-    submitting: "Creating your account…",
+    submitting: "Creating your account...",
     google: "Continue with Google",
     alreadyHave: "Already have an account?",
     login: "Log in",
-    errorGeneric: "An error occurred. Please try again.",
-    noPlanInfo:
-      "Your plan (free or paid) will be applied automatically after signup.",
+    errorGeneric: "Something went wrong. Please try again."
   },
   es: {
     title: "Crear mi cuenta AmorIAI",
     subtitle:
-      "Paso 1: crea tu cuenta. Luego irás directamente al siguiente paso.",
+      "Paso 1: crea tu cuenta. Luego serás redirigido a la página de precios para elegir tu plan.",
+    step: "Paso 1",
     emailLabel: "Correo electrónico",
+    emailPlaceholder: "ej. mi.correo@email.com",
     passwordLabel: "Contraseña",
     passwordPlaceholder: "Elige una contraseña segura",
     passwordHint: "Mínimo 6 caracteres.",
+    showPassword: "Ver",
+    hidePassword: "Ocultar",
     submit: "Crear mi cuenta",
-    submitting: "Creando tu cuenta…",
+    submitting: "Creando la cuenta...",
     google: "Continuar con Google",
     alreadyHave: "¿Ya tienes una cuenta?",
     login: "Iniciar sesión",
-    errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
-    noPlanInfo:
-      "Tu plan (gratis o de pago) se aplicará automáticamente después del registro.",
-  },
+    errorGeneric: "Ha ocurrido un error. Vuelve a intentarlo."
+  }
 };
 
 /* ===========================
-   COMPONENT
+   COMPOSANT SIGNUP
 =========================== */
 
-export default function SignupPage() {
+const SignupPage: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Langue et plan venant de l’URL (?lang=fr&plan=chat)
   const localeParam = (searchParams.get("lang") as Locale) || "fr";
-
-  // plan passé depuis /pricing (ou "free" par défaut)
-  const planParam = searchParams.get("plan");
-  const initialPlan: PlanId =
-    planParam === "chat" ||
-    planParam === "plus" ||
-    planParam === "unlimited" ||
-    planParam === "free"
-      ? (planParam as PlanId)
-      : "free";
+  const initialPlan = (searchParams.get("plan") as PlanId) || "free";
 
   const t = LABELS[localeParam];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loadingEmail, setLoadingEmail] = useState(false);
-  const [loadingGoogle, setLoadingGoogle] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  /* ===========================
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  /* ==============
      REDIRECTION APRÈS SIGNUP
-     free → /create-amoria
-     payant → /payment
-  =========================== */
-
+     -> TOUJOURS /pricing
+  =============== */
   const redirectAfterSignup = () => {
-    if (initialPlan === "free") {
-      router.replace(`/create-amoria?lang=${localeParam}&plan=free`);
-    } else {
-      router.replace(`/payment?plan=${initialPlan}&lang=${localeParam}`);
-    }
+    const params = new URLSearchParams();
+    params.set("lang", localeParam);
+    params.set("plan", initialPlan);
+
+    router.replace(`/pricing?${params.toString()}`);
   };
 
-  /* ===========================
-     EMAIL SIGNUP
-  =========================== */
-
+  /* ==============
+     SUBMIT EMAIL + PASSWORD
+  =============== */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setLoadingEmail(true);
+    setErrorMsg(null);
+    setIsSubmitting(true);
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    setLoadingEmail(false);
-
-    if (error) {
-      setError(error.message || t.errorGeneric);
-      return;
-    }
-
-    redirectAfterSignup();
-  };
-
-  /* ===========================
-     GOOGLE OAUTH
-  =========================== */
-
-  const handleGoogleSignup = async () => {
     try {
-      setError(null);
-      setLoadingGoogle(true);
-
-      const base = window.location.origin;
-      const params = new URLSearchParams();
-      params.set("lang", localeParam);
-      params.set("plan", initialPlan);
-
-      const redirectTo =
-        initialPlan === "free"
-          ? `${base}/create-amoria?${params.toString()}`
-          : `${base}/payment?${params.toString()}`;
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo },
+      const { error } = await supabase.auth.signUp({
+        email,
+        password
+        // si tu as besoin de emailRedirectTo, tu peux l'ajouter ici
+        // options: { emailRedirectTo: "https://ton-domaine.com/auth/callback" },
       });
 
       if (error) {
-        setError(error.message || t.errorGeneric);
+        console.error("Signup error:", error.message);
+        setErrorMsg(error.message || t.errorGeneric);
+        setIsSubmitting(false);
+        return;
       }
-    } finally {
-      setLoadingGoogle(false);
+
+      // Succès -> on envoie vers /pricing
+      redirectAfterSignup();
+    } catch (err: any) {
+      console.error("Unexpected signup error:", err);
+      setErrorMsg(t.errorGeneric);
+      setIsSubmitting(false);
     }
   };
 
-  /* ===========================
-     UI
-  =========================== */
+  /* ==============
+     SIGNUP / LOGIN AVEC GOOGLE
+  =============== */
+  const handleGoogleSignup = async () => {
+    setErrorMsg(null);
+    setIsSubmitting(true);
+
+    try {
+      const redirectTo = `${window.location.origin}/auth/callback`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo
+        }
+      });
+
+      if (error) {
+        console.error("Google signup error:", error.message);
+        setErrorMsg(error.message || t.errorGeneric);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // La redirection finale après callback devra aussi mener à /pricing
+      // (dans ta page /auth/callback, pense à réutiliser redirectAfterSignup)
+    } catch (err: any) {
+      console.error("Unexpected Google signup error:", err);
+      setErrorMsg(t.errorGeneric);
+      setIsSubmitting(false);
+    }
+  };
+
+  const goToLogin = () => {
+    const params = new URLSearchParams();
+    params.set("lang", localeParam);
+    params.set("plan", initialPlan);
+
+    router.push(`/login?${params.toString()}`);
+  };
 
   return (
-    <main
-      className="flex min-h-screen items-center justify-center px-4 py-8 text-slate-100"
-      style={{
-        background:
-          "radial-gradient(circle at top,#020617 0,#020617 45%,#000 100%)",
-      }}
-    >
-      <section className="w-full max-w-md rounded-3xl border border-slate-700/70 bg-gradient-to-b from-slate-950 via-slate-950 to-black/95 p-6 shadow-2xl shadow-slate-950/90">
-        {/* Titre */}
-        <h1 className="mb-1 text-xl font-semibold">{t.title}</h1>
-        <p className="mb-2 text-sm text-slate-300">{t.subtitle}</p>
-        <p className="mb-4 text-xs text-slate-400">{t.noPlanInfo}</p>
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        <div className="mb-6 text-center text-sm uppercase tracking-[0.2em] text-pink-400 font-semibold">
+          {t.step}
+        </div>
 
-        {/* Bouton Google */}
-        <button
-          type="button"
-          onClick={handleGoogleSignup}
-          disabled={loadingGoogle || loadingEmail}
-          className="mb-4 flex w-full items-center justify-center gap-2 rounded-full border border-slate-500/80 bg-slate-950 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {loadingGoogle ? "…" : t.google}
-        </button>
-
-        {/* Formulaire email/password */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-[0.8rem] text-slate-200">
-            {t.emailLabel}
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="rounded-xl border border-slate-600 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none ring-0 transition placeholder:text-slate-500 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-500/40"
-              placeholder="ex. mon.adresse@email.com"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-[0.8rem] text-slate-200">
-            {t.passwordLabel}
-            <div className="relative flex items-center">
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-slate-950 px-3 py-2 pr-10 text-sm text-slate-100 outline-none ring-0 transition placeholder:text-slate-500 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-500/40"
-                placeholder={t.passwordPlaceholder}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-2 inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:text-slate-100"
-              >
-                👁
-              </button>
-            </div>
-            <span className="text-[0.7rem] text-slate-400">
-              {t.passwordHint}
+        <div className="bg-slate-900/70 border border-slate-700/60 rounded-2xl shadow-2xl shadow-pink-500/10 px-6 py-7 sm:px-8 sm:py-9 backdrop-blur">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-white mb-2">
+            {t.title}
+          </h1>
+          <p className="text-sm text-slate-300 mb-6 leading-relaxed">
+            {t.subtitle}
+            <br />
+            <span className="text-xs text-slate-400">
+              Ton forfait (gratuit ou payant) sera appliqué automatiquement après
+              la création du compte.
             </span>
-          </label>
+          </p>
 
-          {error && (
-            <p className="rounded-xl bg-red-900/70 px-3 py-2 text-[0.8rem] text-red-50">
-              {error}
-            </p>
+          {errorMsg && (
+            <div className="mb-4 rounded-lg border border-red-500/60 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+              {errorMsg}
+            </div>
           )}
 
+          {/* BOUTON GOOGLE */}
           <button
-            type="submit"
-            disabled={loadingEmail || loadingGoogle}
-            className="mt-1 w-full rounded-full bg-gradient-to-tr from-fuchsia-500 via-rose-400 to-orange-400 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-rose-400/60 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+            type="button"
+            onClick={handleGoogleSignup}
+            disabled={isSubmitting}
+            className="w-full mb-4 inline-flex items-center justify-center gap-2 rounded-xl border border-slate-600 bg-slate-900/60 px-4 py-2.5 text-sm font-medium text-slate-100 hover:bg-slate-800/80 transition disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loadingEmail ? t.submitting : t.submit}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+            >
+              <path
+                fill="currentColor"
+                d="M21.6 12.23c0-.78-.07-1.53-.2-2.25H12v4.26h5.4c-.23 1.14-.92 2.1-1.96 2.75v2.28h3.17c1.86-1.71 2.99-4.23 2.99-7.04Z"
+              />
+              <path
+                fill="currentColor"
+                d="M12 22c2.7 0 4.96-.9 6.61-2.43l-3.17-2.28c-.88.6-2.01.95-3.44.95-2.65 0-4.9-1.79-5.7-4.19H3.04v2.34A9.996 9.996 0 0 0 12 22Z"
+                opacity="0.8"
+              />
+              <path
+                fill="currentColor"
+                d="M6.3 14.05A5.99 5.99 0 0 1 5.95 12c0-.71.12-1.4.35-2.05V7.61H3.04A10.01 10.01 0 0 0 2 12c0 1.6.38 3.11 1.04 4.39L6.3 14.05Z"
+                opacity="0.6"
+              />
+              <path
+                fill="currentColor"
+                d="M12 6.1c1.47 0 2.79.5 3.83 1.48l2.87-2.87C16.95 2.83 14.69 2 12 2 8.24 2 4.99 4.16 3.04 7.61L6.3 9.95C7.1 7.55 9.35 6.1 12 6.1Z"
+                opacity="0.4"
+              />
+            </svg>
+            {t.google}
           </button>
-        </form>
 
-        <p className="mt-4 text-center text-[0.78rem] text-slate-400">
-          {t.alreadyHave}{" "}
-          <a
-            href={`/login?lang=${localeParam}`}
-            className="font-medium text-slate-100 hover:text-white"
-          >
-            {t.login}
-          </a>
-        </p>
-      </section>
-    </main>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-px flex-1 bg-slate-700" />
+            <span className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              ou
+            </span>
+            <div className="h-px flex-1 bg-slate-700" />
+          </div>
+
+          {/* FORMULAIRE EMAIL */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-100 mb-1">
+                {t.emailLabel}
+              </label>
+              <input
+                type="email"
+                autoComplete="email"
+                required
+                className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                placeholder={t.emailPlaceholder}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-100 mb-1">
+                {t.passwordLabel}
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  required
+                  minLength={6}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2.5 pr-16 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  placeholder={t.passwordPlaceholder}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 right-2 my-1 px-2 text-xs rounded-lg bg-slate-800/70 text-slate-200 hover:bg-slate-700/80"
+                >
+                  {showPassword ? t.hidePassword : t.showPassword}
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-slate-400">{t.passwordHint}</p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="mt-2 w-full rounded-xl bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-pink-500/40 hover:brightness-110 transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? t.submitting : t.submit}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center text-sm text-slate-300">
+            {t.alreadyHave}{" "}
+            <button
+              type="button"
+              onClick={goToLogin}
+              className="font-medium text-pink-400 hover:text-pink-300 underline-offset-4 hover:underline"
+            >
+              {t.login}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
-}
+};
+
+export default SignupPage;
