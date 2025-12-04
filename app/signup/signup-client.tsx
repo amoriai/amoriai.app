@@ -1,19 +1,39 @@
 "use client";
 
 import React, { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabaseClient"; // lib à la racine
+import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "../../lib/supabaseClient";
+
+type Locale = "fr" | "en" | "es";
+type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 export default function SignupClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // langue + plan passés dans l’URL (ex : /signup?lang=fr&plan=free)
+  const rawLang = (searchParams.get("lang") || "fr").toLowerCase();
+  const localeParam: Locale =
+    rawLang === "en" || rawLang === "es" ? (rawLang as Locale) : "fr";
+
+  const rawPlan = (searchParams.get("plan") || "free").toLowerCase();
+  const initialPlan: PlanId =
+    rawPlan === "chat" || rawPlan === "plus" || rawPlan === "unlimited"
+      ? (rawPlan as PlanId)
+      : "free";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  // après création de compte → toujours vers la page pricing, avec lang + plan
   const redirectAfterSignup = () => {
-    router.replace("/pricing");
+    const params = new URLSearchParams();
+    params.set("lang", localeParam);
+    params.set("plan", initialPlan);
+    router.replace(`/pricing?${params.toString()}`);
   };
 
   const handleSignup = async (e: FormEvent) => {
@@ -23,11 +43,13 @@ export default function SignupClient() {
 
     const { error } = await supabase.auth.signUp({
       email,
-      password
+      password,
     });
 
     if (error) {
-      setErrorMsg(error.message || "Une erreur est survenue.");
+      setErrorMsg(
+        error.message || "Une erreur est survenue. Merci de réessayer."
+      );
       setLoading(false);
       return;
     }
@@ -42,98 +64,156 @@ export default function SignupClient() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
 
     if (error) {
-      setErrorMsg(error.message || "Une erreur est survenue.");
+      setErrorMsg(
+        error.message || "Une erreur est survenue. Merci de réessayer."
+      );
       setLoading(false);
     }
   };
 
   const goToLogin = () => {
-    router.push("/login");
+    const params = new URLSearchParams();
+    params.set("lang", localeParam);
+    router.push(`/login?${params.toString()}`);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black via-slate-900 to-black px-4 text-white">
-      <div className="w-full max-w-md bg-slate-900/80 border border-slate-700 rounded-2xl p-6 space-y-5 shadow-xl">
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl font-semibold">Créer mon compte AmorIAI</h1>
-          <p className="text-sm text-slate-300">
-            Étape 1 : crée ton compte. Ensuite tu arrives sur la page des
-            forfaits pour choisir ton plan.
-          </p>
+    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-black text-white flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        {/* Badge étape */}
+        <div className="mb-4 flex items-center justify-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-pink-500/40 bg-pink-500/10 px-3 py-1 text-xs font-medium tracking-wide text-pink-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-pink-400" />
+            Étape 1 sur 2 • Création du compte
+          </span>
         </div>
 
-        {errorMsg && (
-          <div className="bg-red-500/20 border border-red-500 text-red-200 text-sm p-2 rounded">
-            {errorMsg}
-          </div>
-        )}
+        {/* Carte principale */}
+        <div className="rounded-3xl border border-slate-800 bg-slate-900/80 px-6 py-7 shadow-2xl shadow-pink-500/20 backdrop-blur">
+          <header className="mb-6 space-y-2 text-center">
+            <h1 className="text-2xl sm:text-3xl font-semibold leading-tight">
+              Créer mon compte <span className="text-pink-400">AmorIAI</span>
+            </h1>
+            <p className="text-sm text-slate-300 leading-relaxed">
+              Crée ton compte en quelques secondes, puis choisis ton forfait
+              (gratuit ou payant) sur la page des tarifs.
+            </p>
+          </header>
 
-        <button
-          type="button"
-          onClick={handleGoogle}
-          disabled={loading}
-          className="w-full border border-slate-600 bg-slate-800 hover:bg-slate-700 transition rounded-lg py-2 text-sm font-medium"
-        >
-          Continuer avec Google
-        </button>
+          {/* Erreur */}
+          {errorMsg && (
+            <div className="mb-4 rounded-xl border border-red-500/60 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+              {errorMsg}
+            </div>
+          )}
 
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <div className="flex-1 h-px bg-slate-700" />
-          <span>ou</span>
-          <div className="flex-1 h-px bg-slate-700" />
-        </div>
-
-        <form onSubmit={handleSignup} className="space-y-4">
-          <div>
-            <label className="block text-sm mb-1">Adresse courriel</label>
-            <input
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="ex. mon.adresse@email.com"
-              className="w-full rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm mb-1">Mot de passe</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimum 6 caractères"
-              className="w-full rounded-lg bg-slate-800 border border-slate-600 px-3 py-2 text-sm"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 rounded-lg py-2 text-sm font-semibold disabled:opacity-50"
-          >
-            {loading ? "Création..." : "Créer mon compte"}
-          </button>
-        </form>
-
-        <div className="text-center text-sm text-slate-300">
-          Tu as déjà un compte ?{" "}
+          {/* Bouton Google */}
           <button
             type="button"
-            onClick={goToLogin}
-            className="text-pink-400 underline"
+            onClick={handleGoogle}
+            disabled={loading}
+            className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-800/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Me connecter
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white">
+              <span className="text-[10px] font-bold text-slate-900">G</span>
+            </span>
+            Continuer avec Google
           </button>
+
+          <div className="mb-4 flex items-center gap-2 text-xs text-slate-500">
+            <div className="h-px flex-1 bg-slate-700" />
+            <span>ou avec ton courriel</span>
+            <div className="h-px flex-1 bg-slate-700" />
+          </div>
+
+          {/* Formulaire */}
+          <form onSubmit={handleSignup} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium uppercase tracking-wide text-slate-300">
+                Adresse courriel
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="ex. mon.adresse@email.com"
+                  className="w-full rounded-2xl border border-slate-700 bg-slate-950/60 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 shadow-inner focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/60"
+                />
+                <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-500">
+                  @
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium uppercase tracking-wide text-slate-300">
+                Mot de passe
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Choisis un mot de passe sécurisé"
+                  className="w-full rounded-2xl border border-slate-700 bg-slate-950/60 px-3.5 py-2.5 pr-16 text-sm text-slate-100 placeholder:text-slate-500 shadow-inner focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/60"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 right-2 my-1 inline-flex items-center rounded-xl bg-slate-800/80 px-2.5 text-[11px] font-medium text-slate-200 hover:bg-slate-700/90"
+                >
+                  {showPassword ? "Cacher" : "Afficher"}
+                </button>
+              </div>
+              <p className="text-xs text-slate-400">
+                Minimum 6 caractères. Ne partage jamais ton mot de passe.
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-2 w-full rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-400 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Création du compte..." : "Créer mon compte"}
+            </button>
+          </form>
+
+          {/* Footer */}
+          <div className="mt-5 flex flex-col gap-2 text-center text-xs text-slate-400">
+            <p>
+              En créant un compte, tu acceptes nos{" "}
+              <span className="text-pink-300 underline underline-offset-2">
+                conditions d’utilisation
+              </span>{" "}
+              et notre{" "}
+              <span className="text-pink-300 underline underline-offset-2">
+                politique de confidentialité
+              </span>
+              .
+            </p>
+            <p className="text-sm">
+              Tu as déjà un compte ?{" "}
+              <button
+                type="button"
+                onClick={goToLogin}
+                className="font-medium text-pink-300 hover:text-pink-200 underline underline-offset-4"
+              >
+                Me connecter
+              </button>
+            </p>
+          </div>
         </div>
       </div>
     </div>
