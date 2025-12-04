@@ -118,20 +118,26 @@ export default function SignupPage() {
 
   const planLabel = planParam ? PLAN_NAMES[localeParam][planParam] : null;
 
-  // 👉 Nouveau comportement :
-  // - plan = free  → /create-amoria?lang=...
-  // - tous les autres cas → /pricing?lang=...
+  // Redirection après signup :
+  // - plan = free      → /create-amoria?plan=free&lang=...
+  // - plan = chat/...  → /payment?plan=...&lang=...
+  // - pas de plan      → /pricing?lang=...
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", localeParam);
 
-    if (planParam === "free") {
-      params.set("plan", "free");
-      router.push(`/create-amoria?${params.toString()}`);
+    if (!planParam) {
+      router.push(`/pricing?${params.toString()}`);
       return;
     }
 
-    router.push(`/pricing?${params.toString()}`);
+    if (planParam === "free") {
+      params.set("plan", "free");
+      router.push(`/create-amoria?${params.toString()}`);
+    } else {
+      params.set("plan", planParam); // chat / plus / unlimited
+      router.push(`/payment?${params.toString()}`);
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -165,11 +171,15 @@ export default function SignupPage() {
 
       let redirectTo: string;
 
-      if (planParam === "free") {
+      if (!planParam) {
+        // pas de plan → retour sur pricing après OAuth
+        redirectTo = `${base}/pricing?${params.toString()}`;
+      } else if (planParam === "free") {
         params.set("plan", "free");
         redirectTo = `${base}/create-amoria?${params.toString()}`;
       } else {
-        redirectTo = `${base}/pricing?${params.toString()}`;
+        params.set("plan", planParam); // chat / plus / unlimited
+        redirectTo = `${base}/payment?${params.toString()}`;
       }
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -244,7 +254,7 @@ export default function SignupPage() {
           —
         </p>
 
-        {/* FORMULAIRE */}
+        {/* Formulaire email/password */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <label className="flex flex-col gap-1 text-[0.8rem]">
             {t.emailLabel}
@@ -332,10 +342,8 @@ export default function SignupPage() {
           {localeParam === "fr" && (
             <>
               En continuant, tu confirmes accepter les{" "}
-              <span className="text-slate-300">
-                Conditions d’utilisation
-              </span>{" "}
-              et la{" "}
+              <span className="text-slate-300">Conditions d’utilisation</span> et
+              la{" "}
               <span className="text-slate-300">
                 Politique de confidentialité
               </span>{" "}
@@ -353,10 +361,8 @@ export default function SignupPage() {
             <>
               Al continuar, confirmas que aceptas los{" "}
               <span className="text-slate-300">Términos de uso</span> y la{" "}
-              <span className="text-slate-300">
-                Política de privacidad
-              </span>{" "}
-              de AmorIAI.
+              <span className="text-slate-300">Política de privacidad</span> de
+              AmorIAI.
             </>
           )}
         </p>
