@@ -8,7 +8,7 @@ type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 type PersonaType = "woman" | "man" | "woman50" | "man50" | "androgynous";
 
-// ---------------- AVATARS (pour l'enregistrement en base) ----------------
+// ---------------- AVATARS ----------------
 
 const AVATARS: Record<PersonaType, string[]> = {
   woman: [
@@ -333,7 +333,7 @@ export default function CreateAmoriaPage() {
     category !== "" &&
     expectation.trim().length > 0;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMsg(null);
 
@@ -345,9 +345,7 @@ export default function CreateAmoriaPage() {
     setSaving(true);
 
     try {
-      // Vérifier que l'utilisateur est encore logué
-      const { data: userData, error: userError } =
-        await supabase.auth.getUser();
+      const { data: userData, error: userError } = await supabase.auth.getUser();
 
       if (userError || !userData?.user) {
         const params = new URLSearchParams();
@@ -389,7 +387,8 @@ sans jugement, en respectant les limites de l’utilisateur.
 
       if (error) {
         console.error("insert error", error);
-        setErrorMsg(t.genericError);
+        // On affiche le message supabase s'il existe pour t'aider à débug
+        setErrorMsg(error.message || t.genericError);
         return;
       }
 
@@ -563,7 +562,7 @@ sans jugement, en respectant les limites de l’utilisateur.
 
               <button
                 type="submit"
-                formAction={undefined}
+                formAction=""
                 className="amoria-btn amoria-btn--primary"
                 disabled={saving || !isFormValid}
               >
@@ -818,4 +817,4 @@ sans jugement, en respectant les limites de l’utilisateur.
       `}</style>
     </main>
   );
-    }
+}
