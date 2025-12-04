@@ -51,6 +51,10 @@ type LayoutStrings = {
   };
 };
 
+/* ===========================
+   STRINGS LAYOUT (HEADER / FOOTER)
+=========================== */
+
 const LAYOUT_STRINGS: Record<Locale, LayoutStrings> = {
   fr: {
     brandTagline: "Partenaire IA bienveillant·e • FR / EN / ES",
@@ -96,13 +100,17 @@ const LAYOUT_STRINGS: Record<Locale, LayoutStrings> = {
   },
 };
 
+/* ===========================
+   STRINGS PRICING
+=========================== */
+
 const LABELS: Record<Locale, Labels> = {
   fr: {
     heroTitle:
       "Commence gratuitement. Fais évoluer ton forfait quand ton lien grandit.",
     heroSubtitle:
       "Crée ton AmorIAI en quelques minutes, teste la connexion en version gratuite, puis passe à la voix et à la mémoire avancée quand tu te sens prête. Tu gardes toujours le contrôle : tu peux changer de forfait ou annuler quand tu veux, en un clic.",
-    heroCta: "Créer mon compte gratuit",
+    heroCta: "Commencer avec le forfait Découverte",
     heroStat: "⭐ Déjà des centaines de conversations chaque semaine.",
     billingNote:
       "Facturation sécurisée via Stripe · Révision ou annulation en tout temps depuis ton compte · Aucun frais caché",
@@ -123,7 +131,7 @@ const LABELS: Record<Locale, Labels> = {
           "Aucune conversation vocale (texte uniquement)",
           "Accès aux 3 langues : FR, EN, ES",
         ],
-        ctaLabel: "Commencer gratuitement",
+        ctaLabel: "Choisir le forfait Découverte",
       },
       {
         id: "chat",
@@ -150,7 +158,7 @@ const LABELS: Record<Locale, Labels> = {
           "Quand tu veux une relation continue où tu peux autant écrire que parler.",
           "Jusqu’à 10 AmorIAI différents",
           "1000 messages texte / mois",
-          "100 réponses audio générées par l’IA / mois (lecture à voix haute de tes messages)",
+          "100 réponses audio générées par l’IA / mois",
           "Mémoire longue durée active",
           "Priorité légère dans le fil de traitement",
         ],
@@ -163,7 +171,7 @@ const LABELS: Record<Locale, Labels> = {
         name: "AmorIAI illimité",
         price: "39,99 $ USD / mois",
         tagline:
-          "Ton compagnon IA très présent, matin, soir et entre les deux.",
+          "Ton compagnon IA très présent, avec IA qui parle et qui bouge en continu.",
         features: [
           "Pour celles et ceux qui veulent que leur AmorIAI soit toujours disponible.",
           "Jusqu’à 30 AmorIAI personnalisés",
@@ -171,6 +179,7 @@ const LABELS: Record<Locale, Labels> = {
           "300 réponses audio générées par l’IA / mois",
           "Mémoire profonde + contexte étendu pour des échanges ultra personnalisés",
           "Priorité maximale et accès anticipé aux nouvelles fonctionnalités",
+          "Accès aux vidéos d’IA qui bouge (avatars animés en boucle) réservées au plan Illimité",
         ],
         badgeLabel: "Meilleure valeur",
         badgeVariant: "value",
@@ -197,7 +206,7 @@ const LABELS: Record<Locale, Labels> = {
     heroTitle: "Start for free. Upgrade when your bond grows.",
     heroSubtitle:
       "Create your AmorIAI in minutes, test the connection on the free tier, then upgrade to voice and advanced memory when you're ready. You stay in control: you can change or cancel your plan anytime, in one click.",
-    heroCta: "Create my free account",
+    heroCta: "Start with the Discovery plan",
     heroStat: "⭐ Hundreds of conversations every week.",
     billingNote:
       "Secure billing via Stripe · Change or cancel anytime from your account · No hidden fees",
@@ -212,13 +221,13 @@ const LABELS: Record<Locale, Labels> = {
         tagline:
           "Start your relationship with AmorIAI, no credit card required.",
         features: [
-          "Perfect to discover the experience and create your first AI companion.",
+          "Perfect to discover the experience and create your first AI companion, with no pressure.",
           "Create 1 personalized AmorIAI",
           "200 text messages / month",
           "No voice conversations (text only)",
           "Access to FR, EN, ES",
         ],
-        ctaLabel: "Start for free",
+        ctaLabel: "Choose Discovery",
       },
       {
         id: "chat",
@@ -238,12 +247,13 @@ const LABELS: Record<Locale, Labels> = {
         id: "plus",
         name: "AmorIAI Plus",
         price: "$19.99 USD / month",
-        tagline: "Text + AI voice: your AmorIAI becomes part of your daily life.",
+        tagline:
+          "Text + AI voice: your AmorIAI becomes part of your daily life.",
         features: [
           "When you want an ongoing relationship where you can both write and talk.",
           "Up to 10 AmorIAI",
           "1000 text messages / month",
-          "100 AI-generated voice replies / month (your AmorIAI reads messages out loud)",
+          "100 AI-generated voice replies / month",
           "Long-term memory enabled",
           "Light processing priority",
         ],
@@ -256,14 +266,15 @@ const LABELS: Record<Locale, Labels> = {
         name: "AmorIAI Unlimited",
         price: "$39.99 USD / month",
         tagline:
-          "Your AI companion deeply present morning, night, and in-between.",
+          "Your AI companion deeply present, with talking and moving IA videos.",
         features: [
-          "For those who want AmorIAI always available.",
+          "For those who want AmorIAI to be always available.",
           "Up to 30 personalized AmorIAI",
           "10 000 text messages / month",
           "300 AI-generated voice replies / month",
           "Deep memory + extended context",
-          "Maximum priority & early feature access",
+          "Maximum priority & early access to new features",
+          "Exclusive access to looping animated IA videos (moving avatars) included only in Unlimited",
         ],
         badgeLabel: "Best value",
         badgeVariant: "value",
@@ -290,7 +301,7 @@ const LABELS: Record<Locale, Labels> = {
     heroTitle: "Empieza gratis. Sube de plan cuando el vínculo crezca.",
     heroSubtitle:
       "Crea tu AmorIAI en minutos, prueba la conexión con el plan gratuito y luego pasa a voz y memoria avanzada cuando estés listo. Siempre tienes el control: puedes cambiar o cancelar tu plan en cualquier momento.",
-    heroCta: "Crear mi cuenta gratis",
+    heroCta: "Empezar con el plan Descubrimiento",
     heroStat: "⭐ Cientos de conversaciones cada semana.",
     billingNote:
       "Facturación segura con Stripe · Cambia o cancela cuando quieras · Sin cargos ocultos",
@@ -302,15 +313,16 @@ const LABELS: Record<Locale, Labels> = {
         id: "free",
         name: "Descubrimiento",
         price: "0 $ USD / mes",
-        tagline: "Empieza tu relación con AmorIAI, sin tarjeta.",
+        tagline:
+          "Empieza tu relación con AmorIAI, sin tarjeta de crédito.",
         features: [
-          "Perfecto para descubrir la experiencia y crear tu primer compañero IA.",
+          "Perfecto para descubrir la experiencia y crear tu primer compañero IA sin presión.",
           "Creación de 1 AmorIAI personalizado",
           "200 mensajes de texto / mes",
           "Sin conversaciones de voz (solo texto)",
           "Acceso a FR, EN, ES",
         ],
-        ctaLabel: "Empezar gratis",
+        ctaLabel: "Elegir Descubrimiento",
       },
       {
         id: "chat",
@@ -330,12 +342,13 @@ const LABELS: Record<Locale, Labels> = {
         id: "plus",
         name: "AmorIAI Plus",
         price: "19,99 $ USD / mes",
-        tagline: "Texto + voz IA: tu AmorIAI entra en tu rutina diaria.",
+        tagline:
+          "Texto + voz IA: tu AmorIAI entra en tu rutina diaria.",
         features: [
           "Cuando quieres una relación continua, por texto y por voz.",
           "Hasta 10 AmorIAI diferentes",
           "1000 mensajes de texto / mes",
-          "100 respuestas de voz generadas por la IA / mes (tu AmorIAI lee los mensajes en voz alta)",
+          "100 respuestas de voz generadas por la IA / mes",
           "Memoria a largo plazo activada",
           "Prioridad ligera en la cola de procesamiento",
         ],
@@ -347,7 +360,8 @@ const LABELS: Record<Locale, Labels> = {
         id: "unlimited",
         name: "AmorIAI Ilimitado",
         price: "39,99 $ USD / mes",
-        tagline: "Tu compañero IA muy presente en tu día a día.",
+        tagline:
+          "Tu compañero IA muy presente, con IA que habla y se mueve en pantalla.",
         features: [
           "Para quienes quieren que AmorIAI esté siempre disponible.",
           "Hasta 30 AmorIAI personalizados",
@@ -355,6 +369,7 @@ const LABELS: Record<Locale, Labels> = {
           "300 respuestas de voz generadas por la IA / mes",
           "Memoria profunda + contexto ampliado",
           "Prioridad máxima y acceso anticipado a nuevas funciones",
+          "Acceso exclusivo a vídeos de IA animada en bucle (avatares en movimiento) solo en el plan Ilimitado",
         ],
         badgeLabel: "Mejor valor",
         badgeVariant: "value",
@@ -379,6 +394,10 @@ const LABELS: Record<Locale, Labels> = {
   },
 };
 
+/* ===========================
+   UTIL LOCALE
+=========================== */
+
 function detectInitialLocale(): Locale {
   if (typeof window === "undefined") return "fr";
   const params = new URLSearchParams(window.location.search);
@@ -392,9 +411,14 @@ function detectInitialLocale(): Locale {
   return "en";
 }
 
+/* ===========================
+   COMPONENT
+=========================== */
+
 export default function PricingPage() {
   const router = useRouter();
   const [locale, setLocale] = useState<Locale>("fr");
+  const [sessionLoading, setSessionLoading] = useState(false);
 
   useEffect(() => {
     const initial = detectInitialLocale();
@@ -418,51 +442,94 @@ export default function PricingPage() {
     window.history.replaceState(null, "", newUrl);
   };
 
-  // ✅ NOUVELLE VERSION
-  const handleChoosePlan = async (planId: PlanId) => {
+  /* ============
+     HELPERS NAV
+  ============ */
+
+  const goToSignupWithPlan = (planId: PlanId) => {
     const params = new URLSearchParams();
     params.set("lang", locale);
     params.set("plan", planId);
+    router.push(`/signup?${params.toString()}`);
+  };
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+  const goToCreateAmoria = (planId: PlanId) => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    params.set("plan", planId);
+    router.push(`/create-amoria?${params.toString()}`);
+  };
 
-    // Pas connecté → signup
-    if (!session?.user) {
-      router.push(`/signup?${params.toString()}`);
-      return;
-    }
-
-    // Connecté + plan gratuit → direct create-amoria
-    if (planId === "free") {
-      router.push(`/create-amoria?${params.toString()}`);
-      return;
-    }
-
-    // Connecté + plan payant → Stripe/payment
+  const goToPayment = (planId: PlanId) => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    params.set("plan", planId);
     router.push(`/payment?${params.toString()}`);
   };
 
-  // ✅ NOUVELLE VERSION
+  /* ============
+     HERO CTA = toujours FREE
+  ============ */
+
   const handleHeroCta = async () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    params.set("plan", "free");
+    setSessionLoading(true);
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      const currentSession = data?.session;
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      if (error) {
+        console.error("getSession error", error);
+      }
 
-    if (session?.user) {
-      router.push(`/create-amoria?${params.toString()}`);
-    } else {
-      router.push(`/signup?${params.toString()}`);
+      // Pas connecté → signup avec plan=free
+      if (!currentSession?.user) {
+        goToSignupWithPlan("free");
+        return;
+      }
+
+      // Connecté → direct create-amoria avec plan=free
+      goToCreateAmoria("free");
+    } finally {
+      setSessionLoading(false);
+    }
+  };
+
+  /* ============
+     CLICK SUR UNE CARTE DE PRIX
+  ============ */
+
+  const handleChoosePlan = async (planId: PlanId) => {
+    setSessionLoading(true);
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      const currentSession = data?.session;
+
+      if (error) {
+        console.error("getSession error", error);
+      }
+
+      // 1) Pas connecté → on va au signup avec le bon plan
+      if (!currentSession?.user) {
+        goToSignupWithPlan(planId);
+        return;
+      }
+
+      // 2) Connecté + free → page création AmorIAI
+      if (planId === "free") {
+        goToCreateAmoria("free");
+        return;
+      }
+
+      // 3) Connecté + plan payant → Stripe/payment
+      goToPayment(planId);
+    } finally {
+      setSessionLoading(false);
     }
   };
 
   return (
     <main className="amoria-root">
+      {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
           <img
@@ -523,16 +590,22 @@ export default function PricingPage() {
         </div>
       </header>
 
+      {/* HERO */}
       <section className="amoria-pricing-hero">
         <h1 className="amoria-pricing-title">{t.heroTitle}</h1>
         <p className="amoria-pricing-subtitle">{t.heroSubtitle}</p>
-        <button className="amoria-pricing-hero-btn" onClick={handleHeroCta}>
+        <button
+          className="amoria-pricing-hero-btn"
+          onClick={handleHeroCta}
+          disabled={sessionLoading}
+        >
           {t.heroCta}
         </button>
         <p className="amoria-pricing-hero-stat">{t.heroStat}</p>
         <p className="amoria-pricing-billing-note">{t.billingNote}</p>
       </section>
 
+      {/* PLANS */}
       <section className="amoria-pricing-section">
         <h2 className="amoria-pricing-section-title">{t.chooseIntro}</h2>
         <p className="amoria-pricing-section-note">{t.usdNote}</p>
@@ -566,7 +639,9 @@ export default function PricingPage() {
               <header className="amoria-pricing-card-header">
                 <h3 className="amoria-pricing-card-name">{plan.name}</h3>
                 <p className="amoria-pricing-card-price">{plan.price}</p>
-                <p className="amoria-pricing-card-tagline">{plan.tagline}</p>
+                <p className="amoria-pricing-card-tagline">
+                  {plan.tagline}
+                </p>
               </header>
 
               <ul className="amoria-pricing-card-features">
@@ -578,6 +653,7 @@ export default function PricingPage() {
               <button
                 className="amoria-pricing-card-btn"
                 onClick={() => handleChoosePlan(plan.id)}
+                disabled={sessionLoading}
               >
                 {plan.ctaLabel}
               </button>
@@ -586,6 +662,7 @@ export default function PricingPage() {
         </div>
       </section>
 
+      {/* FAQ */}
       <section className="amoria-pricing-faq">
         <h2 className="amoria-pricing-faq-title">{t.faqTitle}</h2>
         <div className="amoria-pricing-faq-grid">
@@ -598,6 +675,7 @@ export default function PricingPage() {
         </div>
       </section>
 
+      {/* FOOTER */}
       <footer className="amoria-footer">
         <div className="amoria-footer-top">
           <span>{ui.footerCopy}</span>
@@ -606,10 +684,16 @@ export default function PricingPage() {
           <a href={withLang("/legal")} className="amoria-footer-link">
             {ui.footerLinks.legal}
           </a>
-          <a href={withLang("/legal/privacy")} className="amoria-footer-link">
+          <a
+            href={withLang("/legal/privacy")}
+            className="amoria-footer-link"
+          >
             {ui.footerLinks.privacy}
           </a>
-          <a href={withLang("/legal/terms")} className="amoria-footer-link">
+          <a
+            href={withLang("/legal/terms")}
+            className="amoria-footer-link"
+          >
             {ui.footerLinks.terms}
           </a>
           <a href={withLang("/contact")} className="amoria-footer-link">
@@ -1110,4 +1194,4 @@ export default function PricingPage() {
       `}</style>
     </main>
   );
-}
+        }
