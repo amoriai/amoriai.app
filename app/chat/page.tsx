@@ -164,8 +164,11 @@ function ChatClient() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
-  // Gestion voix selon abonnement Supabase (Plus / Illimité)
+  // Voix (Plus / Illimité)
   const [canUseVoice, setCanUseVoice] = useState(false);
+
+  // Avatar animé (Unlimited uniquement)
+  const [canAnimateAvatar, setCanAnimateAvatar] = useState(false);
 
   // Micro / dictée
   const [isRecording, setIsRecording] = useState(false);
@@ -179,35 +182,67 @@ function ChatClient() {
         const { data: userData } = await supabase.auth.getUser();
         const user = userData?.user;
         if (!user) {
-          // pas connecté → pas de voix
           setCanUseVoice(false);
+          setCanAnimateAvatar(false);
           setSttSupported(false);
           return;
         }
 
+        /**
+         * IMPORTANT :
+         * - Ce code suppose que la table `pricing_plans` a :
+         *   - un booléen `has_voice`
+         *   - un champ d’identifiant de plan, par ex. `code` (avec valeur "unlimited")
+         *   - éventuellement un booléen `allow_animated_avatar` (true seulement pour Unlimited)
+         * - Adapte les colonnes dans le `select(...)` si ton schéma est différent.
+         */
         const { data: sub, error } = await supabase
           .from("user_subscriptions")
-          .select("pricing_plans(has_voice)")
+          .select(
+            `
+              pricing_plans (
+                has_voice,
+                allow_animated_avatar,
+                code
+              )
+            `
+          )
           .eq("user_id", user.id)
           .eq("current", true)
           .maybeSingle();
 
         if (error || !sub) {
           setCanUseVoice(false);
+          setCanAnimateAvatar(false);
           setSttSupported(false);
           return;
         }
 
         const rawPlans: any = (sub as any).pricing_plans;
+
         let hasVoiceFromDB = false;
+        let allowAnimatedAvatar = false;
 
         if (Array.isArray(rawPlans)) {
-          hasVoiceFromDB = !!rawPlans[0]?.has_voice;
+          const p = rawPlans[0] ?? {};
+          hasVoiceFromDB = !!p.has_voice;
+          if (typeof p.allow_animated_avatar === "boolean") {
+            allowAnimatedAvatar = p.allow_animated_avatar;
+          } else if (p.code === "unlimited") {
+            // fallback : si pas de colonne booléenne, on se base sur le code du plan
+            allowAnimatedAvatar = true;
+          }
         } else if (rawPlans && typeof rawPlans === "object") {
           hasVoiceFromDB = !!rawPlans.has_voice;
+          if (typeof rawPlans.allow_animated_avatar === "boolean") {
+            allowAnimatedAvatar = rawPlans.allow_animated_avatar;
+          } else if (rawPlans.code === "unlimited") {
+            allowAnimatedAvatar = true;
+          }
         }
 
         setCanUseVoice(hasVoiceFromDB);
+        setCanAnimateAvatar(allowAnimatedAvatar);
 
         if (!hasVoiceFromDB) {
           setSttSupported(false);
@@ -215,6 +250,7 @@ function ChatClient() {
       } catch (err) {
         console.error("Erreur loadSubscription:", err);
         setCanUseVoice(false);
+        setCanAnimateAvatar(false);
         setSttSupported(false);
       }
     };
@@ -382,7 +418,7 @@ function ChatClient() {
     loadAI();
   }, [iaId, t.genericError]);
 
-  // Charger l’historique (optionnel)
+  // Charger l’historique
   useEffect(() => {
     const loadHistory = async () => {
       if (!iaId) return;
@@ -421,7 +457,9 @@ function ChatClient() {
     }
 
     const content = newMessage.trim();
-    const baseId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const baseId = `${Date.now()}-${Math.random()
+      .toString(16)
+      .slice(2)}`;
 
     const userMessage: ChatMessage = {
       id: `${baseId}-user`,
@@ -503,17 +541,12 @@ function ChatClient() {
 
   const displayNameUpper = displayName.toUpperCase();
 
-  // 🔥 Nouveau : gestion image / vidéo
   const avatarImageUrl = ai?.avatar_image_url ?? null;
-  const avatarVideoUrl =
-    avatarImageUrl && avatarImageUrl.endsWith(".png")
-      ? avatarImageUrl.replace(".png", ".mp4")
-      : null;
 
-  // Pour l’instant on réutilise canUseVoice pour décider si l’avatar s’anime.
-  // Si tu veux lier ça UNIQUEMENT au plan Unlimited plus tard, tu pourras
-  // remplacer cette ligne par un flag is_unlimited venant de Supabase.
-  const canAnimateAvatar = !!avatarVideoUrl && canUseVoice;
+  const avatarVideoUrl =
+    avatarImageUrl && /\.(png|jpe?g|webp)$/i.test(avatarImageUrl)
+      ? avatarImageUrl.replace(/\.(png|jpe?g|webp)$/i, ".mp4")
+      : null;
 
   return (
     <main className="chat-root">
@@ -802,12 +835,7 @@ function ChatClient() {
           word-wrap: break-word;
         }
         .chat-message--user .chat-bubble {
-          background: linear-gradient(
-            135deg,
-            #fb37ff,
-            #ff6b9c,
-            #f97316
-          );
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
           border-bottom-right-radius: 0.24rem;
         }
@@ -879,12 +907,7 @@ function ChatClient() {
           padding: 0.65rem 1.4rem;
           font-size: 0.9rem;
           cursor: pointer;
-          background: linear-gradient(
-            135deg,
-            #fb37ff,
-            #ff6b9c,
-            #f97316
-          );
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
           box-shadow: 0 16px 40px rgba(248, 113, 113, 0.55);
           min-width: 120px;
@@ -984,4 +1007,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-}
+      }
