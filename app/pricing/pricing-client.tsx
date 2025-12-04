@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
@@ -417,6 +418,7 @@ function detectInitialLocale(): Locale {
 export default function PricingPage() {
   const router = useRouter();
   const [locale, setLocale] = useState<Locale>("fr");
+  const [sessionLoading, setSessionLoading] = useState(false);
 
   useEffect(() => {
     const initial = detectInitialLocale();
@@ -441,8 +443,15 @@ export default function PricingPage() {
   };
 
   /* ============
-     NAV HELPERS
+     HELPERS NAV
   ============ */
+
+  const goToSignupWithPlan = (planId: PlanId) => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    params.set("plan", planId);
+    router.push(`/signup?${params.toString()}`);
+  };
 
   const goToCreateAmoria = (planId: PlanId) => {
     const params = new URLSearchParams();
@@ -462,19 +471,59 @@ export default function PricingPage() {
      HERO CTA = toujours FREE
   ============ */
 
-  const handleHeroCta = () => {
-    goToCreateAmoria("free");
+  const handleHeroCta = async () => {
+    setSessionLoading(true);
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      const currentSession = data?.session;
+
+      if (error) {
+        console.error("getSession error", error);
+      }
+
+      // Pas connecté → signup avec plan=free
+      if (!currentSession?.user) {
+        goToSignupWithPlan("free");
+        return;
+      }
+
+      // Connecté → direct create-amoria avec plan=free
+      goToCreateAmoria("free");
+    } finally {
+      setSessionLoading(false);
+    }
   };
 
   /* ============
      CLICK SUR UNE CARTE DE PRIX
   ============ */
 
-  const handleChoosePlan = (planId: PlanId) => {
-    if (planId === "free") {
-      goToCreateAmoria("free");
-    } else {
+  const handleChoosePlan = async (planId: PlanId) => {
+    setSessionLoading(true);
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      const currentSession = data?.session;
+
+      if (error) {
+        console.error("getSession error", error);
+      }
+
+      // 1) Pas connecté → on va au signup avec le bon plan
+      if (!currentSession?.user) {
+        goToSignupWithPlan(planId);
+        return;
+      }
+
+      // 2) Connecté + free → page création AmorIAI
+      if (planId === "free") {
+        goToCreateAmoria("free");
+        return;
+      }
+
+      // 3) Connecté + plan payant → Stripe/payment
       goToPayment(planId);
+    } finally {
+      setSessionLoading(false);
     }
   };
 
@@ -548,6 +597,7 @@ export default function PricingPage() {
         <button
           className="amoria-pricing-hero-btn"
           onClick={handleHeroCta}
+          disabled={sessionLoading}
         >
           {t.heroCta}
         </button>
@@ -603,6 +653,7 @@ export default function PricingPage() {
               <button
                 className="amoria-pricing-card-btn"
                 onClick={() => handleChoosePlan(plan.id)}
+                disabled={sessionLoading}
               >
                 {plan.ctaLabel}
               </button>
@@ -654,7 +705,493 @@ export default function PricingPage() {
         </div>
       </footer>
 
-      {/* styles identiques à ta version (je ne les recolle pas ici pour ne pas rallonger encore plus) */}
+      <style jsx global>{`
+        :root {
+          --amoria-bg: #020617;
+          --amoria-bg-elevated: #02081f;
+          --amoria-border-subtle: rgba(148, 163, 184, 0.35);
+          --amoria-text-main: #e5e7eb;
+          --amoria-text-muted: #9ca3af;
+          --amoria-accent: #fb37ff;
+          --amoria-accent-2: #ff6b9c;
+        }
+
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont,
+            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+          background: radial-gradient(
+            circle at top,
+            #020617 0,
+            #020617 40%,
+            #000 100%
+          );
+          color: var(--amoria-text-main);
+        }
+
+        .amoria-root {
+          min-height: 100vh;
+          background: radial-gradient(
+            circle at top left,
+            #111827 0,
+            #020617 55%,
+            #000 100%
+          );
+          color: var(--amoria-text-main);
+          padding-bottom: 3rem;
+        }
+
+        .amoria-header {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 1rem 1.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          backdrop-filter: blur(16px);
+          background: linear-gradient(
+            to bottom,
+            rgba(15, 23, 42, 0.92),
+            rgba(15, 23, 42, 0.75),
+            transparent
+          );
+        }
+
+        .amoria-header-left {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+        }
+
+        .amoria-logo-full {
+          height: 36px;
+          width: auto;
+        }
+
+        .amoria-logo-text {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .amoria-logo-title {
+          font-weight: 600;
+          font-size: 0.96rem;
+        }
+
+        .amoria-logo-tagline {
+          font-size: 0.72rem;
+          color: var(--amoria-text-muted);
+        }
+
+        .amoria-nav {
+          display: flex;
+          align-items: center;
+          gap: 1.2rem;
+        }
+
+        .amoria-nav-link {
+          font-size: 0.82rem;
+          color: var(--amoria-text-muted);
+          text-decoration: none;
+          padding-bottom: 0.1rem;
+          border-bottom: 1px solid transparent;
+        }
+
+        .amoria-nav-link:hover {
+          color: #f9fafb;
+          border-color: rgba(148, 163, 184, 0.7);
+        }
+
+        .amoria-nav-link--active {
+          color: #f9fafb;
+          border-color: rgba(248, 250, 252, 0.9);
+        }
+
+        .amoria-nav-right {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .amoria-lang-switch {
+          display: flex;
+          gap: 0.25rem;
+          background: rgba(15, 23, 42, 0.9);
+          padding: 0.18rem;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.4);
+        }
+
+        .amoria-lang-pill {
+          border-radius: 999px;
+          border: none;
+          padding: 0.15rem 0.48rem;
+          font-size: 0.72rem;
+          background: transparent;
+          color: var(--amoria-text-muted);
+          cursor: pointer;
+        }
+
+        .amoria-lang-pill--active {
+          background: #0f172a;
+          color: #f9fafb;
+        }
+
+        .amoria-nav-btn {
+          border-radius: 999px;
+          padding: 0.4rem 0.9rem;
+          font-size: 0.78rem;
+          border: 1px solid transparent;
+          cursor: pointer;
+          white-space: nowrap;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .amoria-nav-btn--primary {
+          background: linear-gradient(
+            135deg,
+            var(--amoria-accent),
+            var(--amoria-accent-2)
+          );
+          color: #f9fafb;
+        }
+
+        .amoria-nav-btn--ghost {
+          background: transparent;
+          border-color: rgba(148, 163, 184, 0.5);
+          color: var(--amoria-text-main);
+        }
+
+        .amoria-pricing-hero {
+          max-width: 960px;
+          margin: 0 auto;
+          padding: 1.8rem 1.5rem 2.3rem;
+          text-align: center;
+        }
+
+        .amoria-pricing-title {
+          font-size: 1.9rem;
+          font-weight: 600;
+          margin-bottom: 0.8rem;
+        }
+
+        .amoria-pricing-subtitle {
+          font-size: 0.98rem;
+          color: #9ca3af;
+          margin-bottom: 1.4rem;
+        }
+
+        .amoria-pricing-hero-btn {
+          border: none;
+          border-radius: 999px;
+          padding: 0.85rem 2.1rem;
+          font-size: 0.98rem;
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
+          color: #f9fafb;
+          cursor: pointer;
+          margin-bottom: 0.8rem;
+          box-shadow: 0 16px 40px rgba(248, 113, 113, 0.5);
+        }
+
+        .amoria-pricing-hero-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 22px 55px rgba(248, 113, 113, 0.7);
+        }
+
+        .amoria-pricing-hero-stat {
+          font-size: 0.86rem;
+          color: #fde68a;
+          margin-bottom: 0.3rem;
+        }
+
+        .amoria-pricing-billing-note {
+          font-size: 0.8rem;
+          color: #9ca3af;
+        }
+
+        .amoria-pricing-section {
+          max-width: 1100px;
+          width: 100%;
+          margin: 0 auto;
+          padding: 0 1.5rem 2.2rem;
+        }
+
+        .amoria-pricing-section-title {
+          text-align: center;
+          font-size: 1.1rem;
+          margin-bottom: 0.4rem;
+        }
+
+        .amoria-pricing-section-note {
+          text-align: center;
+          font-size: 0.82rem;
+          color: #9ca3af;
+          margin-bottom: 1.7rem;
+        }
+
+        .amoria-pricing-grid {
+          display: grid;
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+          gap: 1.3rem;
+        }
+
+        @media (min-width: 900px) {
+          .amoria-pricing-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+          }
+        }
+
+        .amoria-pricing-card {
+          position: relative;
+          border-radius: 1.6rem;
+          padding: 2.1rem 1.2rem 1.4rem;
+          background: radial-gradient(
+            circle at top,
+            #020617 0,
+            #020617 45%,
+            #020617 100%
+          );
+          border: 1px solid rgba(148, 163, 184, 0.45);
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          min-height: 280px;
+          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.8);
+        }
+
+        .amoria-pricing-card--popular {
+          border-color: #fb37ff;
+          box-shadow: 0 24px 70px rgba(251, 55, 255, 0.6);
+          animation: amoriaGlowPulse 5s ease-in-out infinite;
+        }
+
+        .amoria-pricing-card--value {
+          border-color: #22c55e;
+          box-shadow: 0 22px 60px rgba(34, 197, 94, 0.45);
+        }
+
+        @keyframes amoriaGlowPulse {
+          0% {
+            box-shadow: 0 20px 50px rgba(251, 55, 255, 0.45);
+            transform: translateY(0);
+          }
+          50% {
+            box-shadow: 0 32px 80px rgba(251, 55, 255, 0.9);
+            transform: translateY(-3px);
+          }
+          100% {
+            box-shadow: 0 20px 50px rgba(251, 55, 255, 0.45);
+            transform: translateY(0);
+          }
+        }
+
+        .amoria-pricing-badge {
+          position: absolute;
+          top: 0.7rem;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 0.2rem 0.9rem;
+          border-radius: 999px;
+          font-size: 0.68rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          font-weight: 600;
+          border: 1px solid rgba(248, 250, 252, 0.5);
+          white-space: nowrap;
+        }
+
+        .amoria-pricing-badge--popular {
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c);
+          color: #f9fafb;
+        }
+
+        .amoria-pricing-badge--value {
+          background: linear-gradient(135deg, #22c55e, #4ade80);
+          color: #052e16;
+        }
+
+        .amoria-pricing-card-header {
+          margin-bottom: 0.9rem;
+        }
+
+        .amoria-pricing-card-name {
+          font-size: 1rem;
+          font-weight: 600;
+          margin-bottom: 0.25rem;
+        }
+
+        .amoria-pricing-card-price {
+          font-size: 1.05rem;
+          font-weight: 600;
+          margin-bottom: 0.4rem;
+        }
+
+        .amoria-pricing-card-tagline {
+          font-size: 0.8rem;
+          color: #9ca3af;
+        }
+
+        .amoria-pricing-card-features {
+          list-style: none;
+          padding: 0;
+          margin: 0 0 1.1rem;
+          font-size: 0.78rem;
+          color: #d1d5db;
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+        }
+
+        .amoria-pricing-card-features li {
+          position: relative;
+          padding-left: 1.1rem;
+          line-height: 1.6;
+        }
+
+        .amoria-pricing-card-features li::before {
+          content: "•";
+          position: absolute;
+          left: 0.25rem;
+          top: 0.1rem;
+          font-size: 0.9rem;
+          color: #f97316;
+          opacity: 0.9;
+        }
+
+        .amoria-pricing-card-btn {
+          border-radius: 999px;
+          border: none;
+          padding: 0.8rem 1.3rem;
+          font-size: 0.85rem;
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
+          color: #f9fafb;
+          cursor: pointer;
+          width: 100%;
+          box-shadow: 0 14px 35px rgba(248, 113, 113, 0.55);
+        }
+
+        .amoria-pricing-card-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 18px 45px rgba(248, 113, 113, 0.8);
+        }
+
+        .amoria-pricing-faq {
+          max-width: 960px;
+          width: 100%;
+          margin: 0 auto;
+          padding: 0 1.5rem 2.5rem;
+        }
+
+        .amoria-pricing-faq-title {
+          text-align: center;
+          font-size: 1.05rem;
+          margin-bottom: 1rem;
+        }
+
+        .amoria-pricing-faq-grid {
+          display: grid;
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+          gap: 0.9rem;
+        }
+
+        @media (min-width: 800px) {
+          .amoria-pricing-faq-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+
+        .amoria-pricing-faq-card {
+          border-radius: 0.9rem;
+          padding: 0.9rem 1rem;
+          background: radial-gradient(
+            circle at top,
+            rgba(15, 23, 42, 0.98),
+            rgba(15, 23, 42, 1)
+          );
+          border: 1px solid rgba(148, 163, 184, 0.6);
+          font-size: 0.8rem;
+        }
+
+        .amoria-pricing-faq-card h3 {
+          font-size: 0.86rem;
+          margin-bottom: 0.4rem;
+        }
+
+        .amoria-pricing-faq-card p {
+          color: #d1d5db;
+          line-height: 1.5;
+        }
+
+        .amoria-footer {
+          max-width: 1120px;
+          margin: 0 auto;
+          padding: 1.5rem 1.5rem 0;
+          font-size: 0.78rem;
+          color: var(--amoria-text-muted);
+          text-align: center;
+        }
+
+        .amoria-footer-top {
+          margin-bottom: 0.4rem;
+        }
+
+        .amoria-footer-links {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 0.8rem;
+        }
+
+        .amoria-footer-link {
+          color: var(--amoria-text-muted);
+          text-decoration: none;
+          font-size: 0.78rem;
+        }
+
+        .amoria-footer-link:hover {
+          color: #e5e7eb;
+          text-decoration: underline;
+        }
+
+        @media (max-width: 960px) {
+          .amoria-header {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.6rem 1rem;
+          }
+
+          .amoria-nav {
+            display: none;
+          }
+
+          .amoria-pricing-hero {
+            padding-inline: 1.3rem;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .amoria-header {
+            padding-inline: 1rem;
+          }
+
+          .amoria-pricing-section,
+          .amoria-pricing-faq {
+            padding-inline: 1rem;
+          }
+
+          .amoria-nav-right a.amoria-nav-btn--ghost {
+            display: none;
+          }
+        }
+      `}</style>
     </main>
   );
-    }
+  }
