@@ -1,23 +1,21 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL; // ex. https://amoriai.app
-
-if (!stripeSecretKey) {
-  throw new Error("STRIPE_SECRET_KEY is not defined in environment variables.");
-}
-if (!siteUrl) {
-  throw new Error("NEXT_PUBLIC_SITE_URL is not defined in environment variables.");
-}
-
-const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: "2023-10-16",
-});
-
 type PlanId = "chat" | "plus" | "unlimited";
 
-// 🔗 Mapping entre TON code et les prices Stripe (UNIQUEMENT les priceId)
+// ⚠️ On lit les env, mais SANS throw ici
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+
+// On instancie Stripe uniquement si on a une clé
+const stripe =
+  stripeSecretKey !== ""
+    ? new Stripe(stripeSecretKey, {
+        apiVersion: "2023-10-16",
+      })
+    : null;
+
+// Mapping plan → priceId Stripe
 const PLAN_CONFIG: Record<PlanId, { priceId?: string }> = {
   chat: {
     priceId: process.env.STRIPE_PRICE_CHAT,
@@ -37,7 +35,7 @@ export async function POST(req: Request) {
       user_id?: string;
     };
 
-    // 1) Validation de base
+    // 1) Validation plan / user
     if (!plan || !["chat", "plus", "unlimited"].includes(plan)) {
       return NextResponse.json(
         { error: "Plan invalide." },
@@ -52,10 +50,27 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2) Récupérer la config du plan
+    // 2) Vérifier la config Stripe
+    if (!stripe) {
+      console.error("Stripe non initialisé : STRIPE_SECRET_KEY manquante");
+      return NextResponse.json(
+        { error: "Configuration Stripe manquante côté serveur." },
+        { status: 500 }
+      );
+    }
+
+    if (!siteUrl) {
+      console.error("NEXT_PUBLIC_SITE_URL manquante");
+      return NextResponse.json(
+        { error: "Configuration siteUrl manquante côté serveur." },
+        { status: 500 }
+      );
+    }
+
     const cfg = PLAN_CONFIG[plan];
 
     if (!cfg || !cfg.priceId) {
+      console.error("Price ID manquant pour le plan :", plan);
       return NextResponse.json(
         { error: "Aucun price Stripe configuré pour ce plan." },
         { status: 500 }
@@ -75,19 +90,19 @@ export async function POST(req: Request) {
       success_url: `${siteUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/payment/cancel`,
       metadata: {
-        user_id,          // id Supabase de l'utilisateur
-        plan_code: plan,  // "chat" | "plus" | "unlimited"
+        user_id,
+        plan_code: plan,
       },
     });
 
     if (!session.url) {
+      console.error("Stripe a créé la session, mais sans URL :", session.id);
       return NextResponse.json(
         { error: "Impossible de générer l’URL de paiement Stripe." },
         { status: 500 }
       );
     }
 
-    // 4) Retourner l’URL au frontend
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("Stripe checkout error:", err);
