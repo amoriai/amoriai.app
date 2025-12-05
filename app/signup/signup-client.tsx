@@ -59,19 +59,30 @@ export default function SignupClient() {
 
   /**
    * Google OAuth
-   * → retour direct sur /pricing (PAS /auth/callback, qui n'existe pas)
+   * → passe par /auth/callback qui termine la session,
+   * puis /auth/callback redirige vers /pricing.
    */
   const handleGoogle = async () => {
     setLoading(true);
     setErrorMsg("");
 
-    const lang = localeParam || "fr";
-    const plan = initialPlan || "free";
+    const lang: Locale =
+      localeParam === "fr" || localeParam === "en" || localeParam === "es"
+        ? localeParam
+        : "fr";
+
+    const plan: PlanId =
+      initialPlan === "free" ||
+      initialPlan === "chat" ||
+      initialPlan === "plus" ||
+      initialPlan === "unlimited"
+        ? initialPlan
+        : "free";
 
     const redirectUrl =
       typeof window !== "undefined"
-        ? `${window.location.origin}/pricing?lang=${lang}&plan=${plan}`
-        : `/pricing?lang=${lang}&plan=${plan}`;
+        ? `${window.location.origin}/auth/callback?lang=${lang}&plan=${plan}`
+        : undefined;
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
