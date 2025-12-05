@@ -1,12 +1,9 @@
-import RequireAuthClient from "../../RequireAuthClient";
-import ChatClient from "./ChatClient";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
-export default function Page({ params }: { params: { amoriaId: string } }) {
-  return (
-    <RequireAuthClient>
-      <ChatClient amoriaId={params.amoriaId} />
-    </RequireAuthClient>
-  );
+export default function AmoriaRedirectPage({
+  params,
+}: {
+  params: { amoriaId: string };
+}) {
+  redirect(`/chat?amoriaId=${params.amoriaId}`);
 }
