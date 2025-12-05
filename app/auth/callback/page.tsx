@@ -2,44 +2,33 @@
 
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "../../lib/supabaseClient";
-
-type Locale = "fr" | "en" | "es";
-type PlanId = "free" | "chat" | "plus" | "unlimited";
-
-export const dynamic = "force-dynamic";
+import { supabase } from "../../../lib/supabaseClient";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    const run = async () => {
-      try {
-        // Supabase termine la connexion Google avec le code dans l’URL
-        const { error } = await supabase.auth.exchangeCodeForSession(
-          window.location.href
-        );
-        if (error) {
-          console.error("OAuth callback error", error);
-        }
-      } catch (err) {
-        console.error("Unexpected callback error", err);
+    const finalizeAuth = async () => {
+      const lang = searchParams.get("lang") || "fr";
+      const plan = searchParams.get("plan") || "free";
+
+      // On vérifie la session après Google
+      const { data } = await supabase.auth.getSession();
+
+      if (data.session) {
+        router.replace(`/pricing?lang=${lang}&plan=${plan}`);
+      } else {
+        router.replace(`/signup?lang=${lang}&plan=${plan}`);
       }
-
-      const lang = (searchParams.get("lang") as Locale) || "fr";
-      const plan = (searchParams.get("plan") as PlanId) || "free";
-
-      // Une fois la session créée, retour vers la page pricing
-      router.replace(`/pricing?lang=${lang}&plan=${plan}`);
     };
 
-    run();
+    finalizeAuth();
   }, [router, searchParams]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-slate-200">
-      <p>Connexion en cours…</p>
+    <div className="min-h-screen flex items-center justify-center text-white bg-black">
+      Connexion en cours...
     </div>
   );
 }
