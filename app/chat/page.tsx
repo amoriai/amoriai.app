@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
+import { LogoutButton } from "../components/LogoutButton";
 
 type Locale = "fr" | "en" | "es";
 
@@ -437,7 +438,7 @@ function ChatClient() {
     loadHistory();
   }, [iaId]);
 
-  // 🚀 Envoi du message + ajout du token Supabase dans Authorization
+  // Envoi du message
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSendError(null);
@@ -465,7 +466,6 @@ function ChatClient() {
     setSending(true);
 
     try {
-      // 🔐 Récupérer la session Supabase côté client
       const { data: sessionData, error: sessionError } =
         await supabase.auth.getSession();
 
@@ -485,7 +485,7 @@ function ChatClient() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`, // ✅ token envoyé à l’API
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ iaId, message: content, lang: locale }),
       });
@@ -566,6 +566,7 @@ function ChatClient() {
         <a href={homeUrl} className="chat-back">
           {t.backHome}
         </a>
+        <LogoutButton />
       </header>
 
       <section className="chat-card">
@@ -600,7 +601,7 @@ function ChatClient() {
                   ) : (
                     <img
                       src={avatarImageUrl}
-                      alt={`Avatar de {displayName}`}
+                      alt={`Avatar de ${displayName}`}
                       className="chat-avatar-img"
                     />
                   )
@@ -701,6 +702,10 @@ function ChatClient() {
           width: 100%;
           max-width: 900px;
           margin-bottom: 1rem;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
         }
         .chat-back {
           font-size: 0.8rem;
@@ -1019,4 +1024,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-}
+                                                             }
