@@ -1,7 +1,5 @@
 import { Suspense } from "react";
-import SignupClient from "./signup-client";
-
-export const dynamic = "force-dynamic";
+import SignupClient from "./SignupClient";
 
 export default function SignupPage() {
   return (
@@ -10,4 +8,5 @@ export default function SignupPage() {
     </Suspense>
   );
 }
+
 
