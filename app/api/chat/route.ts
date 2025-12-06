@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+const FREE_MONTHLY_LIMIT = 200; // 🔒 Free = 200 messages par mois
+
+function getCurrentPeriodStart(): string {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  return monthStart.toISOString().slice(0, 10); // "YYYY-MM-DD"
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -57,7 +65,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
     }
 
-    // 2️⃣ Client admin (service role) pour lire les tables
+    const userId = user.id;
+
+    // 2️⃣ Client admin (service role) pour lire / écrire dans les tables
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
     // 3️⃣ L’IA doit appartenir à cet utilisateur
@@ -65,7 +75,7 @@ export async function POST(req: Request) {
       .from("user_amoria")
       .select("id, user_id, name, system_prompt, credits, voice_id")
       .eq("id", iaId)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (iaError || !iaRow) {
@@ -75,55 +85,96 @@ export async function POST(req: Request) {
 
     const currentCredits: number = iaRow.credits ?? 0;
 
-    // 4️⃣ Abonnement : si pas de ligne, on considère un plan "Free" avec limite large
+    // 4️⃣ Abonnement & plan
     let maxText = 0;
     let hasVoiceFromPlan = false;
     let voiceLimitFromPlan = 0;
     let planName = "Free";
+    let planCode: string | null = null;
 
     const { data: subscription } = await supabaseAdmin
       .from("user_subscriptions")
       .select("pricing_plan_id")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("status", "active")
       .maybeSingle();
 
     if (subscription?.pricing_plan_id) {
       const { data: plan, error: planError } = await supabaseAdmin
         .from("pricing_plans")
-        .select("name, message_limit, has_voice, voice_limit")
+        .select("code, name, message_limit, has_voice, voice_limit")
         .eq("id", subscription.pricing_plan_id)
         .single();
 
       if (!planError && plan) {
+        planCode = plan.code ?? null;
+        planName = plan.name ?? "Unknown";
         maxText = plan.message_limit ?? 0;
         hasVoiceFromPlan = !!plan.has_voice;
         voiceLimitFromPlan = plan.voice_limit ?? 0;
-        planName = plan.name ?? "Unknown";
       }
     } else {
       // Aucun abonnement = plan gratuit par défaut
-      maxText = 1000;
+      planCode = "free";
+      planName = "Free";
+      maxText = 0; // on ne se sert pas de message_limit pour le free
       hasVoiceFromPlan = false;
       voiceLimitFromPlan = 0;
-      planName = "Free";
     }
 
-    // 5️⃣ Vérifier le quota texte
-    if (maxText > 0 && currentCredits >= maxText) {
-      return NextResponse.json(
-        {
-          error: "text_quota_reached",
-          planName,
-          maxText,
-          message:
-            "Tu as atteint la limite de messages texte pour ton forfait actuel.",
-        },
-        { status: 429 }
-      );
+    const isFreePlan =
+      !subscription?.pricing_plan_id ||
+      planCode === "free" ||
+      planName.toLowerCase().includes("free");
+
+    // 5️⃣ Gestion de la limite Free = 200 messages / mois / user
+    if (isFreePlan) {
+      const periodStart = getCurrentPeriodStart();
+
+      const { data: usageRow, error: usageError } = await supabaseAdmin
+        .from("user_chat_usage")
+        .select("message_count")
+        .eq("user_id", userId)
+        .eq("period_start", periodStart)
+        .maybeSingle();
+
+      if (usageError) {
+        console.error("user_chat_usage select error:", usageError);
+      }
+
+      const currentCount = usageRow?.message_count ?? 0;
+
+      if (currentCount >= FREE_MONTHLY_LIMIT) {
+        return NextResponse.json(
+          {
+            error: "free_limit_reached",
+            planName,
+            maxText: FREE_MONTHLY_LIMIT,
+            message:
+              "Tu as atteint la limite de la version gratuite pour cette période.",
+          },
+          { status: 429 }
+        );
+      }
+
+      // ⚠️ On n’updatte pas encore, on le fera après l’appel OpenAI
+    } else {
+      // 6️⃣ Plans payants : limite basée sur message_limit + credits
+      if (maxText > 0 && currentCredits >= maxText) {
+        return NextResponse.json(
+          {
+            error: "text_quota_reached",
+            planName,
+            maxText,
+            message:
+              "Tu as atteint la limite de messages texte pour ton forfait actuel.",
+          },
+          { status: 429 }
+        );
+      }
     }
 
-    // 6️⃣ System prompt selon la langue
+    // 7️⃣ System prompt selon la langue
     const defaultSystemPromptFr =
       "Tu es une IA de compagnie bienveillante et chaleureuse. Tu réponds en français avec un ton naturel, doux et empathique.";
     const defaultSystemPromptEn =
@@ -137,7 +188,7 @@ export async function POST(req: Request) {
 
     const systemPrompt = iaRow.system_prompt || defaultSystemPrompt;
 
-    // 7️⃣ Appel OpenAI – texte
+    // 8️⃣ Appel OpenAI – texte
     const chatRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -166,7 +217,7 @@ export async function POST(req: Request) {
     const text: string =
       chatData?.choices?.[0]?.message?.content?.trim() || "Je ne sais pas.";
 
-    // 8️⃣ Voix optionnelle
+    // 9️⃣ Voix optionnelle (selon plan)
     const allowAudio =
       !!withAudio && hasVoiceFromPlan && voiceLimitFromPlan > 0;
 
@@ -205,28 +256,76 @@ export async function POST(req: Request) {
       }
     }
 
-    // 9️⃣ Incrémenter les crédits
-    const newCredits = currentCredits + 1;
+    // 🔟 Comptabiliser l’usage
 
-    const { error: updateError } = await supabaseAdmin
-      .from("user_amoria")
-      .update({ credits: newCredits })
-      .eq("id", iaRow.id);
+    if (isFreePlan) {
+      // 🔒 Free → 200 / mois dans user_chat_usage
+      const periodStart = getCurrentPeriodStart();
 
-    if (updateError) {
-      console.error("Error updating credits:", updateError);
+      const { data: usageRow, error: usageError } = await supabaseAdmin
+        .from("user_chat_usage")
+        .select("message_count")
+        .eq("user_id", userId)
+        .eq("period_start", periodStart)
+        .maybeSingle();
+
+      if (usageError) {
+        console.error("user_chat_usage select (after) error:", usageError);
+      }
+
+      const currentCount = usageRow?.message_count ?? 0;
+      const newCount = currentCount + 1;
+
+      const { error: upsertError } = await supabaseAdmin
+        .from("user_chat_usage")
+        .upsert(
+          {
+            user_id: userId,
+            period_start: periodStart,
+            message_count: newCount,
+          },
+          { onConflict: "user_id,period_start" }
+        );
+
+      if (upsertError) {
+        console.error("user_chat_usage upsert error:", upsertError);
+      }
+
+      // Pour le free, on peut utiliser credits_* pour le suivi visuel
+      return NextResponse.json({
+        reply: text,
+        audioBase64,
+        audioMimeType,
+        planName,
+        iaId: iaRow.id,
+        iaName: iaRow.name,
+        credits_used: newCount,
+        credits_remaining: FREE_MONTHLY_LIMIT - newCount,
+      });
+    } else {
+      // 💳 Plans payants : on garde ton système de credits
+      const newCredits = currentCredits + 1;
+
+      const { error: updateError } = await supabaseAdmin
+        .from("user_amoria")
+        .update({ credits: newCredits })
+        .eq("id", iaRow.id);
+
+      if (updateError) {
+        console.error("Error updating credits:", updateError);
+      }
+
+      return NextResponse.json({
+        reply: text,
+        audioBase64,
+        audioMimeType,
+        planName,
+        iaId: iaRow.id,
+        iaName: iaRow.name,
+        credits_used: newCredits,
+        credits_remaining: maxText > 0 ? maxText - newCredits : null,
+      });
     }
-
-    return NextResponse.json({
-      reply: text,
-      audioBase64,
-      audioMimeType,
-      planName,
-      credits_used: newCredits,
-      credits_remaining: maxText > 0 ? maxText - newCredits : null,
-      iaId: iaRow.id,
-      iaName: iaRow.name,
-    });
   } catch (e) {
     console.error("Server error in /api/chat:", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
