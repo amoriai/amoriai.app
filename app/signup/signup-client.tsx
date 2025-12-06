@@ -11,15 +11,11 @@ export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Ce qui arrive éventuellement de /?lang=...
   const localeParam = (searchParams.get("lang") as Locale) || "fr";
-  // On garde initialPlan si tu l’utilises ailleurs, mais on ne l’utilise plus pour choisir un plan payé ici
-  const initialPlan = (searchParams.get("plan") as PlanId) || "free";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -30,9 +26,8 @@ export default function SignupClient() {
         ? localeParam
         : "fr";
 
-    // 🔁 Remplace "/amoria/create" par le vrai path de ta page "Créer mon Amoriai"
+    // 🔁 Adapte ce path si ta page a un autre chemin
     const url = `/amoria/create?lang=${lang}`;
-
     router.replace(url);
   };
 
@@ -52,11 +47,11 @@ export default function SignupClient() {
         setErrorMsg(
           error.message || "Une erreur est survenue. Merci de réessayer."
         );
-        setLoading(false);
         return;
       }
 
       const user = data?.user;
+
       if (user) {
         // 2) Tout le monde commence sur le plan "free"
         const selectedPlan: PlanId = "free";
@@ -85,12 +80,14 @@ export default function SignupClient() {
 
       // 4) Nouveau flow : on va directement vers la création de l’Amoriai
       redirectAfterSignup();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("signup error", err);
       setErrorMsg(
-        err?.message ||
-          "Une erreur est survenue lors de la création du compte."
+        err instanceof Error
+          ? err.message
+          : "Une erreur est survenue lors de la création du compte."
       );
+    } finally {
       setLoading(false);
     }
   };
@@ -104,36 +101,48 @@ export default function SignupClient() {
     setLoading(true);
     setErrorMsg("");
 
-    const lang: Locale =
-      localeParam === "fr" || localeParam === "en" || localeParam === "es"
-        ? localeParam
-        : "fr";
+    try {
+      const lang: Locale =
+        localeParam === "fr" || localeParam === "en" || localeParam === "es"
+          ? localeParam
+          : "fr";
 
-    // On force aussi "free" dans le callback
-    const plan: PlanId = "free";
+      const plan: PlanId = "free";
 
-    const redirectUrl =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/auth/callback?lang=${lang}&plan=${plan}`
-        : undefined;
+      const redirectUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/auth/callback?lang=${lang}&plan=${plan}`
+          : undefined;
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: redirectUrl,
-      },
-    });
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
 
-    if (error) {
+      if (error) {
+        setErrorMsg(
+          error.message || "Une erreur est survenue. Merci de réessayer."
+        );
+      }
+    } catch (err: unknown) {
+      console.error("google oauth error", err);
       setErrorMsg(
-        error.message || "Une erreur est survenue. Merci de réessayer."
+        err instanceof Error
+          ? err.message
+          : "Une erreur est survenue lors de la connexion Google."
       );
+    } finally {
       setLoading(false);
     }
   };
 
   const goToLogin = () => {
-    const lang = localeParam || "fr";
+    const lang =
+      localeParam === "fr" || localeParam === "en" || localeParam === "es"
+        ? localeParam
+        : "fr";
     router.push(`/login?lang=${lang}`);
   };
 
