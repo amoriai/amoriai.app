@@ -3,133 +3,124 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
-type Locale = "fr" | "en" | "es";
-
-type Amoria = {
-  id: string;
-  name: string;
-  system_prompt: string | null;
-  avatar_image_url: string | null;
-};
-
-const STRINGS: Record<Locale, any> = {
-  fr: {
-    title: "Ton espace AmorIAI",
-    subtitle:
-      "Voici ton espace perso. Cette page affiche ton IA réelle.",
-    noData: "Aucun AmorIA n’a encore été créé.",
-    nameLabel: "Nom de ton AmorIAI",
-    goalLabel: "Mission principale",
-    backHome: "← Retour à l’accueil",
-  },
-  en: {
-    title: "Your AmorIAI space",
-    subtitle: "This is your real AmorIA dashboard.",
-    noData: "No AmorIA created yet.",
-    nameLabel: "Your AmorIA’s name",
-    goalLabel: "Main mission",
-    backHome: "← Back to home",
-  },
-  es: {
-    title: "Tu espacio AmorIAI",
-    subtitle: "Este es tu panel real de AmorIA.",
-    noData: "Aún no has creado ningún AmorIA.",
-    nameLabel: "Nombre de tu AmorIA",
-    goalLabel: "Misión principal",
-    backHome: "← Volver al inicio",
-  },
-};
-
-function normalizeLocale(raw: string | null): Locale {
-  if (raw === "en" || raw === "es" || raw === "fr") return raw;
-  return "fr";
-}
-
 export default function MyAmoriaPage() {
-  const [locale, setLocale] = useState<Locale>("fr");
-  const [amoria, setAmoria] = useState<Amoria | null>(null);
+  const router = useRouter();
+
   const [loading, setLoading] = useState(true);
+  const [hasIA, setHasIA] = useState(false);
+  const [plan, setPlan] = useState<string>("free");
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setLocale(normalizeLocale(params.get("lang")));
-  }, []);
+    const checkAll = async () => {
+      setLoading(true);
 
-  useEffect(() => {
-    const load = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData?.user;
+      // ✅ 1. Vérifier utilisateur connecté
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
 
       if (!user) {
-        setLoading(false);
+        router.replace("/login");
         return;
       }
 
-      const { data } = await supabase
+      const userId = user.id;
+
+      // ✅ 2. Vérifier s’il a déjà une IA
+      const { data: ai } = await supabase
         .from("user_amoria")
-        .select("id, name, system_prompt, avatar_image_url")
-        .eq("user_id", user.id)
-        .eq("is_archived", false)
+        .select("id")
+        .eq("user_id", userId)
+        .limit(1)
         .maybeSingle();
 
-      setAmoria(data ?? null);
+      if (ai?.id) {
+        // ✅ Il a déjà son IA → on l’envoie au chat
+        router.replace(`/chat?iaId=${ai.id}`);
+        return;
+      }
+
+      // ✅ 3. Lire son plan
+      const { data: sub } = await supabase
+        .from("user_subscriptions")
+        .select("plan")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (sub?.plan) {
+        setPlan(sub.plan);
+      } else {
+        setPlan("free");
+      }
+
+      setHasIA(false);
       setLoading(false);
     };
 
-    load();
-  }, []);
+    checkAll();
+  }, [router]);
 
-  const t = STRINGS[locale];
+  if (loading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-black text-white">
+        Chargement de ton espace AmorIA…
+      </main>
+    );
+  }
 
-  const homeUrl = `/?lang=${locale}`;
-
+  // ✅ CAS : connecté MAIS AUCUNE IA → PAGE PRO
   return (
-    <main style={{ minHeight: "100vh", padding: "1.5rem", background: "#020617", color: "#e5e7eb" }}>
-      <div style={{ maxWidth: 960, margin: "0 auto" }}>
-        <a href={homeUrl} style={{ fontSize: "0.85rem", color: "#9ca3af" }}>
-          {t.backHome}
-        </a>
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-zinc-900 to-black text-white px-4">
 
-        <h1 style={{ marginTop: "1rem" }}>{t.title}</h1>
-        <p style={{ color: "#9ca3af" }}>{t.subtitle}</p>
+      <div className="max-w-2xl w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-8 shadow-xl">
 
-        {loading && <p>Chargement…</p>}
+        <h1 className="text-3xl font-bold text-center mb-4">
+          Ton espace AmorIA
+        </h1>
 
-        {!loading && !amoria && (
-          <p style={{ color: "#9ca3af" }}>{t.noData}</p>
-        )}
+        <p className="text-center text-zinc-400 mb-8">
+          Ton plan actif :
+          <span className="text-pink-400 font-semibold ml-2 uppercase">
+            {plan}
+          </span>
+        </p>
 
-        {amoria && (
-          <div style={{ marginTop: "2rem", display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "2rem" }}>
-            <div>
-              <h2>{t.nameLabel}</h2>
-              <p>{amoria.name}</p>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-2">
+            Aucune IA détectée
+          </h2>
+          <p className="text-zinc-400 text-sm leading-relaxed">
+            Tu es bien connecté, ton abonnement est actif,  
+            mais tu n’as pas encore créé ton AmorIA personnelle.
+            <br />
+            <br />
+            Elle sera privée, sécurisée, et adaptée à ton plan.
+          </p>
+        </div>
 
-              {amoria.system_prompt && (
-                <>
-                  <h2 style={{ marginTop: "1rem" }}>{t.goalLabel}</h2>
-                  <p>{amoria.system_prompt}</p>
-                </>
-              )}
-            </div>
+        <div className="flex flex-col gap-4">
+          <button
+            onClick={() => router.push(`/create-amoria?plan=${plan}`)}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-center font-semibold hover:opacity-90 transition"
+          >
+            Créer mon AmorIA maintenant
+          </button>
 
-            <div>
-              {amoria.avatar_image_url ? (
-                <img
-                  src={amoria.avatar_image_url}
-                  style={{ width: "100%", borderRadius: "1rem" }}
-                />
-              ) : (
-                <p style={{ color: "#9ca3af" }}>
-                  Aucun avatar enregistré.
-                </p>
-              )}
-            </div>
-          </div>
-        )}
+          <button
+            onClick={() => router.push("/logout")}
+            className="w-full py-3 rounded-xl border border-zinc-700 text-center text-zinc-400 hover:text-white hover:border-zinc-500 transition"
+          >
+            Me déconnecter
+          </button>
+        </div>
+
+        <p className="mt-8 text-xs text-zinc-500 text-center">
+          Ton plan est automatiquement respecté (Free, Plus, Unlimited).
+        </p>
+
       </div>
     </main>
   );
-}
+      }
