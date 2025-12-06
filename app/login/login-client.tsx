@@ -104,6 +104,12 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const redirectToMyAmoria = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    router.replace(`/my-amoria?${params.toString()}`);
+  };
+
   const handleEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -128,11 +134,8 @@ export default function LoginClient() {
         return;
       }
 
-      // 🔁 Après connexion : on va toujours vers /my-amoria
-      const params = new URLSearchParams();
-      params.set("lang", locale);
-
-      router.replace(`/my-amoria?${params.toString()}`);
+      // ✅ Toujours rediriger vers /my-amoria après connexion
+      redirectToMyAmoria();
     } catch (err) {
       console.error("login error", err);
       setErrorMsg(t.errorGeneric);
