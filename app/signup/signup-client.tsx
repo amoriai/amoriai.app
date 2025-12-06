@@ -7,8 +7,8 @@ import { supabase } from "../../lib/supabaseClient";
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-// 🔁 Change ce chemin si ta page de création d’Amoriai est ailleurs
-const CREATE_AMORIA_PATH = "/amoria/create";
+// 🔁 Ici : ta page "Créer Amoriai" est /amoria (CreateAmoriaPage)
+const CREATE_AMORIA_PATH = "/amoria";
 
 export default function SignupClient(): JSX.Element {
   const router = useRouter();
@@ -22,14 +22,20 @@ export default function SignupClient(): JSX.Element {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // 👉 Après signup (email OU Google) → on va créer l’Amoriai
+  // 👉 Après signup (email) → on va directement sur /amoria avec plan=free
   const redirectAfterSignup = () => {
     const lang: Locale =
       localeParam === "fr" || localeParam === "en" || localeParam === "es"
         ? localeParam
         : "fr";
 
-    router.replace(`${CREATE_AMORIA_PATH}?lang=${lang}`);
+    const plan: PlanId = "free";
+
+    const params = new URLSearchParams();
+    params.set("lang", lang);
+    params.set("plan", plan);
+
+    router.replace(`${CREATE_AMORIA_PATH}?${params.toString()}`);
   };
 
   const handleSignup = async (e: FormEvent) => {
@@ -53,7 +59,7 @@ export default function SignupClient(): JSX.Element {
       const user = data?.user;
 
       if (user) {
-        // tout le monde commence sur le plan free
+        // Tout le monde commence sur le plan "free"
         const selectedPlan: PlanId = "free";
 
         const { data: pricingPlan, error: pricingError } = await supabase
@@ -75,6 +81,7 @@ export default function SignupClient(): JSX.Element {
         console.warn("Aucun user retourné par signUp");
       }
 
+      // ➜ direction /amoria?lang=...&plan=free
       redirectAfterSignup();
     } catch (err) {
       console.error("signup error", err);
@@ -119,7 +126,7 @@ export default function SignupClient(): JSX.Element {
             "Une erreur est survenue avec la connexion Google."
         );
       }
-      // la redirection finale se fera dans /auth/callback (où tu peux aussi faire redirectAfterSignup côté serveur)
+      // La redirection finale se fait dans /auth/callback
     } catch (err) {
       console.error("google oauth error", err);
       setErrorMsg(
