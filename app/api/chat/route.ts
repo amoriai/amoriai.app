@@ -1,7 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { createClient } from "@supabase/supabase-js";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { iaId, message, lang, withAudio } = body as {
@@ -19,11 +21,10 @@ export async function POST(req: Request) {
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const apiKey = process.env.OPENAI_API_KEY;
 
-    if (!supabaseUrl || !anonKey || !serviceKey) {
+    if (!supabaseUrl || !serviceKey) {
       console.error("Missing Supabase env vars");
       return NextResponse.json(
         { error: "supabase_env_missing" },
@@ -38,26 +39,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1️⃣ RÉCUPÉRER L’UTILISATEUR CONNECTÉ (via le JWT côté front)
-    const supabaseAuth = createClient(supabaseUrl, anonKey, {
-      global: {
-        headers: {
-          Authorization: req.headers.get("authorization") ?? "",
-        },
-      },
-    });
+    // 1️⃣ RÉCUPÉRER L’UTILISATEUR CONNECTÉ À PARTIR DES COOKIES
+    const supabase = createRouteHandlerClient({ cookies });
 
     const {
       data: { user },
       error: userError,
-    } = await supabaseAuth.auth.getUser();
+    } = await supabase.auth.getUser();
 
     if (userError || !user) {
       console.error("auth.getUser error:", userError);
       return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
     }
 
-    // 2️⃣ CLIENT ADMIN POUR LIRE LES TABLES
+    // 2️⃣ CLIENT ADMIN POUR LES TABLES (service role)
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
     // 3️⃣ L’IA DOIT APPARTENIR À CET UTILISATEUR
@@ -104,7 +99,6 @@ export async function POST(req: Request) {
     }
 
     const maxText: number = plan.message_limit ?? 0;
-    const maxAi: number = plan.ai_limit ?? 0; // à utiliser plus tard si tu veux limiter l’audio
     const planName: string = plan.name ?? "Unknown";
 
     // 6️⃣ VÉRIFIER LE QUOTA TEXTE
@@ -164,7 +158,7 @@ export async function POST(req: Request) {
     const text: string =
       chatData?.choices?.[0]?.message?.content?.trim() || "Je ne sais pas.";
 
-    // 9️⃣ VOIX : AUTORISÉE UNIQUEMENT SI LE FORFAIT A LA VOIX
+    // 9️⃣ VOIX (optionnelle, si plan la permet)
     const allowAudio =
       !!withAudio && !!plan.has_voice && (plan.voice_limit ?? 0) > 0;
 
@@ -217,7 +211,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       reply: text,
-      audioBase64, // null si pas de voix ou plan non autorisé
+      audioBase64,
       audioMimeType,
       planName,
       credits_used: newCredits,
