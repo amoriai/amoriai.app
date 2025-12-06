@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import SignupClient from "./SignupClient";
+import SignupClient from "./signup-client";
 
 export default function SignupPage() {
   return (
@@ -8,5 +8,3 @@ export default function SignupPage() {
     </Suspense>
   );
 }
-
-
