@@ -7,6 +7,12 @@ import { supabase } from "../../../lib/supabaseClient";
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
+const LOADING_TEXT: Record<Locale, string> = {
+  fr: "Connexion en cours...",
+  en: "Signing you in...",
+  es: "Iniciando sesión...",
+};
+
 export default function AuthCallbackClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -19,7 +25,7 @@ export default function AuthCallbackClient() {
           ? langParam
           : "fr";
 
-      // On force le plan de départ à "free" pour Google aussi
+      // On force toujours le plan de départ à "free" après Google
       const plan: PlanId = "free";
 
       // 1) Vérifier la session Supabase
@@ -27,14 +33,18 @@ export default function AuthCallbackClient() {
 
       if (error || !data.session?.user) {
         // Pas de session → retour au signup
-        router.replace(`/signup?lang=${lang}&plan=${plan}`);
+        const params = new URLSearchParams();
+        params.set("lang", lang);
+        params.set("plan", plan);
+
+        router.replace(`/signup?${params.toString()}`);
         return;
       }
 
       const user = data.session.user;
 
       try {
-        // 2) Vérifier si l'utilisateur a déjà une subscription "current"
+        // 2) Vérifier si l'utilisateur a déjà une subscription active
         const { data: existingSub, error: subError } = await supabase
           .from("user_subscriptions")
           .select("id")
@@ -47,7 +57,7 @@ export default function AuthCallbackClient() {
         }
 
         if (!existingSub) {
-          // 3) Récupérer le plan "free" dans pricing_plans
+          // 3) Récupérer le plan "free"
           const { data: pricingPlan, error: pricingError } = await supabase
             .from("pricing_plans")
             .select("id")
@@ -80,7 +90,7 @@ export default function AuthCallbackClient() {
         console.error("Erreur dans finalizeAuth:", err);
       }
 
-      // 5) Redirection finale : CRÉER L’AMORIAI, PAS LES PLANS
+      // 5) Redirection finale : CRÉATION DE L’AMORIAI, PAS LES PLANS
       const params = new URLSearchParams();
       params.set("lang", lang);
       params.set("plan", plan);
@@ -91,9 +101,15 @@ export default function AuthCallbackClient() {
     finalizeAuth();
   }, [router, searchParams]);
 
+  const langParam = (searchParams.get("lang") as Locale) || "fr";
+  const lang: Locale =
+    langParam === "fr" || langParam === "en" || langParam === "es"
+      ? langParam
+      : "fr";
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">
-      Connexion en cours...
+      {LOADING_TEXT[lang]}
     </div>
   );
 }
