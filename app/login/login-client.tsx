@@ -104,6 +104,7 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  /** Après connexion → TOUJOURS /my-amoria (plus jamais /pricing) */
   const redirectToMyAmoria = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -134,7 +135,7 @@ export default function LoginClient() {
         return;
       }
 
-      // ✅ Toujours rediriger vers /my-amoria après connexion
+      // ✅ Connexion OK → on va dans /my-amoria
       redirectToMyAmoria();
     } catch (err) {
       console.error("login error", err);
@@ -152,6 +153,7 @@ export default function LoginClient() {
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
 
+      // ✅ On indique à /auth/callback de renvoyer vers /my-amoria
       const params = new URLSearchParams();
       params.set("lang", locale);
       params.set("next", "/my-amoria");
@@ -170,6 +172,7 @@ export default function LoginClient() {
         setErrorMsg(t.errorGeneric);
         setLoading(false);
       }
+      // Sinon Supabase redirige vers /auth/callback, puis /my-amoria
     } catch (err) {
       console.error("google login error", err);
       setErrorMsg(t.errorGeneric);
@@ -539,4 +542,4 @@ export default function LoginClient() {
       `}</style>
     </main>
   );
-}
+            }
