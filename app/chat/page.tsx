@@ -437,6 +437,7 @@ function ChatClient() {
     loadHistory();
   }, [iaId]);
 
+  // 🚀 Envoi du message + ajout du token Supabase dans Authorization
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSendError(null);
@@ -464,11 +465,27 @@ function ChatClient() {
     setSending(true);
 
     try {
+      // 🔐 Récupérer la session Supabase côté client
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error("getSession error:", sessionError);
+      }
+
+      const accessToken = sessionData?.session?.access_token;
+
+      if (!accessToken) {
+        setSendError(t.notAuthenticated);
+        setSending(false);
+        return;
+      }
+
       const res = await fetch("/api/chat", {
         method: "POST",
-        credentials: "include",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`, // ✅ token envoyé à l’API
         },
         body: JSON.stringify({ iaId, message: content, lang: locale }),
       });
@@ -488,6 +505,10 @@ function ChatClient() {
         }
         if (data?.error === "profile_not_found") {
           setSendError(t.profileNotFound);
+          return;
+        }
+        if (data?.message) {
+          setSendError(data.message);
           return;
         }
         setSendError(
