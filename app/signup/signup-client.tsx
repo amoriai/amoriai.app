@@ -7,10 +7,10 @@ import { supabase } from "../../lib/supabaseClient";
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-// 🔁 Ici : ta page "Créer Amoriai" est /amoria (CreateAmoriaPage)
-const CREATE_AMORIA_PATH = "/amoria";
+// Ta page de création d’Amoriai = dossier app/create-amoria → route /create-amoria
+const CREATE_AMORIA_PATH = "/create-amoria";
 
-export default function SignupClient(): JSX.Element {
+export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -22,13 +22,17 @@ export default function SignupClient(): JSX.Element {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // 👉 Après signup (email) → on va directement sur /amoria avec plan=free
-  const redirectAfterSignup = () => {
-    const lang: Locale =
-      localeParam === "fr" || localeParam === "en" || localeParam === "es"
-        ? localeParam
-        : "fr";
+  // Sécurise la langue
+  const getLocale = (): Locale => {
+    if (localeParam === "fr" || localeParam === "en" || localeParam === "es") {
+      return localeParam;
+    }
+    return "fr";
+  };
 
+  // 👉 Après signup (email) → on va sur la création d’Amoriai en "free"
+  const redirectAfterSignup = () => {
+    const lang = getLocale();
     const plan: PlanId = "free";
 
     const params = new URLSearchParams();
@@ -81,7 +85,7 @@ export default function SignupClient(): JSX.Element {
         console.warn("Aucun user retourné par signUp");
       }
 
-      // ➜ direction /amoria?lang=...&plan=free
+      // ➜ direction /create-amoria?lang=...&plan=free
       redirectAfterSignup();
     } catch (err) {
       console.error("signup error", err);
@@ -101,11 +105,7 @@ export default function SignupClient(): JSX.Element {
     setErrorMsg("");
 
     try {
-      const lang: Locale =
-        localeParam === "fr" || localeParam === "en" || localeParam === "es"
-          ? localeParam
-          : "fr";
-
+      const lang = getLocale();
       const plan: PlanId = "free";
 
       const redirectUrl =
@@ -126,7 +126,7 @@ export default function SignupClient(): JSX.Element {
             "Une erreur est survenue avec la connexion Google."
         );
       }
-      // La redirection finale se fait dans /auth/callback
+      // La redirection finale (vers /create-amoria) se fera dans /auth/callback
     } catch (err) {
       console.error("google oauth error", err);
       setErrorMsg(
@@ -140,11 +140,7 @@ export default function SignupClient(): JSX.Element {
   };
 
   const goToLogin = () => {
-    const lang: Locale =
-      localeParam === "fr" || localeParam === "en" || localeParam === "es"
-        ? localeParam
-        : "fr";
-
+    const lang = getLocale();
     router.push(`/login?lang=${lang}`);
   };
 
