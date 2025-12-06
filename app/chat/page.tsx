@@ -600,7 +600,7 @@ function ChatClient() {
                   ) : (
                     <img
                       src={avatarImageUrl}
-                      alt={`Avatar de ${displayName}`}
+                      alt={`Avatar de {displayName}`}
                       className="chat-avatar-img"
                     />
                   )
