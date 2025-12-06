@@ -22,7 +22,7 @@ export default function SignupClient() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  /** Après création par email → retour sur /pricing */
+  /** Après création → retour sur /pricing (étape 2 : choix/confirmation du forfait) */
   const redirectAfterSignup = () => {
     const lang = localeParam || "fr";
     const plan = initialPlan || "free";
@@ -41,26 +41,69 @@ export default function SignupClient() {
     setLoading(true);
     setErrorMsg("");
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    try {
+      // 1) Création du compte Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
 
-    if (error) {
+      if (error) {
+        setErrorMsg(
+          error.message || "Une erreur est survenue. Merci de réessayer."
+        );
+        setLoading(false);
+        return;
+      }
+
+      const user = data?.user;
+      if (user) {
+        // 2) On récupère le plan à appliquer (free par défaut)
+        const selectedPlan: PlanId =
+          initialPlan === "chat" ||
+          initialPlan === "plus" ||
+          initialPlan === "unlimited"
+            ? initialPlan
+            : "free";
+
+        const { data: pricingPlan, error: pricingError } = await supabase
+          .from("pricing_plans")
+          .select("id")
+          .eq("code", selectedPlan)
+          .maybeSingle();
+
+        if (!pricingError && pricingPlan?.id) {
+          // 3) On crée la ligne dans user_subscriptions
+          await supabase.from("user_subscriptions").insert({
+            user_id: user.id,
+            pricing_plan_id: pricingPlan.id,
+            current: true,
+          });
+        } else {
+          console.error("Impossible de trouver le plan:", selectedPlan);
+        }
+      } else {
+        console.warn(
+          "Aucun user retourné par signUp (email de confirmation activé ?)"
+        );
+      }
+
+      // 4) On continue le flow normal : étape 2 = page des tarifs
+      redirectAfterSignup();
+    } catch (err: any) {
+      console.error("signup error", err);
       setErrorMsg(
-        error.message || "Une erreur est survenue. Merci de réessayer."
+        err?.message ||
+          "Une erreur est survenue lors de la création du compte."
       );
       setLoading(false);
-      return;
     }
-
-    redirectAfterSignup();
   };
 
   /**
    * Google OAuth
-   * → passe par /auth/callback qui termine la session,
-   * puis /auth/callback redirige vers /pricing.
+   * → passe par /auth/callback qui termine la session
+   * (la création de la ligne user_subscriptions se fera là-bas)
    */
   const handleGoogle = async () => {
     setLoading(true);
