@@ -128,13 +128,11 @@ export default function LoginClient() {
         return;
       }
 
-      const nextFromUrl = searchParams.get("next");
-      const baseTarget = nextFromUrl || "/my-amoria";
-
+      // 🔁 Après connexion : on va toujours vers /my-amoria
       const params = new URLSearchParams();
       params.set("lang", locale);
 
-      router.replace(`${baseTarget}?${params.toString()}`);
+      router.replace(`/my-amoria?${params.toString()}`);
     } catch (err) {
       console.error("login error", err);
       setErrorMsg(t.errorGeneric);
