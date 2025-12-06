@@ -67,9 +67,9 @@ const STRINGS: Record<Locale, UiCopy> = {
     genericError:
       "Impossible de charger cette conversation pour le moment. Vérifie le lien ou réessaie plus tard.",
     notAuthenticated:
-      "Tu dois être connectée à ton compte AmorIA pour discuter avec ton IA.",
+      "Nous n’avons pas pu vérifier ta session. Actualise la page ou reconnecte-toi, puis réessaie.",
     profileNotFound:
-      "Profil AmorIA introuvable. Connecte-toi, puis crée ton profil dans « Mon AmorIA ».",
+      "Aucun profil AmorIA trouvé. Crée ton profil dans « Mon AmorIA » puis reviens sur ce lien.",
   },
   en: {
     backHome: "← Back to home",
@@ -86,9 +86,9 @@ const STRINGS: Record<Locale, UiCopy> = {
     genericError:
       "We couldn’t load this conversation. Please check the link or try again later.",
     notAuthenticated:
-      "You must be logged in to your AmorIA account to chat with your AI.",
+      "We couldn’t verify your session. Please refresh the page or log in again, then try once more.",
     profileNotFound:
-      "AmorIA profile not found. Please log in and create your profile in “My AmorIA”.",
+      "No AmorIA profile was found. Create your profile in “My AmorIA”, then come back to this link.",
   },
   es: {
     backHome: "← Volver al inicio",
@@ -105,9 +105,9 @@ const STRINGS: Record<Locale, UiCopy> = {
     genericError:
       "No pudimos cargar esta conversación. Verifica el enlace o inténtalo más tarde.",
     notAuthenticated:
-      "Debes iniciar sesión en tu cuenta de AmorIA para chatear con tu IA.",
+      "No pudimos verificar tu sesión. Actualiza la página o vuelve a iniciar sesión y prueba de nuevo.",
     profileNotFound:
-      "Perfil de AmorIA no encontrado. Inicia sesión y crea tu perfil en « Mi AmorIA ».",
+      "No se encontró ningún perfil de AmorIA. Crea tu perfil en « Mi AmorIA » y vuelve a este enlace.",
   },
 };
 
@@ -188,14 +188,6 @@ function ChatClient() {
           return;
         }
 
-        /**
-         * IMPORTANT :
-         * - Ce code suppose que la table `pricing_plans` a :
-         *   - un booléen `has_voice`
-         *   - un champ d’identifiant de plan, par ex. `code` (avec valeur "unlimited")
-         *   - éventuellement un booléen `allow_animated_avatar` (true seulement pour Unlimited)
-         * - Adapte les colonnes dans le `select(...)` si ton schéma est différent.
-         */
         const { data: sub, error } = await supabase
           .from("user_subscriptions")
           .select(
@@ -229,7 +221,6 @@ function ChatClient() {
           if (typeof p.allow_animated_avatar === "boolean") {
             allowAnimatedAvatar = p.allow_animated_avatar;
           } else if (p.code === "unlimited") {
-            // fallback : si pas de colonne booléenne, on se base sur le code du plan
             allowAnimatedAvatar = true;
           }
         } else if (rawPlans && typeof rawPlans === "object") {
@@ -1007,4 +998,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-      }
+}
