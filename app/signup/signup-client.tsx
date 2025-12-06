@@ -11,8 +11,9 @@ export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Ce qui arrive de /pricing?lang=...&plan=...
+  // Ce qui arrive éventuellement de /?lang=...
   const localeParam = (searchParams.get("lang") as Locale) || "fr";
+  // On garde initialPlan si tu l’utilises ailleurs, mais on ne l’utilise plus pour choisir un plan payé ici
   const initialPlan = (searchParams.get("plan") as PlanId) || "free";
 
   const [email, setEmail] = useState("");
@@ -22,18 +23,17 @@ export default function SignupClient() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  /** Après création → retour sur /pricing (étape 2 : choix/confirmation du forfait) */
+  /** Après création → on envoie directement vers la page de création d’Amoriai */
   const redirectAfterSignup = () => {
-    const lang = localeParam || "fr";
-    const plan = initialPlan || "free";
+    const lang: Locale =
+      localeParam === "fr" || localeParam === "en" || localeParam === "es"
+        ? localeParam
+        : "fr";
 
-    const url = `/pricing?lang=${lang}&plan=${plan}`;
+    // 🔁 Remplace "/amoria/create" par le vrai path de ta page "Créer mon Amoriai"
+    const url = `/amoria/create?lang=${lang}`;
 
-    if (typeof window !== "undefined") {
-      window.location.href = url;
-    } else {
-      router.replace(url);
-    }
+    router.replace(url);
   };
 
   const handleSignup = async (e: FormEvent) => {
@@ -58,13 +58,8 @@ export default function SignupClient() {
 
       const user = data?.user;
       if (user) {
-        // 2) On récupère le plan à appliquer (free par défaut)
-        const selectedPlan: PlanId =
-          initialPlan === "chat" ||
-          initialPlan === "plus" ||
-          initialPlan === "unlimited"
-            ? initialPlan
-            : "free";
+        // 2) Tout le monde commence sur le plan "free"
+        const selectedPlan: PlanId = "free";
 
         const { data: pricingPlan, error: pricingError } = await supabase
           .from("pricing_plans")
@@ -88,7 +83,7 @@ export default function SignupClient() {
         );
       }
 
-      // 4) On continue le flow normal : étape 2 = page des tarifs
+      // 4) Nouveau flow : on va directement vers la création de l’Amoriai
       redirectAfterSignup();
     } catch (err: any) {
       console.error("signup error", err);
@@ -114,13 +109,8 @@ export default function SignupClient() {
         ? localeParam
         : "fr";
 
-    const plan: PlanId =
-      initialPlan === "free" ||
-      initialPlan === "chat" ||
-      initialPlan === "plus" ||
-      initialPlan === "unlimited"
-        ? initialPlan
-        : "free";
+    // On force aussi "free" dans le callback
+    const plan: PlanId = "free";
 
     const redirectUrl =
       typeof window !== "undefined"
@@ -154,7 +144,7 @@ export default function SignupClient() {
         <div className="mb-4 flex items-center justify-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-pink-500/40 bg-pink-500/10 px-3 py-1 text-xs font-medium tracking-wide text-pink-200">
             <span className="h-1.5 w-1.5 rounded-full bg-pink-400" />
-            Étape 1 sur 2 • Création du compte
+            Étape 1 sur 2 • Création de ton accès AmorIAI
           </span>
         </div>
 
@@ -162,11 +152,12 @@ export default function SignupClient() {
         <div className="rounded-3xl border border-slate-800 bg-slate-900/80 px-6 py-7 shadow-2xl shadow-pink-500/20 backdrop-blur">
           <header className="mb-6 space-y-2 text-center">
             <h1 className="text-2xl sm:text-3xl font-semibold leading-tight">
-              Créer mon compte <span className="text-pink-400">AmorIAI</span>
+              Créer ton <span className="text-pink-400">AmorIAI</span> gratuit
             </h1>
             <p className="text-sm text-slate-300 leading-relaxed">
-              Crée ton compte en quelques secondes, puis choisis ton forfait
-              (gratuit ou payant) sur la page des tarifs.
+              Crée ton accès en quelques secondes, puis personnalise ton premier
+              Amoriai gratuit avant de décider si tu veux débloquer les options
+              premium.
             </p>
           </header>
 
@@ -251,7 +242,9 @@ export default function SignupClient() {
               disabled={loading}
               className="mt-2 w-full rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-400 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Création du compte..." : "Créer mon compte"}
+              {loading
+                ? "Création de ton accès..."
+                : "Créer mon Amoriai gratuit"}
             </button>
           </form>
 
