@@ -7,7 +7,7 @@ import { supabase } from "../../lib/supabaseClient";
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-// 🔁 Modifie ce chemin SEULEMENT si ta vraie page est ailleurs
+// 🔁 Change ce chemin si ta page de création d’Amoriai est ailleurs
 const CREATE_AMORIA_PATH = "/amoria/create";
 
 export default function SignupClient(): JSX.Element {
@@ -22,7 +22,7 @@ export default function SignupClient(): JSX.Element {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // ✅ REDIRECTION FINALE : PLUS JAMAIS VERS /PRICING
+  // 👉 Après signup (email OU Google) → on va créer l’Amoriai
   const redirectAfterSignup = () => {
     const lang: Locale =
       localeParam === "fr" || localeParam === "en" || localeParam === "es"
@@ -44,13 +44,16 @@ export default function SignupClient(): JSX.Element {
       });
 
       if (error) {
-        setErrorMsg(error.message || "Erreur de création de compte.");
+        setErrorMsg(
+          error.message || "Une erreur est survenue. Merci de réessayer."
+        );
         return;
       }
 
       const user = data?.user;
 
       if (user) {
+        // tout le monde commence sur le plan free
         const selectedPlan: PlanId = "free";
 
         const { data: pricingPlan, error: pricingError } = await supabase
@@ -66,14 +69,64 @@ export default function SignupClient(): JSX.Element {
             current: true,
           });
         } else {
-          console.error("Plan FREE introuvable");
+          console.error("Impossible de trouver le plan:", selectedPlan);
         }
+      } else {
+        console.warn("Aucun user retourné par signUp");
       }
 
       redirectAfterSignup();
     } catch (err) {
       console.error("signup error", err);
-      setErrorMsg("Erreur lors de la création du compte.");
+      setErrorMsg(
+        err instanceof Error
+          ? err.message
+          : "Une erreur est survenue lors de la création du compte."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔹 Connexion / création via Google
+  const handleGoogle = async () => {
+    setLoading(true);
+    setErrorMsg("");
+
+    try {
+      const lang: Locale =
+        localeParam === "fr" || localeParam === "en" || localeParam === "es"
+          ? localeParam
+          : "fr";
+
+      const plan: PlanId = "free";
+
+      const redirectUrl =
+        typeof window !== "undefined"
+          ? `${window.location.origin}/auth/callback?lang=${lang}&plan=${plan}`
+          : undefined;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
+
+      if (error) {
+        setErrorMsg(
+          error.message ||
+            "Une erreur est survenue avec la connexion Google."
+        );
+      }
+      // la redirection finale se fera dans /auth/callback (où tu peux aussi faire redirectAfterSignup côté serveur)
+    } catch (err) {
+      console.error("google oauth error", err);
+      setErrorMsg(
+        err instanceof Error
+          ? err.message
+          : "Une erreur est survenue avec la connexion Google."
+      );
     } finally {
       setLoading(false);
     }
@@ -90,59 +143,103 @@ export default function SignupClient(): JSX.Element {
 
   return (
     <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
-      <form
-        onSubmit={handleSignup}
-        className="w-full max-w-md space-y-4 bg-slate-900 p-6 rounded-2xl shadow"
-      >
-        <h1 className="text-xl font-bold text-center">
-          Créer ton AmorIAI gratuit
+      <div className="w-full max-w-md rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 shadow-xl px-6 py-7">
+        <h1 className="text-xl sm:text-2xl font-bold text-center mb-4">
+          Créer ton <span className="text-pink-400">AmorIAI</span> gratuit
         </h1>
 
-        {errorMsg && <p className="text-red-400 text-sm">{errorMsg}</p>}
+        {errorMsg && (
+          <div className="mb-4 rounded-xl border border-red-500/60 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+            {errorMsg}
+          </div>
+        )}
 
-        <input
-          type="email"
-          required
-          placeholder="Adresse courriel"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 rounded bg-slate-800"
-        />
-
-        <input
-          type={showPassword ? "text" : "password"}
-          required
-          minLength={6}
-          placeholder="Mot de passe"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 rounded bg-slate-800"
-        />
-
+        {/* BOUTON GOOGLE */}
         <button
           type="button"
-          onClick={() => setShowPassword((v) => !v)}
-          className="text-xs underline"
-        >
-          {showPassword ? "Cacher" : "Afficher"}
-        </button>
-
-        <button
-          type="submit"
+          onClick={handleGoogle}
           disabled={loading}
-          className="w-full bg-pink-500 py-2 rounded font-semibold"
+          className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-800/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? "Création..." : "Créer mon accès gratuit"}
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white">
+            <span className="text-[10px] font-bold text-slate-900">G</span>
+          </span>
+          Continuer avec Google
         </button>
 
-        <button
-          type="button"
-          onClick={goToLogin}
-          className="w-full underline text-sm"
-        >
-          Me connecter
-        </button>
-      </form>
+        <div className="mb-4 flex items-center gap-2 text-xs text-slate-500">
+          <div className="h-px flex-1 bg-slate-700" />
+          <span>ou avec ton courriel</span>
+          <div className="h-px flex-1 bg-slate-700" />
+        </div>
+
+        {/* FORMULAIRE EMAIL */}
+        <form onSubmit={handleSignup} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium uppercase tracking-wide text-slate-300">
+              Adresse courriel
+            </label>
+            <input
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="ex. mon.adresse@email.com"
+              className="w-full rounded-2xl border border-slate-700 bg-slate-950/60 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 shadow-inner focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/60"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium uppercase tracking-wide text-slate-300">
+              Mot de passe
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                minLength={6}
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Choisis un mot de passe sécurisé"
+                className="w-full rounded-2xl border border-slate-700 bg-slate-950/60 px-3.5 py-2.5 pr-16 text-sm text-slate-100 placeholder:text-slate-500 shadow-inner focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/60"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute inset-y-0 right-2 my-1 inline-flex items-center rounded-xl bg-slate-800/80 px-2.5 text-[11px] font-medium text-slate-200 hover:bg-slate-700/90"
+              >
+                {showPassword ? "Cacher" : "Afficher"}
+              </button>
+            </div>
+            <p className="text-xs text-slate-400">
+              Minimum 6 caractères. Ne partage jamais ton mot de passe.
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-2 w-full rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-400 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? "Création de ton accès..." : "Créer mon accès gratuit"}
+          </button>
+        </form>
+
+        <div className="mt-5 text-center text-xs text-slate-400">
+          <p className="text-sm">
+            Tu as déjà un compte ?{" "}
+            <button
+              type="button"
+              onClick={goToLogin}
+              className="font-medium text-pink-300 hover:text-pink-200 underline underline-offset-4"
+            >
+              Me connecter
+            </button>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
