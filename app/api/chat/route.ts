@@ -1,9 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+// app/api/chat/route.ts
+import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { iaId, message, lang, withAudio } = body as {
@@ -21,10 +20,11 @@ export async function POST(req: NextRequest) {
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const apiKey = process.env.OPENAI_API_KEY;
 
-    if (!supabaseUrl || !serviceKey) {
+    if (!supabaseUrl || !anonKey || !serviceKey) {
       console.error("Missing Supabase env vars");
       return NextResponse.json(
         { error: "supabase_env_missing" },
@@ -39,23 +39,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1️⃣ RÉCUPÉRER L’UTILISATEUR CONNECTÉ À PARTIR DES COOKIES
-    const supabase = createRouteHandlerClient({ cookies });
+    // 🔐 1) Récupérer l’utilisateur connecté via le token envoyé par le front
+    const authHeader = req.headers.get("authorization") ?? "";
+
+    const supabaseAuth = createClient(supabaseUrl, anonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
+    });
 
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser();
+    } = await supabaseAuth.auth.getUser();
 
     if (userError || !user) {
       console.error("auth.getUser error:", userError);
       return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
     }
 
-    // 2️⃣ CLIENT ADMIN POUR LES TABLES (service role)
+    // 2) Client admin (service role) pour accéder aux tables
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
-    // 3️⃣ L’IA DOIT APPARTENIR À CET UTILISATEUR
+    // 3) Vérifier que l’IA appartient bien à cet utilisateur
     const { data: iaRow, error: iaError } = await supabaseAdmin
       .from("user_amoria")
       .select("id, user_id, name, system_prompt, credits, voice_id")
@@ -70,7 +78,7 @@ export async function POST(req: NextRequest) {
 
     const currentCredits: number = iaRow.credits ?? 0;
 
-    // 4️⃣ LIRE L’ABONNEMENT ACTIF
+    // 4) Lire l’abonnement actif
     const { data: subscription, error: subError } = await supabaseAdmin
       .from("user_subscriptions")
       .select("pricing_plan_id")
@@ -86,7 +94,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 5️⃣ RÉCUPÉRER LES LIMITES DU FORFAIT
+    // 5) Récupérer les limites du forfait
     const { data: plan, error: planError } = await supabaseAdmin
       .from("pricing_plans")
       .select("name, message_limit, ai_limit, has_voice, voice_limit")
@@ -101,7 +109,7 @@ export async function POST(req: NextRequest) {
     const maxText: number = plan.message_limit ?? 0;
     const planName: string = plan.name ?? "Unknown";
 
-    // 6️⃣ VÉRIFIER LE QUOTA TEXTE
+    // 6) Vérifier le quota texte
     if (maxText > 0 && currentCredits >= maxText) {
       return NextResponse.json(
         {
@@ -115,7 +123,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 7️⃣ SYSTEM PROMPT SELON LA LANGUE
+    // 7) System prompt selon la langue
     const defaultSystemPromptFr =
       "Tu es une IA de compagnie bienveillante et chaleureuse. Tu réponds en français avec un ton naturel, doux et empathique.";
     const defaultSystemPromptEn =
@@ -129,7 +137,7 @@ export async function POST(req: NextRequest) {
 
     const systemPrompt = iaRow.system_prompt || defaultSystemPrompt;
 
-    // 8️⃣ APPEL OPENAI – RÉPONSE TEXTE
+    // 8) Appel OpenAI – réponse texte
     const chatRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -158,7 +166,7 @@ export async function POST(req: NextRequest) {
     const text: string =
       chatData?.choices?.[0]?.message?.content?.trim() || "Je ne sais pas.";
 
-    // 9️⃣ VOIX (optionnelle, si plan la permet)
+    // 9) Voix (optionnelle)
     const allowAudio =
       !!withAudio && !!plan.has_voice && (plan.voice_limit ?? 0) > 0;
 
@@ -197,7 +205,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 🔟 INCRÉMENTER LES CRÉDITS TEXTE
+    // 🔟 Incrémenter les crédits texte
     const newCredits = currentCredits + 1;
 
     const { error: updateError } = await supabaseAdmin
@@ -223,4 +231,4 @@ export async function POST(req: NextRequest) {
     console.error("Server error in /api/chat:", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-}
+        }
