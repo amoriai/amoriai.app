@@ -542,4 +542,4 @@ export default function LoginClient() {
       `}</style>
     </main>
   );
-            }
+}
