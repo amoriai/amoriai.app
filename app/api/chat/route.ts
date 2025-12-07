@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const FREE_MONTHLY_LIMIT = 200; // 🔒 Free = 200 messages par mois
+const FREE_MONTHLY_LIMIT = 3; // 🔒 Free = 3 messages par mois
 
 function getCurrentPeriodStart(): string {
   const now = new Date();
