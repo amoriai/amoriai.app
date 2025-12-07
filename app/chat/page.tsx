@@ -192,7 +192,7 @@ function ChatClient() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
-  // Voix (Plus / Illimité)
+  // Voix (Plus / Unlimited)
   const [canUseVoice, setCanUseVoice] = useState(false);
 
   // Avatar animé (Unlimited uniquement)
@@ -243,30 +243,41 @@ function ChatClient() {
 
         const rawPlans: any = (sub as any).pricing_plans;
 
-        let hasVoiceFromDB = false;
+        let hasVoiceRaw = false;
         let allowAnimatedAvatar = false;
+        let planCode: string | null = null;
 
         if (Array.isArray(rawPlans)) {
           const p = rawPlans[0] ?? {};
-          hasVoiceFromDB = !!p.has_voice;
+          hasVoiceRaw = !!p.has_voice;
+          planCode = typeof p.code === "string" ? p.code : null;
           if (typeof p.allow_animated_avatar === "boolean") {
             allowAnimatedAvatar = p.allow_animated_avatar;
-          } else if (p.code === "unlimited") {
+          } else if (planCode === "unlimited") {
             allowAnimatedAvatar = true;
           }
         } else if (rawPlans && typeof rawPlans === "object") {
-          hasVoiceFromDB = !!rawPlans.has_voice;
+          hasVoiceRaw = !!rawPlans.has_voice;
+          planCode =
+            typeof rawPlans.code === "string" ? rawPlans.code : null;
           if (typeof rawPlans.allow_animated_avatar === "boolean") {
             allowAnimatedAvatar = rawPlans.allow_animated_avatar;
-          } else if (rawPlans.code === "unlimited") {
+          } else if (planCode === "unlimited") {
             allowAnimatedAvatar = true;
           }
         }
 
-        setCanUseVoice(hasVoiceFromDB);
+        const isPlusOrUnlimited =
+          planCode === "plus" || planCode === "unlimited";
+
+        // 🎯 Le micro + la voix ne sont disponibles
+        // QUE pour AmorIAI Plus & Unlimited
+        const finalCanUseVoice = hasVoiceRaw && isPlusOrUnlimited;
+
+        setCanUseVoice(finalCanUseVoice);
         setCanAnimateAvatar(allowAnimatedAvatar);
 
-        if (!hasVoiceFromDB) {
+        if (!finalCanUseVoice) {
           setSttSupported(false);
         }
       } catch (err) {
@@ -1213,4 +1224,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-          }
+      }
