@@ -55,6 +55,7 @@ type UiCopy = {
   paywallTitle: string;
   paywallText: string;
   paywallCta: string;
+  paywallSeePlans: string;
 };
 
 const STRINGS: Record<Locale, UiCopy> = {
@@ -76,11 +77,13 @@ const STRINGS: Record<Locale, UiCopy> = {
       "Nous n’avons pas pu vérifier ta session. Actualise la page ou reconnecte-toi, puis réessaie.",
     profileNotFound:
       "Aucun profil AmorIA trouvé. Crée ton profil dans « Mon AmorIA » puis reviens sur ce lien.",
+
     // 🔒 Paywall
-    paywallTitle: "🔒 Tu as atteint la limite de la version gratuite.",
+    paywallTitle: "🔒 Tu as atteint la limite de ton accès gratuit.",
     paywallText:
-      "Débloque l’accès illimité, la voix et les avatars animés avec ton AmorIA.",
-    paywallCta: "Débloquer AmorIA Plus",
+      "Pour continuer à discuter chaque jour et débloquer la voix de ton AmorIAI, passe à AmorIAI Plus.",
+    paywallCta: "Débloquer AmorIAI Plus",
+    paywallSeePlans: "Voir tous les forfaits →",
   },
   en: {
     backHome: "← Back to home",
@@ -100,11 +103,13 @@ const STRINGS: Record<Locale, UiCopy> = {
       "We couldn’t verify your session. Please refresh the page or log in again, then try once more.",
     profileNotFound:
       "No AmorIA profile was found. Create your profile in “My AmorIA”, then come back to this link.",
+
     // 🔒 Paywall
-    paywallTitle: "🔒 You’ve reached your free limit.",
+    paywallTitle: "🔒 You’ve reached your free access limit.",
     paywallText:
-      "Unlock unlimited chats, voice replies and animated avatars with your AmorIA.",
-    paywallCta: "Upgrade to AmorIA Plus",
+      "To keep talking every day and unlock your AmorIAI’s voice, switch to AmorIAI Plus.",
+    paywallCta: "Unlock AmorIAI Plus",
+    paywallSeePlans: "See all plans →",
   },
   es: {
     backHome: "← Volver al inicio",
@@ -124,11 +129,13 @@ const STRINGS: Record<Locale, UiCopy> = {
       "No pudimos verificar tu sesión. Actualiza la página o vuelve a iniciar sesión y prueba de nuevo.",
     profileNotFound:
       "No se encontró ningún perfil de AmorIA. Crea tu perfil en « Mi AmorIA » y vuelve a este enlace.",
+
     // 🔒 Paywall
-    paywallTitle: "🔒 Has alcanzado el límite gratuito.",
+    paywallTitle: "🔒 Has alcanzado el límite de tu acceso gratuito.",
     paywallText:
-      "Desbloquea chats ilimitados, voz y avatares animados con tu AmorIA.",
-    paywallCta: "Mejorar a AmorIA Plus",
+      "Para seguir hablando cada día y desbloquear la voz de tu AmorIAI, pasa a AmorIAI Plus.",
+    paywallCta: "Desbloquear AmorIAI Plus",
+    paywallSeePlans: "Ver todos los planes →",
   },
 };
 
@@ -581,8 +588,14 @@ function ChatClient() {
     return `/?${params.toString()}`;
   })();
 
+  const pricingUrl = (() => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/pricing?${params.toString()}`;
+  })();
+
   const displayName = (() => {
-    const raw = ai?.name?.trim() || "AmorIA";
+    const raw = ai?.name?.trim() || "AmorIAI";
     return raw;
   })();
 
@@ -598,7 +611,7 @@ function ChatClient() {
   const handleUpgradeClick = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
-    params.set("plan", "chat");
+    params.set("plan", "plus");
     window.location.href = `/pricing?${params.toString()}`;
   };
 
@@ -684,7 +697,7 @@ function ChatClient() {
 
         {sendError && <p className="chat-error">{sendError}</p>}
 
-        {/* 🔒 PAYWALL BANNIÈRE TYPE REPLIKA */}
+        {/* 🔒 PAYWALL BANNIÈRE */}
         {isBlocked && (
           <div className="chat-paywall">
             <div className="chat-paywall-chip">PLUS</div>
@@ -698,6 +711,9 @@ function ChatClient() {
               <span className="chat-paywall-btn-label">{t.paywallCta}</span>
               <span className="chat-paywall-btn-icon">➜</span>
             </button>
+            <a href={pricingUrl} className="chat-paywall-link">
+              {t.paywallSeePlans}
+            </a>
           </div>
         )}
 
@@ -928,12 +944,12 @@ function ChatClient() {
           text-align: center;
         }
 
-        /* 🔒 PAYWALL STYLE REPLIKA */
+        /* 🔒 PAYWALL STYLE */
         .chat-paywall {
           margin-top: 0.6rem;
           margin-bottom: 0.4rem;
           border-radius: 1.25rem;
-          padding: 1rem 1.1rem;
+          padding: 1rem 1.1rem 0.9rem;
           background: radial-gradient(
             circle at top left,
             rgba(251, 55, 255, 0.25),
@@ -942,7 +958,7 @@ function ChatClient() {
           border: 1px solid rgba(251, 113, 133, 0.7);
           display: flex;
           flex-direction: column;
-          gap: 0.5rem;
+          gap: 0.4rem;
           align-items: flex-start;
           position: relative;
           overflow: hidden;
@@ -1015,8 +1031,17 @@ function ChatClient() {
           font-size: 0.9rem;
           transform: translateY(0.5px);
         }
+        .chat-paywall-link {
+          position: relative;
+          z-index: 1;
+          margin-top: 0.1rem;
+          font-size: 0.76rem;
+          color: #f9fafb;
+          text-decoration: underline;
+          text-underline-offset: 2px;
+        }
 
-        /* BARRE DE SAISIE TYPE APP MOBILE */
+        /* BARRE DE SAISIE */
         .chat-input-bar {
           margin-top: 0.4rem;
           display: grid;
@@ -1188,4 +1213,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-}
+          }
