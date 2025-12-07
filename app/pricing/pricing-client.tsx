@@ -101,16 +101,16 @@ const LAYOUT_STRINGS: Record<Locale, LayoutStrings> = {
 };
 
 /* ===========================
-   STRINGS PRICING
+   STRINGS PRICING (SANS FREE)
 =========================== */
 
 const LABELS: Record<Locale, Labels> = {
   fr: {
     heroTitle:
-      "Commence gratuitement. Fais évoluer ton forfait quand ton lien grandit.",
+      "Choisis le forfait qui correspond à ta relation avec ton AmorIAI.",
     heroSubtitle:
-      "Crée ton AmorIAI en quelques minutes, teste la connexion en version gratuite, puis passe à la voix et à la mémoire avancée quand tu te sens prête. Tu gardes toujours le contrôle : tu peux changer de forfait ou annuler quand tu veux, en un clic.",
-    heroCta: "Commencer avec le forfait Découverte",
+      "Crée ton compte gratuitement, découvre l’expérience en texte, puis active le forfait payant qui te convient quand tu es prête. Tu gardes toujours le contrôle : changement ou annulation en un clic, sans engagement.",
+    heroCta: "Créer mon compte gratuit",
     heroStat: "⭐ Déjà des centaines de conversations chaque semaine.",
     billingNote:
       "Facturation sécurisée via Stripe · Révision ou annulation en tout temps depuis ton compte · Aucun frais caché",
@@ -118,21 +118,6 @@ const LABELS: Record<Locale, Labels> = {
     usdNote:
       "Les prix sont en dollars américains (USD). Tu peux changer de forfait ou l’annuler quand tu veux, sans engagement.",
     plans: [
-      {
-        id: "free",
-        name: "Découverte",
-        price: "0 $ USD / mois",
-        tagline:
-          "Commence la relation avec ton AmorIAI, sans carte de crédit.",
-        features: [
-          "Parfait pour découvrir l’expérience et créer ton premier compagnon IA, sans pression.",
-          "Création de 1 AmorIAI personnalisé",
-          "200 messages texte / mois",
-          "Aucune conversation vocale (texte uniquement)",
-          "Accès aux 3 langues : FR, EN, ES",
-        ],
-        ctaLabel: "Choisir le forfait Découverte",
-      },
       {
         id: "chat",
         name: "AmorIAI Chat",
@@ -193,20 +178,20 @@ const LABELS: Record<Locale, Labels> = {
         a: "Oui. Tu peux changer de forfait ou annuler ton abonnement en tout temps depuis ton compte, sans engagement ni frais caché.",
       },
       {
-        q: "Dois-je entrer ma carte pour le forfait Découverte ?",
-        a: "Non. Le forfait Découverte est entièrement gratuit et ne demande aucune carte de crédit.",
+        q: "Est-ce que je peux essayer AmorIAI gratuitement ?",
+        a: "Oui. Tu peux créer un compte gratuit, découvrir l’expérience de base en texte, puis activer un forfait payant uniquement si tu le souhaites.",
       },
       {
-        q: "Que se passe-t-il si j’atteins la limite de messages ?",
+        q: "Que se passe-t-il si j’atteins la limite de messages de mon forfait ?",
         a: "Ton AmorIAI t’informera quand tu approches de la limite. Tu peux ensuite choisir d’attendre le prochain mois ou de passer à un forfait supérieur.",
       },
     ],
   },
   en: {
-    heroTitle: "Start for free. Upgrade when your bond grows.",
+    heroTitle: "Choose the plan that matches your bond with AmorIAI.",
     heroSubtitle:
-      "Create your AmorIAI in minutes, test the connection on the free tier, then upgrade to voice and advanced memory when you're ready. You stay in control: you can change or cancel your plan anytime, in one click.",
-    heroCta: "Start with the Discovery plan",
+      "You can create a free account, try the basic text experience, then activate a paid plan whenever you’re ready. You stay in control: change or cancel anytime in one click, no commitment.",
+    heroCta: "Create my free account",
     heroStat: "⭐ Hundreds of conversations every week.",
     billingNote:
       "Secure billing via Stripe · Change or cancel anytime from your account · No hidden fees",
@@ -214,21 +199,6 @@ const LABELS: Record<Locale, Labels> = {
     usdNote:
       "Prices are in US dollars (USD). You can change or cancel your plan anytime, no commitment.",
     plans: [
-      {
-        id: "free",
-        name: "Discovery",
-        price: "$0 USD / month",
-        tagline:
-          "Start your relationship with AmorIAI, no credit card required.",
-        features: [
-          "Perfect to discover the experience and create your first AI companion, with no pressure.",
-          "Create 1 personalized AmorIAI",
-          "200 text messages / month",
-          "No voice conversations (text only)",
-          "Access to FR, EN, ES",
-        ],
-        ctaLabel: "Choose Discovery",
-      },
       {
         id: "chat",
         name: "AmorIAI Chat",
@@ -288,20 +258,20 @@ const LABELS: Record<Locale, Labels> = {
         a: "Yes. You can change or cancel your subscription anytime from your account, with no hidden fees.",
       },
       {
-        q: "Do I need a card for the Discovery plan?",
-        a: "No. The Discovery plan is completely free and does not require any credit card.",
+        q: "Can I try AmorIAI for free?",
+        a: "Yes. You can create a free account, try the basic text experience, and only activate a paid plan if you decide it’s right for you.",
       },
       {
-        q: "What happens if I reach the message limit?",
-        a: "Your AmorIAI will let you know when you’re close to the limit. You can wait for the next month or upgrade.",
+        q: "What happens if I reach my plan’s message limit?",
+        a: "Your AmorIAI will let you know when you’re close to the limit. You can wait for the next month or upgrade to a higher plan.",
       },
     ],
   },
   es: {
-    heroTitle: "Empieza gratis. Sube de plan cuando el vínculo crezca.",
+    heroTitle: "Elige el plan que encaja con tu vínculo con AmorIAI.",
     heroSubtitle:
-      "Crea tu AmorIAI en minutos, prueba la conexión con el plan gratuito y luego pasa a voz y memoria avanzada cuando estés listo. Siempre tienes el control: puedes cambiar o cancelar tu plan en cualquier momento.",
-    heroCta: "Empezar con el plan Descubrimiento",
+      "Puedes crear una cuenta gratuita, probar la experiencia básica por texto y luego activar un plan de pago cuando estés listo. Siempre tienes el control: puedes cambiar o cancelar en un clic, sin compromiso.",
+    heroCta: "Crear mi cuenta gratuita",
     heroStat: "⭐ Cientos de conversaciones cada semana.",
     billingNote:
       "Facturación segura con Stripe · Cambia o cancela cuando quieras · Sin cargos ocultos",
@@ -310,27 +280,12 @@ const LABELS: Record<Locale, Labels> = {
       "Los precios están en dólares estadounidenses (USD). Puedes cambiar o cancelar tu plan en cualquier momento.",
     plans: [
       {
-        id: "free",
-        name: "Descubrimiento",
-        price: "0 $ USD / mes",
-        tagline:
-          "Empieza tu relación con AmorIAI, sin tarjeta de crédito.",
-        features: [
-          "Perfecto para descubrir la experiencia y crear tu primer compañero IA sin presión.",
-          "Creación de 1 AmorIAI personalizado",
-          "200 mensajes de texto / mes",
-          "Sin conversaciones de voz (solo texto)",
-          "Acceso a FR, EN, ES",
-        ],
-        ctaLabel: "Elegir Descubrimiento",
-      },
-      {
         id: "chat",
         name: "AmorIAI Chat",
         price: "9,99 $ USD / mes",
         tagline: "Para escribir a tu AmorIAI cada día.",
         features: [
-          "Ideal si prefieres las conversaciones por texto con memoria real.",
+          "Ideal si prefieres conversaciones por texto con memoria real.",
           "Hasta 2 AmorIAI diferentes",
           "400 mensajes de texto / mes",
           "Memoria a largo plazo activada",
@@ -383,11 +338,11 @@ const LABELS: Record<Locale, Labels> = {
         a: "Sí. Puedes cambiar o cancelar tu suscripción en cualquier momento desde tu cuenta.",
       },
       {
-        q: "¿Necesito tarjeta para el plan Descubrimiento?",
-        a: "No. El plan Descubrimiento es totalmente gratuito y no requiere tarjeta.",
+        q: "¿Puedo probar AmorIAI de forma gratuita?",
+        a: "Sí. Puedes crear una cuenta gratuita, probar la experiencia básica por texto y activar un plan de pago solo si quieres continuar.",
       },
       {
-        q: "¿Qué pasa si alcanzo el límite de mensajes?",
+        q: "¿Qué pasa si alcanzo el límite de mensajes de mi plan?",
         a: "Tu AmorIAI te avisará cuando estés cerca del límite. Puedes esperar al mes siguiente o subir de plan.",
       },
     ],
@@ -468,30 +423,11 @@ export default function PricingPage() {
   };
 
   /* ============
-     HERO CTA = toujours FREE
+     HERO CTA = SIMPLE SIGNUP
   ============ */
 
-  const handleHeroCta = async () => {
-    setSessionLoading(true);
-    try {
-      const { data, error } = await supabase.auth.getSession();
-      const currentSession = data?.session;
-
-      if (error) {
-        console.error("getSession error", error);
-      }
-
-      // Pas connecté → signup avec plan=free
-      if (!currentSession?.user) {
-        goToSignupWithPlan("free");
-        return;
-      }
-
-      // Connecté → direct create-amoria avec plan=free
-      goToCreateAmoria("free");
-    } finally {
-      setSessionLoading(false);
-    }
+  const handleHeroCta = () => {
+    router.push(withLang("/signup"));
   };
 
   /* ============
@@ -515,13 +451,13 @@ export default function PricingPage() {
         return;
       }
 
-      // 2) Connecté + plan PAYANT → Stripe/payment
+      // 2) Connecté → plan payant → Stripe/payment
       if (planId !== "free") {
         goToPayment(planId);
         return;
       }
 
-      // 3) Connecté + plan GRATUIT → création d’AmorIAI
+      // 3) (Sécurité) au cas où free serait utilisé ailleurs
       goToCreateAmoria("free");
     } finally {
       setSessionLoading(false);
@@ -946,7 +882,7 @@ export default function PricingPage() {
 
         @media (min-width: 900px) {
           .amoria-pricing-grid {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
           }
         }
 
@@ -1165,7 +1101,7 @@ export default function PricingPage() {
         @media (max-width: 960px) {
           .amoria-header {
             flex-wrap: wrap;
-            justify-content: center;
+            justify-content:center;
             gap: 0.6rem 1rem;
           }
 
@@ -1195,4 +1131,4 @@ export default function PricingPage() {
       `}</style>
     </main>
   );
-            }
+}
