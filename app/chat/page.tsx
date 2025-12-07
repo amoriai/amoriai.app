@@ -68,7 +68,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     inputPlaceholder: (name) => `Écris quelque chose à ${name}…`,
     send: "Envoyer",
     sending: "Envoi…",
-    loading: "Chargement de ta conversation…",
+    loading: "Chargement du chat…",
     aiNotFoundTitle: "AmorIA introuvable",
     genericError:
       "Impossible de charger cette conversation pour le moment. Vérifie le lien ou réessaie plus tard.",
@@ -79,8 +79,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     // 🔒 Paywall
     paywallTitle: "🔒 Tu as atteint la limite de la version gratuite.",
     paywallText:
-      "Débloque la voix, les avatars animés et les discussions illimitées avec ton AmorIA.",
-    paywallCta: "Débloquer maintenant",
+      "Débloque l’accès illimité, la voix et les avatars animés avec ton AmorIA.",
+    paywallCta: "Débloquer AmorIA Plus",
   },
   en: {
     backHome: "← Back to home",
@@ -92,7 +92,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     inputPlaceholder: (name) => `Write something to ${name}…`,
     send: "Send",
     sending: "Sending…",
-    loading: "Loading your conversation…",
+    loading: "Loading your chat…",
     aiNotFoundTitle: "Companion not found",
     genericError:
       "We couldn’t load this conversation. Please check the link or try again later.",
@@ -103,8 +103,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     // 🔒 Paywall
     paywallTitle: "🔒 You’ve reached your free limit.",
     paywallText:
-      "Unlock voice, animated avatars and unlimited chats with your AmorIA.",
-    paywallCta: "Upgrade now",
+      "Unlock unlimited chats, voice replies and animated avatars with your AmorIA.",
+    paywallCta: "Upgrade to AmorIA Plus",
   },
   es: {
     backHome: "← Volver al inicio",
@@ -116,7 +116,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     inputPlaceholder: (name) => `Escribe algo a ${name}…`,
     send: "Enviar",
     sending: "Enviando…",
-    loading: "Cargando tu conversación…",
+    loading: "Cargando tu chat…",
     aiNotFoundTitle: "Compañero no encontrado",
     genericError:
       "No pudimos cargar esta conversación. Verifica el enlace o inténtalo más tarde.",
@@ -127,8 +127,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     // 🔒 Paywall
     paywallTitle: "🔒 Has alcanzado el límite gratuito.",
     paywallText:
-      "Desbloquea la voz, los avatares animados y chats ilimitados con tu AmorIA.",
-    paywallCta: "Desbloquear ahora",
+      "Desbloquea chats ilimitados, voz y avatares animados con tu AmorIA.",
+    paywallCta: "Mejorar a AmorIA Plus",
   },
 };
 
@@ -302,7 +302,7 @@ function ChatClient() {
     recognition.lang =
       locale === "fr" ? "fr-FR" : locale === "es" ? "es-ES" : "en-US";
     recognition.interimResults = true;
-       recognition.continuous = false;
+    recognition.continuous = false;
 
     let finalText = "";
 
@@ -520,8 +520,12 @@ function ChatClient() {
         // pas de JSON
       }
 
-      // 🔒 Cas limite gratuite atteinte (quota texte)
-      if (!res.ok && data?.error === "text_quota_reached") {
+      // 🔒 Cas limite (free ou payant) renvoyée par l’API
+      if (
+        !res.ok &&
+        (data?.error === "text_quota_reached" ||
+          data?.error === "free_limit_reached")
+      ) {
         setIsBlocked(true);
         setSendError(null);
         setSending(false);
@@ -680,9 +684,10 @@ function ChatClient() {
 
         {sendError && <p className="chat-error">{sendError}</p>}
 
-        {/* 🔒 PAYWALL BANNIÈRE */}
+        {/* 🔒 PAYWALL BANNIÈRE TYPE REPLIKA */}
         {isBlocked && (
           <div className="chat-paywall">
+            <div className="chat-paywall-chip">PLUS</div>
             <p className="chat-paywall-title">{t.paywallTitle}</p>
             <p className="chat-paywall-text">{t.paywallText}</p>
             <button
@@ -690,21 +695,24 @@ function ChatClient() {
               className="chat-paywall-btn"
               onClick={handleUpgradeClick}
             >
-              {t.paywallCta}
+              <span className="chat-paywall-btn-label">{t.paywallCta}</span>
+              <span className="chat-paywall-btn-icon">➜</span>
             </button>
           </div>
         )}
 
         {/* BARRE DE SAISIE (désactivée si paywall) */}
         <form className="chat-input-bar" onSubmit={handleSubmit}>
-          <textarea
-            className="chat-input"
-            placeholder={t.inputPlaceholder(displayName)}
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            rows={2}
-            disabled={isBlocked}
-          />
+          <div className="chat-input-wrapper">
+            <textarea
+              className="chat-input"
+              placeholder={t.inputPlaceholder(displayName)}
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              rows={1}
+              disabled={isBlocked}
+            />
+          </div>
           <div className="chat-actions">
             {canUseVoice && !isBlocked && (
               <button
@@ -727,9 +735,6 @@ function ChatClient() {
               className="chat-send-btn"
               disabled={sending || !newMessage.trim() || isBlocked}
             >
-              <span className="chat-send-label">
-                {sending ? t.sending : t.send}
-              </span>
               <span className="chat-send-icon">➤</span>
             </button>
           </div>
@@ -922,56 +927,119 @@ function ChatClient() {
           color: #fecaca;
           text-align: center;
         }
+
+        /* 🔒 PAYWALL STYLE REPLIKA */
         .chat-paywall {
           margin-top: 0.6rem;
-          margin-bottom: 0.2rem;
-          border-radius: 1rem;
-          padding: 0.9rem 1rem;
+          margin-bottom: 0.4rem;
+          border-radius: 1.25rem;
+          padding: 1rem 1.1rem;
           background: radial-gradient(
             circle at top left,
-            rgba(251, 55, 255, 0.24),
-            rgba(15, 23, 42, 0.96)
+            rgba(251, 55, 255, 0.25),
+            rgba(15, 23, 42, 0.98)
           );
           border: 1px solid rgba(251, 113, 133, 0.7);
           display: flex;
           flex-direction: column;
-          gap: 0.35rem;
+          gap: 0.5rem;
           align-items: flex-start;
+          position: relative;
+          overflow: hidden;
+        }
+        .chat-paywall::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(
+            circle at 120% 0%,
+            rgba(248, 250, 252, 0.25),
+            transparent 60%
+          );
+          opacity: 0.6;
+          pointer-events: none;
+        }
+        .chat-paywall-chip {
+          position: relative;
+          z-index: 1;
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          padding: 0.18rem 0.6rem;
+          border-radius: 999px;
+          border: 1px solid rgba(248, 250, 252, 0.4);
+          background: rgba(15, 23, 42, 0.82);
         }
         .chat-paywall-title {
-          font-size: 0.9rem;
+          position: relative;
+          z-index: 1;
+          font-size: 0.95rem;
           font-weight: 600;
         }
         .chat-paywall-text {
+          position: relative;
+          z-index: 1;
           font-size: 0.8rem;
           color: #e5e7eb;
+          max-width: 420px;
         }
         .chat-paywall-btn {
-          margin-top: 0.15rem;
+          position: relative;
+          z-index: 1;
+          margin-top: 0.2rem;
           border-radius: 999px;
           border: none;
-          padding: 0.5rem 1.3rem;
+          padding: 0.55rem 1.5rem;
           font-size: 0.85rem;
           cursor: pointer;
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
-          box-shadow: 0 12px 30px rgba(248, 113, 113, 0.55);
+          box-shadow: 0 14px 36px rgba(248, 113, 113, 0.7);
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          font-weight: 600;
         }
+        .chat-paywall-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 18px 48px rgba(248, 113, 113, 0.9);
+        }
+        .chat-paywall-btn:active {
+          transform: translateY(0);
+          box-shadow: 0 10px 26px rgba(248, 113, 113, 0.6);
+        }
+        .chat-paywall-btn-label {
+          white-space: nowrap;
+        }
+        .chat-paywall-btn-icon {
+          font-size: 0.9rem;
+          transform: translateY(0.5px);
+        }
+
+        /* BARRE DE SAISIE TYPE APP MOBILE */
         .chat-input-bar {
-          margin-top: 0.3rem;
+          margin-top: 0.4rem;
           display: grid;
           grid-template-columns: 1fr auto;
-          gap: 0.6rem;
+          gap: 0.55rem;
           align-items: flex-end;
+        }
+        .chat-input-wrapper {
+          border-radius: 999px;
+          padding: 0.1rem 0.75rem;
+          background: rgba(15, 23, 42, 0.95);
+          border: 1px solid rgba(148, 163, 184, 0.7);
+          display: flex;
+          align-items: center;
         }
         .chat-input {
           width: 100%;
-          border-radius: 0.9rem;
-          border: 1px solid rgba(148, 163, 184, 0.7);
-          background: rgba(15, 23, 42, 0.96);
+          border-radius: 999px;
+          border: none;
+          background: transparent;
           color: #e5e7eb;
           font-size: 0.9rem;
-          padding: 0.55rem 0.8rem;
+          padding: 0.4rem 0;
           resize: none;
           outline: none;
         }
@@ -984,26 +1052,27 @@ function ChatClient() {
         }
         .chat-actions {
           display: flex;
-          flex-direction: column;
-          gap: 0.4rem;
-          align-items: stretch;
+          flex-direction: row;
+          gap: 0.35rem;
+          align-items: center;
         }
         .chat-mic-btn {
           border-radius: 999px;
           border: 1px solid rgba(148, 163, 184, 0.7);
           background: rgba(15, 23, 42, 0.96);
           color: #e5e7eb;
-          width: 44px;
-          height: 44px;
+          width: 42px;
+          height: 42px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          font-size: 1.1rem;
+          font-size: 1.05rem;
         }
         .chat-mic-btn--active {
           border-color: #fb37ff;
-          box-shadow: 0 0 18px rgba(251, 55, 255, 0.6);
+          box-shadow: 0 0 18px rgba(251, 55, 255, 0.8);
+          background: radial-gradient(circle at top, #1e293b, #020617);
         }
         .chat-mic-btn:disabled {
           opacity: 0.4;
@@ -1015,29 +1084,36 @@ function ChatClient() {
         .chat-send-btn {
           border-radius: 999px;
           border: none;
-          padding: 0.65rem 1.4rem;
-          font-size: 0.9rem;
+          width: 44px;
+          height: 44px;
           cursor: pointer;
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
-          box-shadow: 0 16px 40px rgba(248, 113, 113, 0.55);
-          min-width: 120px;
+          box-shadow: 0 16px 40px rgba(248, 113, 113, 0.75);
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 0.45rem;
         }
-        .chat-send-icon {
-          font-size: 0.9rem;
-          transform: translateY(0.5px);
+        .chat-send-btn:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 20px 52px rgba(248, 113, 113, 0.9);
+        }
+        .chat-send-btn:active:not(:disabled) {
+          transform: translateY(0);
+          box-shadow: 0 10px 26px rgba(248, 113, 113, 0.6);
         }
         .chat-send-btn:disabled {
-          opacity: 0.5;
+          opacity: 0.4;
           cursor: default;
           box-shadow: none;
         }
+        .chat-send-icon {
+          font-size: 1rem;
+          transform: translateX(1px);
+        }
+
         .chat-privacy-note {
-          margin-top: 0.2rem;
+          margin-top: 0.3rem;
           font-size: 0.78rem;
           color: #6b7280;
           text-align: right;
@@ -1103,13 +1179,7 @@ function ChatClient() {
             padding-inline: 0.7rem;
           }
           .chat-input-bar {
-            grid-template-columns: 1fr;
-          }
-          .chat-actions {
-            flex-direction: row;
-          }
-          .chat-send-btn {
-            flex: 1;
+            grid-template-columns: 1fr auto;
           }
           .chat-privacy-note {
             text-align: center;
@@ -1118,4 +1188,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-      }
+}
