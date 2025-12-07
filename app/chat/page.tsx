@@ -192,11 +192,14 @@ function ChatClient() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
-  // Voix (Plus / Unlimited)
+  // Voix (Plus / Illimité)
   const [canUseVoice, setCanUseVoice] = useState(false);
 
   // Avatar animé (Unlimited uniquement)
   const [canAnimateAvatar, setCanAnimateAvatar] = useState(false);
+
+  // Code du plan (free, chat, plus, unlimited…)
+  const [planCode, setPlanCode] = useState<string | null>(null);
 
   // Micro / dictée
   const [isRecording, setIsRecording] = useState(false);
@@ -205,6 +208,9 @@ function ChatClient() {
 
   // 🔒 Paywall (limite free atteinte)
   const [isBlocked, setIsBlocked] = useState(false);
+
+  const isFreePlan = !planCode || planCode === "free";
+  const isPaidPlan = !isFreePlan;
 
   // Charger l'abonnement depuis Supabase
   useEffect(() => {
@@ -216,6 +222,7 @@ function ChatClient() {
           setCanUseVoice(false);
           setCanAnimateAvatar(false);
           setSttSupported(false);
+          setPlanCode(null);
           return;
         }
 
@@ -238,46 +245,40 @@ function ChatClient() {
           setCanUseVoice(false);
           setCanAnimateAvatar(false);
           setSttSupported(false);
+          setPlanCode(null);
           return;
         }
 
         const rawPlans: any = (sub as any).pricing_plans;
 
-        let hasVoiceRaw = false;
+        let hasVoiceFromDB = false;
         let allowAnimatedAvatar = false;
-        let planCode: string | null = null;
+        let planCodeFromDB: string | null = null;
 
         if (Array.isArray(rawPlans)) {
           const p = rawPlans[0] ?? {};
-          hasVoiceRaw = !!p.has_voice;
-          planCode = typeof p.code === "string" ? p.code : null;
+          hasVoiceFromDB = !!p.has_voice;
           if (typeof p.allow_animated_avatar === "boolean") {
             allowAnimatedAvatar = p.allow_animated_avatar;
-          } else if (planCode === "unlimited") {
+          } else if (p.code === "unlimited") {
             allowAnimatedAvatar = true;
           }
+          planCodeFromDB = p.code ?? null;
         } else if (rawPlans && typeof rawPlans === "object") {
-          hasVoiceRaw = !!rawPlans.has_voice;
-          planCode =
-            typeof rawPlans.code === "string" ? rawPlans.code : null;
+          hasVoiceFromDB = !!rawPlans.has_voice;
           if (typeof rawPlans.allow_animated_avatar === "boolean") {
             allowAnimatedAvatar = rawPlans.allow_animated_avatar;
-          } else if (planCode === "unlimited") {
+          } else if (rawPlans.code === "unlimited") {
             allowAnimatedAvatar = true;
           }
+          planCodeFromDB = rawPlans.code ?? null;
         }
 
-        const isPlusOrUnlimited =
-          planCode === "plus" || planCode === "unlimited";
-
-        // 🎯 Le micro + la voix ne sont disponibles
-        // QUE pour AmorIAI Plus & Unlimited
-        const finalCanUseVoice = hasVoiceRaw && isPlusOrUnlimited;
-
-        setCanUseVoice(finalCanUseVoice);
+        setCanUseVoice(hasVoiceFromDB);
         setCanAnimateAvatar(allowAnimatedAvatar);
+        setPlanCode(planCodeFromDB);
 
-        if (!finalCanUseVoice) {
+        if (!hasVoiceFromDB) {
           setSttSupported(false);
         }
       } catch (err) {
@@ -285,6 +286,7 @@ function ChatClient() {
         setCanUseVoice(false);
         setCanAnimateAvatar(false);
         setSttSupported(false);
+        setPlanCode(null);
       }
     };
 
@@ -451,10 +453,11 @@ function ChatClient() {
     loadAI();
   }, [iaId, t.genericError]);
 
-  // Charger l’historique
+  // Charger l’historique – seulement pour les plans PAYANTS (mémoire)
   useEffect(() => {
     const loadHistory = async () => {
       if (!iaId) return;
+      if (!isPaidPlan) return; // ❗ Aucun historique pour le free
 
       try {
         const res = await fetch(
@@ -477,7 +480,7 @@ function ChatClient() {
     };
 
     loadHistory();
-  }, [iaId]);
+  }, [iaId, isPaidPlan]);
 
   // Envoi du message
   const handleSubmit = async (e: FormEvent) => {
@@ -491,9 +494,7 @@ function ChatClient() {
     }
 
     const content = newMessage.trim();
-    const baseId = `${Date.now()}-${Math.random()
-      .toString(16)
-      .slice(2)}`;
+    const baseId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
     const userMessage: ChatMessage = {
       id: `${baseId}-user`,
@@ -538,9 +539,10 @@ function ChatClient() {
         // pas de JSON
       }
 
-      // 🔒 Cas limite (free ou payant) renvoyée par l’API
+      // 🔒 Cas limite free : on affiche le paywall seulement si FREE
       if (
         !res.ok &&
+        isFreePlan &&
         (data?.error === "text_quota_reached" ||
           data?.error === "free_limit_reached")
       ) {
@@ -708,8 +710,8 @@ function ChatClient() {
 
         {sendError && <p className="chat-error">{sendError}</p>}
 
-        {/* 🔒 PAYWALL BANNIÈRE */}
-        {isBlocked && (
+        {/* 🔒 PAYWALL BANNIÈRE – uniquement pour le FREE */}
+        {isBlocked && isFreePlan && (
           <div className="chat-paywall">
             <div className="chat-paywall-chip">PLUS</div>
             <p className="chat-paywall-title">{t.paywallTitle}</p>
@@ -728,7 +730,7 @@ function ChatClient() {
           </div>
         )}
 
-        {/* BARRE DE SAISIE (désactivée si paywall) */}
+        {/* BARRE DE SAISIE (désactivée si paywall free) */}
         <form className="chat-input-bar" onSubmit={handleSubmit}>
           <div className="chat-input-wrapper">
             <textarea
@@ -737,7 +739,7 @@ function ChatClient() {
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               rows={1}
-              disabled={isBlocked}
+              disabled={isBlocked && isFreePlan}
             />
           </div>
           <div className="chat-actions">
@@ -760,7 +762,7 @@ function ChatClient() {
             <button
               type="submit"
               className="chat-send-btn"
-              disabled={sending || !newMessage.trim() || isBlocked}
+              disabled={sending || !newMessage.trim() || (isBlocked && isFreePlan)}
             >
               <span className="chat-send-icon">➤</span>
             </button>
