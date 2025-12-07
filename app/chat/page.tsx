@@ -76,7 +76,6 @@ const STRINGS: Record<Locale, UiCopy> = {
       "Nous n’avons pas pu vérifier ta session. Actualise la page ou reconnecte-toi, puis réessaie.",
     profileNotFound:
       "Aucun profil AmorIA trouvé. Crée ton profil dans « Mon AmorIA » puis reviens sur ce lien.",
-
     // 🔒 Paywall
     paywallTitle: "🔒 Tu as atteint la limite de la version gratuite.",
     paywallText:
@@ -101,7 +100,6 @@ const STRINGS: Record<Locale, UiCopy> = {
       "We couldn’t verify your session. Please refresh the page or log in again, then try once more.",
     profileNotFound:
       "No AmorIA profile was found. Create your profile in “My AmorIA”, then come back to this link.",
-
     // 🔒 Paywall
     paywallTitle: "🔒 You’ve reached your free limit.",
     paywallText:
@@ -126,7 +124,6 @@ const STRINGS: Record<Locale, UiCopy> = {
       "No pudimos verificar tu sesión. Actualiza la página o vuelve a iniciar sesión y prueba de nuevo.",
     profileNotFound:
       "No se encontró ningún perfil de AmorIA. Crea tu perfil en « Mi AmorIA » y vuelve a este enlace.",
-
     // 🔒 Paywall
     paywallTitle: "🔒 Has alcanzado el límite gratuito.",
     paywallText:
@@ -305,7 +302,7 @@ function ChatClient() {
     recognition.lang =
       locale === "fr" ? "fr-FR" : locale === "es" ? "es-ES" : "en-US";
     recognition.interimResults = true;
-    recognition.continuous = false;
+       recognition.continuous = false;
 
     let finalText = "";
 
@@ -476,7 +473,9 @@ function ChatClient() {
     }
 
     const content = newMessage.trim();
-    const baseId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const baseId = `${Date.now()}-${Math.random()
+      .toString(16)
+      .slice(2)}`;
 
     const userMessage: ChatMessage = {
       id: `${baseId}-user`,
@@ -521,8 +520,8 @@ function ChatClient() {
         // pas de JSON
       }
 
-      // 🔒 Cas limite gratuite atteinte
-      if (data?.error === "free_limit_reached") {
+      // 🔒 Cas limite gratuite atteinte (quota texte)
+      if (!res.ok && data?.error === "text_quota_reached") {
         setIsBlocked(true);
         setSendError(null);
         setSending(false);
@@ -1119,4 +1118,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-          }
+      }
