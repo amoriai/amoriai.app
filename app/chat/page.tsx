@@ -56,6 +56,11 @@ type UiCopy = {
   paywallText: string;
   paywallCta: string;
   paywallSeePlans: string;
+
+  // 🔼 Bandeau pub upgrade (free)
+  promoTitle: string;
+  promoText: string;
+  promoCta: string;
 };
 
 const STRINGS: Record<Locale, UiCopy> = {
@@ -84,6 +89,12 @@ const STRINGS: Record<Locale, UiCopy> = {
       "Pour continuer à discuter chaque jour et débloquer la voix de ton AmorIAI, passe à AmorIAI Plus.",
     paywallCta: "Débloquer AmorIAI Plus",
     paywallSeePlans: "Voir tous les forfaits →",
+
+    // 🔼 Bannière promo (free, avant blocage)
+    promoTitle: "Plus de temps avec ton AmorIAI ?",
+    promoText:
+      "Passe à AmorIAI Plus pour des conversations illimitées et la voix de ton compagnon.",
+    promoCta: "Découvrir AmorIAI Plus",
   },
   en: {
     backHome: "← Back to home",
@@ -110,6 +121,12 @@ const STRINGS: Record<Locale, UiCopy> = {
       "To keep talking every day and unlock your AmorIAI’s voice, switch to AmorIAI Plus.",
     paywallCta: "Unlock AmorIAI Plus",
     paywallSeePlans: "See all plans →",
+
+    // 🔼 Promo banner
+    promoTitle: "Want more time with your AmorIAI?",
+    promoText:
+      "Upgrade to AmorIAI Plus for daily conversations and your companion’s voice.",
+    promoCta: "Discover AmorIAI Plus",
   },
   es: {
     backHome: "← Volver al inicio",
@@ -136,6 +153,12 @@ const STRINGS: Record<Locale, UiCopy> = {
       "Para seguir hablando cada día y desbloquear la voz de tu AmorIAI, pasa a AmorIAI Plus.",
     paywallCta: "Desbloquear AmorIAI Plus",
     paywallSeePlans: "Ver todos los planes →",
+
+    // 🔼 Promo banner
+    promoTitle: "¿Quieres más tiempo con tu AmorIAI?",
+    promoText:
+      "Pasa a AmorIAI Plus para conversaciones diarias y la voz de tu compañero.",
+    promoCta: "Descubrir AmorIAI Plus",
   },
 };
 
@@ -192,11 +215,14 @@ function ChatClient() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
-  // Voix (Plus / Illimité)
+  // Voix (Plus / Unlimited / éventuellement Chat)
   const [canUseVoice, setCanUseVoice] = useState(false);
 
-  // Avatar animé (Unlimited uniquement)
-  const [canAnimateAvatar, setCanAnimateAvatar] = useState(false);
+  // Pulse de l’anneau (tous les plans payants)
+  const [canPulseAvatar, setCanPulseAvatar] = useState(false);
+
+  // Vidéo mp4 (Unlimited seulement)
+  const [canPlayAvatarVideo, setCanPlayAvatarVideo] = useState(false);
 
   // Code du plan (free, chat, plus, unlimited…)
   const [planCode, setPlanCode] = useState<string | null>(null);
@@ -220,7 +246,8 @@ function ChatClient() {
         const user = userData?.user;
         if (!user) {
           setCanUseVoice(false);
-          setCanAnimateAvatar(false);
+          setCanPulseAvatar(false);
+          setCanPlayAvatarVideo(false);
           setSttSupported(false);
           setPlanCode(null);
           return;
@@ -243,7 +270,8 @@ function ChatClient() {
 
         if (error || !sub) {
           setCanUseVoice(false);
-          setCanAnimateAvatar(false);
+          setCanPulseAvatar(false);
+          setCanPlayAvatarVideo(false);
           setSttSupported(false);
           setPlanCode(null);
           return;
@@ -252,31 +280,37 @@ function ChatClient() {
         const rawPlans: any = (sub as any).pricing_plans;
 
         let hasVoiceFromDB = false;
-        let allowAnimatedAvatar = false;
         let planCodeFromDB: string | null = null;
+        let allowVideo = false;
 
         if (Array.isArray(rawPlans)) {
           const p = rawPlans[0] ?? {};
           hasVoiceFromDB = !!p.has_voice;
-          if (typeof p.allow_animated_avatar === "boolean") {
-            allowAnimatedAvatar = p.allow_animated_avatar;
-          } else if (p.code === "unlimited") {
-            allowAnimatedAvatar = true;
-          }
           planCodeFromDB = p.code ?? null;
+
+          // mp4 seulement Unlimited (ou flag allow_animated_avatar = true)
+          if (typeof p.allow_animated_avatar === "boolean") {
+            allowVideo = p.allow_animated_avatar;
+          } else if (p.code === "unlimited") {
+            allowVideo = true;
+          }
         } else if (rawPlans && typeof rawPlans === "object") {
           hasVoiceFromDB = !!rawPlans.has_voice;
-          if (typeof rawPlans.allow_animated_avatar === "boolean") {
-            allowAnimatedAvatar = rawPlans.allow_animated_avatar;
-          } else if (rawPlans.code === "unlimited") {
-            allowAnimatedAvatar = true;
-          }
           planCodeFromDB = rawPlans.code ?? null;
+
+          if (typeof rawPlans.allow_animated_avatar === "boolean") {
+            allowVideo = rawPlans.allow_animated_avatar;
+          } else if (rawPlans.code === "unlimited") {
+            allowVideo = true;
+          }
         }
 
-        setCanUseVoice(hasVoiceFromDB);
-        setCanAnimateAvatar(allowAnimatedAvatar);
         setPlanCode(planCodeFromDB);
+        const isPaid = !!planCodeFromDB && planCodeFromDB !== "free";
+
+        setCanUseVoice(hasVoiceFromDB);
+        setCanPulseAvatar(isPaid); // pulse pour tous les plans payants
+        setCanPlayAvatarVideo(allowVideo); // mp4 uniquement Unlimited / flag DB
 
         if (!hasVoiceFromDB) {
           setSttSupported(false);
@@ -284,7 +318,8 @@ function ChatClient() {
       } catch (err) {
         console.error("Erreur loadSubscription:", err);
         setCanUseVoice(false);
-        setCanAnimateAvatar(false);
+        setCanPulseAvatar(false);
+        setCanPlayAvatarVideo(false);
         setSttSupported(false);
         setPlanCode(null);
       }
@@ -539,7 +574,7 @@ function ChatClient() {
         // pas de JSON
       }
 
-      // 🔒 Cas limite free : on affiche le paywall seulement si FREE
+      // 🔒 Cas limite free : paywall seulement si FREE
       if (
         !res.ok &&
         isFreePlan &&
@@ -628,6 +663,10 @@ function ChatClient() {
     window.location.href = `/pricing?${params.toString()}`;
   };
 
+  const avatarRingClass = canPulseAvatar
+    ? "chat-avatar-ring live"
+    : "chat-avatar-ring";
+
   return (
     <main className="chat-root">
       <header className="chat-header">
@@ -655,9 +694,9 @@ function ChatClient() {
             </>
           ) : (
             <>
-              <div className="chat-avatar-ring live">
+              <div className={avatarRingClass}>
                 {avatarImageUrl ? (
-                  canAnimateAvatar && avatarVideoUrl ? (
+                  canPlayAvatarVideo && avatarVideoUrl ? (
                     <video
                       src={avatarVideoUrl}
                       autoPlay
@@ -710,7 +749,25 @@ function ChatClient() {
 
         {sendError && <p className="chat-error">{sendError}</p>}
 
-        {/* 🔒 PAYWALL BANNIÈRE – uniquement pour le FREE */}
+        {/* 🔼 Petite bannière promo pour le plan FREE, même sans blocage */}
+        {!isBlocked && isFreePlan && (
+          <div className="chat-promo">
+            <div className="chat-promo-tag">PLUS</div>
+            <div className="chat-promo-texts">
+              <p className="chat-promo-title">{t.promoTitle}</p>
+              <p className="chat-promo-text">{t.promoText}</p>
+            </div>
+            <button
+              type="button"
+              className="chat-promo-btn"
+              onClick={handleUpgradeClick}
+            >
+              {t.promoCta}
+            </button>
+          </div>
+        )}
+
+        {/* 🔒 PAYWALL BANNIÈRE – uniquement pour le FREE BLOQUÉ */}
         {isBlocked && isFreePlan && (
           <div className="chat-paywall">
             <div className="chat-paywall-chip">PLUS</div>
@@ -955,6 +1012,55 @@ function ChatClient() {
           font-size: 0.8rem;
           color: #fecaca;
           text-align: center;
+        }
+
+        /* 🔼 Bannière promo upgrade (free non bloqué) */
+        .chat-promo {
+          margin-top: 0.5rem;
+          margin-bottom: 0.1rem;
+          border-radius: 999px;
+          padding: 0.55rem 0.9rem;
+          background: radial-gradient(
+            circle at left,
+            rgba(251, 55, 255, 0.25),
+            rgba(15, 23, 42, 0.98)
+          );
+          border: 1px solid rgba(251, 113, 133, 0.7);
+          display: flex;
+          align-items: center;
+          gap: 0.55rem;
+        }
+        .chat-promo-tag {
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          padding: 0.15rem 0.55rem;
+          border-radius: 999px;
+          border: 1px solid rgba(248, 250, 252, 0.4);
+          background: rgba(15, 23, 42, 0.9);
+        }
+        .chat-promo-texts {
+          flex: 1;
+          min-width: 0;
+        }
+        .chat-promo-title {
+          font-size: 0.8rem;
+          font-weight: 600;
+          margin-bottom: 0.1rem;
+        }
+        .chat-promo-text {
+          font-size: 0.75rem;
+          color: #e5e7eb;
+        }
+        .chat-promo-btn {
+          border-radius: 999px;
+          border: none;
+          padding: 0.38rem 0.9rem;
+          font-size: 0.78rem;
+          cursor: pointer;
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
+          color: #f9fafb;
+          white-space: nowrap;
         }
 
         /* 🔒 PAYWALL STYLE */
