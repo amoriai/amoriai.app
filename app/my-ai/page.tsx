@@ -131,6 +131,10 @@ export default function MyAIPage() {
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // 🔐 plan & animation avatar
+  const [plan, setPlan] = useState<"free" | "plus" | "unlimited">("free");
+  const [canAnimateAvatar, setCanAnimateAvatar] = useState(false);
+
   // Langue depuis ?lang=
   useEffect(() => {
     try {
@@ -144,7 +148,7 @@ export default function MyAIPage() {
 
   const t = STRINGS[locale];
 
-  // Charger la dernière IA de l’utilisateur connecté
+  // Charger la dernière IA + le plan de l’utilisateur connecté
   useEffect(() => {
     const loadAI = async () => {
       try {
@@ -157,6 +161,19 @@ export default function MyAIPage() {
 
         const user = authData.user;
 
+        // Plan
+        const { data: sub } = await supabase
+          .from("user_subscriptions")
+          .select("plan")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        const currentPlan =
+          (sub?.plan as "free" | "plus" | "unlimited") ?? "free";
+        setPlan(currentPlan);
+        setCanAnimateAvatar(currentPlan === "plus" || currentPlan === "unlimited");
+
+        // IA
         const { data, error } = await supabase
           .from("user_amoria")
           .select("*")
@@ -282,6 +299,7 @@ export default function MyAIPage() {
 
   const profileChip = t.profileChipLabel(ai.persona_type);
   const chatLabel = t.chatCta(ai.name);
+  const displayNameUpper = (ai.name || "").toUpperCase();
 
   return (
     <main className="amoria-ai-root">
@@ -298,7 +316,13 @@ export default function MyAIPage() {
         </div>
 
         <div className="amoria-ai-avatar-block">
-          <div className="amoria-avatar-ring">
+          <div
+            className={
+              canAnimateAvatar
+                ? "amoria-avatar-ring amoria-avatar-ring--live"
+                : "amoria-avatar-ring"
+            }
+          >
             {ai.avatar_image_url ? (
               <img
                 src={ai.avatar_image_url}
@@ -309,7 +333,7 @@ export default function MyAIPage() {
               <div className="amoria-avatar-placeholder">{t.noAvatar}</div>
             )}
           </div>
-          <p className="amoria-ai-name">{ai.name}</p>
+          <p className="amoria-ai-name">{displayNameUpper}</p>
 
           <div className="amoria-chip-row">
             <span className="amoria-chip amoria-chip--outline">{profileChip}</span>
@@ -424,6 +448,9 @@ export default function MyAIPage() {
           box-shadow:
             0 0 35px rgba(251, 55, 255, 0.6),
             0 0 70px rgba(56, 189, 248, 0.4);
+        }
+
+        .amoria-avatar-ring--live {
           animation: amoriaPulse 4s ease-in-out infinite;
         }
 
@@ -433,8 +460,8 @@ export default function MyAIPage() {
           border-radius: 999px;
           object-fit: cover;
           background: #020617;
-          transform: scale(0.92); /* léger dézoom pour voir visage + cheveux */
-          object-position: 50% 20%; /* remonte un peu pour les cheveux */
+          transform: scale(0.92);
+          object-position: 50% 20%;
         }
 
         .amoria-avatar-placeholder {
@@ -452,9 +479,9 @@ export default function MyAIPage() {
 
         .amoria-ai-name {
           margin-top: 0.4rem;
-          font-weight: 600;
-          letter-spacing: 0.04em;
-          text-transform: lowercase;
+          font-weight: 700;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
         }
 
         .amoria-chip-row {
