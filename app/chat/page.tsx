@@ -86,14 +86,14 @@ const STRINGS: Record<Locale, UiCopy> = {
     // 🔒 Paywall
     paywallTitle: "🔒 Tu as atteint la limite de ton accès gratuit.",
     paywallText:
-      "Pour continuer à discuter chaque jour et débloquer la voix de ton AmorIAI, passe à AmorIAI Plus.",
+      "Pour continuer à discuter plus librement et débloquer la voix de ton AmorIAI, passe à AmorIAI Plus.",
     paywallCta: "Débloquer AmorIAI Plus",
     paywallSeePlans: "Voir tous les forfaits →",
 
     // 🔼 Bannière promo (free, avant blocage)
     promoTitle: "Plus de temps avec ton AmorIAI ?",
     promoText:
-      "Passe à AmorIAI Plus pour des conversations illimitées et la voix de ton compagnon.",
+      "Passe à AmorIAI Plus pour beaucoup plus de messages chaque mois et la voix de ton compagnon.",
     promoCta: "Découvrir AmorIAI Plus",
   },
   en: {
@@ -118,14 +118,14 @@ const STRINGS: Record<Locale, UiCopy> = {
     // 🔒 Paywall
     paywallTitle: "🔒 You’ve reached your free access limit.",
     paywallText:
-      "To keep talking every day and unlock your AmorIAI’s voice, switch to AmorIAI Plus.",
+      "To keep talking more freely and unlock your AmorIAI’s voice, switch to AmorIAI Plus.",
     paywallCta: "Unlock AmorIAI Plus",
     paywallSeePlans: "See all plans →",
 
     // 🔼 Promo banner
     promoTitle: "Want more time with your AmorIAI?",
     promoText:
-      "Upgrade to AmorIAI Plus for daily conversations and your companion’s voice.",
+      "Upgrade to AmorIAI Plus for more messages every month and your companion’s voice.",
     promoCta: "Discover AmorIAI Plus",
   },
   es: {
@@ -150,14 +150,14 @@ const STRINGS: Record<Locale, UiCopy> = {
     // 🔒 Paywall
     paywallTitle: "🔒 Has alcanzado el límite de tu acceso gratuito.",
     paywallText:
-      "Para seguir hablando cada día y desbloquear la voz de tu AmorIAI, pasa a AmorIAI Plus.",
+      "Para seguir hablando con más libertad y desbloquear la voz de tu AmorIAI, pasa a AmorIAI Plus.",
     paywallCta: "Desbloquear AmorIAI Plus",
     paywallSeePlans: "Ver todos los planes →",
 
     // 🔼 Promo banner
     promoTitle: "¿Quieres más tiempo con tu AmorIAI?",
     promoText:
-      "Pasa a AmorIAI Plus para conversaciones diarias y la voz de tu compañero.",
+      "Pasa a AmorIAI Plus para muchos más mensajes cada mes y la voz de tu compañero.",
     promoCta: "Descubrir AmorIAI Plus",
   },
 };
@@ -1332,4 +1332,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-      }
+    }
