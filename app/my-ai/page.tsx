@@ -108,7 +108,7 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-// On essaie de séparer personnalité et mission à partir du system_prompt
+// Séparer personnalité et mission à partir du system_prompt
 function extractPersonality(prompt: string): string {
   const idx = prompt.indexOf("Ta mission");
   if (idx > 0) {
@@ -131,8 +131,10 @@ export default function MyAIPage() {
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔐 plan & animation avatar
-  const [plan, setPlan] = useState<"free" | "plus" | "unlimited">("free");
+  // plan & animation avatar
+  const [plan, setPlan] = useState<"free" | "chat" | "plus" | "unlimited">(
+    "free"
+  );
   const [canAnimateAvatar, setCanAnimateAvatar] = useState(false);
 
   // Langue depuis ?lang=
@@ -148,11 +150,12 @@ export default function MyAIPage() {
 
   const t = STRINGS[locale];
 
-  // Charger la dernière IA + le plan de l’utilisateur connecté
+  // Charger IA + plan utilisateur
   useEffect(() => {
     const loadAI = async () => {
       try {
-        const { data: authData, error: authError } = await supabase.auth.getUser();
+        const { data: authData, error: authError } =
+          await supabase.auth.getUser();
         if (authError || !authData?.user) {
           setError(t.error);
           setLoading(false);
@@ -161,7 +164,7 @@ export default function MyAIPage() {
 
         const user = authData.user;
 
-        // Plan
+        // Plan (string simple dans user_subscriptions.plan)
         const { data: sub } = await supabase
           .from("user_subscriptions")
           .select("plan")
@@ -169,9 +172,11 @@ export default function MyAIPage() {
           .maybeSingle();
 
         const currentPlan =
-          (sub?.plan as "free" | "plus" | "unlimited") ?? "free";
+          (sub?.plan as "free" | "chat" | "plus" | "unlimited") ?? "free";
         setPlan(currentPlan);
-        setCanAnimateAvatar(currentPlan === "plus" || currentPlan === "unlimited");
+
+        // 👉 Avatar animé pour tout sauf le plan free
+        setCanAnimateAvatar(currentPlan !== "free");
 
         // IA
         const { data, error } = await supabase
@@ -349,7 +354,7 @@ export default function MyAIPage() {
             <p className="amoria-panel-text">{personalityText}</p>
           </article>
 
-          <article className="amoria-panel">
+        <article className="amoria-panel">
             <h2 className="amoria-panel-title">{t.missionTitle}</h2>
             <p className="amoria-panel-text">{missionText}</p>
           </article>
@@ -482,6 +487,8 @@ export default function MyAIPage() {
           font-weight: 700;
           letter-spacing: 0.16em;
           text-transform: uppercase;
+          font-size: 0.95rem;
+          text-shadow: 0 0 6px rgba(251, 55, 255, 0.7);
         }
 
         .amoria-chip-row {
@@ -619,4 +626,4 @@ export default function MyAIPage() {
       `}</style>
     </main>
   );
-}
+        }
