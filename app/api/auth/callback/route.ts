@@ -1,33 +1,42 @@
-import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+"use client";
 
-export async function GET(req: NextRequest) {
-  const url = new URL(req.url);
-  const code = url.searchParams.get("code");
-  const langParam = url.searchParams.get("lang") ?? "fr";
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "../../lib/supabaseClient";
 
-  // Pas de code → on renvoie au login
-  if (!code) {
-    return NextResponse.redirect(
-      new URL(`/login?lang=${langParam}`, url.origin)
-    );
-  }
+type Locale = "fr" | "en" | "es";
 
-  const supabase = createRouteHandlerClient({ cookies });
+function normalizeLocale(raw: string | null): Locale {
+  if (raw === "fr" || raw === "en" || raw === "es") return raw;
+  return "fr";
+}
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+export default function AuthCallbackPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  if (error) {
-    console.error("exchangeCodeForSession error", error);
-    return NextResponse.redirect(
-      new URL(`/login?lang=${langParam}`, url.origin)
-    );
-  }
+  useEffect(() => {
+    const run = async () => {
+      const locale = normalizeLocale(searchParams.get("lang"));
 
-  // ✅ IMPORTANT : après Google, on va TOUJOURS sur /my-amoria
-  // C'est /my-amoria qui décidera ensuite : chat ou page "Créer ton AmorIA"
-  return NextResponse.redirect(
-    new URL(`/my-amoria?lang=${langParam}`, url.origin)
+      // On force Supabase à finaliser la session si besoin
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("auth callback getUser error", error);
+      } else {
+        console.log("auth callback user", data?.user?.id);
+      }
+
+      // 👉 IMPORTANT : on envoie TOUJOURS vers /my-amoria
+      router.replace(`/my-amoria?lang=${locale}`);
+    };
+
+    void run();
+  }, [router, searchParams]);
+
+  return (
+    <main className="min-h-screen flex items-center justify-center bg-black text-white">
+      <p>Connexion en cours…</p>
+    </main>
   );
 }
