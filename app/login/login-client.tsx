@@ -44,7 +44,9 @@ const STRINGS: Record<Locale, Strings> = {
     noAccount: "Pas encore de compte ?",
     signupLink: "Créer mon compte",
     errorGeneric: "Une erreur est survenue. Réessaie dans un instant.",
-    errorInvalid: "Courriel ou mot de passe invalide.",
+    // ➜ texte orienté “nouveau compte”
+    errorInvalid:
+      "Ce courriel n’est pas encore associé à un compte AmorIAI. Crée ton compte pour commencer.",
   },
   en: {
     title: "Log in",
@@ -63,7 +65,8 @@ const STRINGS: Record<Locale, Strings> = {
     noAccount: "Don’t have an account yet?",
     signupLink: "Create my account",
     errorGeneric: "Something went wrong. Please try again.",
-    errorInvalid: "Invalid email or password.",
+    errorInvalid:
+      "This email isn’t linked to an AmorIAI account yet. Create your account to get started.",
   },
   es: {
     title: "Iniciar sesión",
@@ -82,7 +85,8 @@ const STRINGS: Record<Locale, Strings> = {
     noAccount: "¿Todavía no tienes cuenta?",
     signupLink: "Crear mi cuenta",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
-    errorInvalid: "Correo o contraseña inválidos.",
+    errorInvalid:
+      "Este correo aún no está vinculado a una cuenta de AmorIAI. Crea tu cuenta para empezar.",
   },
 };
 
@@ -104,11 +108,63 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  /** Après connexion → TOUJOURS /my-amoria (plus jamais /pricing) */
+  /** Fallback : centre l’utilisateur sur /my-amoria */
   const redirectToMyAmoria = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
     router.replace(`/my-amoria?${params.toString()}`);
+  };
+
+  const goToSignup = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    router.push(`/signup?${params.toString()}`);
+  };
+
+  /** Après connexion : regarde s’il existe déjà un AmorIA et redirige. */
+  const redirectAfterLogin = async () => {
+    try {
+      const { data: authData, error: authError } =
+        await supabase.auth.getUser();
+
+      if (authError || !authData?.user) {
+        redirectToMyAmoria();
+        return;
+      }
+
+      const user = authData.user;
+
+      const { data: existing, error: aiError } = await supabase
+        .from("user_amoria")
+        .select("id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (aiError) {
+        console.error("Supabase user_amoria error:", aiError);
+        redirectToMyAmoria();
+        return;
+      }
+
+      if (existing?.id) {
+        // ✅ AmorIA déjà créé → on va directement au chat
+        const params = new URLSearchParams();
+        params.set("iaId", existing.id);
+        params.set("lang", locale);
+        router.replace(`/chat?${params.toString()}`);
+      } else {
+        // ✅ Aucun AmorIA → on envoie vers la création du premier AmorIA
+        const params = new URLSearchParams();
+        params.set("lang", locale);
+        params.set("plan", "free");
+        router.replace(`/create-amoria?${params.toString()}`);
+      }
+    } catch (err) {
+      console.error("redirectAfterLogin error:", err);
+      redirectToMyAmoria();
+    }
   };
 
   const handleEmailLogin = async (e: FormEvent) => {
@@ -126,17 +182,27 @@ export default function LoginClient() {
 
       if (error) {
         console.error("supabase signIn error", error);
-        setErrorMsg(
-          error.message.toLowerCase().includes("invalid")
-            ? t.errorInvalid
-            : t.errorGeneric
-        );
+        const msg = error.message.toLowerCase();
+
+        if (msg.includes("invalid") || msg.includes("invalid login")) {
+          // ➜ On considère que le compte n’existe pas (ou mauvais mot de passe),
+          // mais on suit ton choix produit : on pousse vers la création.
+          setErrorMsg(t.errorInvalid);
+
+          // petite pause pour que le message soit visible, puis redirection
+          setTimeout(() => {
+            goToSignup();
+          }, 1400);
+        } else {
+          setErrorMsg(t.errorGeneric);
+        }
+
         setLoading(false);
         return;
       }
 
-      // ✅ Connexion OK → on va dans /my-amoria
-      redirectToMyAmoria();
+      // ✅ Connexion OK → on décide où envoyer (chat ou création d’AmorIA)
+      await redirectAfterLogin();
     } catch (err) {
       console.error("login error", err);
       setErrorMsg(t.errorGeneric);
@@ -153,7 +219,7 @@ export default function LoginClient() {
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
 
-      // ✅ On indique à /auth/callback de renvoyer vers /my-amoria
+      // /auth/callback se chargera ensuite de renvoyer vers /my-amoria
       const params = new URLSearchParams();
       params.set("lang", locale);
       params.set("next", "/my-amoria");
@@ -172,18 +238,11 @@ export default function LoginClient() {
         setErrorMsg(t.errorGeneric);
         setLoading(false);
       }
-      // Sinon Supabase redirige vers /auth/callback, puis /my-amoria
     } catch (err) {
       console.error("google login error", err);
       setErrorMsg(t.errorGeneric);
       setLoading(false);
     }
-  };
-
-  const goToSignup = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    router.push(`/signup?${params.toString()}`);
   };
 
   return (
