@@ -27,7 +27,7 @@ export default function AuthCallbackClient() {
       const lang = normalizeLocale(searchParams.get("lang"));
       const plan: PlanId = "free"; // plan de départ
 
-      // 1) Vérifier la session Supabase
+      // 1) Vérifier la session Supabase (Google vient d'appeler le callback)
       const { data, error } = await supabase.auth.getSession();
 
       if (error || !data.session?.user) {
@@ -42,7 +42,7 @@ export default function AuthCallbackClient() {
       const user = data.session.user;
 
       try {
-        // 2) Vérifier si une subscription active existe déjà
+        // 2) Vérifier s'il existe déjà une subscription "current" pour cet utilisateur
         const { data: existingSub, error: subError } = await supabase
           .from("user_subscriptions")
           .select("id")
@@ -54,8 +54,8 @@ export default function AuthCallbackClient() {
           console.error("Erreur lecture user_subscriptions:", subError);
         }
 
+        // 3) Si aucune subscription → créer automatiquement le plan "free"
         if (!existingSub) {
-          // 3) Récupérer le plan "free"
           const { data: pricingPlan, error: pricingError } = await supabase
             .from("pricing_plans")
             .select("id")
@@ -67,7 +67,6 @@ export default function AuthCallbackClient() {
           }
 
           if (pricingPlan?.id) {
-            // 4) Créer la subscription free si elle n'existe pas
             const { error: insertError } = await supabase
               .from("user_subscriptions")
               .insert({
@@ -88,7 +87,7 @@ export default function AuthCallbackClient() {
         console.error("Erreur dans finalizeAuth:", err);
       }
 
-      // 5) Redirection finale : TOUJOURS /my-amoria
+      // 4) Redirection finale → TOUJOURS vers /my-amoria
       const params = new URLSearchParams();
       params.set("lang", lang);
       params.set("plan", plan);
