@@ -13,20 +13,19 @@ const LOADING_TEXT: Record<Locale, string> = {
   es: "Iniciando sesión...",
 };
 
+function normalizeLocale(raw: string | null): Locale {
+  if (raw === "fr" || raw === "en" || raw === "es") return raw;
+  return "fr";
+}
+
 export default function AuthCallbackClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const finalizeAuth = async () => {
-      const langParam = (searchParams.get("lang") as Locale) || "fr";
-      const lang: Locale =
-        langParam === "fr" || langParam === "en" || langParam === "es"
-          ? langParam
-          : "fr";
-
-      // On force toujours le plan de départ à "free" après Google
-      const plan: PlanId = "free";
+      const lang = normalizeLocale(searchParams.get("lang"));
+      const plan: PlanId = "free"; // plan de départ
 
       // 1) Vérifier la session Supabase
       const { data, error } = await supabase.auth.getSession();
@@ -36,7 +35,6 @@ export default function AuthCallbackClient() {
         const params = new URLSearchParams();
         params.set("lang", lang);
         params.set("plan", plan);
-
         router.replace(`/signup?${params.toString()}`);
         return;
       }
@@ -44,7 +42,7 @@ export default function AuthCallbackClient() {
       const user = data.session.user;
 
       try {
-        // 2) Vérifier si l'utilisateur a déjà une subscription active
+        // 2) Vérifier si une subscription active existe déjà
         const { data: existingSub, error: subError } = await supabase
           .from("user_subscriptions")
           .select("id")
@@ -90,22 +88,18 @@ export default function AuthCallbackClient() {
         console.error("Erreur dans finalizeAuth:", err);
       }
 
-      // 5) Redirection finale : CRÉATION DE L’AMORIAI, PAS LES PLANS
+      // 5) Redirection finale : TOUJOURS /my-amoria
       const params = new URLSearchParams();
       params.set("lang", lang);
       params.set("plan", plan);
 
-      router.replace(`/create-amoria?${params.toString()}`);
+      router.replace(`/my-amoria?${params.toString()}`);
     };
 
-    finalizeAuth();
+    void finalizeAuth();
   }, [router, searchParams]);
 
-  const langParam = (searchParams.get("lang") as Locale) || "fr";
-  const lang: Locale =
-    langParam === "fr" || langParam === "en" || langParam === "es"
-      ? langParam
-      : "fr";
+  const lang = normalizeLocale(searchParams.get("lang"));
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">
