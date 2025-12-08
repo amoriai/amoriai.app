@@ -44,7 +44,6 @@ const STRINGS: Record<Locale, Strings> = {
     noAccount: "Pas encore de compte ?",
     signupLink: "Créer mon compte",
     errorGeneric: "Une erreur est survenue. Réessaie dans un instant.",
-    // ➜ texte orienté “nouveau compte”
     errorInvalid:
       "Ce courriel n’est pas encore associé à un compte AmorIAI. Crée ton compte pour commencer.",
   },
@@ -108,20 +107,19 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  /** Fallback : centre l’utilisateur sur /my-amoria */
-  const redirectToMyAmoria = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    router.replace(`/my-amoria?${params.toString()}`);
-  };
-
   const goToSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
     router.push(`/signup?${params.toString()}`);
   };
 
-  /** Après connexion : regarde s’il existe déjà un AmorIA et redirige. */
+  const redirectToMyAmoria = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    router.replace(`/my-amoria?${params.toString()}`);
+  };
+
+  // Après connexion : on regarde si un AmorIA existe déjà
   const redirectAfterLogin = async () => {
     try {
       const { data: authData, error: authError } =
@@ -149,13 +147,11 @@ export default function LoginClient() {
       }
 
       if (existing?.id) {
-        // ✅ AmorIA déjà créé → on va directement au chat
         const params = new URLSearchParams();
         params.set("iaId", existing.id);
         params.set("lang", locale);
         router.replace(`/chat?${params.toString()}`);
       } else {
-        // ✅ Aucun AmorIA → on envoie vers la création du premier AmorIA
         const params = new URLSearchParams();
         params.set("lang", locale);
         params.set("plan", "free");
@@ -182,26 +178,36 @@ export default function LoginClient() {
 
       if (error) {
         console.error("supabase signIn error", error);
-        const msg = error.message.toLowerCase();
 
-        if (msg.includes("invalid") || msg.includes("invalid login")) {
-          // ➜ On considère que le compte n’existe pas (ou mauvais mot de passe),
-          // mais on suit ton choix produit : on pousse vers la création.
+        const raw = (error.message || "").toLowerCase();
+        const status = (error as any).status as number | undefined;
+
+        const looksLikeNoAccount =
+          status === 400 ||
+          status === 401 ||
+          raw.includes("invalid login") ||
+          raw.includes("invalid email or password") ||
+          raw.includes("user not found") ||
+          raw.includes("invalid credentials");
+
+        if (looksLikeNoAccount) {
           setErrorMsg(t.errorInvalid);
+          setLoading(false);
 
-          // petite pause pour que le message soit visible, puis redirection
+          // On laisse le message 1,4 s puis on pousse vers /signup
           setTimeout(() => {
             goToSignup();
           }, 1400);
-        } else {
-          setErrorMsg(t.errorGeneric);
+
+          return;
         }
 
+        setErrorMsg(t.errorGeneric);
         setLoading(false);
         return;
       }
 
-      // ✅ Connexion OK → on décide où envoyer (chat ou création d’AmorIA)
+      // Connexion OK → on enchaîne sur chat ou création d’AmorIA
       await redirectAfterLogin();
     } catch (err) {
       console.error("login error", err);
@@ -219,7 +225,6 @@ export default function LoginClient() {
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
 
-      // /auth/callback se chargera ensuite de renvoyer vers /my-amoria
       const params = new URLSearchParams();
       params.set("lang", locale);
       params.set("next", "/my-amoria");
@@ -228,9 +233,7 @@ export default function LoginClient() {
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo,
-        },
+        options: { redirectTo },
       });
 
       if (error) {
@@ -410,7 +413,7 @@ export default function LoginClient() {
           gap: 0.55rem;
           cursor: pointer;
           transition: background 0.15s ease, transform 0.1s ease,
-            box-shadow 0.15s ease;
+            box-shadow 0.15s.ease;
         }
 
         .auth-google-btn:disabled {
@@ -504,11 +507,6 @@ export default function LoginClient() {
           border-color: #f97316;
           box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.6),
             0 15px 40px rgba(15, 23, 42, 0.9);
-          background: radial-gradient(
-              circle at top left,
-              rgba(15, 23, 42, 0.9),
-              rgba(15, 23, 42, 1)
-            );
         }
 
         .auth-password-wrapper {
@@ -601,4 +599,4 @@ export default function LoginClient() {
       `}</style>
     </main>
   );
-}
+               }
