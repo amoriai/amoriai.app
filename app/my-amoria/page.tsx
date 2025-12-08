@@ -3,12 +3,20 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "../../lib/supabaseClient";
+
+type Locale = "fr" | "en" | "es";
+
+function normalizeLocale(raw: string | null): Locale {
+  if (raw === "fr" || raw === "en" || raw === "es") return raw;
+  return "fr";
+}
 
 export default function MyAmoriaPage() {
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const searchParams = useSearchParams();
+  const lang = normalizeLocale(searchParams.get("lang"));
 
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState<string>("free");
@@ -17,25 +25,26 @@ export default function MyAmoriaPage() {
     const checkAll = async () => {
       setLoading(true);
 
-      // 1. Vérifier l'utilisateur connecté (via cookies Supabase)
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      // 1. Vérifier l'utilisateur connecté (même client que login)
+      const { data: authData, error: authError } = await supabase.auth.getUser();
 
-      if (userError) {
-        console.error("Erreur getUser()", userError);
+      if (authError) {
+        console.error("Erreur getUser() dans /my-amoria:", authError);
       }
 
+      const user = authData?.user;
+
       if (!user) {
-        // Pas connecté → retour login
-        router.replace("/login");
+        console.log("Aucun user dans /my-amoria → retour login");
+        const params = new URLSearchParams();
+        params.set("lang", lang);
+        router.replace(`/login?${params.toString()}`);
         return;
       }
 
       const userId = user.id;
 
-      // 2. Vérifier s’il a déjà une IA
+      // 2. Vérifier si une AmorIA existe déjà
       const {
         data: ai,
         error: aiError,
@@ -47,16 +56,19 @@ export default function MyAmoriaPage() {
         .maybeSingle();
 
       if (aiError) {
-        console.error("Erreur lecture user_amoria", aiError);
+        console.error("Erreur lecture user_amoria:", aiError);
       }
 
       if (ai?.id) {
-        // IA déjà créée → on envoie directement au chat
-        router.replace(`/chat?iaId=${ai.id}`);
+        console.log("IA trouvée, redirection vers le chat", ai.id);
+        const params = new URLSearchParams();
+        params.set("iaId", ai.id);
+        params.set("lang", lang);
+        router.replace(`/chat?${params.toString()}`);
         return;
       }
 
-      // 3. Lire son plan
+      // 3. Lire le plan
       const {
         data: sub,
         error: subError,
@@ -67,20 +79,15 @@ export default function MyAmoriaPage() {
         .maybeSingle();
 
       if (subError) {
-        console.error("Erreur lecture user_subscriptions", subError);
+        console.error("Erreur lecture user_subscriptions:", subError);
       }
 
-      if (sub?.plan) {
-        setPlan(sub.plan);
-      } else {
-        setPlan("free");
-      }
-
+      setPlan(sub?.plan ?? "free");
       setLoading(false);
     };
 
     void checkAll();
-  }, [router, supabase]);
+  }, [router, lang]);
 
   if (loading) {
     return (
@@ -108,7 +115,7 @@ export default function MyAmoriaPage() {
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-8">
           <h2 className="text-xl font-semibold mb-2">Aucune IA détectée</h2>
           <p className="text-zinc-400 text-sm leading-relaxed">
-            Tu es bien connecté, ton abonnement est actif, mais tu n’as pas
+            Tu es bien connectée, ton abonnement est actif, mais tu n’as pas
             encore créé ton AmorIA personnelle.
             <br />
             <br />
@@ -118,7 +125,7 @@ export default function MyAmoriaPage() {
 
         <div className="flex flex-col gap-4">
           <button
-            onClick={() => router.push(`/create-amoria?plan=${plan}`)}
+            onClick={() => router.push(`/create-amoria?plan=${plan}&lang=${lang}`)}
             className="w-full py-3 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 text-center font-semibold hover:opacity-90 transition"
           >
             Créer mon AmorIA maintenant
