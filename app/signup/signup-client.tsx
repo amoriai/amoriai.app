@@ -36,7 +36,8 @@ const STRINGS: Record<Locale, Strings> = {
   fr: {
     badge: "Création de compte AmorIAI",
     title: "Créer ton compte",
-    subtitle: "Active ton accès gratuit, puis crée ton premier AmorIAI.",
+    subtitle:
+      "Active ton accès gratuit, puis crée ton premier AmorIAI en quelques secondes.",
     google: "Continuer avec Google",
     or: "ou",
     emailLabel: "Adresse courriel",
@@ -54,7 +55,8 @@ const STRINGS: Record<Locale, Strings> = {
   en: {
     badge: "Create your AmorIAI account",
     title: "Create your account",
-    subtitle: "Activate your free access, then create your first AmorIAI.",
+    subtitle:
+      "Activate your free access, then create your first AmorIAI in a few seconds.",
     google: "Continue with Google",
     or: "or",
     emailLabel: "Email address",
@@ -73,7 +75,7 @@ const STRINGS: Record<Locale, Strings> = {
     badge: "Crear tu cuenta AmorIAI",
     title: "Crear tu cuenta",
     subtitle:
-      "Activa tu acceso gratuito y luego crea tu primer AmorIAI.",
+      "Activa tu acceso gratuito y luego crea tu primer AmorIAI en segundos.",
     google: "Continuar con Google",
     or: "o",
     emailLabel: "Correo electrónico",
@@ -214,8 +216,7 @@ export default function SignupClient() {
         setErrorMsg(t.errorGoogle);
         setLoading(false);
       }
-      // La redirection finale (→ /my-amoria ou /create-amoria)
-      // se fait dans /auth/callback
+      // Redirection finale gérée dans /auth/callback
     } catch (err) {
       console.error("google oauth error", err);
       setErrorMsg(t.errorGoogle);
@@ -371,9 +372,9 @@ export default function SignupClient() {
         .auth-card {
           position: relative;
           width: 100%;
-          max-width: 430px;
+          max-width: 440px;
           border-radius: 1.9rem;
-          padding: 2.2rem 2.4rem 2rem;
+          padding: 2.3rem 2.5rem 2.1rem;
           background:
             radial-gradient(
               circle at top left,
@@ -414,7 +415,7 @@ export default function SignupClient() {
         }
 
         .auth-title {
-          font-size: 1.65rem;
+          font-size: 1.7rem;
           font-weight: 700;
           margin: 0 0 0.35rem;
           letter-spacing: 0.02em;
@@ -429,7 +430,7 @@ export default function SignupClient() {
         .auth-google-btn {
           width: 100%;
           border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.85);
+          border: 1px solid rgba(148, 163, 184, 0.9);
           padding: 0.7rem 1rem;
           background: radial-gradient(
             circle at top left,
@@ -469,10 +470,10 @@ export default function SignupClient() {
         }
 
         .auth-google-icon {
-          width: 1.4rem;
-          height: 1.4rem;
+          width: 1.5rem;
+          height: 1.5rem;
           border-radius: 999px;
-          background: #ffffff;
+          background: transparent; /* on laisse le PNG gérer son fond */
           display: inline-flex;
           align-items: center;
           justify-content: center;
