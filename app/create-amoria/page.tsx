@@ -8,7 +8,9 @@ type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 type PersonaType = "woman" | "man" | "woman50" | "man50" | "androgynous";
 
-/* ============ AVATARS ============ */
+/* ===========================
+   AVATARS
+=========================== */
 
 const AVATARS: Record<PersonaType, string[]> = {
   woman: [
@@ -59,7 +61,9 @@ function randomAvatar(type: PersonaType): string {
   return list[index];
 }
 
-/* ============ TEXTES ============ */
+/* ===========================
+   TEXTES
+=========================== */
 
 type Copy = {
   stepBadge: string;
@@ -260,7 +264,9 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
   },
 ];
 
-/* ============ COMPOSANT ============ */
+/* ===========================
+   COMPONENT
+=========================== */
 
 export default function CreateAmoriaPage() {
   const router = useRouter();
@@ -278,7 +284,7 @@ export default function CreateAmoriaPage() {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // lecture query + session
+  // Lecture des query params + vérification session
   useEffect(() => {
     const init = async () => {
       const params = new URLSearchParams(window.location.search);
@@ -392,9 +398,10 @@ sans jugement, en respectant les limites de l’utilisateur.
         return;
       }
 
+      // ✅ IMPORTANT : on reste sur /my-ai
       const params = new URLSearchParams();
       params.set("lang", locale);
-      router.push("/my-ai?" + params.toString()); // IMPORTANT : my-ai
+      router.push("/my-ai?" + params.toString());
     } catch (err) {
       console.error(err);
       setErrorMsg(t.genericError);
@@ -406,8 +413,12 @@ sans jugement, en respectant les limites de l’utilisateur.
   if (!ready) {
     return (
       <main className="amoria-create-root">
-        <div className="amoria-loading-card">
-          <p>Chargement de ton espace…</p>
+        <div className="amoria-create-wrapper">
+          <div className="amoria-create-card">
+            <p style={{ fontSize: "0.85rem", color: "#9ca3af" }}>
+              Chargement de ton espace…
+            </p>
+          </div>
         </div>
       </main>
     );
@@ -415,32 +426,35 @@ sans jugement, en respectant les limites de l’utilisateur.
 
   return (
     <main className="amoria-create-root">
-      <div className="amoria-shell">
-        <header className="amoria-header">
-          <div className="amoria-step-badge">{t.stepBadge}</div>
-          <div className="amoria-header-main">
-            <div>
-              <h1 className="amoria-title">{t.pageTitle}</h1>
-              <p className="amoria-subtitle">{t.pageSubtitle}</p>
-            </div>
+      <div className="amoria-create-wrapper">
+        <div className="amoria-create-card">
+          <header className="amoria-create-header">
+            <div className="amoria-step-badge">{t.stepBadge}</div>
 
-            <div className="amoria-plan-pill">
-              <span className="amoria-plan-label">{t.currentPlanLabel}</span>
-              <span className="amoria-plan-name">{t.planName(plan)}</span>
+            <div className="amoria-create-top">
+              <div>
+                <h1 className="amoria-create-title">{t.pageTitle}</h1>
+                <p className="amoria-create-subtitle">{t.pageSubtitle}</p>
+              </div>
+              <div className="amoria-plan-pill">
+                <span className="amoria-plan-label">
+                  {t.currentPlanLabel}
+                </span>
+                <span className="amoria-plan-name">
+                  {t.planName(plan)}
+                </span>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        <section className="amoria-card">
           {errorMsg && (
             <div className="amoria-banner amoria-banner--error">
               {errorMsg}
             </div>
           )}
 
-          <form className="amoria-layout" onSubmit={handleSubmit} noValidate>
-            {/* COLONNE GAUCHE */}
-            <div className="amoria-col-left">
+          <form className="amoria-grid" onSubmit={handleSubmit} noValidate>
+            <div className="amoria-left">
               <label className="amoria-field">
                 <span className="amoria-label">{t.nameLabel}</span>
                 <input
@@ -519,12 +533,9 @@ sans jugement, en respectant les limites de l’utilisateur.
                   ))}
                 </select>
               </label>
-
-              <p className="amoria-helper">{t.helperText}</p>
             </div>
 
-            {/* COLONNE DROITE */}
-            <div className="amoria-col-right">
+            <div className="amoria-right">
               <div className="amoria-preview-card">
                 <p className="amoria-preview-title">{t.previewTitle}</p>
                 <p className="amoria-preview-text">{t.previewText}</p>
@@ -537,11 +548,15 @@ sans jugement, en respectant les limites de l’utilisateur.
                   value={expectation}
                   onChange={(e) => setExpectation(e.target.value)}
                   placeholder={t.expectationPlaceholder}
-                  rows={6}
+                  rows={5}
                 />
               </label>
+            </div>
 
-              <div className="amoria-actions amoria-actions--under-right">
+            <div className="amoria-footer">
+              <p className="amoria-helper">{t.helperText}</p>
+
+              <div className="amoria-actions">
                 <button
                   type="button"
                   className="amoria-btn amoria-btn--secondary"
@@ -561,93 +576,83 @@ sans jugement, en respectant les limites de l’utilisateur.
               </div>
             </div>
           </form>
-        </section>
+        </div>
       </div>
 
       <style jsx global>{`
         .amoria-create-root {
           min-height: 100vh;
-          padding: 2rem 1.5rem;
-          background:
-            radial-gradient(circle at top, #020617 0, #020617 40%, #000 80%),
-            radial-gradient(circle at bottom, #020617, #000);
+          padding: 1.5rem;
+          background: radial-gradient(circle at top, #020617 0, #000 60%);
           color: #e5e7eb;
           font-family: system-ui, -apple-system, BlinkMacSystemFont,
             "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           justify-content: center;
         }
 
-        .amoria-shell {
+        .amoria-create-wrapper {
           width: 100%;
           max-width: 980px;
         }
 
-        .amoria-loading-card {
-          margin: 0 auto;
-          margin-top: 6rem;
-          max-width: 420px;
-          border-radius: 1.4rem;
-          padding: 1.4rem 1.6rem;
-          background: rgba(15, 23, 42, 0.96);
-          border: 1px solid rgba(148, 163, 184, 0.5);
-          text-align: center;
-          font-size: 0.9rem;
-          color: #cbd5f5;
+        .amoria-create-card {
+          border-radius: 1.5rem;
+          border: 1px solid rgba(148, 163, 184, 0.45);
+          background: radial-gradient(
+            circle at top,
+            #020617,
+            #020617 40%,
+            #000 100%
+          );
+          box-shadow: 0 22px 55px rgba(15, 23, 42, 0.9);
+          padding: 1.8rem 1.7rem 1.5rem;
         }
 
-        .amoria-header {
-          margin-bottom: 1rem;
+        .amoria-create-header {
+          margin-bottom: 1.1rem;
         }
 
         .amoria-step-badge {
           display: inline-flex;
-          align-items: center;
-          gap: 0.35rem;
-          padding: 0.25rem 0.85rem;
+          padding: 0.25rem 0.8rem;
           border-radius: 999px;
-          border: 1px solid rgba(96, 165, 250, 0.9);
-          background: radial-gradient(
-            circle at 0% 0%,
-            rgba(59, 130, 246, 0.7),
-            rgba(15, 23, 42, 0.9)
-          );
-          color: #dbeafe;
+          border: 1px solid rgba(96, 165, 250, 0.8);
+          background: rgba(37, 99, 235, 0.25);
+          color: #bfdbfe;
           font-size: 0.78rem;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
+          margin-bottom: 0.75rem;
         }
 
-        .amoria-header-main {
-          margin-top: 0.8rem;
+        .amoria-create-top {
           display: flex;
           justify-content: space-between;
+          gap: 1rem;
           align-items: flex-start;
-          gap: 1.2rem;
           flex-wrap: wrap;
         }
 
-        .amoria-title {
-          font-size: 1.6rem;
+        .amoria-create-title {
+          font-size: 1.3rem;
           margin-bottom: 0.3rem;
         }
 
-        .amoria-subtitle {
-          font-size: 0.9rem;
+        .amoria-create-subtitle {
+          font-size: 0.86rem;
           color: #9ca3af;
-          max-width: 580px;
+          max-width: 560px;
         }
 
         .amoria-plan-pill {
           border-radius: 999px;
-          padding: 0.45rem 0.9rem;
+          padding: 0.45rem 0.85rem;
           border: 1px solid rgba(148, 163, 184, 0.7);
-          background: rgba(15, 23, 42, 0.95);
           display: inline-flex;
           flex-direction: column;
           gap: 0.1rem;
-          font-size: 0.78rem;
+          font-size: 0.75rem;
+          background: rgba(15, 23, 42, 0.9);
         }
 
         .amoria-plan-label {
@@ -658,49 +663,31 @@ sans jugement, en respectant les limites de l’utilisateur.
           font-weight: 500;
         }
 
-        .amoria-card {
-          border-radius: 1.6rem;
-          padding: 1.7rem 1.5rem 1.5rem;
-          border: 1px solid rgba(148, 163, 184, 0.45);
-          background:
-            radial-gradient(
-              circle at top left,
-              rgba(251, 113, 133, 0.2),
-              transparent 55%
-            ),
-            radial-gradient(
-              circle at bottom right,
-              rgba(59, 130, 246, 0.2),
-              transparent 55%
-            ),
-            rgba(15, 23, 42, 0.98);
-          box-shadow: 0 24px 60px rgba(15, 23, 42, 0.9);
-        }
-
         .amoria-banner {
           border-radius: 0.9rem;
           padding: 0.55rem 0.9rem;
           font-size: 0.8rem;
-          margin-bottom: 0.9rem;
+          margin-bottom: 0.8rem;
         }
 
         .amoria-banner--error {
-          background: rgba(185, 28, 28, 0.2);
-          border: 1px solid rgba(248, 113, 113, 0.9);
+          background: rgba(185, 28, 28, 0.18);
+          border: 1px solid rgba(248, 113, 113, 0.8);
           color: #fecaca;
         }
 
-        .amoria-layout {
+        .amoria-grid {
           display: grid;
-          grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-          gap: 1.6rem;
+          grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+          gap: 1.4rem;
+          margin-bottom: 1.1rem;
         }
 
-        .amoria-col-left,
-        .amoria-col-right {
+        .amoria-left,
+        .amoria-right {
           display: flex;
           flex-direction: column;
-          gap: 0.95rem;
+          gap: 0.9rem;
         }
 
         .amoria-field {
@@ -717,22 +704,29 @@ sans jugement, en respectant les limites de l’utilisateur.
         .amoria-input,
         .amoria-select,
         .amoria-textarea {
-          width: 100%;
           border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.6);
-          padding: 0.65rem 1rem;
-          background: radial-gradient(
-            circle at top left,
-            rgba(15, 23, 42, 0.96),
-            rgba(15, 23, 42, 1)
-          );
+          border: 1px solid rgba(148, 163, 184, 0.5);
+          padding: 0.65rem 0.95rem;
+          background: rgba(15, 23, 42, 0.96);
           color: #f9fafb;
           font-size: 0.86rem;
         }
 
-        .amoria-input::placeholder,
-        .amoria-textarea::placeholder {
-          color: #6b7280;
+        /* ✅ plus de place côté flèche */
+        .amoria-select {
+          padding-right: 2.3rem;
+        }
+
+        /* ✅ Corrige la couleur des options dans la liste */
+        .amoria-select option {
+          background-color: #020617;
+          color: #e5e7eb;
+        }
+
+        .amoria-textarea {
+          border-radius: 1rem;
+          resize: vertical;
+          min-height: 120px;
         }
 
         .amoria-input:focus,
@@ -740,41 +734,17 @@ sans jugement, en respectant les limites de l’utilisateur.
         .amoria-textarea:focus {
           outline: none;
           border-color: #fb37ff;
-          box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.45);
-        }
-
-        .amoria-select {
-          appearance: none;
-          -webkit-appearance: none;
-          padding-right: 2.4rem; /* espace pour la flèche */
-          background-image: linear-gradient(
-              45deg,
-              transparent 50%,
-              #e5e7eb 50%
-            ),
-            linear-gradient(135deg, #e5e7eb 50%, transparent 50%);
-          background-position: calc(100% - 1.1rem) 50%,
-            calc(100% - 0.7rem) 50%;
-          background-size: 6px 6px, 6px 6px;
-          background-repeat: no-repeat;
-        }
-
-        .amoria-field--textarea .amoria-textarea {
-          border-radius: 1rem;
-          resize: vertical;
-          min-height: 140px;
+          box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.4);
         }
 
         .amoria-preview-card {
           border-radius: 1.2rem;
-          padding: 1rem 1.2rem;
-          background: linear-gradient(130deg, #fb37ff, #ff6b9c, #38bdf8);
-          color: #f9fafb;
+          padding: 1rem 1.1rem;
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #38bdf8);
           display: flex;
           flex-direction: column;
           gap: 0.25rem;
-          box-shadow: 0 16px 40px rgba(248, 113, 113, 0.65);
-          animation: amoriaGlow 7s ease-in-out infinite;
+          color: #f9fafb;
         }
 
         .amoria-preview-title {
@@ -783,11 +753,19 @@ sans jugement, en respectant les limites de l’utilisateur.
         }
 
         .amoria-preview-text {
-          font-size: 0.82rem;
+          font-size: 0.8rem;
+        }
+
+        .amoria-footer {
+          display: flex;
+          justify-content: space-between;
+          gap: 1rem;
+          align-items: center;
+          flex-wrap: wrap;
+          margin-top: 0.4rem;
         }
 
         .amoria-helper {
-          margin-top: 0.35rem;
           font-size: 0.78rem;
           color: #9ca3af;
           max-width: 420px;
@@ -795,17 +773,12 @@ sans jugement, en respectant les limites de l’utilisateur.
 
         .amoria-actions {
           display: flex;
-          gap: 0.65rem;
-        }
-
-        .amoria-actions--under-right {
-          margin-top: 0.9rem;
-          justify-content: flex-end;
+          gap: 0.6rem;
         }
 
         .amoria-btn {
           border-radius: 999px;
-          padding: 0.65rem 1.35rem;
+          padding: 0.6rem 1.3rem;
           font-size: 0.85rem;
           cursor: pointer;
           border: 1px solid transparent;
@@ -815,75 +788,50 @@ sans jugement, en respectant les limites de l’utilisateur.
         .amoria-btn--primary {
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
-          box-shadow: 0 16px 40px rgba(248, 113, 113, 0.75);
-          font-weight: 600;
-          transition: transform 0.1s ease, box-shadow 0.1s ease,
-            filter 0.1s ease;
+          box-shadow: 0 14px 34px rgba(248, 113, 113, 0.45);
         }
 
         .amoria-btn--primary:disabled {
           opacity: 0.55;
           cursor: default;
-          box-shadow: none;
-          filter: grayscale(0.1);
-        }
-
-        .amoria-btn--primary:not(:disabled):hover {
-          transform: translateY(-1px);
-          box-shadow: 0 22px 55px rgba(248, 113, 113, 0.9);
         }
 
         .amoria-btn--secondary {
-          background: rgba(15, 23, 42, 0.95);
+          background: rgba(15, 23, 42, 0.9);
           color: #e5e7eb;
-          border-color: rgba(148, 163, 184, 0.8);
+          border-color: rgba(148, 163, 184, 0.7);
         }
 
-        @keyframes amoriaGlow {
-          0% {
-            box-shadow: 0 16px 40px rgba(248, 113, 113, 0.55);
-            transform: translateY(0);
-          }
-          50% {
-            box-shadow: 0 20px 55px rgba(248, 113, 113, 0.9);
-            transform: translateY(-1px);
-          }
-          100% {
-            box-shadow: 0 16px 40px rgba(248, 113, 113, 0.55);
-            transform: translateY(0);
-          }
-        }
-
-        @media (max-width: 860px) {
-          .amoria-layout {
+        @media (max-width: 820px) {
+          .amoria-grid {
             grid-template-columns: minmax(0, 1fr);
           }
 
-          .amoria-actions--under-right {
-            justify-content: flex-start;
+          .amoria-create-card {
+            padding-inline: 1.15rem;
+          }
+
+          .amoria-actions {
+            width: 100%;
+            justify-content: flex-end;
           }
         }
 
         @media (max-width: 520px) {
-          .amoria-create-root {
-            padding-inline: 1.1rem;
+          .amoria-footer {
+            flex-direction: column;
+            align-items: flex-start;
           }
-
-          .amoria-card {
-            padding-inline: 1.15rem;
-          }
-
-          .amoria-actions--under-right {
-            flex-direction: column-reverse;
-            align-items: stretch;
-          }
-
-          .amoria-btn {
+          .amoria-actions {
             width: 100%;
+            justify-content: stretch;
+          }
+          .amoria-btn {
+            flex: 1;
             text-align: center;
           }
         }
       `}</style>
     </main>
   );
-}
+         }
