@@ -7,45 +7,130 @@ import { supabase } from "../../lib/supabaseClient";
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-// Ta page de création d’Amoriai = dossier app/create-amoria → route /create-amoria
 const CREATE_AMORIA_PATH = "/create-amoria";
+
+/* ===========================
+   TEXTES PAR LANGUE
+=========================== */
+
+type Strings = {
+  badge: string;
+  title: string;
+  subtitle: string;
+  google: string;
+  or: string;
+  emailLabel: string;
+  emailPlaceholder: string;
+  passwordLabel: string;
+  passwordPlaceholder: string;
+  passwordHint: string;
+  submit: string;
+  submitting: string;
+  haveAccount: string;
+  loginLink: string;
+  errorGeneric: string;
+  errorGoogle: string;
+};
+
+const STRINGS: Record<Locale, Strings> = {
+  fr: {
+    badge: "Création de compte AmorIAI",
+    title: "Créer ton compte",
+    subtitle: "Active ton accès gratuit, puis crée ton premier AmorIAI.",
+    google: "Continuer avec Google",
+    or: "ou",
+    emailLabel: "Adresse courriel",
+    emailPlaceholder: "ex. mon.adresse@email.com",
+    passwordLabel: "Mot de passe",
+    passwordPlaceholder: "Choisis un mot de passe sécurisé",
+    passwordHint: "Minimum 6 caractères. Ne partage jamais ton mot de passe.",
+    submit: "Créer mon accès gratuit",
+    submitting: "Création de ton accès…",
+    haveAccount: "Tu as déjà un compte ?",
+    loginLink: "Me connecter",
+    errorGeneric: "Une erreur est survenue. Merci de réessayer.",
+    errorGoogle: "Une erreur est survenue avec la connexion Google.",
+  },
+  en: {
+    badge: "Create your AmorIAI account",
+    title: "Create your account",
+    subtitle: "Activate your free access, then create your first AmorIAI.",
+    google: "Continue with Google",
+    or: "or",
+    emailLabel: "Email address",
+    emailPlaceholder: "e.g. my.address@email.com",
+    passwordLabel: "Password",
+    passwordPlaceholder: "Choose a secure password",
+    passwordHint: "Minimum 6 characters. Never share your password.",
+    submit: "Create my free access",
+    submitting: "Creating your access…",
+    haveAccount: "Already have an account?",
+    loginLink: "Log in",
+    errorGeneric: "Something went wrong. Please try again.",
+    errorGoogle: "Something went wrong with Google sign-in.",
+  },
+  es: {
+    badge: "Crear tu cuenta AmorIAI",
+    title: "Crear tu cuenta",
+    subtitle:
+      "Activa tu acceso gratuito y luego crea tu primer AmorIAI.",
+    google: "Continuar con Google",
+    or: "o",
+    emailLabel: "Correo electrónico",
+    emailPlaceholder: "ej. mi.direccion@email.com",
+    passwordLabel: "Contraseña",
+    passwordPlaceholder: "Elige una contraseña segura",
+    passwordHint:
+      "Mínimo 6 caracteres. Nunca compartas tu contraseña.",
+    submit: "Crear mi acceso gratuito",
+    submitting: "Creando tu acceso…",
+    haveAccount: "¿Ya tienes cuenta?",
+    loginLink: "Iniciar sesión",
+    errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
+    errorGoogle:
+      "Ocurrió un error con el inicio de sesión de Google.",
+  },
+};
+
+/* ===========================
+   HELPERS
+=========================== */
+
+function normalizeLocale(raw: string | null): Locale {
+  if (raw === "fr" || raw === "en" || raw === "es") return raw;
+  return "fr";
+}
+
+/* ===========================
+   COMPONENT
+=========================== */
 
 export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const localeParam = (searchParams.get("lang") as Locale) || "fr";
+  const locale = normalizeLocale(searchParams.get("lang"));
+  const t = STRINGS[locale];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Sécurise la langue
-  const getLocale = (): Locale => {
-    if (localeParam === "fr" || localeParam === "en" || localeParam === "es") {
-      return localeParam;
-    }
-    return "fr";
-  };
-
-  // 👉 Après signup (email) → on va sur la création d’Amoriai en "free"
   const redirectAfterSignup = () => {
-    const lang = getLocale();
-    const plan: PlanId = "free";
-
     const params = new URLSearchParams();
-    params.set("lang", lang);
-    params.set("plan", plan);
-
+    params.set("lang", locale);
+    params.set("plan", "free");
     router.replace(`${CREATE_AMORIA_PATH}?${params.toString()}`);
   };
 
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+
     setLoading(true);
-    setErrorMsg("");
+    setErrorMsg(null);
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -54,16 +139,15 @@ export default function SignupClient() {
       });
 
       if (error) {
-        setErrorMsg(
-          error.message || "Une erreur est survenue. Merci de réessayer."
-        );
+        console.error("supabase signUp error", error);
+        setErrorMsg(error.message || t.errorGeneric);
+        setLoading(false);
         return;
       }
 
       const user = data?.user;
 
       if (user) {
-        // Tout le monde commence sur le plan "free"
         const selectedPlan: PlanId = "free";
 
         const { data: pricingPlan, error: pricingError } = await supabase
@@ -73,11 +157,20 @@ export default function SignupClient() {
           .maybeSingle();
 
         if (!pricingError && pricingPlan?.id) {
-          await supabase.from("user_subscriptions").insert({
-            user_id: user.id,
-            pricing_plan_id: pricingPlan.id,
-            current: true,
-          });
+          const { error: insertError } = await supabase
+            .from("user_subscriptions")
+            .insert({
+              user_id: user.id,
+              pricing_plan_id: pricingPlan.id,
+              current: true,
+            });
+
+          if (insertError) {
+            console.error(
+              "Erreur insert user_subscriptions (free):",
+              insertError
+            );
+          }
         } else {
           console.error("Impossible de trouver le plan:", selectedPlan);
         }
@@ -85,164 +178,486 @@ export default function SignupClient() {
         console.warn("Aucun user retourné par signUp");
       }
 
-      // ➜ direction /create-amoria?lang=...&plan=free
       redirectAfterSignup();
     } catch (err) {
       console.error("signup error", err);
-      setErrorMsg(
-        err instanceof Error
-          ? err.message
-          : "Une erreur est survenue lors de la création du compte."
-      );
+      setErrorMsg(t.errorGeneric);
     } finally {
       setLoading(false);
     }
   };
 
-  // 🔹 Connexion / création via Google
   const handleGoogle = async () => {
+    if (loading) return;
     setLoading(true);
-    setErrorMsg("");
+    setErrorMsg(null);
 
     try {
-      const lang = getLocale();
-      const plan: PlanId = "free";
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "";
 
-      const redirectUrl =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/auth/callback?lang=${lang}&plan=${plan}`
-          : undefined;
+      const params = new URLSearchParams();
+      params.set("lang", locale);
+      params.set("plan", "free");
+
+      const redirectTo = `${origin}/auth/callback?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: redirectUrl,
+          redirectTo,
         },
       });
 
       if (error) {
-        setErrorMsg(
-          error.message ||
-            "Une erreur est survenue avec la connexion Google."
-        );
+        console.error("google oauth error", error);
+        setErrorMsg(t.errorGoogle);
+        setLoading(false);
       }
-      // La redirection finale (vers /create-amoria) se fera dans /auth/callback
+      // La redirection finale (→ /my-amoria ou /create-amoria)
+      // se fait dans /auth/callback
     } catch (err) {
       console.error("google oauth error", err);
-      setErrorMsg(
-        err instanceof Error
-          ? err.message
-          : "Une erreur est survenue avec la connexion Google."
-      );
-    } finally {
+      setErrorMsg(t.errorGoogle);
       setLoading(false);
     }
   };
 
   const goToLogin = () => {
-    const lang = getLocale();
-    router.push(`/login?lang=${lang}`);
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    router.push(`/login?${params.toString()}`);
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 shadow-xl px-6 py-7">
-        <h1 className="text-xl sm:text-2xl font-bold text-center mb-4">
-          Créer ton <span className="text-pink-400">AmorIAI</span> gratuit
-        </h1>
+    <main className="auth-root">
+      <div className="auth-gradient-orbit" />
+      <div className="auth-gradient-orbit auth-gradient-orbit--right" />
 
-        {errorMsg && (
-          <div className="mb-4 rounded-xl border border-red-500/60 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-            {errorMsg}
-          </div>
-        )}
+      <div className="auth-card">
+        <div className="auth-badge">{t.badge}</div>
 
-        {/* BOUTON GOOGLE */}
+        <header className="auth-header">
+          <h1 className="auth-title">{t.title}</h1>
+          <p className="auth-subtitle">{t.subtitle}</p>
+        </header>
+
+        {errorMsg && <p className="auth-error auth-error--block">{errorMsg}</p>}
+
         <button
           type="button"
           onClick={handleGoogle}
           disabled={loading}
-          className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-800/90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="auth-google-btn"
         >
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white">
-            <span className="text-[10px] font-bold text-slate-900">G</span>
+          <span className="auth-google-icon">
+            <img
+              src="/google-g.png"
+              alt="Google"
+              className="auth-google-img"
+            />
           </span>
-          Continuer avec Google
+          <span>{t.google}</span>
         </button>
 
-        <div className="mb-4 flex items-center gap-2 text-xs text-slate-500">
-          <div className="h-px flex-1 bg-slate-700" />
-          <span>ou avec ton courriel</span>
-          <div className="h-px flex-1 bg-slate-700" />
+        <div className="auth-divider">
+          <span className="auth-divider-line" />
+          <span className="auth-divider-label">{t.or}</span>
+          <span className="auth-divider-line" />
         </div>
 
-        {/* FORMULAIRE EMAIL */}
-        <form onSubmit={handleSignup} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="block text-xs font-medium uppercase tracking-wide text-slate-300">
-              Adresse courriel
-            </label>
+        <form onSubmit={handleSignup} noValidate className="auth-form">
+          <div className="auth-field">
+            <label className="auth-label">{t.emailLabel}</label>
             <input
               type="email"
               required
-              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="ex. mon.adresse@email.com"
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/60 px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 shadow-inner focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/60"
+              placeholder={t.emailPlaceholder}
+              className="auth-input"
+              autoComplete="email"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="block text-xs font-medium uppercase tracking-wide text-slate-300">
-              Mot de passe
-            </label>
-            <div className="relative">
+          <div className="auth-field">
+            <label className="auth-label">{t.passwordLabel}</label>
+            <div className="auth-password-wrapper">
               <input
                 type={showPassword ? "text" : "password"}
                 required
                 minLength={6}
-                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Choisis un mot de passe sécurisé"
-                className="w-full rounded-2xl border border-slate-700 bg-slate-950/60 px-3.5 py-2.5 pr-16 text-sm text-slate-100 placeholder:text-slate-500 shadow-inner focus:border-pink-500 focus:outline-none focus:ring-2 focus:ring-pink-500/60"
+                placeholder={t.passwordPlaceholder}
+                className="auth-input auth-input-password"
+                autoComplete="new-password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute inset-y-0 right-2 my-1 inline-flex items-center rounded-xl bg-slate-800/80 px-2.5 text-[11px] font-medium text-slate-200 hover:bg-slate-700/90"
+                className="auth-password-toggle"
               >
                 {showPassword ? "Cacher" : "Afficher"}
               </button>
             </div>
-            <p className="text-xs text-slate-400">
-              Minimum 6 caractères. Ne partage jamais ton mot de passe.
-            </p>
+            <p className="auth-password-hint">{t.passwordHint}</p>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 w-full rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-orange-400 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+            className="auth-submit-btn"
           >
-            {loading ? "Création de ton accès..." : "Créer mon accès gratuit"}
+            {loading ? t.submitting : t.submit}
           </button>
         </form>
 
-        <div className="mt-5 text-center text-xs text-slate-400">
-          <p className="text-sm">
-            Tu as déjà un compte ?{" "}
-            <button
-              type="button"
-              onClick={goToLogin}
-              className="font-medium text-pink-300 hover:text-pink-200 underline underline-offset-4"
-            >
-              Me connecter
-            </button>
-          </p>
+        <div className="auth-footer">
+          {t.haveAccount}{" "}
+          <button type="button" onClick={goToLogin} className="auth-link-btn">
+            {t.loginLink}
+          </button>
         </div>
       </div>
-    </div>
+
+      <style jsx>{`
+        .auth-root {
+          min-height: 100vh;
+          margin: 0;
+          padding: 1.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          overflow: hidden;
+          background:
+            radial-gradient(circle at top, #020617 0, #020617 40%, #000 80%),
+            radial-gradient(circle at bottom, #020617, #000);
+          color: #e5e7eb;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont,
+            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .auth-gradient-orbit {
+          position: absolute;
+          width: 520px;
+          height: 520px;
+          border-radius: 999px;
+          background: radial-gradient(
+            circle at 20% 20%,
+            rgba(251, 113, 133, 0.55),
+            transparent 60%
+          );
+          opacity: 0.6;
+          filter: blur(4px);
+          top: -120px;
+          left: -120px;
+          pointer-events: none;
+        }
+
+        .auth-gradient-orbit--right {
+          top: auto;
+          bottom: -160px;
+          left: auto;
+          right: -140px;
+          background: radial-gradient(
+            circle at 80% 20%,
+            rgba(59, 130, 246, 0.55),
+            transparent 65%
+          );
+        }
+
+        .auth-card {
+          position: relative;
+          width: 100%;
+          max-width: 430px;
+          border-radius: 1.9rem;
+          padding: 2.2rem 2.4rem 2rem;
+          background:
+            radial-gradient(
+              circle at top left,
+              rgba(248, 113, 113, 0.28),
+              transparent 55%
+            ),
+            radial-gradient(
+              circle at bottom right,
+              rgba(59, 130, 246, 0.28),
+              transparent 55%
+            ),
+            rgba(2, 6, 23, 0.98);
+          box-shadow:
+            0 32px 90px rgba(15, 23, 42, 0.95),
+            0 0 0 1px rgba(148, 163, 184, 0.35);
+          border: 1px solid rgba(148, 163, 184, 0.55);
+          backdrop-filter: blur(20px);
+          z-index: 1;
+        }
+
+        .auth-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.2rem 0.9rem;
+          border-radius: 999px;
+          font-size: 0.7rem;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          background: rgba(15, 23, 42, 0.96);
+          border: 1px solid rgba(148, 163, 184, 0.7);
+          color: #9ca3af;
+          margin-bottom: 1rem;
+        }
+
+        .auth-header {
+          margin-bottom: 1.5rem;
+        }
+
+        .auth-title {
+          font-size: 1.65rem;
+          font-weight: 700;
+          margin: 0 0 0.35rem;
+          letter-spacing: 0.02em;
+        }
+
+        .auth-subtitle {
+          margin: 0;
+          font-size: 0.9rem;
+          color: #9ca3af;
+        }
+
+        .auth-google-btn {
+          width: 100%;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.85);
+          padding: 0.7rem 1rem;
+          background: radial-gradient(
+            circle at top left,
+            rgba(15, 23, 42, 0.9),
+            rgba(15, 23, 42, 1)
+          );
+          color: #e5e7eb;
+          font-size: 0.9rem;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.55rem;
+          cursor: pointer;
+          transition:
+            background 0.15s ease,
+            transform 0.1s ease,
+            box-shadow 0.15s ease,
+            border-color 0.15s ease;
+        }
+
+        .auth-google-btn:disabled {
+          opacity: 0.7;
+          cursor: default;
+          box-shadow: none;
+        }
+
+        .auth-google-btn:not(:disabled):hover {
+          background: radial-gradient(
+            circle at top left,
+            rgba(15, 23, 42, 0.92),
+            rgba(15, 23, 42, 1)
+          );
+          transform: translateY(-1px);
+          border-color: rgba(248, 250, 252, 0.7);
+          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+        }
+
+        .auth-google-icon {
+          width: 1.4rem;
+          height: 1.4rem;
+          border-radius: 999px;
+          background: #ffffff;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+
+        .auth-google-img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+
+        .auth-divider {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin: 1.4rem 0 1.2rem;
+        }
+
+        .auth-divider-line {
+          flex: 1;
+          height: 1px;
+          background: linear-gradient(
+            to right,
+            transparent,
+            rgba(148, 163, 184, 0.7),
+            transparent
+          );
+        }
+
+        .auth-divider-label {
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: #6b7280;
+        }
+
+        .auth-form {
+          display: flex;
+          flex-direction: column;
+          gap: 0.9rem;
+        }
+
+        .auth-field {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+
+        .auth-label {
+          font-size: 0.8rem;
+          color: #e5e7eb;
+        }
+
+        .auth-input {
+          width: 100%;
+          border-radius: 999px;
+          border: 1px solid rgba(55, 65, 81, 0.95);
+          background: radial-gradient(
+            circle at top left,
+            rgba(15, 23, 42, 0.9),
+            rgba(15, 23, 42, 1)
+          );
+          padding: 0.6rem 0.95rem;
+          font-size: 0.9rem;
+          color: #e5e7eb;
+          outline: none;
+          transition:
+            border-color 0.15s ease,
+            box-shadow 0.15s ease,
+            background 0.15s ease;
+        }
+
+        .auth-input::placeholder {
+          color: #6b7280;
+        }
+
+        .auth-input:focus {
+          border-color: #f97316;
+          box-shadow:
+            0 0 0 1px rgba(249, 115, 22, 0.65),
+            0 14px 38px rgba(15, 23, 42, 0.9);
+        }
+
+        .auth-password-wrapper {
+          position: relative;
+        }
+
+        .auth-input-password {
+          padding-right: 2.7rem;
+        }
+
+        .auth-password-toggle {
+          position: absolute;
+          right: 0.7rem;
+          top: 50%;
+          transform: translateY(-50%);
+          border-radius: 999px;
+          border: none;
+          background: transparent;
+          color: #9ca3af;
+          font-size: 0.75rem;
+          padding: 0.2rem 0.5rem;
+          cursor: pointer;
+          transition: color 0.15s ease, background 0.15s ease;
+        }
+
+        .auth-password-toggle:hover {
+          color: #e5e7eb;
+          background: rgba(15, 23, 42, 0.9);
+        }
+
+        .auth-password-hint {
+          font-size: 0.75rem;
+          color: #9ca3af;
+          margin-top: 0.2rem;
+        }
+
+        .auth-error {
+          font-size: 0.8rem;
+          color: #fecaca;
+        }
+
+        .auth-error--block {
+          margin-bottom: 0.8rem;
+        }
+
+        .auth-submit-btn {
+          width: 100%;
+          margin-top: 0.3rem;
+          border-radius: 999px;
+          border: none;
+          padding: 0.78rem 1rem;
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: #f9fafb;
+          cursor: pointer;
+          background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
+          box-shadow: 0 18px 48px rgba(248, 113, 113, 0.7);
+          transition:
+            transform 0.1s ease,
+            box-shadow 0.15s ease,
+            filter 0.1s ease;
+        }
+
+        .auth-submit-btn:disabled {
+          opacity: 0.75;
+          cursor: default;
+          box-shadow: none;
+          filter: grayscale(0.1);
+        }
+
+        .auth-submit-btn:not(:disabled):hover {
+          transform: translateY(-1px);
+          box-shadow: 0 24px 60px rgba(248, 113, 113, 0.9);
+        }
+
+        .auth-footer {
+          margin-top: 1.15rem;
+          font-size: 0.85rem;
+          text-align: center;
+          color: #9ca3af;
+        }
+
+        .auth-link-btn {
+          border: none;
+          background: none;
+          padding: 0;
+          margin: 0;
+          color: #f9a8d4;
+          cursor: pointer;
+          font-size: 0.85rem;
+          text-decoration: underline;
+          text-underline-offset: 2px;
+        }
+
+        @media (max-width: 480px) {
+          .auth-root {
+            padding-inline: 1.1rem;
+          }
+          .auth-card {
+            padding-inline: 1.6rem;
+          }
+        }
+      `}</style>
+    </main>
   );
-}
+  }
