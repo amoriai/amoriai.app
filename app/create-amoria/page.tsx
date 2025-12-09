@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
@@ -264,6 +264,7 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
 
 export default function CreateAmoriaPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [locale, setLocale] = useState<Locale>("fr");
   const [plan, setPlan] = useState<PlanId>("free");
@@ -278,12 +279,11 @@ export default function CreateAmoriaPage() {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // lecture query + session
+  // lecture query + vérification session
   useEffect(() => {
     const init = async () => {
-      const params = new URLSearchParams(window.location.search);
-      const langParam = params.get("lang");
-      const planParam = params.get("plan");
+      const langParam = searchParams.get("lang");
+      const planParam = searchParams.get("plan");
 
       if (langParam === "fr" || langParam === "en" || langParam === "es") {
         setLocale(langParam);
@@ -297,16 +297,17 @@ export default function CreateAmoriaPage() {
         setPlan(planParam);
       }
 
-      const { data, error } = await supabase.auth.getUser();
+      const { data, error } = await supabase.auth.getSession();
 
-      if (error || !data?.user) {
+      if (error || !data?.session) {
+        // pas de session → on renvoie vers /login (pas /signup)
         const qp = new URLSearchParams();
         qp.set(
           "lang",
           langParam === "en" || langParam === "es" ? langParam : "fr"
         );
         if (planParam) qp.set("plan", planParam);
-        router.push(`/signup?${qp.toString()}`);
+        router.replace(`/login?${qp.toString()}`);
         return;
       }
 
@@ -314,7 +315,7 @@ export default function CreateAmoriaPage() {
     };
 
     init();
-  }, [router]);
+  }, [router, searchParams]);
 
   const t = STRINGS[locale];
   const relationOptions = RELATION_OPTIONS[locale];
@@ -349,10 +350,11 @@ export default function CreateAmoriaPage() {
         await supabase.auth.getUser();
 
       if (userError || !userData?.user) {
+        // session perdue entre temps → retour login
         const params = new URLSearchParams();
         params.set("lang", locale);
         params.set("plan", plan);
-        router.push("/signup?" + params.toString());
+        router.replace("/login?" + params.toString());
         return;
       }
 
@@ -394,7 +396,7 @@ sans jugement, en respectant les limites de l’utilisateur.
 
       const params = new URLSearchParams();
       params.set("lang", locale);
-      router.push("/my-ai?" + params.toString()); // my-ai
+      router.push("/my-ai?" + params.toString());
     } catch (err) {
       console.error(err);
       setErrorMsg(t.genericError);
@@ -746,7 +748,7 @@ sans jugement, en respectant les limites de l’utilisateur.
         .amoria-select {
           appearance: none;
           -webkit-appearance: none;
-          padding-right: 2.4rem; /* espace pour la flèche */
+          padding-right: 2.4rem;
           background-image: linear-gradient(
               45deg,
               transparent 50%,
@@ -759,13 +761,11 @@ sans jugement, en respectant les limites de l’utilisateur.
           background-repeat: no-repeat;
         }
 
-        /* >>> ICI : fond sombre pour le menu déroulant <<< */
         .amoria-select option {
-          background-color: #020617; /* fond dark pour la liste */
-          color: #f9fafb;           /* texte clair */
+          background-color: #020617;
+          color: #f9fafb;
         }
 
-        /* option "Choisir…" un peu plus pâle */
         .amoria-select option[value=""] {
           color: #9ca3af;
         }
