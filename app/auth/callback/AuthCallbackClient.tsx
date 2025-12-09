@@ -28,35 +28,16 @@ export default function AuthCallbackClient() {
 
   useEffect(() => {
     const finalizeAuth = async () => {
-      // 0) Si on a un `code` dans l’URL (confirmation email / magic link)
-      const code = searchParams.get("code");
-
-      if (code) {
-        const { error: exchangeError } =
-          await supabase.auth.exchangeCodeForSession(code);
-
-        if (exchangeError) {
-          console.error(
-            "Erreur exchangeCodeForSession:",
-            exchangeError
-          );
-          // Si le code est invalide, on renvoie vers la connexion
-          const params = new URLSearchParams();
-          params.set("lang", lang);
-          params.set("plan", plan);
-          router.replace(`/login?${params.toString()}`);
-          return;
-        }
-      }
-
-      // 1) Vérifier la session Supabase
+      // 1) Vérifier la session Supabase (après retour du lien email / Google)
       const { data, error } = await supabase.auth.getSession();
 
       if (error || !data.session?.user) {
+        // ❗ Cas où la session n’est pas encore présente (ex : clic depuis un autre navigateur)
         const params = new URLSearchParams();
         params.set("lang", lang);
         params.set("plan", plan);
-        router.replace(`/signup?${params.toString()}`);
+        // On renvoie sur /login, pas /signup
+        router.replace(`/login?${params.toString()}`);
         return;
       }
 
@@ -77,12 +58,11 @@ export default function AuthCallbackClient() {
 
         // 3) Créer automatiquement le plan free si absent
         if (!existingSub) {
-          const { data: pricingPlan, error: pricingError } =
-            await supabase
-              .from("pricing_plans")
-              .select("id")
-              .eq("code", plan)
-              .maybeSingle();
+          const { data: pricingPlan, error: pricingError } = await supabase
+            .from("pricing_plans")
+            .select("id")
+            .eq("code", plan)
+            .maybeSingle();
 
           if (pricingError) {
             console.error("Erreur pricing_plans:", pricingError);
@@ -118,7 +98,7 @@ export default function AuthCallbackClient() {
     };
 
     void finalizeAuth();
-  }, [router, searchParams, lang, plan]);
+  }, [router, lang, plan]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">
