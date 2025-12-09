@@ -394,7 +394,7 @@ sans jugement, en respectant les limites de l’utilisateur.
 
       const params = new URLSearchParams();
       params.set("lang", locale);
-      router.push("/my-ai?" + params.toString()); // IMPORTANT : my-ai
+      router.push("/my-ai?" + params.toString()); // my-ai
     } catch (err) {
       console.error(err);
       setErrorMsg(t.genericError);
@@ -757,6 +757,17 @@ sans jugement, en respectant les limites de l’utilisateur.
             calc(100% - 0.7rem) 50%;
           background-size: 6px 6px, 6px 6px;
           background-repeat: no-repeat;
+        }
+
+        /* >>> ICI : fond sombre pour le menu déroulant <<< */
+        .amoria-select option {
+          background-color: #020617; /* fond dark pour la liste */
+          color: #f9fafb;           /* texte clair */
+        }
+
+        /* option "Choisir…" un peu plus pâle */
+        .amoria-select option[value=""] {
+          color: #9ca3af;
         }
 
         .amoria-field--textarea .amoria-textarea {
