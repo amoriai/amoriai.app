@@ -23,41 +23,38 @@ export default function AuthCallbackClient() {
   const searchParams = useSearchParams();
 
   const lang = normalizeLocale(searchParams.get("lang"));
-  // par défaut on reste sur "free" si rien n'est passé
-  const plan: PlanId = (searchParams.get("plan") as PlanId) || "free";
+  const plan: PlanId = "free";
 
   useEffect(() => {
     const finalizeAuth = async () => {
-      // 0) Supabase renvoie un ?code=... dans l’URL → on doit l’échanger
-      const code = searchParams.get("code");
-      if (code) {
-        const { error: exchangeError } =
-          await supabase.auth.exchangeCodeForSession(code);
+      try {
+        const code = searchParams.get("code");
 
-        if (exchangeError) {
-          console.error("Erreur exchangeCodeForSession:", exchangeError);
-          // si on n’arrive pas à créer une session, on renvoie vers le login
-          const p = new URLSearchParams();
-          p.set("lang", lang);
-          router.replace(`/login?${p.toString()}`);
+        // 1) IMPORTANT : on échange le code reçu dans l'URL
+        if (code) {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            console.error("Erreur exchangeCodeForSession:", error);
+          } else {
+            console.log("Session après exchangeCodeForSession:", data.session?.user?.id);
+          }
+        }
+
+        // 2) Maintenant on peut lire la session réelle
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error || !data.session?.user) {
+          console.error("Aucune session après callback:", error);
+          // Ici on t’envoie vers /login car ton email est déjà confirmé
+          const params = new URLSearchParams();
+          params.set("lang", lang);
+          router.replace(`/login?${params.toString()}`);
           return;
         }
-      }
 
-      // 1) Maintenant on lit la session
-      const { data, error } = await supabase.auth.getSession();
+        const user = data.session.user;
 
-      if (error || !data.session?.user) {
-        const p = new URLSearchParams();
-        p.set("lang", lang);
-        router.replace(`/login?${p.toString()}`);
-        return;
-      }
-
-      const user = data.session.user;
-
-      try {
-        // 2) Vérifier s’il existe déjà une subscription "current"
+        // 3) Vérifier / créer la subscription FREE si besoin
         const { data: existingSub, error: subError } = await supabase
           .from("user_subscriptions")
           .select("id")
@@ -69,7 +66,6 @@ export default function AuthCallbackClient() {
           console.error("Erreur lecture user_subscriptions:", subError);
         }
 
-        // 3) Créer automatiquement le plan free si absent
         if (!existingSub) {
           const { data: pricingPlan, error: pricingError } = await supabase
             .from("pricing_plans")
@@ -91,22 +87,22 @@ export default function AuthCallbackClient() {
               });
 
             if (insertError) {
-              console.error(
-                "Erreur insert user_subscriptions:",
-                insertError
-              );
+              console.error("Erreur insert user_subscriptions:", insertError);
             }
           }
         }
+
+        // 4) Redirection finale vers la création d’AmorIAI
+        const params = new URLSearchParams();
+        params.set("lang", lang);
+        params.set("plan", plan);
+        router.replace(`/create-amoria?${params.toString()}`);
       } catch (err) {
         console.error("Erreur finalizeAuth:", err);
+        const params = new URLSearchParams();
+        params.set("lang", lang);
+        router.replace(`/login?${params.toString()}`);
       }
-
-      // 4) Redirection finale vers la création d’AmorIAI
-      const p = new URLSearchParams();
-      p.set("lang", lang);
-      p.set("plan", plan);
-      router.replace(`/create-amoria?${p.toString()}`);
     };
 
     void finalizeAuth();
