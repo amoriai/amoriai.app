@@ -25,16 +25,14 @@ export default function AuthCallbackClient() {
   useEffect(() => {
     const finalizeAuth = async () => {
       const lang = normalizeLocale(searchParams.get("lang"));
-      const plan: PlanId = "free"; // plan de départ
+      const plan: PlanId = "free"; ✅
 
-      // 1) Vérifier la session Supabase (Google vient d'appeler le callback)
+      // ✅ On vérifie que la session est bien créée
       const { data, error } = await supabase.auth.getSession();
 
       if (error || !data.session?.user) {
-        // Pas de session → retour au signup
         const params = new URLSearchParams();
         params.set("lang", lang);
-        params.set("plan", plan);
         router.replace(`/signup?${params.toString()}`);
         return;
       }
@@ -42,57 +40,38 @@ export default function AuthCallbackClient() {
       const user = data.session.user;
 
       try {
-        // 2) Vérifier s'il existe déjà une subscription "current" pour cet utilisateur
-        const { data: existingSub, error: subError } = await supabase
+        const { data: existingSub } = await supabase
           .from("user_subscriptions")
           .select("id")
           .eq("user_id", user.id)
           .eq("current", true)
           .maybeSingle();
 
-        if (subError) {
-          console.error("Erreur lecture user_subscriptions:", subError);
-        }
-
-        // 3) Si aucune subscription → créer automatiquement le plan "free"
         if (!existingSub) {
-          const { data: pricingPlan, error: pricingError } = await supabase
+          const { data: pricingPlan } = await supabase
             .from("pricing_plans")
             .select("id")
             .eq("code", plan)
             .maybeSingle();
 
-          if (pricingError) {
-            console.error("Erreur pricing_plans (free):", pricingError);
-          }
-
           if (pricingPlan?.id) {
-            const { error: insertError } = await supabase
-              .from("user_subscriptions")
-              .insert({
-                user_id: user.id,
-                pricing_plan_id: pricingPlan.id,
-                current: true,
-              });
-
-            if (insertError) {
-              console.error(
-                "Erreur insert user_subscriptions (free):",
-                insertError
-              );
-            }
+            await supabase.from("user_subscriptions").insert({
+              user_id: user.id,
+              pricing_plan_id: pricingPlan.id,
+              current: true,
+            });
           }
         }
       } catch (err) {
-        console.error("Erreur dans finalizeAuth:", err);
+        console.error("Erreur finalizeAuth:", err);
       }
 
-      // 4) Redirection finale → TOUJOURS vers /my-amoria
+      // ✅✅✅ REDIRECTION FINALE CORRECTE
       const params = new URLSearchParams();
       params.set("lang", lang);
       params.set("plan", plan);
 
-      router.replace(`/my-amoria?${params.toString()}`);
+      ✅ router.replace(`/create-amoria?${params.toString()}`);
     };
 
     void finalizeAuth();
