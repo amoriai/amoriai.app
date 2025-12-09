@@ -28,6 +28,27 @@ export default function AuthCallbackClient() {
 
   useEffect(() => {
     const finalizeAuth = async () => {
+      // 0) Si on a un `code` dans l’URL (confirmation email / magic link)
+      const code = searchParams.get("code");
+
+      if (code) {
+        const { error: exchangeError } =
+          await supabase.auth.exchangeCodeForSession(code);
+
+        if (exchangeError) {
+          console.error(
+            "Erreur exchangeCodeForSession:",
+            exchangeError
+          );
+          // Si le code est invalide, on renvoie vers la connexion
+          const params = new URLSearchParams();
+          params.set("lang", lang);
+          params.set("plan", plan);
+          router.replace(`/login?${params.toString()}`);
+          return;
+        }
+      }
+
       // 1) Vérifier la session Supabase
       const { data, error } = await supabase.auth.getSession();
 
@@ -56,11 +77,12 @@ export default function AuthCallbackClient() {
 
         // 3) Créer automatiquement le plan free si absent
         if (!existingSub) {
-          const { data: pricingPlan, error: pricingError } = await supabase
-            .from("pricing_plans")
-            .select("id")
-            .eq("code", plan)
-            .maybeSingle();
+          const { data: pricingPlan, error: pricingError } =
+            await supabase
+              .from("pricing_plans")
+              .select("id")
+              .eq("code", plan)
+              .maybeSingle();
 
           if (pricingError) {
             console.error("Erreur pricing_plans:", pricingError);
@@ -96,7 +118,7 @@ export default function AuthCallbackClient() {
     };
 
     void finalizeAuth();
-  }, [router, lang, plan]);
+  }, [router, searchParams, lang, plan]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">
