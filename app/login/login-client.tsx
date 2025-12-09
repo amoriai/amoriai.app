@@ -2,6 +2,7 @@
 
 import React, { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
@@ -69,7 +70,7 @@ const STRINGS: Record<Locale, Strings> = {
   es: {
     title: "Iniciar sesión",
     subtitle: "Accede a tu AmorIAI personal y continúa la conversación.",
-    badge: "Conectarte a AmorIAI",
+    badge: "Conexión a AmorIAI",
     google: "Continuar con Google",
     or: "o",
     emailLabel: "Correo electrónico",
@@ -92,7 +93,7 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-export default function LoginClient() {
+export default function LoginPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -105,7 +106,7 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Après connexion → toujours /my-amoria
+  // Après connexion → /my-amoria
   const redirectToMyAmoria = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -132,7 +133,6 @@ export default function LoginClient() {
       });
 
       if (error) {
-        console.error("supabase signIn error", error);
         const msg = (error.message || "").toLowerCase();
         const looksAuthError =
           msg.includes("invalid") ||
@@ -160,7 +160,6 @@ export default function LoginClient() {
     try {
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
-
       const params = new URLSearchParams();
       params.set("lang", locale);
       const redirectTo = `${origin}/auth/callback?${params.toString()}`;
@@ -184,8 +183,9 @@ export default function LoginClient() {
 
   return (
     <main className="auth-root">
-      <div className="auth-gradient-orbit" />
-      <div className="auth-gradient-orbit auth-gradient-orbit--right" />
+      <div className="auth-bg-stars" />
+      <div className="auth-bg-glow auth-bg-glow--left" />
+      <div className="auth-bg-glow auth-bg-glow--right" />
 
       <div className="auth-card">
         <div className="auth-badge">{t.badge}</div>
@@ -195,18 +195,23 @@ export default function LoginClient() {
           <p className="auth-subtitle">{t.subtitle}</p>
         </header>
 
+        {/* BOUTON GOOGLE AMÉLIORÉ */}
         <button
           type="button"
           onClick={handleGoogleLogin}
           disabled={loading}
           className="auth-google-btn"
         >
-          <img
-            src="/google-g.png"
-            alt="Google"
-            className="auth-google-icon-img"
-          />
-          <span>{t.google}</span>
+          <span className="auth-google-icon">
+            <Image
+              src="/google-g.png"
+              alt="Google"
+              width={18}
+              height={18}
+              className="auth-google-icon-img"
+            />
+          </span>
+          <span className="auth-google-label">{t.google}</span>
         </button>
 
         <div className="auth-divider">
@@ -280,40 +285,61 @@ export default function LoginClient() {
           justify-content: center;
           position: relative;
           overflow: hidden;
-          background:
-            radial-gradient(circle at top, #020617 0, #020617 40%, #000 80%),
-            radial-gradient(circle at bottom, #020617, #000);
+          background: radial-gradient(circle at top, #020617 0, #000 65%);
           color: #e5e7eb;
           font-family: system-ui, -apple-system, BlinkMacSystemFont,
             "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
         }
 
-        .auth-gradient-orbit {
+        .auth-bg-stars {
+          position: absolute;
+          inset: -40%;
+          background-image: radial-gradient(
+              1px 1px at 10% 20%,
+              rgba(148, 163, 184, 0.5),
+              transparent
+            ),
+            radial-gradient(
+              1px 1px at 80% 10%,
+              rgba(148, 163, 184, 0.4),
+              transparent
+            ),
+            radial-gradient(
+              1px 1px at 30% 70%,
+              rgba(148, 163, 184, 0.35),
+              transparent
+            );
+          opacity: 0.3;
+          pointer-events: none;
+        }
+
+        .auth-bg-glow {
           position: absolute;
           width: 520px;
           height: 520px;
           border-radius: 999px;
-          background: radial-gradient(
-            circle at 20% 20%,
-            rgba(251, 113, 133, 0.55),
-            transparent 60%
-          );
-          opacity: 0.6;
           filter: blur(4px);
-          top: -120px;
-          left: -120px;
+          opacity: 0.7;
           pointer-events: none;
         }
 
-        .auth-gradient-orbit--right {
-          top: auto;
+        .auth-bg-glow--left {
+          top: -120px;
+          left: -120px;
+          background: radial-gradient(
+            circle at 20% 20%,
+            rgba(251, 113, 133, 0.6),
+            transparent 65%
+          );
+        }
+
+        .auth-bg-glow--right {
           bottom: -160px;
-          left: auto;
-          right: -140px;
+          right: -150px;
           background: radial-gradient(
             circle at 80% 20%,
-            rgba(59, 130, 246, 0.55),
-            transparent 65%
+            rgba(59, 130, 246, 0.6),
+            transparent 70%
           );
         }
 
@@ -326,21 +352,35 @@ export default function LoginClient() {
           background:
             radial-gradient(
               circle at top left,
-              rgba(248, 113, 113, 0.28),
+              rgba(248, 113, 113, 0.3),
               transparent 55%
             ),
             radial-gradient(
               circle at bottom right,
-              rgba(59, 130, 246, 0.28),
+              rgba(59, 130, 246, 0.3),
               transparent 55%
             ),
             rgba(2, 6, 23, 0.98);
           box-shadow:
             0 32px 90px rgba(15, 23, 42, 0.95),
-            0 0 0 1px rgba(148, 163, 184, 0.35);
+            0 0 0 1px rgba(148, 163, 184, 0.4);
           border: 1px solid rgba(148, 163, 184, 0.55);
           backdrop-filter: blur(20px);
           z-index: 1;
+        }
+
+        .auth-card::before {
+          content: "";
+          position: absolute;
+          inset: -1px;
+          border-radius: inherit;
+          background: linear-gradient(
+            135deg,
+            rgba(251, 113, 133, 0.7),
+            rgba(59, 130, 246, 0.7)
+          );
+          opacity: 0.35;
+          z-index: -1;
         }
 
         .auth-badge {
@@ -352,18 +392,18 @@ export default function LoginClient() {
           font-size: 0.7rem;
           letter-spacing: 0.16em;
           text-transform: uppercase;
-          background: rgba(15, 23, 42, 0.96);
-          border: 1px solid rgba(148, 163, 184, 0.7);
+          background: rgba(15, 23, 42, 0.95);
+          border: 1px solid rgba(148, 163, 184, 0.8);
           color: #9ca3af;
           margin-bottom: 1rem;
         }
 
         .auth-header {
-          margin-bottom: 1.5rem;
+          margin-bottom: 1.6rem;
         }
 
         .auth-title {
-          font-size: 1.65rem;
+          font-size: 1.7rem;
           font-weight: 700;
           margin: 0 0 0.35rem;
           letter-spacing: 0.02em;
@@ -378,14 +418,10 @@ export default function LoginClient() {
         .auth-google-btn {
           width: 100%;
           border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.85);
+          border: 1px solid rgba(148, 163, 184, 0.9);
           padding: 0.7rem 1rem;
-          background: radial-gradient(
-            circle at top left,
-            rgba(15, 23, 42, 0.9),
-            rgba(15, 23, 42, 1)
-          );
-          color: #e5e7eb;
+          background: #ffffff;
+          color: #1f2933;
           font-size: 0.9rem;
           font-weight: 500;
           display: flex;
@@ -394,36 +430,40 @@ export default function LoginClient() {
           gap: 0.55rem;
           cursor: pointer;
           transition:
-            background 0.15s ease,
             transform 0.1s ease,
             box-shadow 0.15s ease,
-            border-color 0.15s ease;
+            border-color 0.15s ease,
+            background 0.15s ease;
         }
 
         .auth-google-btn:disabled {
-          opacity: 0.7;
+          opacity: 0.8;
           cursor: default;
           box-shadow: none;
         }
 
         .auth-google-btn:not(:disabled):hover {
-          background: radial-gradient(
-            circle at top left,
-            rgba(15, 23, 42, 0.92),
-            rgba(15, 23, 42, 1)
-          );
           transform: translateY(-1px);
-          border-color: rgba(248, 250, 252, 0.7);
-          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+          border-color: rgba(37, 99, 235, 0.9);
+          box-shadow: 0 18px 42px rgba(15, 23, 42, 0.8);
+        }
+
+        .auth-google-icon {
+          width: 1.6rem;
+          height: 1.6rem;
+          border-radius: 999px;
+          background: #ffffff;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .auth-google-icon-img {
-          width: 1.4rem;
-          height: 1.4rem;
-          border-radius: 999px;
-          object-fit: contain;
-          background: #ffffff;
-          padding: 0.1rem;
+          display: block;
+        }
+
+        .auth-google-label {
+          white-space: nowrap;
         }
 
         .auth-divider {
@@ -543,11 +583,13 @@ export default function LoginClient() {
           color: #f9fafb;
           cursor: pointer;
           background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
+          background-size: 200% 200%;
           box-shadow: 0 18px 48px rgba(248, 113, 113, 0.7);
           transition:
             transform 0.1s ease,
             box-shadow 0.15s ease,
-            filter 0.1s ease;
+            filter 0.1s ease,
+            background-position 0.4s ease;
         }
 
         .auth-submit-btn:disabled {
@@ -560,6 +602,7 @@ export default function LoginClient() {
         .auth-submit-btn:not(:disabled):hover {
           transform: translateY(-1px);
           box-shadow: 0 24px 60px rgba(248, 113, 113, 0.9);
+          background-position: 100% 0%;
         }
 
         .auth-footer {
@@ -592,4 +635,4 @@ export default function LoginClient() {
       `}</style>
     </main>
   );
-}
+      }
