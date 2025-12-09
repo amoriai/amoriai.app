@@ -28,90 +28,107 @@ export default function AuthCallbackClient() {
   useEffect(() => {
     const finalizeAuth = async () => {
       try {
-        // 1) Très important : transformer le code du lien en session Supabase
-        if (typeof window !== "undefined") {
-          const { error: exchangeError } =
-            await supabase.auth.exchangeCodeForSession(
-              window.location.href
-            );
+        // 1) Récupérer les tokens dans l'URL (query OU hash)
+        let access_token = searchParams.get("access_token");
+        let refresh_token = searchParams.get("refresh_token");
 
-          if (exchangeError) {
-            console.error("exchangeCodeForSession error:", exchangeError);
+        if (typeof window !== "undefined" && (!access_token || !refresh_token)) {
+          const hash = window.location.hash; // ex: #access_token=...&refresh_token=...
+          if (hash && hash.startsWith("#")) {
+            const hashParams = new URLSearchParams(hash.slice(1));
+            access_token = access_token || hashParams.get("access_token");
+            refresh_token = refresh_token || hashParams.get("refresh_token");
           }
         }
 
-        // 2) Récupérer la session maintenant qu’on a fait l’échange
-        const { data, error } = await supabase.auth.getSession();
-
-        if (error || !data.session?.user) {
-          // Si malgré tout il n’y a pas de session → on renvoie sur /login
-          const params = new URLSearchParams();
-          params.set("lang", lang);
-          params.set("plan", plan);
-          router.replace(`/login?${params.toString()}`);
-          return;
-        }
-
-        const user = data.session.user;
-
-        // 3) Vérifier / créer la subscription "free"
-        const { data: existingSub, error: subError } = await supabase
-          .from("user_subscriptions")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("current", true)
-          .maybeSingle();
-
-        if (subError) {
-          console.error("Erreur lecture user_subscriptions:", subError);
-        }
-
-        if (!existingSub) {
-          const { data: pricingPlan, error: pricingError } = await supabase
-            .from("pricing_plans")
-            .select("id")
-            .eq("code", plan)
-            .maybeSingle();
-
-          if (pricingError) {
-            console.error("Erreur pricing_plans:", pricingError);
+        // 2) Si on a les deux tokens → créer la session Supabase
+        if (access_token && refresh_token) {
+          const { error: setSessionError } = await supabase.auth.setSession({
+            access_token,
+            refresh_token,
+          });
+          if (setSessionError) {
+            console.error("Erreur setSession:", setSessionError);
           }
+        }
 
-          if (pricingPlan?.id) {
-            const { error: insertError } = await supabase
+        // 3) Récupérer le user
+        const { data: userData, error: userError } =
+          await supabase.auth.getUser();
+
+        if (userError) {
+          console.error("Erreur getUser:", userError);
+        }
+
+        const user = userData?.user;
+
+        // 4) Créer la subscription free si nécessaire
+        if (user) {
+          try {
+            const { data: existingSub, error: subError } = await supabase
               .from("user_subscriptions")
-              .insert({
-                user_id: user.id,
-                pricing_plan_id: pricingPlan.id,
-                current: true,
-              });
+              .select("id")
+              .eq("user_id", user.id)
+              .eq("current", true)
+              .maybeSingle();
 
-            if (insertError) {
-              console.error(
-                "Erreur insert user_subscriptions:",
-                insertError
-              );
+            if (subError) {
+              console.error("Erreur lecture user_subscriptions:", subError);
             }
+
+            if (!existingSub) {
+              const { data: pricingPlan, error: pricingError } = await supabase
+                .from("pricing_plans")
+                .select("id")
+                .eq("code", plan)
+                .maybeSingle();
+
+              if (pricingError) {
+                console.error("Erreur pricing_plans:", pricingError);
+              }
+
+              if (pricingPlan?.id) {
+                const { error: insertError } = await supabase
+                  .from("user_subscriptions")
+                  .insert({
+                    user_id: user.id,
+                    pricing_plan_id: pricingPlan.id,
+                    current: true,
+                  });
+
+                if (insertError) {
+                  console.error(
+                    "Erreur insert user_subscriptions:",
+                    insertError
+                  );
+                }
+              }
+            }
+          } catch (err) {
+            console.error("Erreur durant la création de la subscription:", err);
           }
+        } else {
+          console.warn("Pas de user après callback (confirmation email)");
         }
 
-        // 4) Redirection finale vers la création d’AmorIAI
+        // 5) Redirection finale vers la création de l’IA
         const params = new URLSearchParams();
         params.set("lang", lang);
         params.set("plan", plan);
 
         router.replace(`/create-amoria?${params.toString()}`);
       } catch (err) {
-        console.error("Erreur finalizeAuth:", err);
-        const params = new URLSearchParams();
-        params.set("lang", lang);
-        params.set("plan", plan);
-        router.replace(`/login?${params.toString()}`);
+        console.error("Erreur finalizeAuth globale:", err);
+
+        // En cas de gros problème, fallback sur login
+        const fallbackParams = new URLSearchParams();
+        fallbackParams.set("lang", lang);
+        router.replace(`/login?${fallbackParams.toString()}`);
       }
     };
 
     void finalizeAuth();
-  }, [router, lang, plan]);
+  }, [router, searchParams, lang, plan]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">
