@@ -53,7 +53,7 @@ const STRINGS: Record<Locale, Strings> = {
     loginLink: "Me connecter",
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
     errorGoogle: "Une erreur est survenue avec la connexion Google.",
-    // ⬇⬇⬇ AJOUT : texte de confirmation avec emoji + 3 lignes
+    // Texte de confirmation avec emoji + 2 lignes
     confirmTitle: "✅ Ton compte a bien été créé.",
     confirmBody:
       "📩 Vérifie ton courriel pour confirmer ton inscription.\nUne fois confirmé, tu pourras créer ton AmorIAI.",
@@ -148,9 +148,22 @@ export default function SignupClient() {
     setWaitingConfirmation(false);
 
     try {
+      // 🔹 Nouveau : URL de redirection pour le lien du courriel Supabase
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "";
+
+      const redirectParams = new URLSearchParams();
+      redirectParams.set("lang", locale);
+      redirectParams.set("plan", "free");
+
+      const emailRedirectTo = `${origin}/auth/callback?${redirectParams.toString()}`;
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo,
+        },
       });
 
       if (error) {
@@ -267,7 +280,6 @@ export default function SignupClient() {
         {waitingConfirmation && (
           <div className="auth-confirm-box">
             <div className="auth-confirm-title">{t.confirmTitle}</div>
-            {/* ⬇⬇⬇ AJOUT : permet d'afficher les \n en vraies lignes */}
             <div className="auth-confirm-body">{t.confirmBody}</div>
           </div>
         )}
@@ -474,7 +486,6 @@ export default function SignupClient() {
 
         .auth-confirm-body {
           font-size: 0.8rem;
-          /* ⬇⬇⬇ AJOUT : respecte les retours à la ligne (\n) du texte */
           white-space: pre-line;
         }
 
@@ -701,7 +712,6 @@ export default function SignupClient() {
           text-underline-offset: 2px;
         }
 
-        /* ⬇⬇⬇ AJOUT : éviter que le texte devienne blanc avec l'autofill / saisie */
         .auth-input,
         .auth-input:focus,
         .auth-input:active {
