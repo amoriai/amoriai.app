@@ -82,7 +82,6 @@ type Copy = {
   formError: string;
   previewTitle: string;
   previewText: string;
-  previewChip: string;
 };
 
 const STRINGS: Record<Locale, Copy> = {
@@ -120,7 +119,6 @@ const STRINGS: Record<Locale, Copy> = {
     previewTitle: "Ta configuration d’abord, la magie ensuite ✨",
     previewText:
       'Ici, tu définis simplement la personnalité et le rôle de ton AmorIAI. Il sera réellement créé quand tu cliqueras sur « Créer mon AmorIAI ».',
-    previewChip: "✨ Aperçu en temps réel",
   },
   en: {
     stepBadge: "Step 2 · Create your AmorIAI",
@@ -151,12 +149,10 @@ const STRINGS: Record<Locale, Copy> = {
     saving: "Creating your AmorIAI…",
     genericError:
       "Something went wrong while creating your AmorIAI. Please try again.",
-    formError:
-      "Please fill in all fields before creating your AmorIAI.",
+    formError: "Please fill in all fields before creating your AmorIAI.",
     previewTitle: "Set things up first, magic comes after ✨",
     previewText:
       'Here you only define your AmorIAI’s personality and role. It will actually be created when you click “Create my AmorIAI”.',
-    previewChip: "✨ Live preview",
   },
   es: {
     stepBadge: "Paso 2 · Crea tu AmorIAI",
@@ -192,7 +188,6 @@ const STRINGS: Record<Locale, Copy> = {
     previewTitle: "Primero la configuración, luego la magia ✨",
     previewText:
       'Aquí solo defines la personalidad y el papel de tu AmorIAI. Se creará realmente cuando pulses «Crear mi AmorIAI».',
-    previewChip: "✨ Vista previa en vivo",
   },
 };
 
@@ -398,7 +393,7 @@ sans jugement, en respectant les limites de l’utilisateur.
 
       const params = new URLSearchParams();
       params.set("lang", locale);
-      // Route à garder : /my-ai
+      // IMPORTANT : on garde /my-ai ici
       router.push("/my-ai?" + params.toString());
     } catch (err) {
       console.error(err);
@@ -451,7 +446,7 @@ sans jugement, en respectant les limites de l’utilisateur.
             </div>
           )}
 
-          {/* Formulaire + footer */}
+          {/* tout le formulaire + footer */}
           <form className="amoria-grid" onSubmit={handleSubmit} noValidate>
             <div className="amoria-left">
               <label className="amoria-field">
@@ -473,70 +468,78 @@ sans jugement, en respectant les limites de l’utilisateur.
 
               <label className="amoria-field">
                 <span className="amoria-label">{t.relationLabel}</span>
-                <select
-                  className="amoria-select"
-                  value={relationType}
-                  onChange={(e) => setRelationType(e.target.value)}
-                >
-                  <option value="">
-                    {locale === "fr"
-                      ? "Choisir…"
-                      : locale === "en"
-                      ? "Choose…"
-                      : "Elegir…"}
-                  </option>
-                  {relationOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
+                <div className="amoria-select-wrapper">
+                  <select
+                    className="amoria-select"
+                    value={relationType}
+                    onChange={(e) => setRelationType(e.target.value)}
+                  >
+                    <option value="">
+                      {locale === "fr"
+                        ? "Choisir…"
+                        : locale === "en"
+                        ? "Choose…"
+                        : "Elegir…"}
                     </option>
-                  ))}
-                </select>
+                    {relationOptions.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="amoria-select-arrow">⌄</span>
+                </div>
               </label>
 
               <label className="amoria-field">
                 <span className="amoria-label">{t.toneLabel}</span>
-                <select
-                  className="amoria-select"
-                  value={tone}
-                  onChange={(e) => setTone(e.target.value)}
-                >
-                  <option value="">
-                    {locale === "fr"
-                      ? "Choisir…"
-                      : locale === "en"
-                      ? "Choose…"
-                      : "Elegir…"}
-                  </option>
-                  {toneOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
+                <div className="amoria-select-wrapper">
+                  <select
+                    className="amoria-select"
+                    value={tone}
+                    onChange={(e) => setTone(e.target.value)}
+                  >
+                    <option value="">
+                      {locale === "fr"
+                        ? "Choisir…"
+                        : locale === "en"
+                        ? "Choose…"
+                        : "Elegir…"}
                     </option>
-                  ))}
-                </select>
+                    {toneOptions.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="amoria-select-arrow">⌄</span>
+                </div>
               </label>
 
               <label className="amoria-field">
                 <span className="amoria-label">{t.categoryLabel}</span>
-                <select
-                  className="amoria-select"
-                  value={category}
-                  onChange={(e) =>
-                    setCategory(e.target.value as PersonaType | "")
-                  }
-                >
-                  <option value="">{t.categoryPlaceholder}</option>
-                  {CATEGORY_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label[locale]}
-                    </option>
-                  ))}
-                </select>
+                <div className="amoria-select-wrapper">
+                  <select
+                    className="amoria-select"
+                    value={category}
+                    onChange={(e) =>
+                      setCategory(e.target.value as PersonaType | "")
+                    }
+                  >
+                    <option value="">{t.categoryPlaceholder}</option>
+                    {CATEGORY_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label[locale]}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="amoria-select-arrow">⌄</span>
+                </div>
               </label>
             </div>
 
             <div className="amoria-right">
               <div className="amoria-preview-card">
-                <div className="amoria-preview-chip">{t.previewChip}</div>
                 <p className="amoria-preview-title">{t.previewTitle}</p>
                 <p className="amoria-preview-text">{t.previewText}</p>
               </div>
@@ -553,6 +556,7 @@ sans jugement, en respectant les limites de l’utilisateur.
               </label>
             </div>
 
+            {/* footer centré sous tout le bloc */}
             <div className="amoria-footer">
               <p className="amoria-helper">{t.helperText}</p>
 
@@ -607,7 +611,7 @@ sans jugement, en respectant les limites de l’utilisateur.
             #000 100%
           );
           box-shadow: 0 22px 55px rgba(15, 23, 42, 0.9);
-          padding: 1.8rem 1.7rem 1.5rem;
+          padding: 1.8rem 1.7rem 1.6rem;
         }
 
         .amoria-create-header {
@@ -680,7 +684,7 @@ sans jugement, en respectant les limites de l’utilisateur.
           display: grid;
           grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
           gap: 1.4rem;
-          margin-bottom: 1.1rem;
+          margin-bottom: 0.8rem;
         }
 
         .amoria-left,
@@ -726,30 +730,37 @@ sans jugement, en respectant les limites de l’utilisateur.
           box-shadow: 0 0 0 1px rgba(251, 55, 255, 0.4);
         }
 
-        .amoria-preview-card {
-          border-radius: 1.2rem;
-          padding: 0.85rem 1.05rem 1rem;
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #38bdf8);
-          background-size: 220% 220%;
-          color: #f9fafb;
-          display: flex;
-          flex-direction: column;
-          gap: 0.3rem;
-          border: 1px solid rgba(248, 250, 252, 0.7);
-          box-shadow: 0 18px 45px rgba(251, 55, 255, 0.5);
-          animation:
-            amoriaPreviewGradient 11s ease infinite,
-            amoriaPreviewPulse 4s ease-in-out infinite;
+        /* wrapper + flèche custom pour les selects */
+        .amoria-select-wrapper {
+          position: relative;
         }
 
-        .amoria-preview-chip {
-          align-self: flex-start;
-          padding: 0.18rem 0.7rem;
-          border-radius: 999px;
-          font-size: 0.72rem;
-          background: rgba(15, 23, 42, 0.22);
-          border: 1px solid rgba(248, 250, 252, 0.7);
-          backdrop-filter: blur(10px);
+        .amoria-select {
+          width: 100%;
+          appearance: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          padding-right: 2.4rem; /* espace pour la flèche */
+        }
+
+        .amoria-select-arrow {
+          position: absolute;
+          right: 0.9rem;
+          top: 50%;
+          transform: translateY(-50%);
+          font-size: 0.7rem;
+          color: #e5e7eb;
+          pointer-events: none;
+        }
+
+        .amoria-preview-card {
+          border-radius: 1.2rem;
+          padding: 1rem 1.1rem;
+          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #38bdf8);
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          color: #f9fafb;
         }
 
         .amoria-preview-title {
@@ -761,24 +772,28 @@ sans jugement, en respectant les limites de l’utilisateur.
           font-size: 0.8rem;
         }
 
+        /* footer centré sous tout le bloc */
         .amoria-footer {
+          margin-top: 1.4rem;
+          padding-top: 1rem;
+          border-top: 1px solid rgba(31, 41, 55, 0.9);
           display: flex;
-          justify-content: space-between;
-          gap: 1rem;
+          flex-direction: column;
           align-items: center;
-          flex-wrap: wrap;
-          margin-top: 0.4rem;
+          gap: 0.75rem;
+          text-align: center;
         }
 
         .amoria-helper {
           font-size: 0.78rem;
           color: #9ca3af;
-          max-width: 420px;
+          max-width: 480px;
         }
 
         .amoria-actions {
           display: flex;
           gap: 0.6rem;
+          justify-content: center;
         }
 
         .amoria-btn {
@@ -807,33 +822,6 @@ sans jugement, en respectant les limites de l’utilisateur.
           border-color: rgba(148, 163, 184, 0.7);
         }
 
-        @keyframes amoriaPreviewGradient {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
-
-        @keyframes amoriaPreviewPulse {
-          0% {
-            box-shadow: 0 16px 40px rgba(251, 55, 255, 0.35);
-            transform: translateY(0);
-          }
-          50% {
-            box-shadow: 0 22px 55px rgba(251, 55, 255, 0.6);
-            transform: translateY(-2px);
-          }
-          100% {
-            box-shadow: 0 16px 40px rgba(251, 55, 255, 0.35);
-            transform: translateY(0);
-          }
-        }
-
         @media (max-width: 820px) {
           .amoria-grid {
             grid-template-columns: minmax(0, 1fr);
@@ -845,19 +833,8 @@ sans jugement, en respectant les limites de l’utilisateur.
 
           .amoria-actions {
             width: 100%;
-            justify-content: flex-end;
           }
-        }
 
-        @media (max-width: 520px) {
-          .amoria-footer {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-          .amoria-actions {
-            width: 100%;
-            justify-content: stretch;
-          }
           .amoria-btn {
             flex: 1;
             text-align: center;
@@ -866,4 +843,4 @@ sans jugement, en respectant les limites de l’utilisateur.
       `}</style>
     </main>
   );
-        }
+                    }
