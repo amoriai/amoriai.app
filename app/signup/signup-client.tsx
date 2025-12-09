@@ -53,7 +53,6 @@ const STRINGS: Record<Locale, Strings> = {
     loginLink: "Me connecter",
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
     errorGoogle: "Une erreur est survenue avec la connexion Google.",
-    // Texte de confirmation avec emoji + 2 lignes
     confirmTitle: "✅ Ton compte a bien été créé.",
     confirmBody:
       "📩 Vérifie ton courriel pour confirmer ton inscription.\nUne fois confirmé, tu pourras créer ton AmorIAI.",
@@ -97,8 +96,7 @@ const STRINGS: Record<Locale, Strings> = {
     haveAccount: "¿Ya tienes cuenta?",
     loginLink: "Iniciar sesión",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
-    errorGoogle:
-      "Ocurrió un error con el inicio de sesión de Google.",
+    errorGoogle: "Ocurrió un error con el inicio de sesión de Google.",
     confirmTitle: "✅ Tu cuenta ha sido creada.",
     confirmBody:
       "📩 Revisa tu correo para confirmar tu inscripción.\nUna vez confirmada, podrás crear tu AmorIAI.",
@@ -148,7 +146,6 @@ export default function SignupClient() {
     setWaitingConfirmation(false);
 
     try {
-      // 🔹 Nouveau : URL de redirection pour le lien du courriel Supabase
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
 
@@ -206,13 +203,11 @@ export default function SignupClient() {
         console.warn("Aucun user retourné par signUp");
       }
 
-      // Si pas de session → email à confirmer
       if (!session) {
         setWaitingConfirmation(true);
         return;
       }
 
-      // Si session déjà active → on peut rediriger vers la création d’AmorIAI
       redirectAfterSignup();
     } catch (err) {
       console.error("signup error", err);
@@ -284,7 +279,9 @@ export default function SignupClient() {
           </div>
         )}
 
-        {errorMsg && <p className="auth-error auth-error--block">{errorMsg}</p>}
+        {errorMsg && (
+          <p className="auth-error auth-error--block">{errorMsg}</p>
+        )}
 
         <button
           type="button"
