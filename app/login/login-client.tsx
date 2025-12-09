@@ -106,7 +106,6 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Après connexion → toujours /my-amoria
   const redirectToMyAmoria = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -384,10 +383,14 @@ export default function LoginClient() {
         .auth-google-btn {
           width: 100%;
           border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.9);
-          padding: 0.65rem 1rem;
-          background: linear-gradient(135deg, #ffffff, #f3f4f6);
-          color: #111827;
+          border: 1px solid rgba(148, 163, 184, 0.85);
+          padding: 0.7rem 1rem;
+          background: radial-gradient(
+            circle at top left,
+            rgba(15, 23, 42, 0.9),
+            rgba(15, 23, 42, 1)
+          );
+          color: #e5e7eb;
           font-size: 0.9rem;
           font-weight: 500;
           display: flex;
@@ -400,7 +403,7 @@ export default function LoginClient() {
             transform 0.1s ease,
             box-shadow 0.15s ease,
             border-color 0.15s ease;
-          box-shadow: 0 14px 32px rgba(15, 23, 42, 0.4);
+          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
         }
 
         .auth-google-btn:disabled {
@@ -410,10 +413,14 @@ export default function LoginClient() {
         }
 
         .auth-google-btn:not(:disabled):hover {
-          background: linear-gradient(135deg, #ffffff, #e5e7eb);
+          background: radial-gradient(
+            circle at top left,
+            rgba(15, 23, 42, 0.95),
+            rgba(15, 23, 42, 1)
+          );
           transform: translateY(-1px);
-          border-color: rgba(15, 23, 42, 0.3);
-          box-shadow: 0 20px 45px rgba(15, 23, 42, 0.55);
+          border-color: rgba(248, 250, 252, 0.7);
+          box-shadow: 0 20px 50px rgba(15, 23, 42, 0.95);
         }
 
         .auth-google-icon {
@@ -423,7 +430,7 @@ export default function LoginClient() {
           align-items: center;
           justify-content: center;
           border-radius: 999px;
-          background: transparent; /* pas de fond blanc ajouté */
+          background: transparent;
         }
 
         .auth-divider {
@@ -592,4 +599,4 @@ export default function LoginClient() {
       `}</style>
     </main>
   );
-                    }
+}
