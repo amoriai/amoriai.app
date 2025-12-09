@@ -53,9 +53,10 @@ const STRINGS: Record<Locale, Strings> = {
     loginLink: "Me connecter",
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
     errorGoogle: "Une erreur est survenue avec la connexion Google.",
-    confirmTitle: "Ton compte a bien été créé.",
+    // ⬇⬇⬇ AJOUT : texte de confirmation avec emoji + 3 lignes
+    confirmTitle: "✅ Ton compte a bien été créé.",
     confirmBody:
-      "Vérifie ton courriel pour confirmer ton inscription. Une fois confirmé, tu pourras créer ton AmorIAI.",
+      "📩 Vérifie ton courriel pour confirmer ton inscription.\nUne fois confirmé, tu pourras créer ton AmorIAI.",
   },
   en: {
     badge: "Create your AmorIAI account",
@@ -75,9 +76,9 @@ const STRINGS: Record<Locale, Strings> = {
     loginLink: "Log in",
     errorGeneric: "Something went wrong. Please try again.",
     errorGoogle: "Something went wrong with Google sign-in.",
-    confirmTitle: "Your account has been created.",
+    confirmTitle: "✅ Your account has been created.",
     confirmBody:
-      "Check your email to confirm your registration. Once confirmed, you’ll be able to create your AmorIAI.",
+      "📩 Check your email to confirm your registration.\nOnce confirmed, you’ll be able to create your AmorIAI.",
   },
   es: {
     badge: "Crear tu cuenta AmorIAI",
@@ -90,8 +91,7 @@ const STRINGS: Record<Locale, Strings> = {
     emailPlaceholder: "ej. mi.direccion@email.com",
     passwordLabel: "Contraseña",
     passwordPlaceholder: "Elige una contraseña segura",
-    passwordHint:
-      "Mínimo 6 caracteres. Nunca compartas tu contraseña.",
+    passwordHint: "Mínimo 6 caracteres. Nunca compartas tu contraseña.",
     submit: "Crear mi acceso gratuito",
     submitting: "Creando tu acceso…",
     haveAccount: "¿Ya tienes cuenta?",
@@ -99,9 +99,9 @@ const STRINGS: Record<Locale, Strings> = {
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     errorGoogle:
       "Ocurrió un error con el inicio de sesión de Google.",
-    confirmTitle: "Tu cuenta ha sido creada.",
+    confirmTitle: "✅ Tu cuenta ha sido creada.",
     confirmBody:
-      "Revisa tu correo para confirmar tu inscripción. Una vez confirmada, podrás crear tu AmorIAI.",
+      "📩 Revisa tu correo para confirmar tu inscripción.\nUna vez confirmada, podrás crear tu AmorIAI.",
   },
 };
 
@@ -267,6 +267,7 @@ export default function SignupClient() {
         {waitingConfirmation && (
           <div className="auth-confirm-box">
             <div className="auth-confirm-title">{t.confirmTitle}</div>
+            {/* ⬇⬇⬇ AJOUT : permet d'afficher les \n en vraies lignes */}
             <div className="auth-confirm-body">{t.confirmBody}</div>
           </div>
         )}
@@ -473,6 +474,8 @@ export default function SignupClient() {
 
         .auth-confirm-body {
           font-size: 0.8rem;
+          /* ⬇⬇⬇ AJOUT : respecte les retours à la ligne (\n) du texte */
+          white-space: pre-line;
         }
 
         .auth-google-btn {
@@ -696,6 +699,20 @@ export default function SignupClient() {
           font-size: 0.85rem;
           text-decoration: underline;
           text-underline-offset: 2px;
+        }
+
+        /* ⬇⬇⬇ AJOUT : éviter que le texte devienne blanc avec l'autofill / saisie */
+        .auth-input,
+        .auth-input:focus,
+        .auth-input:active {
+          color: #e5e7eb;
+        }
+
+        .auth-input:-webkit-autofill,
+        .auth-input:-webkit-autofill:hover,
+        .auth-input:-webkit-autofill:focus {
+          -webkit-text-fill-color: #e5e7eb;
+          transition: background-color 9999s ease-out 0s;
         }
 
         @media (max-width: 480px) {
