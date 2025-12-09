@@ -446,7 +446,7 @@ sans jugement, en respectant les limites de l’utilisateur.
             </div>
           )}
 
-          {/* TOUT le formulaire + le footer sont dans le <form> */}
+          {/* Formulaire + footer dans le <form> */}
           <form className="amoria-grid" onSubmit={handleSubmit} noValidate>
             <div className="amoria-left">
               <label className="amoria-field">
@@ -547,7 +547,7 @@ sans jugement, en respectant les limites de l’utilisateur.
               </label>
             </div>
 
-            {/* FOOTER DANS LE FORM */}
+            {/* FOOTER sous tout le bloc */}
             <div className="amoria-footer">
               <p className="amoria-helper">{t.helperText}</p>
 
@@ -740,24 +740,28 @@ sans jugement, en respectant les limites de l’utilisateur.
           font-size: 0.8rem;
         }
 
+        /* ===== FOOTER sous le bloc ===== */
         .amoria-footer {
+          grid-column: 1 / -1; /* largeur complète sous les 2 colonnes */
           display: flex;
-          justify-content: space-between;
-          gap: 1rem;
-          align-items: center;
-          flex-wrap: wrap;
-          margin-top: 0.4rem;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.9rem;
+          margin-top: 0.6rem;
         }
 
         .amoria-helper {
           font-size: 0.78rem;
           color: #9ca3af;
-          max-width: 420px;
+          max-width: 460px;
         }
 
         .amoria-actions {
           display: flex;
           gap: 0.6rem;
+          width: 100%;
+          justify-content: flex-start;
+          flex-wrap: wrap;
         }
 
         .amoria-btn {
@@ -794,28 +798,19 @@ sans jugement, en respectant les limites de l’utilisateur.
           .amoria-create-card {
             padding-inline: 1.15rem;
           }
-
-          .amoria-actions {
-            width: 100%;
-            justify-content: flex-end;
-          }
         }
 
         @media (max-width: 520px) {
-          .amoria-footer {
-            flex-direction: column;
-            align-items: flex-start;
-          }
           .amoria-actions {
-            width: 100%;
-            justify-content: stretch;
+            flex-direction: column;
+            align-items: stretch;
           }
           .amoria-btn {
-            flex: 1;
+            width: 100%;
             text-align: center;
           }
         }
       `}</style>
     </main>
   );
-         }
+        }
