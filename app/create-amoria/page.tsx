@@ -82,6 +82,7 @@ type Copy = {
   formError: string;
   previewTitle: string;
   previewText: string;
+  previewChip: string;
 };
 
 const STRINGS: Record<Locale, Copy> = {
@@ -119,6 +120,7 @@ const STRINGS: Record<Locale, Copy> = {
     previewTitle: "Ta configuration d’abord, la magie ensuite ✨",
     previewText:
       'Ici, tu définis simplement la personnalité et le rôle de ton AmorIAI. Il sera réellement créé quand tu cliqueras sur « Créer mon AmorIAI ».',
+    previewChip: "✨ Aperçu en temps réel",
   },
   en: {
     stepBadge: "Step 2 · Create your AmorIAI",
@@ -154,6 +156,7 @@ const STRINGS: Record<Locale, Copy> = {
     previewTitle: "Set things up first, magic comes after ✨",
     previewText:
       'Here you only define your AmorIAI’s personality and role. It will actually be created when you click “Create my AmorIAI”.',
+    previewChip: "✨ Live preview",
   },
   es: {
     stepBadge: "Paso 2 · Crea tu AmorIAI",
@@ -189,6 +192,7 @@ const STRINGS: Record<Locale, Copy> = {
     previewTitle: "Primero la configuración, luego la magia ✨",
     previewText:
       'Aquí solo defines la personalidad y el papel de tu AmorIAI. Se creará realmente cuando pulses «Crear mi AmorIAI».',
+    previewChip: "✨ Vista previa en vivo",
   },
 };
 
@@ -394,6 +398,7 @@ sans jugement, en respectant les limites de l’utilisateur.
 
       const params = new URLSearchParams();
       params.set("lang", locale);
+      // Route à garder : /my-ai
       router.push("/my-ai?" + params.toString());
     } catch (err) {
       console.error(err);
@@ -446,7 +451,7 @@ sans jugement, en respectant les limites de l’utilisateur.
             </div>
           )}
 
-          {/* Formulaire + footer dans le <form> */}
+          {/* Formulaire + footer */}
           <form className="amoria-grid" onSubmit={handleSubmit} noValidate>
             <div className="amoria-left">
               <label className="amoria-field">
@@ -531,6 +536,7 @@ sans jugement, en respectant les limites de l’utilisateur.
 
             <div className="amoria-right">
               <div className="amoria-preview-card">
+                <div className="amoria-preview-chip">{t.previewChip}</div>
                 <p className="amoria-preview-title">{t.previewTitle}</p>
                 <p className="amoria-preview-text">{t.previewText}</p>
               </div>
@@ -547,7 +553,6 @@ sans jugement, en respectant les limites de l’utilisateur.
               </label>
             </div>
 
-            {/* FOOTER sous tout le bloc */}
             <div className="amoria-footer">
               <p className="amoria-helper">{t.helperText}</p>
 
@@ -723,12 +728,28 @@ sans jugement, en respectant les limites de l’utilisateur.
 
         .amoria-preview-card {
           border-radius: 1.2rem;
-          padding: 1rem 1.1rem;
+          padding: 0.85rem 1.05rem 1rem;
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #38bdf8);
+          background-size: 220% 220%;
+          color: #f9fafb;
           display: flex;
           flex-direction: column;
-          gap: 0.25rem;
-          color: #f9fafb;
+          gap: 0.3rem;
+          border: 1px solid rgba(248, 250, 252, 0.7);
+          box-shadow: 0 18px 45px rgba(251, 55, 255, 0.5);
+          animation:
+            amoriaPreviewGradient 11s ease infinite,
+            amoriaPreviewPulse 4s ease-in-out infinite;
+        }
+
+        .amoria-preview-chip {
+          align-self: flex-start;
+          padding: 0.18rem 0.7rem;
+          border-radius: 999px;
+          font-size: 0.72rem;
+          background: rgba(15, 23, 42, 0.22);
+          border: 1px solid rgba(248, 250, 252, 0.7);
+          backdrop-filter: blur(10px);
         }
 
         .amoria-preview-title {
@@ -740,28 +761,24 @@ sans jugement, en respectant les limites de l’utilisateur.
           font-size: 0.8rem;
         }
 
-        /* ===== FOOTER sous le bloc ===== */
         .amoria-footer {
-          grid-column: 1 / -1; /* largeur complète sous les 2 colonnes */
           display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 0.9rem;
-          margin-top: 0.6rem;
+          justify-content: space-between;
+          gap: 1rem;
+          align-items: center;
+          flex-wrap: wrap;
+          margin-top: 0.4rem;
         }
 
         .amoria-helper {
           font-size: 0.78rem;
           color: #9ca3af;
-          max-width: 460px;
+          max-width: 420px;
         }
 
         .amoria-actions {
           display: flex;
           gap: 0.6rem;
-          width: 100%;
-          justify-content: flex-start;
-          flex-wrap: wrap;
         }
 
         .amoria-btn {
@@ -790,6 +807,33 @@ sans jugement, en respectant les limites de l’utilisateur.
           border-color: rgba(148, 163, 184, 0.7);
         }
 
+        @keyframes amoriaPreviewGradient {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+
+        @keyframes amoriaPreviewPulse {
+          0% {
+            box-shadow: 0 16px 40px rgba(251, 55, 255, 0.35);
+            transform: translateY(0);
+          }
+          50% {
+            box-shadow: 0 22px 55px rgba(251, 55, 255, 0.6);
+            transform: translateY(-2px);
+          }
+          100% {
+            box-shadow: 0 16px 40px rgba(251, 55, 255, 0.35);
+            transform: translateY(0);
+          }
+        }
+
         @media (max-width: 820px) {
           .amoria-grid {
             grid-template-columns: minmax(0, 1fr);
@@ -798,15 +842,24 @@ sans jugement, en respectant les limites de l’utilisateur.
           .amoria-create-card {
             padding-inline: 1.15rem;
           }
+
+          .amoria-actions {
+            width: 100%;
+            justify-content: flex-end;
+          }
         }
 
         @media (max-width: 520px) {
-          .amoria-actions {
+          .amoria-footer {
             flex-direction: column;
-            align-items: stretch;
+            align-items: flex-start;
+          }
+          .amoria-actions {
+            width: 100%;
+            justify-content: stretch;
           }
           .amoria-btn {
-            width: 100%;
+            flex: 1;
             text-align: center;
           }
         }
