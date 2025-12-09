@@ -22,11 +22,12 @@ export default function AuthCallbackClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Langue et plan récupérés une seule fois
+  const lang = normalizeLocale(searchParams.get("lang"));
+  const plan: PlanId = "free";
+
   useEffect(() => {
     const finalizeAuth = async () => {
-      const lang = normalizeLocale(searchParams.get("lang"));
-      const plan: PlanId = "free";
-
       // 1) Vérifier la session Supabase
       const { data, error } = await supabase.auth.getSession();
 
@@ -41,7 +42,7 @@ export default function AuthCallbackClient() {
       const user = data.session.user;
 
       try {
-        // 2) Vérifier s’il existe déjà une subscription
+        // 2) Vérifier s’il existe déjà une subscription "current"
         const { data: existingSub, error: subError } = await supabase
           .from("user_subscriptions")
           .select("id")
@@ -95,13 +96,11 @@ export default function AuthCallbackClient() {
     };
 
     void finalizeAuth();
-  }, [router, searchParams]);
-
-  const lang = normalizeLocale(searchParams.get("lang"));
+  }, [router, lang, plan]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">
       {LOADING_TEXT[lang]}
     </div>
   );
-    }
+}
