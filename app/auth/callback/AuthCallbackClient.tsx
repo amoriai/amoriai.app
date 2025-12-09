@@ -25,14 +25,15 @@ export default function AuthCallbackClient() {
   useEffect(() => {
     const finalizeAuth = async () => {
       const lang = normalizeLocale(searchParams.get("lang"));
-      const plan: PlanId = "free"; ✅
+      const plan: PlanId = "free";
 
-      // ✅ On vérifie que la session est bien créée
+      // 1) Vérifier la session Supabase
       const { data, error } = await supabase.auth.getSession();
 
       if (error || !data.session?.user) {
         const params = new URLSearchParams();
         params.set("lang", lang);
+        params.set("plan", plan);
         router.replace(`/signup?${params.toString()}`);
         return;
       }
@@ -40,38 +41,57 @@ export default function AuthCallbackClient() {
       const user = data.session.user;
 
       try {
-        const { data: existingSub } = await supabase
+        // 2) Vérifier s’il existe déjà une subscription
+        const { data: existingSub, error: subError } = await supabase
           .from("user_subscriptions")
           .select("id")
           .eq("user_id", user.id)
           .eq("current", true)
           .maybeSingle();
 
+        if (subError) {
+          console.error("Erreur lecture user_subscriptions:", subError);
+        }
+
+        // 3) Créer automatiquement le plan free si absent
         if (!existingSub) {
-          const { data: pricingPlan } = await supabase
+          const { data: pricingPlan, error: pricingError } = await supabase
             .from("pricing_plans")
             .select("id")
             .eq("code", plan)
             .maybeSingle();
 
+          if (pricingError) {
+            console.error("Erreur pricing_plans:", pricingError);
+          }
+
           if (pricingPlan?.id) {
-            await supabase.from("user_subscriptions").insert({
-              user_id: user.id,
-              pricing_plan_id: pricingPlan.id,
-              current: true,
-            });
+            const { error: insertError } = await supabase
+              .from("user_subscriptions")
+              .insert({
+                user_id: user.id,
+                pricing_plan_id: pricingPlan.id,
+                current: true,
+              });
+
+            if (insertError) {
+              console.error(
+                "Erreur insert user_subscriptions:",
+                insertError
+              );
+            }
           }
         }
       } catch (err) {
         console.error("Erreur finalizeAuth:", err);
       }
 
-      // ✅✅✅ REDIRECTION FINALE CORRECTE
+      // 4) ✅ Redirection FINALE vers la création de l’IA
       const params = new URLSearchParams();
       params.set("lang", lang);
       params.set("plan", plan);
 
-      ✅ router.replace(`/create-amoria?${params.toString()}`);
+      router.replace(`/create-amoria?${params.toString()}`);
     };
 
     void finalizeAuth();
@@ -84,4 +104,4 @@ export default function AuthCallbackClient() {
       {LOADING_TEXT[lang]}
     </div>
   );
-}
+    }
