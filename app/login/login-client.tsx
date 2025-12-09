@@ -201,7 +201,11 @@ export default function LoginClient() {
           disabled={loading}
           className="auth-google-btn"
         >
-          <span className="auth-google-icon">G</span>
+          <img
+            src="/google-g.png"
+            alt="Google"
+            className="auth-google-icon-img"
+          />
           <span>{t.google}</span>
         </button>
 
@@ -413,17 +417,13 @@ export default function LoginClient() {
           box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
         }
 
-        .auth-google-icon {
+        .auth-google-icon-img {
           width: 1.4rem;
           height: 1.4rem;
           border-radius: 999px;
+          object-fit: contain;
           background: #ffffff;
-          color: #111827;
-          font-weight: 700;
-          font-size: 0.8rem;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
+          padding: 0.1rem;
         }
 
         .auth-divider {
