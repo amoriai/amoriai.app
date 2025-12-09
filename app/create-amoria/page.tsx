@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
@@ -264,7 +264,6 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
 
 export default function CreateAmoriaPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [locale, setLocale] = useState<Locale>("fr");
   const [plan, setPlan] = useState<PlanId>("free");
@@ -279,11 +278,12 @@ export default function CreateAmoriaPage() {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // lecture query + vérification session
+  // lecture query + session (avec window.location.search)
   useEffect(() => {
     const init = async () => {
-      const langParam = searchParams.get("lang");
-      const planParam = searchParams.get("plan");
+      const params = new URLSearchParams(window.location.search);
+      const langParam = params.get("lang");
+      const planParam = params.get("plan");
 
       if (langParam === "fr" || langParam === "en" || langParam === "es") {
         setLocale(langParam);
@@ -300,7 +300,6 @@ export default function CreateAmoriaPage() {
       const { data, error } = await supabase.auth.getSession();
 
       if (error || !data?.session) {
-        // pas de session → on renvoie vers /login (pas /signup)
         const qp = new URLSearchParams();
         qp.set(
           "lang",
@@ -315,7 +314,7 @@ export default function CreateAmoriaPage() {
     };
 
     init();
-  }, [router, searchParams]);
+  }, [router]);
 
   const t = STRINGS[locale];
   const relationOptions = RELATION_OPTIONS[locale];
@@ -350,7 +349,6 @@ export default function CreateAmoriaPage() {
         await supabase.auth.getUser();
 
       if (userError || !userData?.user) {
-        // session perdue entre temps → retour login
         const params = new URLSearchParams();
         params.set("lang", locale);
         params.set("plan", plan);
