@@ -90,13 +90,15 @@ const STRINGS: Record<Locale, Strings> = {
     emailPlaceholder: "ej. mi.direccion@email.com",
     passwordLabel: "Contraseña",
     passwordPlaceholder: "Elige una contraseña segura",
-    passwordHint: "Mínimo 6 caracteres. Nunca compartas tu contraseña.",
+    passwordHint:
+      "Mínimo 6 caracteres. Nunca compartas tu contraseña.",
     submit: "Crear mi acceso gratuito",
     submitting: "Creando tu acceso…",
     haveAccount: "¿Ya tienes cuenta?",
     loginLink: "Iniciar sesión",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
-    errorGoogle: "Ocurrió un error con el inicio de sesión de Google.",
+    errorGoogle:
+      "Ocurrió un error con el inicio de sesión de Google.",
     confirmTitle: "✅ Tu cuenta ha sido creada.",
     confirmBody:
       "📩 Revisa tu correo para confirmar tu inscripción.\nUna vez confirmada, podrás crear tu AmorIAI.",
@@ -204,10 +206,12 @@ export default function SignupClient() {
       }
 
       if (!session) {
+        // pas encore connecté → on affiche le bloc “vérifie ton courriel”
         setWaitingConfirmation(true);
         return;
       }
 
+      // session déjà active → on va directement créer l’AmorIAI
       redirectAfterSignup();
     } catch (err) {
       console.error("signup error", err);
@@ -245,7 +249,6 @@ export default function SignupClient() {
         setErrorMsg(t.errorGoogle);
         setLoading(false);
       }
-      // Redirection finale gérée dans /auth/callback
     } catch (err) {
       console.error("google oauth error", err);
       setErrorMsg(t.errorGoogle);
@@ -279,9 +282,7 @@ export default function SignupClient() {
           </div>
         )}
 
-        {errorMsg && (
-          <p className="auth-error auth-error--block">{errorMsg}</p>
-        )}
+        {errorMsg && <p className="auth-error auth-error--block">{errorMsg}</p>}
 
         <button
           type="button"
