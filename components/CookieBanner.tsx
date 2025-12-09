@@ -6,16 +6,16 @@ type Locale = "fr" | "en" | "es";
 
 const TEXT: Record<Locale, { text: string; accept: string }> = {
   fr: {
-    text: "Ce site utilise des cookies pour améliorer ton expérience. En continuant, tu acceptes leur utilisation.",
-    accept: "Accepter",
+    text: "Ce site utilise des cookies pour assurer son bon fonctionnement, améliorer ton expérience et analyser le trafic. En continuant, tu acceptes l'utilisation des cookies.",
+    accept: "Tout accepter",
   },
   en: {
-    text: "This site uses cookies to improve your experience. By continuing, you accept their use.",
-    accept: "Accept",
+    text: "This site uses cookies to ensure proper operation, enhance your experience and analyze traffic. By continuing, you agree to the use of cookies.",
+    accept: "Accept all",
   },
   es: {
-    text: "Este sitio utiliza cookies para mejorar tu experiencia. Al continuar, aceptas su uso.",
-    accept: "Aceptar",
+    text: "Este sitio utiliza cookies para garantizar su correcto funcionamiento, mejorar tu experiencia y analizar el tráfico. Al continuar, aceptas el uso de cookies.",
+    accept: "Aceptar todo",
   },
 };
 
@@ -35,6 +35,7 @@ export default function CookieBanner() {
 
   useEffect(() => {
     const consent = localStorage.getItem("cookieConsent");
+
     if (!consent) {
       setVisible(true);
     }
