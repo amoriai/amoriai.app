@@ -30,6 +30,8 @@ type Strings = {
   loginLink: string;
   errorGeneric: string;
   errorGoogle: string;
+  confirmTitle: string;
+  confirmBody: string;
 };
 
 const STRINGS: Record<Locale, Strings> = {
@@ -51,6 +53,9 @@ const STRINGS: Record<Locale, Strings> = {
     loginLink: "Me connecter",
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
     errorGoogle: "Une erreur est survenue avec la connexion Google.",
+    confirmTitle: "Ton compte a bien été créé.",
+    confirmBody:
+      "Vérifie ton courriel pour confirmer ton inscription. Une fois confirmé, tu pourras créer ton AmorIAI.",
   },
   en: {
     badge: "Create your AmorIAI account",
@@ -70,6 +75,9 @@ const STRINGS: Record<Locale, Strings> = {
     loginLink: "Log in",
     errorGeneric: "Something went wrong. Please try again.",
     errorGoogle: "Something went wrong with Google sign-in.",
+    confirmTitle: "Your account has been created.",
+    confirmBody:
+      "Check your email to confirm your registration. Once confirmed, you’ll be able to create your AmorIAI.",
   },
   es: {
     badge: "Crear tu cuenta AmorIAI",
@@ -91,6 +99,9 @@ const STRINGS: Record<Locale, Strings> = {
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     errorGoogle:
       "Ocurrió un error con el inicio de sesión de Google.",
+    confirmTitle: "Tu cuenta ha sido creada.",
+    confirmBody:
+      "Revisa tu correo para confirmar tu inscripción. Una vez confirmada, podrás crear tu AmorIAI.",
   },
 };
 
@@ -119,6 +130,7 @@ export default function SignupClient() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [waitingConfirmation, setWaitingConfirmation] = useState(false);
 
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
@@ -133,6 +145,7 @@ export default function SignupClient() {
 
     setLoading(true);
     setErrorMsg(null);
+    setWaitingConfirmation(false);
 
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -143,11 +156,11 @@ export default function SignupClient() {
       if (error) {
         console.error("supabase signUp error", error);
         setErrorMsg(error.message || t.errorGeneric);
-        setLoading(false);
         return;
       }
 
       const user = data?.user;
+      const session = data?.session;
 
       if (user) {
         const selectedPlan: PlanId = "free";
@@ -180,6 +193,13 @@ export default function SignupClient() {
         console.warn("Aucun user retourné par signUp");
       }
 
+      // Si pas de session → email à confirmer
+      if (!session) {
+        setWaitingConfirmation(true);
+        return;
+      }
+
+      // Si session déjà active → on peut rediriger vers la création d’AmorIAI
       redirectAfterSignup();
     } catch (err) {
       console.error("signup error", err);
@@ -193,6 +213,7 @@ export default function SignupClient() {
     if (loading) return;
     setLoading(true);
     setErrorMsg(null);
+    setWaitingConfirmation(false);
 
     try {
       const origin =
@@ -242,6 +263,13 @@ export default function SignupClient() {
           <h1 className="auth-title">{t.title}</h1>
           <p className="auth-subtitle">{t.subtitle}</p>
         </header>
+
+        {waitingConfirmation && (
+          <div className="auth-confirm-box">
+            <div className="auth-confirm-title">{t.confirmTitle}</div>
+            <div className="auth-confirm-body">{t.confirmBody}</div>
+          </div>
+        )}
 
         {errorMsg && <p className="auth-error auth-error--block">{errorMsg}</p>}
 
@@ -427,6 +455,26 @@ export default function SignupClient() {
           color: #9ca3af;
         }
 
+        .auth-confirm-box {
+          background: rgba(34, 197, 94, 0.12);
+          border: 1px solid rgba(34, 197, 94, 0.6);
+          padding: 0.9rem 1rem;
+          border-radius: 0.9rem;
+          font-size: 0.85rem;
+          color: #bbf7d0;
+          margin-bottom: 1rem;
+          text-align: center;
+        }
+
+        .auth-confirm-title {
+          font-weight: 600;
+          margin-bottom: 0.25rem;
+        }
+
+        .auth-confirm-body {
+          font-size: 0.8rem;
+        }
+
         .auth-google-btn {
           width: 100%;
           border-radius: 999px;
@@ -473,7 +521,7 @@ export default function SignupClient() {
           width: 1.5rem;
           height: 1.5rem;
           border-radius: 999px;
-          background: transparent; /* on laisse le PNG gérer son fond */
+          background: transparent;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -661,4 +709,4 @@ export default function SignupClient() {
       `}</style>
     </main>
   );
-  }
+}
