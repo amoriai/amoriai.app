@@ -5,6 +5,18 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
+/* ===========================
+   ⚠️ CLÉ RECAPTCHA (PUBLIC)
+=========================== */
+
+// ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇
+// ICI : CLÉ PUBLIQUE UNIQUEMENT
+// VERCEL => NEXT_PUBLIC_RECAPTCHA_SITE_KEY = (CLÉ DU SITE RECAPTCHA)
+// C’EST LA CLÉ ***PUBLIQUE*** (PAS LA SECRÈTE)
+// ⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆
+
+const RECAPTCHA_SITE_KEY = "6LcTvCcsAAAAAMaNReYdUv0Q3S7MB-CBzQN-APnS";
+
 type Locale = "fr" | "en" | "es";
 
 type Strings = {
