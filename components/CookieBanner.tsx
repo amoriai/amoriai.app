@@ -4,18 +4,24 @@ import { useEffect, useState } from "react";
 
 type Locale = "fr" | "en" | "es";
 
-const TEXT: Record<Locale, { text: string; accept: string }> = {
+const TEXT: Record<
+  Locale,
+  { text: string; accept: string; decline: string }
+> = {
   fr: {
-    text: "Ce site utilise des cookies pour assurer son bon fonctionnement, améliorer ton expérience et analyser le trafic. En continuant, tu acceptes l'utilisation des cookies.",
+    text: "Ce site utilise des cookies pour assurer son bon fonctionnement, améliorer ton expérience et analyser le trafic. Tu peux accepter ou refuser les cookies non essentiels.",
     accept: "Tout accepter",
+    decline: "Refuser",
   },
   en: {
-    text: "This site uses cookies to ensure proper operation, improve your experience and analyze traffic. By continuing, you agree to the use of cookies.",
+    text: "This site uses cookies to ensure proper operation, improve your experience and analyze traffic. You can accept or refuse non-essential cookies.",
     accept: "Accept all",
+    decline: "Decline",
   },
   es: {
-    text: "Este sitio utiliza cookies para garantizar su correcto funcionamiento, mejorar tu experiencia y analizar el tráfico. Al continuar, aceptas el uso de cookies.",
+    text: "Este sitio utiliza cookies para garantizar su correcto funcionamiento, mejorar tu experiencia y analizar el tráfico. Puedes aceptar o rechazar las cookies no esenciales.",
     accept: "Aceptar todo",
+    decline: "Rechazar",
   },
 };
 
@@ -35,7 +41,7 @@ export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
   const [locale, setLocale] = useState<Locale>("fr");
 
-  // 1) Gérer le consentement (afficher ou non le bandeau)
+  // ✅ Afficher le bandeau uniquement si aucun choix n’a été fait
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -45,7 +51,7 @@ export default function CookieBanner() {
     }
   }, []);
 
-  // 2) Suivre la langue en fonction de l’URL, sans useSearchParams
+  // ✅ Suivre la langue via l’URL ?lang=fr|en|es
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -53,13 +59,10 @@ export default function CookieBanner() {
       setLocale(getLocaleFromUrl());
     };
 
-    // première lecture
     updateLocale();
 
-    // écouter les changements d’URL (back/forward)
     window.addEventListener("popstate", updateLocale);
 
-    // patch léger sur pushState / replaceState pour capter les changements de langue
     const originalPushState = window.history.pushState;
     const originalReplaceState = window.history.replaceState;
 
@@ -82,7 +85,14 @@ export default function CookieBanner() {
 
   const acceptCookies = () => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("cookieConsent", "true");
+      localStorage.setItem("cookieConsent", "accepted");
+    }
+    setVisible(false);
+  };
+
+  const declineCookies = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cookieConsent", "rejected");
     }
     setVisible(false);
   };
@@ -92,9 +102,16 @@ export default function CookieBanner() {
   return (
     <div style={styles.container}>
       <p style={styles.text}>{TEXT[locale].text}</p>
-      <button onClick={acceptCookies} style={styles.button}>
-        {TEXT[locale].accept}
-      </button>
+
+      <div style={styles.buttonsRow}>
+        <button onClick={declineCookies} style={styles.secondaryButton}>
+          {TEXT[locale].decline}
+        </button>
+
+        <button onClick={acceptCookies} style={styles.primaryButton}>
+          {TEXT[locale].accept}
+        </button>
+      </div>
     </div>
   );
 }
@@ -124,7 +141,15 @@ const styles = {
     lineHeight: 1.4,
   },
 
-  button: {
+  buttonsRow: {
+    display: "flex",
+    flexDirection: "row" as const,
+    gap: "10px",
+    justifyContent: "center" as const,
+    flexWrap: "wrap" as const,
+  },
+
+  primaryButton: {
     background: "linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316)",
     border: "none",
     borderRadius: "999px",
@@ -133,5 +158,18 @@ const styles = {
     fontWeight: 600,
     color: "#fff",
     cursor: "pointer",
+    minWidth: "110px",
+  },
+
+  secondaryButton: {
+    background: "transparent",
+    borderRadius: "999px",
+    padding: "6px 18px",
+    fontSize: "13px",
+    fontWeight: 500,
+    color: "#e5e7eb",
+    cursor: "pointer",
+    border: "1px solid rgba(148,163,184,0.7)",
+    minWidth: "110px",
   },
 };
