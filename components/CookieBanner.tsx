@@ -10,7 +10,7 @@ const TEXT: Record<Locale, { text: string; accept: string }> = {
     accept: "Tout accepter",
   },
   en: {
-    text: "This site uses cookies to ensure proper operation, enhance your experience and analyze traffic. By continuing, you agree to the use of cookies.",
+    text: "This site uses cookies to ensure proper operation, improve your experience and analyze traffic. By continuing, you agree to the use of cookies.",
     accept: "Accept all",
   },
   es: {
@@ -19,13 +19,13 @@ const TEXT: Record<Locale, { text: string; accept: string }> = {
   },
 };
 
-function detectLocale(): Locale {
+function getLocaleFromUrl(): Locale {
   if (typeof window === "undefined") return "fr";
 
-  const params = new URLSearchParams(window.location.search);
-  const lang = params.get("lang");
+  const url = window.location.href;
 
-  if (lang === "fr" || lang === "en" || lang === "es") return lang;
+  if (url.includes("lang=en")) return "en";
+  if (url.includes("lang=es")) return "es";
   return "fr";
 }
 
@@ -34,13 +34,18 @@ export default function CookieBanner() {
   const [locale, setLocale] = useState<Locale>("fr");
 
   useEffect(() => {
-    const consent = localStorage.getItem("cookieConsent");
-    if (!consent) {
-      setVisible(true);
-    }
+    // ✅ Lire la langue UNE FOIS côté client
+    setLocale(getLocaleFromUrl());
 
-    // détecte la langue à la première visite
-    setLocale(detectLocale());
+    // ✅ Vérifier le consentement
+    const consent = localStorage.getItem("cookieConsent");
+    if (!consent) setVisible(true);
+
+    // ✅ Écouter les changements de langue (FR/EN/ES)
+    const onChange = () => setLocale(getLocaleFromUrl());
+    window.addEventListener("popstate", onChange);
+
+    return () => window.removeEventListener("popstate", onChange);
   }, []);
 
   const acceptCookies = () => {
@@ -53,7 +58,6 @@ export default function CookieBanner() {
   return (
     <div style={styles.container}>
       <p style={styles.text}>{TEXT[locale].text}</p>
-
       <button onClick={acceptCookies} style={styles.button}>
         {TEXT[locale].accept}
       </button>
