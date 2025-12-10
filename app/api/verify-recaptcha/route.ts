@@ -1,7 +1,7 @@
 // app/api/verify-recaptcha/route.ts
 import { NextResponse } from "next/server";
 
-const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET_KEY;
+const RECAPTCHA_SECRET = 6LcTvCcsAAAAAOqpVcbhgNOH-xUPCAfu7O6gg-nA;
 
 export async function POST(req: Request) {
   if (!RECAPTCHA_SECRET) {
