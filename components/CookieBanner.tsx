@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
 
@@ -19,33 +20,27 @@ const TEXT: Record<Locale, { text: string; accept: string }> = {
   },
 };
 
-function getLocaleFromUrl(): Locale {
-  if (typeof window === "undefined") return "fr";
-
-  const url = window.location.href;
-
-  if (url.includes("lang=en")) return "en";
-  if (url.includes("lang=es")) return "es";
+function resolveLocale(langParam: string | null): Locale {
+  if (langParam === "en") return "en";
+  if (langParam === "es") return "es";
   return "fr";
 }
 
 export default function CookieBanner() {
+  const searchParams = useSearchParams();
+  const locale = resolveLocale(searchParams.get("lang"));
+
   const [visible, setVisible] = useState(false);
-  const [locale, setLocale] = useState<Locale>("fr");
 
   useEffect(() => {
-    // ✅ Lire la langue UNE FOIS côté client
-    setLocale(getLocaleFromUrl());
+    // Vérifie si l’utilisateur a déjà accepté
+    const consent = typeof window !== "undefined"
+      ? localStorage.getItem("cookieConsent")
+      : null;
 
-    // ✅ Vérifier le consentement
-    const consent = localStorage.getItem("cookieConsent");
-    if (!consent) setVisible(true);
-
-    // ✅ Écouter les changements de langue (FR/EN/ES)
-    const onChange = () => setLocale(getLocaleFromUrl());
-    window.addEventListener("popstate", onChange);
-
-    return () => window.removeEventListener("popstate", onChange);
+    if (!consent) {
+      setVisible(true);
+    }
   }, []);
 
   const acceptCookies = () => {
