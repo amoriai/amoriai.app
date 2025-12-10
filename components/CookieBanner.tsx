@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type Locale = "fr" | "en" | "es";
 
@@ -19,29 +20,30 @@ const TEXT: Record<Locale, { text: string; accept: string }> = {
   },
 };
 
-function detectLocale(): Locale {
-  if (typeof window === "undefined") return "fr";
-
-  const params = new URLSearchParams(window.location.search);
-  const lang = params.get("lang");
-
-  if (lang === "fr" || lang === "en" || lang === "es") return lang;
-  return "fr";
-}
-
 export default function CookieBanner() {
+  const searchParams = useSearchParams();
+
   const [visible, setVisible] = useState(false);
   const [locale, setLocale] = useState<Locale>("fr");
 
+  // 1) Afficher seulement si pas encore accepté
   useEffect(() => {
     const consent = localStorage.getItem("cookieConsent");
-
     if (!consent) {
       setVisible(true);
     }
-
-    setLocale(detectLocale());
   }, []);
+
+  // 2) Suivre la langue de l’URL à chaque changement (?lang=fr/en/es)
+  useEffect(() => {
+    const lang = searchParams.get("lang");
+
+    if (lang === "fr" || lang === "en" || lang === "es") {
+      setLocale(lang);
+    } else {
+      setLocale("fr");
+    }
+  }, [searchParams]);
 
   const acceptCookies = () => {
     localStorage.setItem("cookieConsent", "true");
