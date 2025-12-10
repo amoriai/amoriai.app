@@ -38,7 +38,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "2. Quelles données sont collectées ?",
         paragraphs: [
           "Nous pouvons collecter plusieurs types de données lorsque tu utilises AmorIAI.app :",
-          "• Informations de compte : adresse e-mail, mot de passe chiffré, langue préférée, paramètres de ton compte.\n• Données d’usage : dates et heures de connexion, type d’appareil, système d’exploitation, données techniques permettant d’améliorer le service.\n• Contenu des échanges avec ton AmorIAI : messages texte, journaux, réponses, ainsi que certaines métadonnées (heure, langue utilisée).",
+          "• Informations de compte : adresse e-mail, mot de passe chiffré, langue préférée, paramètres de ton compte. Si tu crées un compte ou te connectes via Google, certaines informations de base de ton profil Google (par exemple, ton adresse e-mail) nous sont transmises pour créer ou associer ton compte AmorIAI.\n• Données d’usage : dates et heures de connexion, type d’appareil, système d’exploitation, données techniques permettant d’améliorer le service.\n• Contenu des échanges avec ton AmorIAI : messages texte, journaux, réponses, ainsi que certaines métadonnées (heure, langue utilisée).\n• Données de paiement : informations liées aux transactions (montant, devise, identifiant de transaction, statut de paiement) traitées par notre prestataire Stripe. Nous ne stockons pas nous-mêmes les numéros complets de carte bancaire.\n• Cookies et traceurs : cookies strictement nécessaires au fonctionnement du site (authentification, sécurité, préférences de langue) et, si tu les acceptes, cookies de mesure d’audience et d’analytique pour comprendre comment le site est utilisé.",
           "Nous ne vendons pas tes données personnelles à des tiers.",
         ],
       },
@@ -46,7 +46,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "3. Comment utilisons-nous tes données ?",
         paragraphs: [
           "Nous utilisons tes données pour :",
-          "• Fournir le service : créer ton compte, te connecter, permettre les échanges texte/voix avec ton AmorIAI.\n• Personnaliser ton expérience : mémoriser certains éléments (dans les plans payants) pour que ton AmorIAI se souvienne de toi.\n• Améliorer AmorIAI.app : analyser de manière agrégée l’usage du service afin de comprendre ce qui fonctionne ou non.\n• Respecter nos obligations légales : par exemple en cas de demande des autorités compétentes, dans les limites prévues par la loi.",
+          "• Fournir le service : créer ton compte, te connecter (y compris via Google si tu choisis cette option), permettre les échanges texte/voix avec ton AmorIAI.\n• Gérer les abonnements et paiements : traiter tes paiements via notre prestataire Stripe, vérifier l’état de ton abonnement et lutter contre la fraude.\n• Personnaliser ton expérience : mémoriser certains éléments (dans les plans payants) pour que ton AmorIAI se souvienne de toi.\n• Améliorer AmorIAI.app : analyser de manière agrégée l’usage du service (via journaux techniques et, le cas échéant, cookies de mesure d’audience) afin de comprendre ce qui fonctionne ou non.\n• Respecter nos obligations légales : par exemple en cas de demande des autorités compétentes, dans les limites prévues par la loi.",
         ],
       },
       {
@@ -54,14 +54,14 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         paragraphs: [
           "Tes conversations avec ton AmorIAI peuvent toucher à des sujets personnels (émotions, relations, bien-être, etc.).",
           "Nous te recommandons :\n• de ne pas partager d’informations ultra sensibles (numéros de cartes bancaires, mots de passe, documents officiels complets, etc.),\n• d’éviter de publier des informations permettant d’identifier directement une autre personne sans son consentement.",
-          "Les modèles d’IA utilisés pour faire fonctionner AmorIAI peuvent analyser ton contenu pour répondre, mais nous mettons en place des garde-fous pour limiter l’usage de ces données à l’amélioration du service et au fonctionnement du modèle.",
+          "Les modèles d’IA utilisés pour faire fonctionner AmorIAI peuvent analyser ton contenu pour répondre, mais nous mettons en place des garde-fous pour limiter l’usage de ces données au fonctionnement et à l’amélioration du service.",
         ],
       },
       {
         title: "5. Partage de tes données",
         paragraphs: [
           "Nous pouvons partager certaines données avec :",
-          "• Des prestataires techniques (hébergement, infrastructure, outils d’analytique) strictement nécessaires au fonctionnement d’AmorIAI.app.\n• Des services d’IA tiers, lorsque c’est nécessaire pour générer les réponses de ton AmorIAI.",
+          "• Des prestataires techniques (hébergement, infrastructure, bases de données, outils d’analytique) strictement nécessaires au fonctionnement d’AmorIAI.app.\n• Des services d’IA tiers, lorsque c’est nécessaire pour générer les réponses de ton AmorIAI.\n• Notre prestataire de paiement Stripe, pour traiter tes paiements, vérifier les transactions et lutter contre la fraude.\n• Google, lorsque tu choisis de te connecter ou de créer un compte via ton compte Google (authentification OAuth). Dans ce cas, certaines informations de ton profil Google sont transmises pour permettre la connexion.",
           "Nous ne partageons pas tes données avec des annonceurs pour du ciblage publicitaire basé sur tes conversations individuelles.",
         ],
       },
@@ -70,7 +70,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         paragraphs: [
           "Nous conservons tes données aussi longtemps que nécessaire pour :",
           "• fournir le service,\n• respecter nos obligations légales,\n• résoudre des litiges potentiels.",
-          "Tu peux demander la suppression de ton compte en nous écrivant à : contactamoriai@gmail.com. Certaines données peuvent toutefois être conservées plus longtemps si la loi l’exige (par exemple, des journaux techniques ou des preuves de consentement).",
+          "Tu peux demander la suppression de ton compte en nous écrivant à : contactamoriai@gmail.com. Certaines données peuvent toutefois être conservées plus longtemps si la loi l’exige (par exemple, des journaux techniques, des données comptables ou des preuves de consentement).",
         ],
       },
       {
@@ -130,7 +130,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "2. What data do we collect?",
         paragraphs: [
           "We may collect several types of data when you use AmorIAI.app:",
-          "• Account information: e-mail address, encrypted password, preferred language, account settings.\n• Usage data: login dates and times, device type, operating system, technical logs used to improve the service.\n• Conversation content: text messages and some metadata (time, language used) exchanged with your AmorIAI.",
+          "• Account information: e-mail address, encrypted password, preferred language, account settings. If you sign up or log in with Google, some basic information from your Google profile (for example your e-mail address) is shared with us so we can create or link your AmorIAI account.\n• Usage data: login dates and times, device type, operating system, technical logs used to improve the service.\n• Conversation content: text messages and some metadata (time, language used) exchanged with your AmorIAI.\n• Payment data: information related to transactions (amount, currency, transaction identifier, payment status) processed by our payment provider Stripe. We do not store full payment card numbers on our own servers.\n• Cookies and similar technologies: strictly necessary cookies (for authentication, security and language preferences) and, if you accept them, analytics cookies to understand how the site is used.",
           "We do not sell your personal data to third parties.",
         ],
       },
@@ -138,7 +138,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "3. How do we use your data?",
         paragraphs: [
           "We use your data to:",
-          "• Provide the service: create your account, log you in, enable text/voice exchanges with your AmorIAI.\n• Personalize your experience: in paid plans, enable your AmorIAI to remember you over time.\n• Improve AmorIAI.app: analyze usage in an aggregated way to understand what works and what does not.\n• Comply with legal obligations: for example, in response to lawful requests from competent authorities.",
+          "• Provide the service: create your account, log you in (including via Google if you choose that option), enable text/voice exchanges with your AmorIAI.\n• Manage subscriptions and payments: process your payments via our provider Stripe, verify transactions and help prevent fraud.\n• Personalize your experience: in paid plans, enable your AmorIAI to remember you over time.\n• Improve AmorIAI.app: analyse usage in an aggregated way (through technical logs and, where applicable, analytics cookies) to understand what works and what does not.\n• Comply with legal obligations: for example, in response to lawful requests from competent authorities.",
         ],
       },
       {
@@ -146,14 +146,14 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         paragraphs: [
           "Your conversations with your AmorIAI may involve personal topics (emotions, relationships, wellbeing, etc.).",
           "We recommend that you:\n• do not share ultra-sensitive information (payment card numbers, passwords, full official documents, etc.);\n• avoid sharing data that could directly identify another person without their consent.",
-          "The AI models used to run AmorIAI may analyze your content to generate responses, but we put safeguards in place so this data is used only to operate and improve the service.",
+          "The AI models used to run AmorIAI may analyse your content to generate responses, but we put safeguards in place so this data is used only to operate and improve the service.",
         ],
       },
       {
         title: "5. Sharing your data",
         paragraphs: [
           "We may share certain data with:",
-          "• Technical providers (hosting, infrastructure, analytics tools) strictly necessary for AmorIAI.app to function.\n• Third-party AI services, when needed to generate responses from your AmorIAI.",
+          "• Technical providers (hosting, infrastructure, databases, analytics tools) strictly necessary for AmorIAI.app to function.\n• Third-party AI services, when needed to generate responses from your AmorIAI.\n• Our payment provider Stripe, to process your payments, verify transactions and help prevent fraud.\n• Google, when you choose to sign up or log in using your Google account (OAuth authentication). In that case, certain information from your Google profile is shared so we can authenticate you.",
           "We do not share your personal conversations with advertisers for interest-based advertising.",
         ],
       },
@@ -162,7 +162,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         paragraphs: [
           "We keep your data for as long as necessary to:",
           "• provide the service,\n• comply with legal obligations,\n• handle potential disputes.",
-          "You can request deletion of your account by writing to: contactamoriai@gmail.com. Some data may be kept longer if required by law (for example, technical logs or proof of consent).",
+          "You can request deletion of your account by writing to: contactamoriai@gmail.com. Some data may be kept longer if required by law (for example, technical logs, accounting records or proof of consent).",
         ],
       },
       {
@@ -222,7 +222,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "2. ¿Qué datos recopilamos?",
         paragraphs: [
           "Podemos recopilar varios tipos de datos cuando usas AmorIAI.app:",
-          "• Información de cuenta: correo electrónico, contraseña cifrada, idioma preferido, ajustes de tu cuenta.\n• Datos de uso: fechas y horas de conexión, tipo de dispositivo, sistema operativo, datos técnicos para mejorar el servicio.\n• Contenido de las conversaciones con tu AmorIAI: mensajes de texto y algunas metadatos (hora, idioma utilizado).",
+          "• Información de cuenta: correo electrónico, contraseña cifrada, idioma preferido y ajustes de tu cuenta. Si creas una cuenta o inicias sesión con Google, se comparten con nosotros algunos datos básicos de tu perfil de Google (por ejemplo, tu correo electrónico) para poder crear o vincular tu cuenta de AmorIAI.\n• Datos de uso: fechas y horas de conexión, tipo de dispositivo, sistema operativo y datos técnicos para mejorar el servicio.\n• Contenido de las conversaciones con tu AmorIAI: mensajes de texto y algunas metadatos (hora, idioma utilizado).\n• Datos de pago: información relacionada con las transacciones (importe, moneda, identificador de transacción, estado del pago) tratada por nuestro proveedor de pagos Stripe. No almacenamos en nuestros servidores los números completos de las tarjetas.\n• Cookies y tecnologías similares: cookies estrictamente necesarias para el funcionamiento del sitio (autenticación, seguridad, preferencias de idioma) y, si las aceptas, cookies de analítica para entender cómo se utiliza el sitio.",
           "No vendemos tus datos personales a terceros.",
         ],
       },
@@ -230,7 +230,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "3. ¿Cómo utilizamos tus datos?",
         paragraphs: [
           "Utilizamos tus datos para:",
-          "• Prestar el servicio: crear tu cuenta, iniciar sesión y permitir los intercambios de texto/voz con tu AmorIAI.\n• Personalizar tu experiencia: en los planes de pago, permitir que tu AmorIAI recuerde ciertos elementos a lo largo del tiempo.\n• Mejorar AmorIAI.app: analizar el uso de forma agregada para entender qué funciona y qué no.\n• Cumplir con nuestras obligaciones legales: por ejemplo, ante solicitudes válidas de autoridades competentes.",
+          "• Prestar el servicio: crear tu cuenta, iniciar sesión (incluido Google si eliges esa opción) y permitir los intercambios de texto/voz con tu AmorIAI.\n• Gestionar suscripciones y pagos: procesar tus pagos a través de nuestro proveedor Stripe, verificar las transacciones y ayudar a prevenir el fraude.\n• Personalizar tu experiencia: en los planes de pago, permitir que tu AmorIAI recuerde ciertos elementos a lo largo del tiempo.\n• Mejorar AmorIAI.app: analizar el uso de forma agregada (mediante registros técnicos y, en su caso, cookies de analítica) para entender qué funciona y qué no.\n• Cumplir con nuestras obligaciones legales: por ejemplo, ante solicitudes válidas de autoridades competentes.",
         ],
       },
       {
@@ -245,7 +245,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         title: "5. Compartir tus datos",
         paragraphs: [
           "Podemos compartir algunos datos con:",
-          "• Proveedores técnicos (alojamiento, infraestructura, herramientas de analítica) estrictamente necesarios para el funcionamiento de AmorIAI.app.\n• Servicios de IA de terceros, cuando sea necesario para generar las respuestas de tu AmorIAI.",
+          "• Proveedores técnicos (alojamiento, infraestructura, bases de datos, herramientas de analítica) estrictamente necesarios para el funcionamiento de AmorIAI.app.\n• Servicios de IA de terceros, cuando sea necesario para generar las respuestas de tu AmorIAI.\n• Nuestro proveedor de pagos Stripe, para procesar tus pagos, verificar las transacciones y ayudar a prevenir el fraude.\n• Google, cuando eliges crear una cuenta o iniciar sesión mediante tu cuenta de Google (autenticación OAuth). En ese caso, se comparte cierta información de tu perfil de Google para poder autenticarte.",
           "No compartimos tus conversaciones personales con anunciantes para publicidad basada en tus chats.",
         ],
       },
@@ -254,7 +254,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         paragraphs: [
           "Conservamos tus datos durante el tiempo necesario para:",
           "• prestar el servicio,\n• cumplir con obligaciones legales,\n• gestionar posibles disputas.",
-          "Puedes solicitar la eliminación de tu cuenta escribiendo a: contactamoriai@gmail.com. Algunos datos pueden conservarse más tiempo si la ley lo exige (por ejemplo, registros técnicos o pruebas de consentimiento).",
+          "Puedes solicitar la eliminación de tu cuenta escribiendo a: contactamoriai@gmail.com. Algunos datos pueden conservarse más tiempo si la ley lo exige (por ejemplo, registros técnicos, información contable o pruebas de consentimiento).",
         ],
       },
       {
