@@ -19,14 +19,15 @@ const TEXT: Record<Locale, { text: string; accept: string }> = {
   },
 };
 
-function detectLocale(): Locale {
+function getLocaleFromUrl(): Locale {
   if (typeof window === "undefined") return "fr";
 
-  const url = window.location.href;
+  const params = new URLSearchParams(window.location.search);
+  const lang = params.get("lang");
 
-  if (url.includes("lang=en")) return "en";
-  if (url.includes("lang=es")) return "es";
-
+  if (lang === "en" || lang === "es" || lang === "fr") {
+    return lang;
+  }
   return "fr";
 }
 
@@ -34,20 +35,55 @@ export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
   const [locale, setLocale] = useState<Locale>("fr");
 
+  // 1) Gérer le consentement (afficher ou non le bandeau)
   useEffect(() => {
-    setLocale(detectLocale());
+    if (typeof window === "undefined") return;
 
     const consent = localStorage.getItem("cookieConsent");
-    if (!consent) setVisible(true);
+    if (!consent) {
+      setVisible(true);
+    }
+  }, []);
 
-    const onLangChange = () => setLocale(detectLocale());
-    window.addEventListener("popstate", onLangChange);
+  // 2) Suivre la langue en fonction de l’URL, sans useSearchParams
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-    return () => window.removeEventListener("popstate", onLangChange);
+    const updateLocale = () => {
+      setLocale(getLocaleFromUrl());
+    };
+
+    // première lecture
+    updateLocale();
+
+    // écouter les changements d’URL (back/forward)
+    window.addEventListener("popstate", updateLocale);
+
+    // patch léger sur pushState / replaceState pour capter les changements de langue
+    const originalPushState = window.history.pushState;
+    const originalReplaceState = window.history.replaceState;
+
+    window.history.pushState = function (...args) {
+      originalPushState.apply(this, args as any);
+      updateLocale();
+    };
+
+    window.history.replaceState = function (...args) {
+      originalReplaceState.apply(this, args as any);
+      updateLocale();
+    };
+
+    return () => {
+      window.removeEventListener("popstate", updateLocale);
+      window.history.pushState = originalPushState;
+      window.history.replaceState = originalReplaceState;
+    };
   }, []);
 
   const acceptCookies = () => {
-    localStorage.setItem("cookieConsent", "true");
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cookieConsent", "true");
+    }
     setVisible(false);
   };
 
