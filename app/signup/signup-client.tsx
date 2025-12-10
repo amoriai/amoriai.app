@@ -1,13 +1,31 @@
 "use client";
 
-import React, { useState, FormEvent } from "react";
+import React, { useState, FormEvent, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
+
+declare global {
+  interface Window {
+    grecaptcha: any;
+  }
+}
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 const CREATE_AMORIA_PATH = "/create-amoria";
+
+/* ===========================
+   ⚠️ CLÉ RECAPTCHA (PUBLIC)
+=========================== */
+
+// ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇
+// ICI : CLÉ PUBLIQUE UNIQUEMENT
+// VERCEL => NEXT_PUBLIC_RECAPTCHA_SITE_KEY = (CLÉ DU SITE RECAPTCHA)
+// C’EST LA CLÉ ***PUBLIQUE*** (PAS LA SECRÈTE)
+// ⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆
+
+const RECAPTCHA_SITE_KEY = 6LcTvCcsAAAAAMaNReYdUv0Q3S7MB-CBzQN-APnS;
 
 /* ===========================
    TEXTES PAR LANGUE
@@ -30,6 +48,7 @@ type Strings = {
   loginLink: string;
   errorGeneric: string;
   errorGoogle: string;
+  errorRecaptcha: string; // ⬅ NOUVEAU
   confirmTitle: string;
   confirmBody: string;
 };
@@ -53,6 +72,8 @@ const STRINGS: Record<Locale, Strings> = {
     loginLink: "Me connecter",
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
     errorGoogle: "Une erreur est survenue avec la connexion Google.",
+    errorRecaptcha:
+      "La vérification de sécurité (reCAPTCHA) a échoué. Merci de réessayer.",
     confirmTitle: "✅ Ton compte a bien été créé.",
     confirmBody:
       "📩 Vérifie ton courriel pour confirmer ton inscription.\nUne fois confirmé, tu pourras créer ton AmorIAI.",
@@ -75,6 +96,8 @@ const STRINGS: Record<Locale, Strings> = {
     loginLink: "Log in",
     errorGeneric: "Something went wrong. Please try again.",
     errorGoogle: "Something went wrong with Google sign-in.",
+    errorRecaptcha:
+      "Security check (reCAPTCHA) failed. Please try again.",
     confirmTitle: "✅ Your account has been created.",
     confirmBody:
       "📩 Check your email to confirm your registration.\nOnce confirmed, you’ll be able to create your AmorIAI.",
@@ -99,6 +122,8 @@ const STRINGS: Record<Locale, Strings> = {
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     errorGoogle:
       "Ocurrió un error con el inicio de sesión de Google.",
+    errorRecaptcha:
+      "La verificación de seguridad (reCAPTCHA) ha fallado. Inténtalo de nuevo.",
     confirmTitle: "✅ Tu cuenta ha sido creada.",
     confirmBody:
       "📩 Revisa tu correo para confirmar tu inscripción.\nUna vez confirmada, podrás crear tu AmorIAI.",
@@ -132,11 +157,53 @@ export default function SignupClient() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [waitingConfirmation, setWaitingConfirmation] = useState(false);
 
+  // reCAPTCHA token (v3)
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+
+  // Charger le script reCAPTCHA v3 côté client
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!RECAPTCHA_SITE_KEY) {
+      console.error(
+        "⚠️ NEXT_PUBLIC_RECAPTCHA_SITE_KEY (CLÉ PUBLIQUE) est manquante."
+      );
+      return;
+    }
+
+    // éviter de doubler le script
+    const alreadyLoaded = document.querySelector(
+      'script[src^="https://www.google.com/recaptcha/api.js"]'
+    );
+    if (alreadyLoaded) return;
+
+    const script = document.createElement("script");
+    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+  }, []);
+
   const redirectAfterSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
     params.set("plan", "free");
     router.replace(`${CREATE_AMORIA_PATH}?${params.toString()}`);
+  };
+
+  // Récupération d’un token reCAPTCHA v3
+  const runRecaptcha = async (): Promise<string | null> => {
+    if (typeof window === "undefined") return null;
+    if (!RECAPTCHA_SITE_KEY) return null;
+    if (!window.grecaptcha) return null;
+
+    return new Promise((resolve, reject) => {
+      window.grecaptcha.ready(() => {
+        window.grecaptcha
+          .execute(RECAPTCHA_SITE_KEY, { action: "signup" })
+          .then((token: string) => resolve(token))
+          .catch((err: unknown) => reject(err));
+      });
+    });
   };
 
   const handleSignup = async (e: FormEvent) => {
@@ -148,6 +215,55 @@ export default function SignupClient() {
     setWaitingConfirmation(false);
 
     try {
+      // 1️⃣ reCAPTCHA AVANT SUPABASE
+      if (!RECAPTCHA_SITE_KEY) {
+        setErrorMsg(t.errorRecaptcha);
+        setLoading(false);
+        return;
+      }
+
+      let token = recaptchaToken;
+
+      if (!token) {
+        try {
+          token = await runRecaptcha();
+          setRecaptchaToken(token);
+        } catch (err) {
+          console.error("reCAPTCHA error", err);
+          setErrorMsg(t.errorRecaptcha);
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (!token) {
+        setErrorMsg(t.errorRecaptcha);
+        setLoading(false);
+        return;
+      }
+
+      // 2️⃣ Vérification côté serveur (route /api/verify-recaptcha)
+      const verifyRes = await fetch("/api/verify-recaptcha", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token,
+          action: "signup",
+        }),
+      });
+
+      const verifyJson = await verifyRes.json();
+
+      if (!verifyRes.ok || !verifyJson.success) {
+        console.error("verify-recaptcha error", verifyJson);
+        setErrorMsg(t.errorRecaptcha);
+        setLoading(false);
+        return;
+      }
+
+      // 3️⃣ Si OK → on continue avec Supabase
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
 
@@ -206,12 +322,10 @@ export default function SignupClient() {
       }
 
       if (!session) {
-        // pas encore connecté → on affiche le bloc “vérifie ton courriel”
         setWaitingConfirmation(true);
         return;
       }
 
-      // session déjà active → on va directement créer l’AmorIAI
       redirectAfterSignup();
     } catch (err) {
       console.error("signup error", err);
