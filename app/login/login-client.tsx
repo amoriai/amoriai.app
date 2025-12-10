@@ -2,6 +2,7 @@
 
 import React, { FormEvent, useState } from "react";
 import Image from "next/image";
+import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
