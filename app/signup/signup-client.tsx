@@ -25,7 +25,7 @@ const CREATE_AMORIA_PATH = "/create-amoria";
 // C’EST LA CLÉ ***PUBLIQUE*** (PAS LA SECRÈTE)
 // ⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆
 
-const RECAPTCHA_SITE_KEY = 6LcTvCcsAAAAAMaNReYdUv0Q3S7MB-CBzQN-APnS;
+const RECAPTCHA_SITE_KEY = "6LcTvCcsAAAAAMaNReYdUv0Q3S7MB-CBzQN-APnS";
 
 /* ===========================
    TEXTES PAR LANGUE
