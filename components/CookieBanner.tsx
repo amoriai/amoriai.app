@@ -59,10 +59,13 @@ export default function CookieBanner() {
       setLocale(getLocaleFromUrl());
     };
 
+    // première lecture
     updateLocale();
 
+    // navigation back/forward
     window.addEventListener("popstate", updateLocale);
 
+    // patch léger pushState / replaceState
     const originalPushState = window.history.pushState;
     const originalReplaceState = window.history.replaceState;
 
@@ -85,14 +88,16 @@ export default function CookieBanner() {
 
   const acceptCookies = () => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("cookieConsent", "accepted");
+      // ✅ Mon ajout : valeur explicite pour "tout accepter"
+      localStorage.setItem("cookieConsent", "all");
     }
     setVisible(false);
   };
 
   const declineCookies = () => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("cookieConsent", "rejected");
+      // ✅ Mon ajout : seulement les cookies essentiels
+      localStorage.setItem("cookieConsent", "necessary");
     }
     setVisible(false);
   };
