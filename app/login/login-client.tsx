@@ -196,6 +196,11 @@ export default function LoginClient() {
   };
 
   return (
+     <>
+  <Script
+    src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
+    strategy="afterInteractive"
+  />
     <main className="auth-root">
       <div className="auth-gradient-orbit" />
       <div className="auth-gradient-orbit auth-gradient-orbit--right" />
@@ -611,5 +616,6 @@ export default function LoginClient() {
         }
       `}</style>
     </main>
+        </>
   );
 }
