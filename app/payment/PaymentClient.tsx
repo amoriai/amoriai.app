@@ -33,34 +33,27 @@ export default function PaymentClient() {
     const run = async () => {
       setError(null);
 
-      // Plan invalide → retour pricing en gardant la langue
       if (!plan) {
         router.replace(`/pricing?lang=${lang}`);
         return;
       }
 
-      // Check session
-      const { data, error: authErr } = await supabase.auth.getUser();
+      const { data, error: userErr } = await supabase.auth.getUser();
+      if (userErr) console.error("supabase.auth.getUser error:", userErr);
 
-      if (authErr) {
-        console.error("supabase.auth.getUser error:", authErr);
-      }
-
-      if (!data?.user) {
-        // Pas connecté → login en gardant plan/lang
+      const user = data?.user;
+      if (!user) {
         router.replace(`/login?lang=${lang}&plan=${plan}`);
         return;
       }
 
-      // Créer la session Stripe via ton endpoint
       try {
         const res = await fetch("/api/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            plan, // chat | plus | unlimited
-            lang, // fr | en | es (optionnel côté API, mais pratique)
-            // user_id: data.user.id, // OPTIONNEL: je recommande de ne pas l'envoyer
+            plan,              // chat | plus | unlimited
+            user_id: user.id,  // ✅ obligatoire pour TON api/checkout
           }),
         });
 
@@ -88,7 +81,6 @@ export default function PaymentClient() {
     };
 
     run();
-
     return () => {
       cancelled = true;
     };
