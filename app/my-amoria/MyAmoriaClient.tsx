@@ -42,7 +42,7 @@ const STRINGS: Record<Locale, UiStrings> = {
     retry: "Réessayer",
     diagTitle: "Diagnostic",
     diagNoAccess:
-      "Accès refusé à la base (RLS / policies). Vérifie les policies Supabase pour user_amoria et user_subscriptions.",
+      "Accès refusé à la base (RLS / policies). Vérifie les policies Supabase.",
     diagUnknown:
       "Une erreur est survenue. Regarde la console (F12) pour voir le détail.",
   },
@@ -59,7 +59,7 @@ const STRINGS: Record<Locale, UiStrings> = {
     retry: "Retry",
     diagTitle: "Diagnostics",
     diagNoAccess:
-      "Access denied (RLS / policies). Check Supabase policies for user_amoria and user_subscriptions.",
+      "Access denied (RLS / policies). Check your Supabase policies.",
     diagUnknown: "Something went wrong. Check the browser console (F12).",
   },
   es: {
@@ -74,10 +74,8 @@ const STRINGS: Record<Locale, UiStrings> = {
     planHint: "Tu plan se respeta automáticamente (Free, Plus, Unlimited).",
     retry: "Reintentar",
     diagTitle: "Diagnóstico",
-    diagNoAccess:
-      "Acceso denegado (RLS / policies). Revisa las policies de Supabase para user_amoria y user_subscriptions.",
-    diagUnknown:
-      "Ocurrió un error. Revisa la consola del navegador (F12).",
+    diagNoAccess: "Acceso denegado (RLS / policies). Revisa tus policies.",
+    diagUnknown: "Ocurrió un error. Revisa la consola del navegador (F12).",
   },
 };
 
@@ -85,11 +83,6 @@ type LoadState =
   | { status: "loading" }
   | { status: "ready"; plan: PlanId }
   | { status: "error"; message: string; kind: "no_access" | "unknown" };
-
-function asPlanId(v: any): PlanId {
-  if (v === "chat" || v === "plus" || v === "unlimited") return v;
-  return "free";
-}
 
 function looksLikeRlsError(message: string) {
   const msg = (message || "").toLowerCase();
@@ -100,6 +93,19 @@ function looksLikeRlsError(message: string) {
     msg.includes("policy") ||
     msg.includes("violates row-level security")
   );
+}
+
+function planFromPricingName(name: any): PlanId {
+  const n = (name || "").toString().toLowerCase().trim();
+
+  if (n === "free") return "free";
+  if (n.includes("découverte") || n.includes("decouverte")) return "free";
+  if (n.includes("plus")) return "plus";
+  if (n.includes("illimité") || n.includes("illimite") || n.includes("unlimited"))
+    return "unlimited";
+  if (n.includes("chat")) return "chat";
+
+  return "free";
 }
 
 export default function MyAmoriaClient() {
@@ -113,15 +119,6 @@ export default function MyAmoriaClient() {
   const t = STRINGS[lang];
 
   const [state, setState] = useState<LoadState>({ status: "loading" });
-
-  // Optionnel: tunnel sécurisé (si tu veux vraiment bloquer "retour")
-  useEffect(() => {
-    const preventBack = () =>
-      window.history.pushState(null, "", window.location.href);
-    window.history.pushState(null, "", window.location.href);
-    window.addEventListener("popstate", preventBack);
-    return () => window.removeEventListener("popstate", preventBack);
-  }, []);
 
   const load = async () => {
     setState({ status: "loading" });
@@ -139,12 +136,11 @@ export default function MyAmoriaClient() {
     const userId = user.id;
     console.log("[MY-AMORIA] userId:", userId);
 
-    // 2) Chercher l’IA existante
-    // ✅ IMPORTANT: colonne = user_id_uuid (selon tes captures)
+    // 2) IA existante (colonne = user_id)
     const { data: aiList, error: aiErr } = await supabase
       .from("user_amoria")
       .select("id")
-      .eq("user_id_uuid", userId)
+      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(1);
 
@@ -161,18 +157,18 @@ export default function MyAmoriaClient() {
 
     console.log("[MY-AMORIA] aiList:", aiList);
 
-    if (aiList && aiList.length > 0 && aiList[0]?.id) {
+    if (aiList?.[0]?.id) {
       router.replace(`/chat?iaId=${aiList[0].id}&lang=${lang}`);
       return;
     }
 
-    // 3) Lire le plan
-    // ✅ IMPORTANT: colonne = user_id_uuid (même logique)
+    // 3) Subscriptions: lire pricing_plan_id (pas "plan")
     const { data: subList, error: subErr } = await supabase
       .from("user_subscriptions")
-      .select("plan")
-      .eq("user_id_uuid", userId)
-      .limit(1);
+      .select("pricing_plan_id,current,created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(5);
 
     if (subErr) {
       console.error("user_subscriptions SELECT error:", subErr);
@@ -187,9 +183,33 @@ export default function MyAmoriaClient() {
 
     console.log("[MY-AMORIA] subList:", subList);
 
-    const plan = asPlanId(subList?.[0]?.plan);
+    // Priorité: current=true si présent, sinon la plus récente
+    const currentSub =
+      subList?.find((r: any) => r?.current === true) ?? subList?.[0];
 
-    // Aucune IA trouvée -> afficher écran "Créer"
+    const pricingPlanId = currentSub?.pricing_plan_id;
+
+    // Si aucun plan en DB → Free
+    if (!pricingPlanId) {
+      setState({ status: "ready", plan: "free" });
+      return;
+    }
+
+    // 4) pricing_plans: récupérer le name via l'id
+    const { data: planRow, error: planErr } = await supabase
+      .from("pricing_plans")
+      .select("name")
+      .eq("id", pricingPlanId)
+      .maybeSingle();
+
+    if (planErr) {
+      console.error("pricing_plans SELECT error:", planErr);
+      // fallback safe
+      setState({ status: "ready", plan: "free" });
+      return;
+    }
+
+    const plan = planFromPricingName(planRow?.name);
     setState({ status: "ready", plan });
   };
 
@@ -255,7 +275,9 @@ export default function MyAmoriaClient() {
 
         <div className="space-y-3">
           <button
-            onClick={() => router.push(`/create-amoria?plan=${plan}&lang=${lang}`)}
+            onClick={() =>
+              router.push(`/create-amoria?plan=${plan}&lang=${lang}`)
+            }
             className="w-full py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 font-semibold"
           >
             {t.createNow}
@@ -273,4 +295,4 @@ export default function MyAmoriaClient() {
       </section>
     </main>
   );
-  }
+      }
