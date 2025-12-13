@@ -2,8 +2,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import { cookies } from "next/headers";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
 export const runtime = "nodejs";
 
@@ -70,34 +68,24 @@ export async function POST(req: Request) {
 
     const siteUrl = cleanSiteUrl(siteUrlRaw);
 
-    // 1) Parse body
+    // 1) Parse body (ON AJOUTE user_id)
     const body = (await req.json().catch(() => ({}))) as {
       plan?: unknown;
       lang?: unknown;
+      user_id?: unknown;
     };
 
     const plan = body.plan;
     const lang = typeof body.lang === "string" ? body.lang : "";
+    const userId = typeof body.user_id === "string" ? body.user_id : "";
 
     // 2) Validation plan
     if (!isPlan(plan)) {
       return NextResponse.json({ error: "Plan invalide." }, { status: 400 });
     }
 
-    // 3) Récupérer le user côté serveur via cookies Supabase
-    const supabaseAuth = createRouteHandlerClient({ cookies });
-    const { data: userData, error: userErr } = await supabaseAuth.auth.getUser();
-
-    if (userErr) {
-      console.error("supabase getUser error:", userErr);
-      return NextResponse.json(
-        { error: "Erreur auth. Réessaie de te reconnecter." },
-        { status: 401 }
-      );
-    }
-
-    const user = userData?.user;
-    if (!user) {
+    // 3) Validation user_id (plus de cookies Supabase ici)
+    if (!userId) {
       return NextResponse.json(
         { error: "Non authentifié. Connecte-toi pour payer." },
         { status: 401 }
@@ -134,10 +122,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // 5) ✅ URLs Stripe (RETOUR = /stripe/return)
+    // 5) URLs Stripe (RETOUR = /stripe/return)
     const langParam = lang ? `&lang=${encodeURIComponent(lang)}` : "";
     const successUrl = `${siteUrl}/stripe/return?session_id={CHECKOUT_SESSION_ID}${langParam}`;
-    const cancelUrl = `${siteUrl}/payment/cancel${lang ? `?lang=${encodeURIComponent(lang)}` : ""}`;
+    const cancelUrl = `${siteUrl}/payment/cancel${
+      lang ? `?lang=${encodeURIComponent(lang)}` : ""
+    }`;
 
     // 6) Créer session Stripe Checkout
     const session = await stripe.checkout.sessions.create({
@@ -147,12 +137,12 @@ export async function POST(req: Request) {
       success_url: successUrl,
       cancel_url: cancelUrl,
 
-      // utile pour retrouver le user dans Stripe
-      client_reference_id: user.id,
+      // utile dans Stripe
+      client_reference_id: userId,
 
       // IMPORTANT: pour ton webhook
       metadata: {
-        user_id: user.id,
+        user_id: userId,
         plan_code: plan,
       },
     });
