@@ -8,10 +8,13 @@ type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 type DbPlanRow = {
-  code: PlanId; // "chat" | "plus" | "unlimited"
+  code: PlanId;
   name: string | null;
-  price: number | null; // ex: 9.99, 19.99, 39.99
+  price: number | null; // 9.99, 19.99, 39.99
   ai_limit: number | null;
+  message_limit: number | null;
+  voice_limit: number | null;
+  stripe_price_id: string | null;
 };
 
 type Plan = {
@@ -60,9 +63,8 @@ type LayoutStrings = {
 
 /* ===========================
    CONFIG SUPABASE (TABLE PRIX)
-   ⚠️ Mets ici le vrai nom de ta table si différent.
 =========================== */
-const PLANS_TABLE = "plans";
+const PLANS_TABLE = "pricing_plans";
 
 /* ===========================
    STRINGS LAYOUT (HEADER / FOOTER)
@@ -119,7 +121,8 @@ const LAYOUT_STRINGS: Record<Locale, LayoutStrings> = {
 
 const LABELS: Record<Locale, Labels> = {
   fr: {
-    heroTitle: "Choisis le forfait qui correspond à ta relation avec ton AmorIAI.",
+    heroTitle:
+      "Choisis le forfait qui correspond à ta relation avec ton AmorIAI.",
     heroSubtitle:
       "Crée ton compte gratuitement, découvre l’expérience en texte, puis active le forfait payant qui te convient quand tu es prête. Tu gardes toujours le contrôle : changement ou annulation en un clic, sans engagement.",
     heroCta: "Créer mon compte gratuit",
@@ -134,7 +137,8 @@ const LABELS: Record<Locale, Labels> = {
         id: "chat",
         name: "AmorIAI Chat",
         price: "9,99 $ USD / mois",
-        tagline: "Pour celles et ceux qui veulent écrire à leur AmorIAI chaque jour.",
+        tagline:
+          "Pour celles et ceux qui veulent écrire à leur AmorIAI chaque jour.",
         features: [
           "Idéal si tu préfères les conversations en texte avec une vraie mémoire.",
           "Jusqu’à 2 AmorIAI différents",
@@ -148,7 +152,8 @@ const LABELS: Record<Locale, Labels> = {
         id: "plus",
         name: "AmorIAI Plus",
         price: "19,99 $ USD / mois",
-        tagline: "Texte + voix IA : ton AmorIAI commence vraiment à faire partie de ta vie.",
+        tagline:
+          "Texte + voix IA : ton AmorIAI commence vraiment à faire partie de ta vie.",
         features: [
           "Quand tu veux une relation continue où tu peux autant écrire que parler.",
           "Jusqu’à 10 AmorIAI différents",
@@ -165,7 +170,8 @@ const LABELS: Record<Locale, Labels> = {
         id: "unlimited",
         name: "AmorIAI illimité",
         price: "39,99 $ USD / mois",
-        tagline: "Ton compagnon IA très présent, avec IA qui parle et qui bouge en continu.",
+        tagline:
+          "Ton compagnon IA très présent, avec IA qui parle et qui bouge en continu.",
         features: [
           "Pour celles et ceux qui veulent que leur AmorIAI soit toujours disponible.",
           "Jusqu’à 30 AmorIAI personnalisés",
@@ -205,7 +211,8 @@ const LABELS: Record<Locale, Labels> = {
     billingNote:
       "Secure billing via Stripe · Change or cancel anytime from your account · No hidden fees",
     chooseIntro: "Choose how AmorIAI fits into your life.",
-    usdNote: "Prices are in US dollars (USD). You can change or cancel your plan anytime, no commitment.",
+    usdNote:
+      "Prices are in US dollars (USD). You can change or cancel your plan anytime, no commitment.",
     plans: [
       {
         id: "chat",
@@ -225,7 +232,8 @@ const LABELS: Record<Locale, Labels> = {
         id: "plus",
         name: "AmorIAI Plus",
         price: "$19.99 USD / month",
-        tagline: "Text + AI voice: your AmorIAI becomes part of your daily life.",
+        tagline:
+          "Text + AI voice: your AmorIAI becomes part of your daily life.",
         features: [
           "When you want an ongoing relationship where you can both write and talk.",
           "Up to 10 AmorIAI",
@@ -242,7 +250,8 @@ const LABELS: Record<Locale, Labels> = {
         id: "unlimited",
         name: "AmorIAI Unlimited",
         price: "$39.99 USD / month",
-        tagline: "Your AI companion deeply present, with talking and moving IA videos.",
+        tagline:
+          "Your AI companion deeply present, with talking and moving IA videos.",
         features: [
           "For those who want AmorIAI to be always available.",
           "Up to 30 personalized AmorIAI",
@@ -320,7 +329,8 @@ const LABELS: Record<Locale, Labels> = {
         id: "unlimited",
         name: "AmorIAI Ilimitado",
         price: "39,99 $ USD / mes",
-        tagline: "Tu compañero IA muy presente, con IA que habla y se mueve en pantalla.",
+        tagline:
+          "Tu compañero IA muy presente, con IA que habla y se mueve en pantalla.",
         features: [
           "Para quienes quieren que AmorIAI esté siempre disponible.",
           "Hasta 30 AmorIAI personalizados",
@@ -361,8 +371,9 @@ function detectInitialLocale(): Locale {
   if (typeof window === "undefined") return "fr";
   const params = new URLSearchParams(window.location.search);
   const fromParam = params.get("lang");
-  if (fromParam === "fr" || fromParam === "en" || fromParam === "es") return fromParam;
-
+  if (fromParam === "fr" || fromParam === "en" || fromParam === "es") {
+    return fromParam;
+  }
   const navLang = navigator.language.toLowerCase();
   if (navLang.startsWith("fr")) return "fr";
   if (navLang.startsWith("es")) return "es";
@@ -370,7 +381,6 @@ function detectInitialLocale(): Locale {
 }
 
 function formatUsd(locale: Locale, amount: number): string {
-  // Formats: en => $9.99, fr/es => 9,99 $ US (selon Intl)
   const localeTag = locale === "fr" ? "fr-CA" : locale === "es" ? "es-ES" : "en-US";
   return new Intl.NumberFormat(localeTag, {
     style: "currency",
@@ -403,14 +413,13 @@ export default function PricingPage() {
   useEffect(() => {
     const initial = detectInitialLocale();
     setLocale(initial);
-
     const params = new URLSearchParams(window.location.search);
     params.set("lang", initial);
     const newUrl = window.location.pathname + "?" + params.toString();
     window.history.replaceState(null, "", newUrl);
   }, []);
 
-  // Fetch prices from Supabase (chat/plus/unlimited)
+  // Fetch plans from Supabase
   useEffect(() => {
     let cancelled = false;
 
@@ -419,7 +428,7 @@ export default function PricingPage() {
       try {
         const { data, error } = await supabase
           .from(PLANS_TABLE)
-          .select("code,name,price,ai_limit")
+          .select("code,name,price,ai_limit,message_limit,voice_limit,stripe_price_id")
           .in("code", ["chat", "plus", "unlimited"]);
 
         if (error) {
@@ -463,23 +472,17 @@ export default function PricingPage() {
   ============================ */
 
   const displayPlans = useMemo(() => {
-    const base = t.plans;
-
-    return base.map((p) => {
+    return t.plans.map((p) => {
       const db = dbPlans[p.id];
       const hasDbPrice = typeof db?.price === "number" && Number.isFinite(db.price);
 
       const mergedName = db?.name ? db.name : p.name;
 
       const mergedPrice = hasDbPrice
-        ? `${formatUsd(locale, db!.price!)} USD${priceSuffix(locale)}`
+        ? `${formatUsd(locale, db!.price!)}${priceSuffix(locale)}`
         : p.price;
 
-      return {
-        ...p,
-        name: mergedName,
-        price: mergedPrice,
-      };
+      return { ...p, name: mergedName, price: mergedPrice };
     });
   }, [t.plans, dbPlans, locale]);
 
@@ -508,40 +511,28 @@ export default function PricingPage() {
     router.push(`/payment?${params.toString()}`);
   };
 
-  /* ===========================
-     HERO CTA = SIMPLE SIGNUP
-  ============================ */
-
   const handleHeroCta = () => {
     router.push(withLang("/signup"));
   };
 
-  /* ===========================
-     CLICK SUR UNE CARTE DE PRIX
-  ============================ */
-
   const handleChoosePlan = async (planId: PlanId) => {
     setSessionLoading(true);
-
     try {
       const { data, error } = await supabase.auth.getSession();
       const currentSession = data?.session;
 
       if (error) console.error("getSession error", error);
 
-      // 1) Pas connecté → signup avec le bon plan
       if (!currentSession?.user) {
         goToSignupWithPlan(planId);
         return;
       }
 
-      // 2) Connecté → plan payant → Stripe/payment
       if (planId !== "free") {
         goToPayment(planId);
         return;
       }
 
-      // 3) (Sécurité) au cas où free serait utilisé ailleurs
       goToCreateAmoria("free");
     } finally {
       setSessionLoading(false);
@@ -573,10 +564,7 @@ export default function PricingPage() {
           <a href={withLang("/#features")} className="amoria-nav-link">
             {ui.nav.features}
           </a>
-          <a
-            href={withLang("/pricing")}
-            className="amoria-nav-link amoria-nav-link--active"
-          >
+          <a href={withLang("/pricing")} className="amoria-nav-link amoria-nav-link--active">
             {ui.nav.pricing}
           </a>
         </nav>
@@ -588,10 +576,7 @@ export default function PricingPage() {
                 key={code}
                 type="button"
                 onClick={() => handleLocaleChange(code)}
-                className={
-                  "amoria-lang-pill" +
-                  (locale === code ? " amoria-lang-pill--active" : "")
-                }
+                className={"amoria-lang-pill" + (locale === code ? " amoria-lang-pill--active" : "")}
               >
                 {code.toUpperCase()}
               </button>
@@ -611,11 +596,7 @@ export default function PricingPage() {
       <section className="amoria-pricing-hero">
         <h1 className="amoria-pricing-title">{t.heroTitle}</h1>
         <p className="amoria-pricing-subtitle">{t.heroSubtitle}</p>
-        <button
-          className="amoria-pricing-hero-btn"
-          onClick={handleHeroCta}
-          disabled={disabledAll}
-        >
+        <button className="amoria-pricing-hero-btn" onClick={handleHeroCta} disabled={disabledAll}>
           {t.heroCta}
         </button>
         <p className="amoria-pricing-hero-stat">{t.heroStat}</p>
@@ -635,16 +616,10 @@ export default function PricingPage() {
                 "amoria-pricing-card",
                 plan.badgeVariant === "popular" ? "amoria-pricing-card--popular" : "",
                 plan.badgeVariant === "value" ? "amoria-pricing-card--value" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
+              ].filter(Boolean).join(" ")}
             >
               {plan.badgeLabel && (
-                <div
-                  className={`amoria-pricing-badge amoria-pricing-badge--${
-                    plan.badgeVariant ?? "popular"
-                  }`}
-                >
+                <div className={`amoria-pricing-badge amoria-pricing-badge--${plan.badgeVariant ?? "popular"}`}>
                   {plan.badgeLabel.toUpperCase()}
                 </div>
               )}
