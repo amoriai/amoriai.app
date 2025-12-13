@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+
+export const runtime = "nodejs";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16",
@@ -15,7 +16,7 @@ const supabaseAdmin = createClient(
 type PlanCode = "free" | "chat" | "plus" | "unlimited";
 
 export async function POST(req: Request) {
-  const sig = headers().get("stripe-signature");
+  const sig = req.headers.get("stripe-signature");
   if (!sig) return new NextResponse("Missing Stripe signature", { status: 400 });
 
   const rawBody = await req.text();
@@ -28,8 +29,8 @@ export async function POST(req: Request) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (err: any) {
-    console.error("❌ Webhook signature error:", err.message);
-    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
+    console.error("❌ Webhook signature error:", err?.message);
+    return new NextResponse(`Webhook Error: ${err?.message}`, { status: 400 });
   }
 
   try {
@@ -40,11 +41,10 @@ export async function POST(req: Request) {
       const planCode = session.metadata?.plan_code as PlanCode | undefined;
 
       if (!userId || !planCode) {
-        console.warn("Webhook: user_id ou plan_code manquant", session.metadata);
+        console.warn("Webhook: metadata manquante", session.metadata);
         return new NextResponse("Missing metadata", { status: 200 });
       }
 
-      // Cherche le plan par code (stable)
       const { data: plan, error: planError } = await supabaseAdmin
         .from("pricing_plans")
         .select("id")
@@ -52,17 +52,15 @@ export async function POST(req: Request) {
         .maybeSingle();
 
       if (planError || !plan) {
-        console.error("Webhook: plan introuvable pour code =", planCode, planError);
+        console.error("Webhook: plan introuvable", planCode, planError);
         return new NextResponse("Plan not found", { status: 200 });
       }
 
-      // Met les anciens abonnements à current=false
       await supabaseAdmin
         .from("user_subscriptions")
         .update({ current: false })
         .eq("user_id", userId);
 
-      // Upsert abonnement courant (nécessite user_id UNIQUE)
       const { error: upsertError } = await supabaseAdmin
         .from("user_subscriptions")
         .upsert(
@@ -76,9 +74,7 @@ export async function POST(req: Request) {
           { onConflict: "user_id" }
         );
 
-      if (upsertError) {
-        console.error("Webhook: upsert error", upsertError);
-      }
+      if (upsertError) console.error("Webhook: upsert error", upsertError);
     }
 
     return new NextResponse("ok", { status: 200 });
