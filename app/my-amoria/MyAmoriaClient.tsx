@@ -17,7 +17,6 @@ type UiStrings = {
   backHome: string;
   planHint: string;
 
-  // + diagnostics
   retry: string;
   diagTitle: string;
   diagNoAccess: string;
@@ -90,12 +89,27 @@ const STRINGS: Record<Locale, UiStrings> = {
 
 type LoadState =
   | { status: "loading" }
-  | { status: "ready"; plan: PlanId; hasAi: boolean }
-  | { status: "error"; message: string; kind: "no_access" | "no_ai" | "unknown" };
+  | { status: "ready"; plan: PlanId }
+  | {
+      status: "error";
+      message: string;
+      kind: "no_access" | "no_ai" | "unknown";
+    };
 
 function asPlanId(v: any): PlanId {
   if (v === "chat" || v === "plus" || v === "unlimited") return v;
   return "free";
+}
+
+function looksLikeRlsError(message: string) {
+  const msg = (message || "").toLowerCase();
+  return (
+    msg.includes("permission") ||
+    msg.includes("not allowed") ||
+    msg.includes("rls") ||
+    msg.includes("policy") ||
+    msg.includes("violates row-level security")
+  );
 }
 
 export default function MyAmoriaClient() {
@@ -112,7 +126,9 @@ export default function MyAmoriaClient() {
 
   // ✅ Tunnel sécurisé: empêcher "retour"
   useEffect(() => {
-    const preventBack = () => window.history.pushState(null, "", window.location.href);
+    const preventBack = () =>
+      window.history.pushState(null, "", window.location.href);
+
     window.history.pushState(null, "", window.location.href);
     window.addEventListener("popstate", preventBack);
     return () => window.removeEventListener("popstate", preventBack);
@@ -133,39 +149,32 @@ export default function MyAmoriaClient() {
 
     const userId = user.id;
 
-    // 2) IA (⚠️ gérer erreurs + filtre non archivée)
-    const { data: ai, error: aiErr } = await supabase
+    // 2) IA (✅ ROBUSTE: pas de maybeSingle)
+    const { data: aiList, error: aiErr } = await supabase
       .from("user_amoria")
       .select("id")
       .eq("user_id", userId)
       .eq("is_archived", false)
       .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
 
     if (aiErr) {
       console.error("user_amoria SELECT error:", aiErr);
-      const msg = (aiErr.message || "").toLowerCase();
-      const looksRls =
-        msg.includes("permission") ||
-        msg.includes("not allowed") ||
-        msg.includes("rls") ||
-        msg.includes("policy");
-
+      const rls = looksLikeRlsError(aiErr.message || "");
       setState({
         status: "error",
-        kind: looksRls ? "no_access" : "unknown",
-        message: looksRls ? t.diagNoAccess : t.diagUnknown,
+        kind: rls ? "no_access" : "unknown",
+        message: rls ? t.diagNoAccess : t.diagUnknown,
       });
       return;
     }
 
-    if (ai?.id) {
-      router.replace(`/chat?iaId=${ai.id}&lang=${lang}`);
+    if (aiList && aiList.length > 0 && aiList[0]?.id) {
+      router.replace(`/chat?iaId=${aiList[0].id}&lang=${lang}`);
       return;
     }
 
-    // 3) Plan (⚠️ gérer erreurs)
+    // 3) Plan (ok de garder maybeSingle ici parce que 1 ligne max par user)
     const { data: sub, error: subErr } = await supabase
       .from("user_subscriptions")
       .select("plan")
@@ -174,26 +183,19 @@ export default function MyAmoriaClient() {
 
     if (subErr) {
       console.error("user_subscriptions SELECT error:", subErr);
-      const msg = (subErr.message || "").toLowerCase();
-      const looksRls =
-        msg.includes("permission") ||
-        msg.includes("not allowed") ||
-        msg.includes("rls") ||
-        msg.includes("policy");
-
-      // On peut quand même continuer en free, mais on l’indique en diagnostic
+      const rls = looksLikeRlsError(subErr.message || "");
       setState({
         status: "error",
-        kind: looksRls ? "no_access" : "unknown",
-        message: looksRls ? t.diagNoAccess : t.diagUnknown,
+        kind: rls ? "no_access" : "unknown",
+        message: rls ? t.diagNoAccess : t.diagUnknown,
       });
       return;
     }
 
     const plan = asPlanId(sub?.plan);
 
-    // Ici: aucune IA trouvée
-    setState({ status: "ready", plan, hasAi: false });
+    // Ici: aucune IA trouvée → écran "créer"
+    setState({ status: "ready", plan });
   };
 
   useEffect(() => {
@@ -240,7 +242,7 @@ export default function MyAmoriaClient() {
     );
   }
 
-  // state.status === "ready" (donc pas d’IA trouvée)
+  // state.status === "ready"
   const plan = state.plan;
 
   return (
@@ -259,7 +261,9 @@ export default function MyAmoriaClient() {
 
         <div className="space-y-3">
           <button
-            onClick={() => router.push(`/create-amoria?plan=${plan}&lang=${lang}`)}
+            onClick={() =>
+              router.push(`/create-amoria?plan=${plan}&lang=${lang}`)
+            }
             className="w-full py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 font-semibold"
           >
             {t.createNow}
