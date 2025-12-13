@@ -70,14 +70,14 @@ export async function POST(req: Request) {
 
     const siteUrl = cleanSiteUrl(siteUrlRaw);
 
-    // 1) Parse body (PLUS de user_id ici)
+    // 1) Parse body
     const body = (await req.json().catch(() => ({}))) as {
       plan?: unknown;
       lang?: unknown;
     };
 
     const plan = body.plan;
-    const lang = typeof body.lang === "string" ? body.lang : undefined;
+    const lang = typeof body.lang === "string" ? body.lang : "";
 
     // 2) Validation plan
     if (!isPlan(plan)) {
@@ -134,16 +134,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // 5) URLs (optionnel: garder lang)
-    const successUrl =
-      lang && lang.length > 0
-        ? `${siteUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}&lang=${encodeURIComponent(lang)}`
-        : `${siteUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
-
-    const cancelUrl =
-      lang && lang.length > 0
-        ? `${siteUrl}/payment/cancel?lang=${encodeURIComponent(lang)}`
-        : `${siteUrl}/payment/cancel`;
+    // 5) ✅ URLs Stripe (RETOUR = /stripe/return)
+    const langParam = lang ? `&lang=${encodeURIComponent(lang)}` : "";
+    const successUrl = `${siteUrl}/stripe/return?session_id={CHECKOUT_SESSION_ID}${langParam}`;
+    const cancelUrl = `${siteUrl}/payment/cancel${lang ? `?lang=${encodeURIComponent(lang)}` : ""}`;
 
     // 6) Créer session Stripe Checkout
     const session = await stripe.checkout.sessions.create({
@@ -153,10 +147,10 @@ export async function POST(req: Request) {
       success_url: successUrl,
       cancel_url: cancelUrl,
 
-      // ✅ utile (facultatif) pour retrouver le user dans Stripe sans webhook
+      // utile pour retrouver le user dans Stripe
       client_reference_id: user.id,
 
-      // ✅ IMPORTANT: ce que ton webhook attend
+      // IMPORTANT: pour ton webhook
       metadata: {
         user_id: user.id,
         plan_code: plan,
