@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
+type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 type UiStrings = {
   title: string;
@@ -15,6 +16,13 @@ type UiStrings = {
   createNow: string;
   backHome: string;
   planHint: string;
+
+  // + diagnostics
+  retry: string;
+  diagTitle: string;
+  diagNoAccess: string;
+  diagNoAi: string;
+  diagUnknown: string;
 };
 
 function normalizeLocale(raw: string | null): Locale {
@@ -29,10 +37,18 @@ const STRINGS: Record<Locale, UiStrings> = {
     activePlanLabel: "Plan actif",
     noAiTitle: "Aucune IA détectée",
     noAiBody:
-      "Tu es bien connectée et ton abonnement est actif, mais tu n’as pas encore créé ton AmorIAI personnelle.",
+      "Tu es bien connectée, mais aucune AmorIAI n’a été trouvée pour ce compte.",
     createNow: "Créer mon AmorIAI maintenant",
     backHome: "Retour à la page d’accueil",
     planHint: "Ton plan est automatiquement respecté (Free, Plus, Unlimited).",
+    retry: "Réessayer",
+    diagTitle: "Diagnostic",
+    diagNoAccess:
+      "Accès refusé à la base (RLS / policies). Vérifie les policies Supabase pour user_amoria et user_subscriptions.",
+    diagNoAi:
+      "Aucune ligne trouvée dans user_amoria pour ce user_id (ou IA archivée).",
+    diagUnknown:
+      "Une erreur est survenue. Regarde la console (F12) pour voir le détail.",
   },
   en: {
     title: "Your AmorIAI space",
@@ -40,10 +56,16 @@ const STRINGS: Record<Locale, UiStrings> = {
     activePlanLabel: "Active plan",
     noAiTitle: "No AI detected",
     noAiBody:
-      "You are logged in and your subscription is active, but you haven’t created your personal AmorIAI yet.",
+      "You are logged in, but we couldn’t find an AmorIAI for this account.",
     createNow: "Create my AmorIAI now",
     backHome: "Back to homepage",
     planHint: "Your plan is automatically enforced (Free, Plus, Unlimited).",
+    retry: "Retry",
+    diagTitle: "Diagnostics",
+    diagNoAccess:
+      "Access denied (RLS / policies). Check Supabase policies for user_amoria and user_subscriptions.",
+    diagNoAi: "No row found in user_amoria for this user_id (or AI archived).",
+    diagUnknown: "Something went wrong. Check the browser console (F12).",
   },
   es: {
     title: "Tu espacio AmorIAI",
@@ -51,85 +73,175 @@ const STRINGS: Record<Locale, UiStrings> = {
     activePlanLabel: "Plan activo",
     noAiTitle: "Ninguna IA detectada",
     noAiBody:
-      "Estás conectada y tu suscripción está activa, pero aún no has creado tu AmorIAI personal.",
+      "Estás conectada, pero no encontramos un AmorIAI para esta cuenta.",
     createNow: "Crear mi AmorIAI ahora",
     backHome: "Volver a la página de inicio",
     planHint: "Tu plan se respeta automáticamente (Free, Plus, Unlimited).",
+    retry: "Reintentar",
+    diagTitle: "Diagnóstico",
+    diagNoAccess:
+      "Acceso denegado (RLS / policies). Revisa las policies de Supabase para user_amoria y user_subscriptions.",
+    diagNoAi:
+      "No hay filas en user_amoria para este user_id (o IA archivada).",
+    diagUnknown:
+      "Ocurrió un error. Revisa la consola del navegador (F12).",
   },
 };
+
+type LoadState =
+  | { status: "loading" }
+  | { status: "ready"; plan: PlanId; hasAi: boolean }
+  | { status: "error"; message: string; kind: "no_access" | "no_ai" | "unknown" };
+
+function asPlanId(v: any): PlanId {
+  if (v === "chat" || v === "plus" || v === "unlimited") return v;
+  return "free";
+}
 
 export default function MyAmoriaClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const lang = normalizeLocale(searchParams.get("lang"));
+
+  const lang = useMemo(
+    () => normalizeLocale(searchParams.get("lang")),
+    [searchParams]
+  );
   const t = STRINGS[lang];
 
-  const [loading, setLoading] = useState(true);
-  const [plan, setPlan] = useState<string>("free");
+  const [state, setState] = useState<LoadState>({ status: "loading" });
 
-  // ✅ BLOCAGE TOTAL DU BOUTON RETOUR (TUNNEL SÉCURISÉ)
+  // ✅ Tunnel sécurisé: empêcher "retour"
   useEffect(() => {
-    const preventBack = () => {
-      window.history.pushState(null, "", window.location.href);
-    };
-
+    const preventBack = () => window.history.pushState(null, "", window.location.href);
     window.history.pushState(null, "", window.location.href);
     window.addEventListener("popstate", preventBack);
-
-    return () => {
-      window.removeEventListener("popstate", preventBack);
-    };
+    return () => window.removeEventListener("popstate", preventBack);
   }, []);
 
+  const load = async () => {
+    setState({ status: "loading" });
+
+    // 1) Auth
+    const { data: authData, error: authErr } = await supabase.auth.getUser();
+    if (authErr) console.error("auth.getUser error:", authErr);
+
+    const user = authData?.user;
+    if (!user) {
+      router.replace(`/login?lang=${lang}`);
+      return;
+    }
+
+    const userId = user.id;
+
+    // 2) IA (⚠️ gérer erreurs + filtre non archivée)
+    const { data: ai, error: aiErr } = await supabase
+      .from("user_amoria")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("is_archived", false)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (aiErr) {
+      console.error("user_amoria SELECT error:", aiErr);
+      const msg = (aiErr.message || "").toLowerCase();
+      const looksRls =
+        msg.includes("permission") ||
+        msg.includes("not allowed") ||
+        msg.includes("rls") ||
+        msg.includes("policy");
+
+      setState({
+        status: "error",
+        kind: looksRls ? "no_access" : "unknown",
+        message: looksRls ? t.diagNoAccess : t.diagUnknown,
+      });
+      return;
+    }
+
+    if (ai?.id) {
+      router.replace(`/chat?iaId=${ai.id}&lang=${lang}`);
+      return;
+    }
+
+    // 3) Plan (⚠️ gérer erreurs)
+    const { data: sub, error: subErr } = await supabase
+      .from("user_subscriptions")
+      .select("plan")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (subErr) {
+      console.error("user_subscriptions SELECT error:", subErr);
+      const msg = (subErr.message || "").toLowerCase();
+      const looksRls =
+        msg.includes("permission") ||
+        msg.includes("not allowed") ||
+        msg.includes("rls") ||
+        msg.includes("policy");
+
+      // On peut quand même continuer en free, mais on l’indique en diagnostic
+      setState({
+        status: "error",
+        kind: looksRls ? "no_access" : "unknown",
+        message: looksRls ? t.diagNoAccess : t.diagUnknown,
+      });
+      return;
+    }
+
+    const plan = asPlanId(sub?.plan);
+
+    // Ici: aucune IA trouvée
+    setState({ status: "ready", plan, hasAi: false });
+  };
+
   useEffect(() => {
-    const checkAll = async () => {
-      setLoading(true);
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
-      // ✅ 1. Vérifier l'utilisateur connecté
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData?.user;
-
-      if (!user) {
-        router.replace(`/login?lang=${lang}`);
-        return;
-      }
-
-      const userId = user.id;
-
-      // ✅ 2. Vérifier si une IA existe déjà
-      const { data: ai } = await supabase
-        .from("user_amoria")
-        .select("id")
-        .eq("user_id", userId)
-        .limit(1)
-        .maybeSingle();
-
-      if (ai?.id) {
-        router.replace(`/chat?iaId=${ai.id}&lang=${lang}`);
-        return;
-      }
-
-      // ✅ 3. Lire le plan
-      const { data: sub } = await supabase
-        .from("user_subscriptions")
-        .select("plan")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      setPlan(sub?.plan ?? "free");
-      setLoading(false);
-    };
-
-    void checkAll();
-  }, [router, lang]);
-
-  if (loading) {
+  if (state.status === "loading") {
     return (
       <main className="min-h-screen flex items-center justify-center bg-black text-white">
         <p>{t.loading}</p>
       </main>
     );
   }
+
+  if (state.status === "error") {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-black text-white p-6">
+        <section className="max-w-xl w-full bg-gray-900 p-8 rounded-2xl shadow-2xl text-center space-y-6">
+          <h1 className="text-2xl font-bold">{t.title}</h1>
+
+          <div className="bg-gray-800 p-4 rounded-xl text-left">
+            <h2 className="font-semibold mb-2">{t.diagTitle}</h2>
+            <p className="text-gray-300 text-sm">{state.message}</p>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => void load()}
+              className="w-full py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 font-semibold"
+            >
+              {t.retry}
+            </button>
+
+            <button
+              onClick={() => router.push("/")}
+              className="w-full py-2 rounded-full border border-gray-500 text-sm"
+            >
+              {t.backHome}
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  // state.status === "ready" (donc pas d’IA trouvée)
+  const plan = state.plan;
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-black text-white p-6">
@@ -147,9 +259,7 @@ export default function MyAmoriaClient() {
 
         <div className="space-y-3">
           <button
-            onClick={() =>
-              router.push(`/create-amoria?plan=${plan}&lang=${lang}`)
-            }
+            onClick={() => router.push(`/create-amoria?plan=${plan}&lang=${lang}`)}
             className="w-full py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 font-semibold"
           >
             {t.createNow}
