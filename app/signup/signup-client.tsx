@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, FormEvent, useEffect } from "react";
+import React, { useEffect, useMemo, useState, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 declare global {
   interface Window {
-    grecaptcha: any;
+    grecaptcha?: any;
   }
 }
 
@@ -14,18 +14,7 @@ type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 const CREATE_AMORIA_PATH = "/create-amoria";
-
-/* ===========================
-   ⚠️ CLÉ RECAPTCHA (PUBLIC)
-=========================== */
-
-// ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇
-// ICI : CLÉ PUBLIQUE UNIQUEMENT
-// VERCEL => NEXT_PUBLIC_RECAPTCHA_SITE_KEY = (CLÉ DU SITE RECAPTCHA)
-// C’EST LA CLÉ ***PUBLIQUE*** (PAS LA SECRÈTE)
-// ⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆
-
-const RECAPTCHA_SITE_KEY = "6LcTvCcsAAAAAMaNReYdUv0Q3S7MB-CBzQN-APnS";
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
 
 /* ===========================
    TEXTES PAR LANGUE
@@ -48,7 +37,7 @@ type Strings = {
   loginLink: string;
   errorGeneric: string;
   errorGoogle: string;
-  errorRecaptcha: string; // ⬅ NOUVEAU
+  errorRecaptcha: string;
   confirmTitle: string;
   confirmBody: string;
 };
@@ -96,8 +85,7 @@ const STRINGS: Record<Locale, Strings> = {
     loginLink: "Log in",
     errorGeneric: "Something went wrong. Please try again.",
     errorGoogle: "Something went wrong with Google sign-in.",
-    errorRecaptcha:
-      "Security check (reCAPTCHA) failed. Please try again.",
+    errorRecaptcha: "Security check (reCAPTCHA) failed. Please try again.",
     confirmTitle: "✅ Your account has been created.",
     confirmBody:
       "📩 Check your email to confirm your registration.\nOnce confirmed, you’ll be able to create your AmorIAI.",
@@ -113,15 +101,13 @@ const STRINGS: Record<Locale, Strings> = {
     emailPlaceholder: "ej. mi.direccion@email.com",
     passwordLabel: "Contraseña",
     passwordPlaceholder: "Elige una contraseña segura",
-    passwordHint:
-      "Mínimo 6 caracteres. Nunca compartas tu contraseña.",
+    passwordHint: "Mínimo 6 caracteres. Nunca compartas tu contraseña.",
     submit: "Crear mi acceso gratuito",
     submitting: "Creando tu acceso…",
     haveAccount: "¿Ya tienes cuenta?",
     loginLink: "Iniciar sesión",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
-    errorGoogle:
-      "Ocurrió un error con el inicio de sesión de Google.",
+    errorGoogle: "Ocurrió un error con el inicio de sesión de Google.",
     errorRecaptcha:
       "La verificación de seguridad (reCAPTCHA) ha fallado. Inténtalo de nuevo.",
     confirmTitle: "✅ Tu cuenta ha sido creada.",
@@ -135,8 +121,14 @@ const STRINGS: Record<Locale, Strings> = {
 =========================== */
 
 function normalizeLocale(raw: string | null): Locale {
-  if (raw === "fr" || raw === "en" || raw === "es") return raw;
-  return "fr";
+  return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
+}
+
+function buildRedirectParams(locale: Locale) {
+  const params = new URLSearchParams();
+  params.set("lang", locale);
+  params.set("plan", "free");
+  return params;
 }
 
 /* ===========================
@@ -147,65 +139,76 @@ export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const locale = normalizeLocale(searchParams.get("lang"));
+  const locale = useMemo(
+    () => normalizeLocale(searchParams.get("lang")),
+    [searchParams]
+  );
   const t = STRINGS[locale];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [waitingConfirmation, setWaitingConfirmation] = useState(false);
 
-  // reCAPTCHA token (v3)
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
-
-  // Charger le script reCAPTCHA v3 côté client
+  /* ===========================
+     Load reCAPTCHA v3 script
+  =========================== */
   useEffect(() => {
-    if (typeof window === "undefined") return;
     if (!RECAPTCHA_SITE_KEY) {
-      console.error(
-        "⚠️ NEXT_PUBLIC_RECAPTCHA_SITE_KEY (CLÉ PUBLIQUE) est manquante."
-      );
+      console.error("NEXT_PUBLIC_RECAPTCHA_SITE_KEY manquante");
       return;
     }
-
-    // éviter de doubler le script
-    const alreadyLoaded = document.querySelector(
-      'script[src^="https://www.google.com/recaptcha/api.js"]'
-    );
-    if (alreadyLoaded) return;
+    if (document.getElementById("recaptcha-script")) return;
 
     const script = document.createElement("script");
+    script.id = "recaptcha-script";
     script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
     script.async = true;
     script.defer = true;
     document.body.appendChild(script);
   }, []);
 
-  const redirectAfterSignup = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    params.set("plan", "free");
-    router.replace(`${CREATE_AMORIA_PATH}?${params.toString()}`);
-  };
-
-  // Récupération d’un token reCAPTCHA v3
+  /* ===========================
+     Get token (fresh each time)
+  =========================== */
   const runRecaptcha = async (): Promise<string | null> => {
-    if (typeof window === "undefined") return null;
     if (!RECAPTCHA_SITE_KEY) return null;
     if (!window.grecaptcha) return null;
 
-    return new Promise((resolve, reject) => {
-      window.grecaptcha.ready(() => {
-        window.grecaptcha
-          .execute(RECAPTCHA_SITE_KEY, { action: "signup" })
-          .then((token: string) => resolve(token))
-          .catch((err: unknown) => reject(err));
-      });
+    return new Promise((resolve) => {
+      try {
+        window.grecaptcha.ready(() => {
+          window.grecaptcha
+            .execute(RECAPTCHA_SITE_KEY, { action: "signup" })
+            .then((token: string) => resolve(token))
+            .catch(() => resolve(null));
+        });
+      } catch {
+        resolve(null);
+      }
     });
   };
 
+  /* ===========================
+     Redirect helpers
+  =========================== */
+  const redirectAfterSignup = () => {
+    const params = buildRedirectParams(locale);
+    router.replace(`${CREATE_AMORIA_PATH}?${params.toString()}`);
+  };
+
+  const goToLogin = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    router.push(`/login?${params.toString()}`);
+  };
+
+  /* ===========================
+     Email Signup
+  =========================== */
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -215,70 +218,38 @@ export default function SignupClient() {
     setWaitingConfirmation(false);
 
     try {
-      // 1️⃣ reCAPTCHA AVANT SUPABASE
-      if (!RECAPTCHA_SITE_KEY) {
+      // 1) reCAPTCHA
+      const token = await runRecaptcha();
+      if (!token) {
         setErrorMsg(t.errorRecaptcha);
-        setLoading(false);
         return;
       }
 
-      let token = recaptchaToken;
-
-      if (!token) {
-        try {
-          token = await runRecaptcha();
-          setRecaptchaToken(token);
-        } catch (err) {
-          console.error("reCAPTCHA error", err);
-          setErrorMsg(t.errorRecaptcha);
-          setLoading(false);
-          return;
-        }
-      }
-
-      if (!token) {
-        setErrorMsg(t.errorRecaptcha);
-        setLoading(false);
-        return;
-      }
-
-      // 2️⃣ Vérification côté serveur (route /api/verify-recaptcha)
+      // 2) Verify token server-side
       const verifyRes = await fetch("/api/verify-recaptcha", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          token,
-          action: "signup",
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, action: "signup" }),
       });
 
-      const verifyJson = await verifyRes.json();
+      const verifyJson = await verifyRes.json().catch(() => ({}));
 
-      if (!verifyRes.ok || !verifyJson.success) {
-        console.error("verify-recaptcha error", verifyJson);
+      if (!verifyRes.ok || !verifyJson?.success) {
+        console.error("verify-recaptcha failed:", verifyJson);
         setErrorMsg(t.errorRecaptcha);
-        setLoading(false);
         return;
       }
 
-      // 3️⃣ Si OK → on continue avec Supabase
+      // 3) Supabase signup
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
-
-      const redirectParams = new URLSearchParams();
-      redirectParams.set("lang", locale);
-      redirectParams.set("plan", "free");
-
-      const emailRedirectTo = `${origin}/auth/callback?${redirectParams.toString()}`;
+      const params = buildRedirectParams(locale);
+      const emailRedirectTo = `${origin}/auth/callback?${params.toString()}`;
 
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo,
-        },
+        options: { emailRedirectTo },
       });
 
       if (error) {
@@ -287,45 +258,13 @@ export default function SignupClient() {
         return;
       }
 
-      const user = data?.user;
-      const session = data?.session;
-
-      if (user) {
-        const selectedPlan: PlanId = "free";
-
-        const { data: pricingPlan, error: pricingError } = await supabase
-          .from("pricing_plans")
-          .select("id")
-          .eq("code", selectedPlan)
-          .maybeSingle();
-
-        if (!pricingError && pricingPlan?.id) {
-          const { error: insertError } = await supabase
-            .from("user_subscriptions")
-            .insert({
-              user_id: user.id,
-              pricing_plan_id: pricingPlan.id,
-              current: true,
-            });
-
-          if (insertError) {
-            console.error(
-              "Erreur insert user_subscriptions (free):",
-              insertError
-            );
-          }
-        } else {
-          console.error("Impossible de trouver le plan:", selectedPlan);
-        }
-      } else {
-        console.warn("Aucun user retourné par signUp");
-      }
-
-      if (!session) {
+      // Si pas de session => email confirmation obligatoire
+      if (!data?.session) {
         setWaitingConfirmation(true);
         return;
       }
 
+      // Session directe => on continue
       redirectAfterSignup();
     } catch (err) {
       console.error("signup error", err);
@@ -335,8 +274,12 @@ export default function SignupClient() {
     }
   };
 
+  /* ===========================
+     Google OAuth
+  =========================== */
   const handleGoogle = async () => {
     if (loading) return;
+
     setLoading(true);
     setErrorMsg(null);
     setWaitingConfirmation(false);
@@ -345,36 +288,29 @@ export default function SignupClient() {
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
 
-      const params = new URLSearchParams();
-      params.set("lang", locale);
-      params.set("plan", "free");
-
+      const params = buildRedirectParams(locale);
       const redirectTo = `${origin}/auth/callback?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: {
-          redirectTo,
-        },
+        options: { redirectTo },
       });
 
       if (error) {
         console.error("google oauth error", error);
         setErrorMsg(t.errorGoogle);
-        setLoading(false);
       }
     } catch (err) {
       console.error("google oauth error", err);
       setErrorMsg(t.errorGoogle);
+    } finally {
       setLoading(false);
     }
   };
 
-  const goToLogin = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    router.push(`/login?${params.toString()}`);
-  };
+  /* ===========================
+     RENDER
+  =========================== */
 
   return (
     <main className="auth-root">
@@ -405,11 +341,7 @@ export default function SignupClient() {
           className="auth-google-btn"
         >
           <span className="auth-google-icon">
-            <img
-              src="/google-g.png"
-              alt="Google"
-              className="auth-google-img"
-            />
+            <img src="/google-g.png" alt="Google" className="auth-google-img" />
           </span>
           <span>{t.google}</span>
         </button>
@@ -458,11 +390,7 @@ export default function SignupClient() {
             <p className="auth-password-hint">{t.passwordHint}</p>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="auth-submit-btn"
-          >
+          <button type="submit" disabled={loading} className="auth-submit-btn">
             {loading ? t.submitting : t.submit}
           </button>
         </form>
@@ -485,12 +413,11 @@ export default function SignupClient() {
           justify-content: center;
           position: relative;
           overflow: hidden;
-          background:
-            radial-gradient(circle at top, #020617 0, #020617 40%, #000 80%),
+          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 80%),
             radial-gradient(circle at bottom, #020617, #000);
           color: #e5e7eb;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+            "Helvetica Neue", Arial, sans-serif;
         }
 
         .auth-gradient-orbit {
@@ -528,8 +455,7 @@ export default function SignupClient() {
           max-width: 440px;
           border-radius: 1.9rem;
           padding: 2.3rem 2.5rem 2.1rem;
-          background:
-            radial-gradient(
+          background: radial-gradient(
               circle at top left,
               rgba(248, 113, 113, 0.28),
               transparent 55%
@@ -540,8 +466,7 @@ export default function SignupClient() {
               transparent 55%
             ),
             rgba(2, 6, 23, 0.98);
-          box-shadow:
-            0 32px 90px rgba(15, 23, 42, 0.95),
+          box-shadow: 0 32px 90px rgba(15, 23, 42, 0.95),
             0 0 0 1px rgba(148, 163, 184, 0.35);
           border: 1px solid rgba(148, 163, 184, 0.55);
           backdrop-filter: blur(20px);
@@ -619,11 +544,8 @@ export default function SignupClient() {
           justify-content: center;
           gap: 0.55rem;
           cursor: pointer;
-          transition:
-            background 0.15s ease,
-            transform 0.1s ease,
-            box-shadow 0.15s ease,
-            border-color 0.15s ease;
+          transition: background 0.15s ease, transform 0.1s ease,
+            box-shadow 0.15s ease, border-color 0.15s ease;
         }
 
         .auth-google-btn:disabled {
@@ -715,9 +637,7 @@ export default function SignupClient() {
           font-size: 0.9rem;
           color: #e5e7eb;
           outline: none;
-          transition:
-            border-color 0.15s ease,
-            box-shadow 0.15s ease,
+          transition: border-color 0.15s ease, box-shadow 0.15s ease,
             background 0.15s ease;
         }
 
@@ -727,8 +647,7 @@ export default function SignupClient() {
 
         .auth-input:focus {
           border-color: #f97316;
-          box-shadow:
-            0 0 0 1px rgba(249, 115, 22, 0.65),
+          box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.65),
             0 14px 38px rgba(15, 23, 42, 0.9);
         }
 
@@ -787,9 +706,7 @@ export default function SignupClient() {
           cursor: pointer;
           background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
           box-shadow: 0 18px 48px rgba(248, 113, 113, 0.7);
-          transition:
-            transform 0.1s ease,
-            box-shadow 0.15s ease,
+          transition: transform 0.1s ease, box-shadow 0.15s ease,
             filter 0.1s ease;
         }
 
@@ -848,4 +765,4 @@ export default function SignupClient() {
       `}</style>
     </main>
   );
-}
+  }
