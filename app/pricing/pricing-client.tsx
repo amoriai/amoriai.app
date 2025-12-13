@@ -499,13 +499,14 @@ export default function PricingPage() {
       return;
     }
 
-    const userId = userData.user.id;
-
-    const res = await fetch("/api/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: planId, lang: locale, user_id: userId }),
-    });
+   const res = await fetch("/api/checkout", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    plan: planId,
+    lang: locale,
+  }),
+});
 
     const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
 
