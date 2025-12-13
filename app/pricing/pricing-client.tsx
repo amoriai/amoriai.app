@@ -544,7 +544,7 @@ export default function PricingPage() {
   };
 
   // ✅ Pendant checkout, on désactive tout pour éviter double paiement
-  const disableEverything = plansLoading || activePlanLoading !== null;
+  const disableEverything = activePlanLoading !== null;
 
   return (
     <main className="amoria-root">
