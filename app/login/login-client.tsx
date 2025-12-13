@@ -1,22 +1,35 @@
 "use client";
 
-import React, { FormEvent, useState } from "react";
+import React, { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
+declare global {
+  interface Window {
+    grecaptcha?: {
+      ready: (cb: () => void) => void;
+      execute: (siteKey: string, opts: { action: string }) => Promise<string>;
+    };
+  }
+}
+
 /* ===========================
    ⚠️ CLÉ RECAPTCHA (PUBLIC)
 =========================== */
 
-// ⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇⬇
-// ICI : CLÉ PUBLIQUE UNIQUEMENT
-// VERCEL => NEXT_PUBLIC_RECAPTCHA_SITE_KEY = (CLÉ DU SITE RECAPTCHA)
-// C’EST LA CLÉ ***PUBLIQUE*** (PAS LA SECRÈTE)
-// ⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆⬆
-
+/**
+ * ✅ CONSEILLÉ : utiliser process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
+ * MAIS je garde ton const pour rester 1:1 avec ton code.
+ *
+ * IMPORTANT: ceci doit être la clé "site key" (publique), pas la secret key.
+ * Source Google: https://developers.google.com/recaptcha/docs/v3
+ */
 const RECAPTCHA_SITE_KEY = "6LcTvCcsAAAAAMaNReYdUv0Q3S7MB-CBzQN-APnS";
+
+// Ajuste si tu veux plus strict (0.7), ou plus permissif (0.3)
+const MIN_RECAPTCHA_SCORE = 0.5;
 
 type Locale = "fr" | "en" | "es";
 
@@ -38,6 +51,7 @@ type Strings = {
   signupLink: string;
   errorGeneric: string;
   errorInvalid: string;
+  errorRecaptcha: string;
 };
 
 const STRINGS: Record<Locale, Strings> = {
@@ -60,6 +74,8 @@ const STRINGS: Record<Locale, Strings> = {
     errorGeneric: "Une erreur est survenue. Réessaie dans un instant.",
     errorInvalid:
       "Courriel ou mot de passe invalide. Vérifie tes infos ou crée un compte.",
+    errorRecaptcha:
+      "Connexion refusée (vérification de sécurité). Recharge la page et réessaie.",
   },
   en: {
     title: "Log in",
@@ -79,6 +95,8 @@ const STRINGS: Record<Locale, Strings> = {
     signupLink: "Create my account",
     errorGeneric: "Something went wrong. Please try again.",
     errorInvalid: "Invalid email or password.",
+    errorRecaptcha:
+      "Login blocked (security check). Refresh the page and try again.",
   },
   es: {
     title: "Iniciar sesión",
@@ -98,6 +116,8 @@ const STRINGS: Record<Locale, Strings> = {
     signupLink: "Crear mi cuenta",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     errorInvalid: "Correo o contraseña inválidos.",
+    errorRecaptcha:
+      "Inicio bloqueado (verificación de seguridad). Recarga la página e inténtalo de nuevo.",
   },
 };
 
@@ -119,6 +139,20 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // (optionnel) on peut vérifier si grecaptcha est prêt
+  const [recaptchaReady, setRecaptchaReady] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const timer = setInterval(() => {
+      if (window.grecaptcha?.execute) {
+        setRecaptchaReady(true);
+        clearInterval(timer);
+      }
+    }, 150);
+    return () => clearInterval(timer);
+  }, []);
+
   const redirectToMyAmoria = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -131,6 +165,44 @@ export default function LoginClient() {
     router.push(`/signup?${params.toString()}`);
   };
 
+  const getRecaptchaToken = async (action: "login" | "google_login") => {
+    if (!RECAPTCHA_SITE_KEY) return null;
+    if (typeof window === "undefined") return null;
+    if (!window.grecaptcha?.execute || !window.grecaptcha?.ready) return null;
+
+    return new Promise<string | null>((resolve) => {
+      window.grecaptcha!.ready(async () => {
+        try {
+          const token = await window.grecaptcha!.execute(RECAPTCHA_SITE_KEY, {
+            action,
+          });
+          resolve(token);
+        } catch {
+          resolve(null);
+        }
+      });
+    });
+  };
+
+  const verifyRecaptcha = async (token: string, action: string) => {
+    const res = await fetch("/api/verify-recaptcha", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, action }),
+    });
+
+    const json = await res.json();
+
+    // Ton route renvoie { success, score, action, errors }
+    const ok =
+      res.ok &&
+      json?.success === true &&
+      typeof json?.score === "number" &&
+      json.score >= MIN_RECAPTCHA_SCORE;
+
+    return { ok, json };
+  };
+
   const handleEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -139,6 +211,24 @@ export default function LoginClient() {
     setErrorMsg(null);
 
     try {
+      // 1) reCAPTCHA token
+      const token = await getRecaptchaToken("login");
+      if (!token) {
+        setErrorMsg(t.errorRecaptcha);
+        setLoading(false);
+        return;
+      }
+
+      // 2) verify serveur
+      const { ok, json } = await verifyRecaptcha(token, "login");
+      if (!ok) {
+        console.error("reCAPTCHA verify failed:", json);
+        setErrorMsg(t.errorRecaptcha);
+        setLoading(false);
+        return;
+      }
+
+      // 3) login supabase
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -171,11 +261,28 @@ export default function LoginClient() {
     setErrorMsg(null);
 
     try {
+      // (Optionnel mais cohérent) reCAPTCHA avant OAuth
+      const token = await getRecaptchaToken("google_login");
+      if (!token) {
+        setErrorMsg(t.errorRecaptcha);
+        setLoading(false);
+        return;
+      }
+
+      const { ok, json } = await verifyRecaptcha(token, "google_login");
+      if (!ok) {
+        console.error("reCAPTCHA verify failed:", json);
+        setErrorMsg(t.errorRecaptcha);
+        setLoading(false);
+        return;
+      }
+
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
 
       const params = new URLSearchParams();
       params.set("lang", locale);
+
       const redirectTo = `${origin}/auth/callback?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -196,426 +303,420 @@ export default function LoginClient() {
   };
 
   return (
-     <>
-  <Script
-    src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
-    strategy="afterInteractive"
-  />
-    <main className="auth-root">
-      <div className="auth-gradient-orbit" />
-      <div className="auth-gradient-orbit auth-gradient-orbit--right" />
+    <>
+      <Script
+        src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
+        strategy="afterInteractive"
+      />
 
-      <div className="auth-card">
-        <div className="auth-badge">{t.badge}</div>
+      <main className="auth-root">
+        <div className="auth-gradient-orbit" />
+        <div className="auth-gradient-orbit auth-gradient-orbit--right" />
 
-        <header className="auth-header">
-          <h1 className="auth-title">{t.title}</h1>
-          <p className="auth-subtitle">{t.subtitle}</p>
-        </header>
+        <div className="auth-card">
+          <div className="auth-badge">{t.badge}</div>
 
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={loading}
-          className="auth-google-btn"
-        >
-          <span className="auth-google-icon">
-            <Image
-              src="/google-g.png"
-              alt="Google"
-              width={18}
-              height={18}
-              style={{ width: "18px", height: "18px", objectFit: "contain" }}
-            />
-          </span>
-          <span>{t.google}</span>
-        </button>
-
-        <div className="auth-divider">
-          <span className="auth-divider-line" />
-          <span className="auth-divider-label">{t.or}</span>
-          <span className="auth-divider-line" />
-        </div>
-
-        <form onSubmit={handleEmailLogin} noValidate className="auth-form">
-          <div className="auth-field">
-            <label className="auth-label">{t.emailLabel}</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t.emailPlaceholder}
-              className="auth-input"
-              autoComplete="email"
-            />
-          </div>
-
-          <div className="auth-field">
-            <label className="auth-label">{t.passwordLabel}</label>
-            <div className="auth-password-wrapper">
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={t.passwordPlaceholder}
-                className="auth-input auth-input-password"
-                autoComplete="current-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="auth-password-toggle"
-              >
-                {showPassword ? t.hide : t.show}
-              </button>
-            </div>
-          </div>
-
-          {errorMsg && <p className="auth-error">{errorMsg}</p>}
+          <header className="auth-header">
+            <h1 className="auth-title">{t.title}</h1>
+            <p className="auth-subtitle">{t.subtitle}</p>
+          </header>
 
           <button
-            type="submit"
-            disabled={loading}
-            className="auth-submit-btn"
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading || !recaptchaReady}
+            className="auth-google-btn"
           >
-            {loading ? t.submitting : t.submit}
+            <span className="auth-google-icon">
+              <Image
+                src="/google-g.png"
+                alt="Google"
+                width={18}
+                height={18}
+                style={{ width: "18px", height: "18px", objectFit: "contain" }}
+              />
+            </span>
+            <span>{t.google}</span>
           </button>
-        </form>
 
-        <div className="auth-footer">
-          {t.noAccount}{" "}
-          <button type="button" onClick={goToSignup} className="auth-link-btn">
-            {t.signupLink}
-          </button>
+          <div className="auth-divider">
+            <span className="auth-divider-line" />
+            <span className="auth-divider-label">{t.or}</span>
+            <span className="auth-divider-line" />
+          </div>
+
+          <form onSubmit={handleEmailLogin} noValidate className="auth-form">
+            <div className="auth-field">
+              <label className="auth-label">{t.emailLabel}</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t.emailPlaceholder}
+                className="auth-input"
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="auth-field">
+              <label className="auth-label">{t.passwordLabel}</label>
+              <div className="auth-password-wrapper">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t.passwordPlaceholder}
+                  className="auth-input auth-input-password"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="auth-password-toggle"
+                >
+                  {showPassword ? t.hide : t.show}
+                </button>
+              </div>
+            </div>
+
+            {errorMsg && <p className="auth-error">{errorMsg}</p>}
+
+            <button
+              type="submit"
+              disabled={loading || !recaptchaReady}
+              className="auth-submit-btn"
+            >
+              {loading ? t.submitting : t.submit}
+            </button>
+          </form>
+
+          <div className="auth-footer">
+            {t.noAccount}{" "}
+            <button
+              type="button"
+              onClick={goToSignup}
+              className="auth-link-btn"
+            >
+              {t.signupLink}
+            </button>
+          </div>
         </div>
-      </div>
 
-      <style jsx>{`
-        .auth-root {
-          min-height: 100vh;
-          margin: 0;
-          padding: 1.5rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          overflow: hidden;
-          background:
-            radial-gradient(circle at top, #020617 0, #020617 40%, #000 85%),
-            radial-gradient(circle at bottom, #020617, #000);
-          color: #e5e7eb;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-        }
-
-        .auth-gradient-orbit {
-          position: absolute;
-          width: 520px;
-          height: 520px;
-          border-radius: 999px;
-          background: radial-gradient(
-            circle at 20% 20%,
-            rgba(251, 113, 133, 0.5),
-            transparent 60%
-          );
-          opacity: 0.55;
-          filter: blur(4px);
-          top: -120px;
-          left: -120px;
-          pointer-events: none;
-        }
-
-        .auth-gradient-orbit--right {
-          top: auto;
-          bottom: -160px;
-          left: auto;
-          right: -140px;
-          background: radial-gradient(
-            circle at 80% 20%,
-            rgba(59, 130, 246, 0.5),
-            transparent 65%
-          );
-        }
-
-        .auth-card {
-          position: relative;
-          width: 100%;
-          max-width: 430px;
-          border-radius: 1.9rem;
-          padding: 2.2rem 2.4rem 2rem;
-          background:
-            radial-gradient(
-              circle at top left,
-              rgba(248, 113, 113, 0.24),
-              transparent 55%
-            ),
-            radial-gradient(
-              circle at bottom right,
-              rgba(59, 130, 246, 0.24),
-              transparent 55%
-            ),
-            rgba(2, 6, 23, 0.98);
-          box-shadow:
-            0 28px 80px rgba(15, 23, 42, 0.95),
-            0 0 0 1px rgba(148, 163, 184, 0.35);
-          border: 1px solid rgba(148, 163, 184, 0.55);
-          backdrop-filter: blur(20px);
-          z-index: 1;
-        }
-
-        .auth-badge {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0.2rem 0.9rem;
-          border-radius: 999px;
-          font-size: 0.7rem;
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          background: rgba(15, 23, 42, 0.96);
-          border: 1px solid rgba(148, 163, 184, 0.7);
-          color: #9ca3af;
-          margin-bottom: 1rem;
-        }
-
-        .auth-header {
-          margin-bottom: 1.5rem;
-        }
-
-        .auth-title {
-          font-size: 1.7rem;
-          font-weight: 700;
-          margin: 0 0 0.4rem;
-          letter-spacing: 0.02em;
-        }
-
-        .auth-subtitle {
-          margin: 0;
-          font-size: 0.98rem;
-          line-height: 1.45;
-          color: #9ca3af;
-        }
-
-        .auth-google-btn {
-          width: 100%;
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.85);
-          padding: 0.7rem 1rem;
-          background: radial-gradient(
-            circle at top left,
-            rgba(15, 23, 42, 0.9),
-            rgba(15, 23, 42, 1)
-          );
-          color: #e5e7eb;
-          font-size: 0.9rem;
-          font-weight: 500;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.55rem;
-          cursor: pointer;
-          transition:
-            background 0.15s ease,
-            transform 0.1s ease,
-            box-shadow 0.15s ease,
-            border-color 0.15s ease;
-          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
-        }
-
-        .auth-google-btn:disabled {
-          opacity: 0.75;
-          cursor: default;
-          box-shadow: none;
-        }
-
-        .auth-google-btn:not(:disabled):hover {
-          background: radial-gradient(
-            circle at top left,
-            rgba(15, 23, 42, 0.95),
-            rgba(15, 23, 42, 1)
-          );
-          transform: translateY(-1px);
-          border-color: rgba(248, 250, 252, 0.7);
-          box-shadow: 0 20px 50px rgba(15, 23, 42, 0.95);
-        }
-
-        .auth-google-icon {
-          width: 1.4rem;
-          height: 1.4rem;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 999px;
-          background: transparent;
-        }
-
-        .auth-divider {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          margin: 1.4rem 0 1.2rem;
-        }
-
-        .auth-divider-line {
-          flex: 1;
-          height: 1px;
-          background: linear-gradient(
-            to right,
-            transparent,
-            rgba(148, 163, 184, 0.7),
-            transparent
-          );
-        }
-
-        .auth-divider-label {
-          font-size: 0.75rem;
-          text-transform: uppercase;
-          letter-spacing: 0.16em;
-          color: #6b7280;
-        }
-
-        .auth-form {
-          display: flex;
-          flex-direction: column;
-          gap: 0.9rem;
-        }
-
-        .auth-field {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-
-        .auth-label {
-          font-size: 0.8rem;
-          color: #e5e7eb;
-        }
-
-        .auth-input {
-          width: 100%;
-          border-radius: 999px;
-          border: 1px solid rgba(55, 65, 81, 0.95);
-          background: radial-gradient(
-            circle at top left,
-            rgba(15, 23, 42, 0.9),
-            rgba(15, 23, 42, 1)
-          );
-          padding: 0.6rem 0.95rem;
-          font-size: 0.9rem;
-          color: #e5e7eb;
-          outline: none;
-          transition:
-            border-color 0.15s ease,
-            box-shadow 0.15s ease,
-            background 0.15s ease;
-        }
-
-        .auth-input::placeholder {
-          color: #6b7280;
-        }
-
-        .auth-input:focus {
-          border-color: #f97316;
-          box-shadow:
-            0 0 0 1px rgba(249, 115, 22, 0.65),
-            0 14px 38px rgba(15, 23, 42, 0.9);
-        }
-
-        .auth-password-wrapper {
-          position: relative;
-        }
-
-        .auth-input-password {
-          padding-right: 2.7rem;
-        }
-
-        .auth-password-toggle {
-          position: absolute;
-          right: 0.7rem;
-          top: 50%;
-          transform: translateY(-50%);
-          border-radius: 999px;
-          border: none;
-          background: transparent;
-          color: #9ca3af;
-          font-size: 0.75rem;
-          padding: 0.2rem 0.5rem;
-          cursor: pointer;
-          transition: color 0.15s ease, background 0.15s ease;
-        }
-
-        .auth-password-toggle:hover {
-          color: #e5e7eb;
-          background: rgba(15, 23, 42, 0.9);
-        }
-
-        .auth-error {
-          font-size: 0.8rem;
-          color: #fecaca;
-          margin: 0.2rem 0 0.1rem;
-        }
-
-        .auth-submit-btn {
-          width: 100%;
-          margin-top: 0.3rem;
-          border-radius: 999px;
-          border: none;
-          padding: 0.78rem 1rem;
-          font-size: 0.95rem;
-          font-weight: 600;
-          color: #f9fafb;
-          cursor: pointer;
-          background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
-          box-shadow: 0 18px 48px rgba(248, 113, 113, 0.7);
-          transition:
-            transform 0.1s ease,
-            box-shadow 0.15s ease,
-            filter 0.1s ease;
-        }
-
-        .auth-submit-btn:disabled {
-          opacity: 0.75;
-          cursor: default;
-          box-shadow: none;
-          filter: grayscale(0.1);
-        }
-
-        .auth-submit-btn:not(:disabled):hover {
-          transform: translateY(-1px);
-          box-shadow: 0 24px 60px rgba(248, 113, 113, 0.9);
-        }
-
-        .auth-footer {
-          margin-top: 1.15rem;
-          font-size: 0.85rem;
-          text-align: center;
-          color: #9ca3af;
-        }
-
-        .auth-link-btn {
-          border: none;
-          background: none;
-          padding: 0;
-          margin: 0;
-          color: #f9a8d4;
-          cursor: pointer;
-          font-size: 0.85rem;
-          text-decoration: underline;
-          text-underline-offset: 2px;
-        }
-
-        @media (max-width: 480px) {
+        <style jsx>{`
           .auth-root {
-            padding-inline: 1.1rem;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 85%),
+              radial-gradient(circle at bottom, #020617, #000);
+            color: #e5e7eb;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+              "Helvetica Neue", Arial, sans-serif;
           }
+
+          .auth-gradient-orbit {
+            position: absolute;
+            width: 520px;
+            height: 520px;
+            border-radius: 999px;
+            background: radial-gradient(
+              circle at 20% 20%,
+              rgba(251, 113, 133, 0.5),
+              transparent 60%
+            );
+            opacity: 0.55;
+            filter: blur(4px);
+            top: -120px;
+            left: -120px;
+            pointer-events: none;
+          }
+
+          .auth-gradient-orbit--right {
+            top: auto;
+            bottom: -160px;
+            left: auto;
+            right: -140px;
+            background: radial-gradient(
+              circle at 80% 20%,
+              rgba(59, 130, 246, 0.5),
+              transparent 65%
+            );
+          }
+
           .auth-card {
-            padding-inline: 1.6rem;
+            position: relative;
+            width: 100%;
+            max-width: 430px;
+            border-radius: 1.9rem;
+            padding: 2.2rem 2.4rem 2rem;
+            background: radial-gradient(
+                circle at top left,
+                rgba(248, 113, 113, 0.24),
+                transparent 55%
+              ),
+              radial-gradient(
+                circle at bottom right,
+                rgba(59, 130, 246, 0.24),
+                transparent 55%
+              ),
+              rgba(2, 6, 23, 0.98);
+            box-shadow: 0 28px 80px rgba(15, 23, 42, 0.95),
+              0 0 0 1px rgba(148, 163, 184, 0.35);
+            border: 1px solid rgba(148, 163, 184, 0.55);
+            backdrop-filter: blur(20px);
+            z-index: 1;
           }
-        }
-      `}</style>
-    </main>
-        </>
+
+          .auth-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.2rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            background: rgba(15, 23, 42, 0.96);
+            border: 1px solid rgba(148, 163, 184, 0.7);
+            color: #9ca3af;
+            margin-bottom: 1rem;
+          }
+
+          .auth-header {
+            margin-bottom: 1.5rem;
+          }
+
+          .auth-title {
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin: 0 0 0.4rem;
+            letter-spacing: 0.02em;
+          }
+
+          .auth-subtitle {
+            margin: 0;
+            font-size: 0.98rem;
+            line-height: 1.45;
+            color: #9ca3af;
+          }
+
+          .auth-google-btn {
+            width: 100%;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.85);
+            padding: 0.7rem 1rem;
+            background: radial-gradient(
+              circle at top left,
+              rgba(15, 23, 42, 0.9),
+              rgba(15, 23, 42, 1)
+            );
+            color: #e5e7eb;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.1s ease,
+              box-shadow 0.15s ease, border-color 0.15s ease;
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+          }
+
+          .auth-google-btn:disabled {
+            opacity: 0.75;
+            cursor: default;
+            box-shadow: none;
+          }
+
+          .auth-google-btn:not(:disabled):hover {
+            background: radial-gradient(
+              circle at top left,
+              rgba(15, 23, 42, 0.95),
+              rgba(15, 23, 42, 1)
+            );
+            transform: translateY(-1px);
+            border-color: rgba(248, 250, 252, 0.7);
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.95);
+          }
+
+          .auth-google-icon {
+            width: 1.4rem;
+            height: 1.4rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: transparent;
+          }
+
+          .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1.4rem 0 1.2rem;
+          }
+
+          .auth-divider-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(
+              to right,
+              transparent,
+              rgba(148, 163, 184, 0.7),
+              transparent
+            );
+          }
+
+          .auth-divider-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            color: #6b7280;
+          }
+
+          .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+          }
+
+          .auth-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+          }
+
+          .auth-label {
+            font-size: 0.8rem;
+            color: #e5e7eb;
+          }
+
+          .auth-input {
+            width: 100%;
+            border-radius: 999px;
+            border: 1px solid rgba(55, 65, 81, 0.95);
+            background: radial-gradient(
+              circle at top left,
+              rgba(15, 23, 42, 0.9),
+              rgba(15, 23, 42, 1)
+            );
+            padding: 0.6rem 0.95rem;
+            font-size: 0.9rem;
+            color: #e5e7eb;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease,
+              background 0.15s ease;
+          }
+
+          .auth-input::placeholder {
+            color: #6b7280;
+          }
+
+          .auth-input:focus {
+            border-color: #f97316;
+            box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.65),
+              0 14px 38px rgba(15, 23, 42, 0.9);
+          }
+
+          .auth-password-wrapper {
+            position: relative;
+          }
+
+          .auth-input-password {
+            padding-right: 2.7rem;
+          }
+
+          .auth-password-toggle {
+            position: absolute;
+            right: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 999px;
+            border: none;
+            background: transparent;
+            color: #9ca3af;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            cursor: pointer;
+            transition: color 0.15s ease, background 0.15s ease;
+          }
+
+          .auth-password-toggle:hover {
+            color: #e5e7eb;
+            background: rgba(15, 23, 42, 0.9);
+          }
+
+          .auth-error {
+            font-size: 0.8rem;
+            color: #fecaca;
+            margin: 0.2rem 0 0.1rem;
+          }
+
+          .auth-submit-btn {
+            width: 100%;
+            margin-top: 0.3rem;
+            border-radius: 999px;
+            border: none;
+            padding: 0.78rem 1rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #f9fafb;
+            cursor: pointer;
+            background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
+            box-shadow: 0 18px 48px rgba(248, 113, 113, 0.7);
+            transition: transform 0.1s ease, box-shadow 0.15s ease,
+              filter 0.1s ease;
+          }
+
+          .auth-submit-btn:disabled {
+            opacity: 0.75;
+            cursor: default;
+            box-shadow: none;
+            filter: grayscale(0.1);
+          }
+
+          .auth-submit-btn:not(:disabled):hover {
+            transform: translateY(-1px);
+            box-shadow: 0 24px 60px rgba(248, 113, 113, 0.9);
+          }
+
+          .auth-footer {
+            margin-top: 1.15rem;
+            font-size: 0.85rem;
+            text-align: center;
+            color: #9ca3af;
+          }
+
+          .auth-link-btn {
+            border: none;
+            background: none;
+            padding: 0;
+            margin: 0;
+            color: #f9a8d4;
+            cursor: pointer;
+            font-size: 0.85rem;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+          }
+
+          @media (max-width: 480px) {
+            .auth-root {
+              padding-inline: 1.1rem;
+            }
+            .auth-card {
+              padding-inline: 1.6rem;
+            }
+          }
+        `}</style>
+      </main>
+    </>
   );
-}
+       }
