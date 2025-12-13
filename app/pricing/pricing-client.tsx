@@ -11,7 +11,7 @@ type PlanId = "free" | PaidPlanId;
 type DbPlanRow = {
   code: PaidPlanId;
   name: string | null;
-  price: number | null; // ex: 9.99, 19.99, 39.99
+  price: number | null;
   ai_limit: number | null;
   message_limit: number | null;
   voice_limit: number | null;
@@ -21,7 +21,7 @@ type DbPlanRow = {
 type Plan = {
   id: PlanId;
   name: string;
-  price: string; // affichage final
+  price: string;
   tagline: string;
   features: string[];
   badgeLabel?: string;
@@ -197,9 +197,11 @@ const LABELS: Record<Locale, Labels> = {
       "You can create a free account, try the basic text experience, then activate a paid plan whenever you’re ready. You stay in control: change or cancel anytime in one click, no commitment.",
     heroCta: "Create my free account",
     heroStat: "⭐ Hundreds of conversations every week.",
-    billingNote: "Secure billing via Stripe · Change or cancel anytime from your account · No hidden fees",
+    billingNote:
+      "Secure billing via Stripe · Change or cancel anytime from your account · No hidden fees",
     chooseIntro: "Choose how AmorIAI fits into your life.",
-    usdNote: "Prices are in US dollars (USD). You can change or cancel your plan anytime, no commitment.",
+    usdNote:
+      "Prices are in US dollars (USD). You can change or cancel your plan anytime, no commitment.",
     plans: [
       {
         id: "chat",
@@ -244,7 +246,7 @@ const LABELS: Record<Locale, Labels> = {
           "300 AI-generated voice replies / month",
           "Deep memory + extended context",
           "Maximum priority & early access to new features",
-          "Exclusive access to looping animated IA videos (moving avatars) included only in Unlimited",
+          "Exclusive access to looping animated IA videos included only in Unlimited",
         ],
         badgeLabel: "Best value",
         badgeVariant: "value",
@@ -273,9 +275,11 @@ const LABELS: Record<Locale, Labels> = {
       "Puedes crear una cuenta gratuita, probar la experiencia básica por texto y luego activar un plan de pago cuando estés listo. Siempre tienes el control: puedes cambiar o cancelar en un clic, sin compromiso.",
     heroCta: "Crear mi cuenta gratuita",
     heroStat: "⭐ Cientos de conversaciones cada semana.",
-    billingNote: "Facturación segura con Stripe · Cambia o cancela cuando quieras · Sin cargos ocultos",
+    billingNote:
+      "Facturación segura con Stripe · Cambia o cancela cuando quieras · Sin cargos ocultos",
     chooseIntro: "Elige cómo AmorIAI toma su lugar en tu vida.",
-    usdNote: "Los precios están en dólares estadounidenses (USD). Puedes cambiar o cancelar tu plan en cualquier momento.",
+    usdNote:
+      "Los precios están en dólares estadounidenses (USD). Puedes cambiar o cancelar tu plan en cualquier momento.",
     plans: [
       {
         id: "chat",
@@ -320,7 +324,7 @@ const LABELS: Record<Locale, Labels> = {
           "300 respuestas de voz generadas por la IA / mes",
           "Memoria profunda + contexto ampliado",
           "Prioridad máxima y acceso anticipado a nuevas funciones",
-          "Acceso exclusivo a vídeos de IA animada en bucle (avatares en movimiento) solo en el plan Ilimitado",
+          "Acceso exclusivo a vídeos de IA animada en bucle solo en el plan Ilimitado",
         ],
         badgeLabel: "Mejor valor",
         badgeVariant: "value",
@@ -329,18 +333,9 @@ const LABELS: Record<Locale, Labels> = {
     ],
     faqTitle: "Preguntas frecuentes",
     faqs: [
-      {
-        q: "¿Puedo cambiar o cancelar mi plan cuando quiera?",
-        a: "Sí. Puedes cambiar o cancelar tu suscripción en cualquier momento desde tu cuenta.",
-      },
-      {
-        q: "¿Puedo probar AmorIAI de forma gratuita?",
-        a: "Sí. Puedes crear una cuenta gratuita, probar la experiencia básica por texto y activar un plan de pago solo si quieres continuar.",
-      },
-      {
-        q: "¿Qué pasa si alcanzo el límite de mensajes de mi plan?",
-        a: "Tu AmorIAI te avisará cuando estés cerca del límite. Puedes esperar al mes siguiente o subir de plan.",
-      },
+      { q: "¿Puedo cambiar o cancelar mi plan cuando quiera?", a: "Sí. Puedes cambiar o cancelar tu suscripción en cualquier momento desde tu cuenta." },
+      { q: "¿Puedo probar AmorIAI de forma gratuita?", a: "Sí. Puedes crear una cuenta gratuita, probar la experiencia básica por texto y activar un plan de pago solo si quieres continuar." },
+      { q: "¿Qué pasa si alcanzo el límite de mensajes de mi plan?", a: "Tu AmorIAI te avisará cuando estés cerca del límite. Puedes esperar al mes siguiente o subir de plan." },
     ],
   },
 };
@@ -384,10 +379,12 @@ export default function PricingPage() {
   const router = useRouter();
 
   const [locale, setLocale] = useState<Locale>("fr");
-  const [sessionLoading, setSessionLoading] = useState(false);
   const [plansLoading, setPlansLoading] = useState(false);
   const [dbPlans, setDbPlans] = useState<Partial<Record<PaidPlanId, DbPlanRow>>>({});
   const [errorMsg, setErrorMsg] = useState<string>("");
+
+  // ✅ loading seulement sur le bouton cliqué
+  const [activePlanLoading, setActivePlanLoading] = useState<PlanId | null>(null);
 
   // Init locale + force ?lang=
   useEffect(() => {
@@ -414,6 +411,7 @@ export default function PricingPage() {
 
         if (error) {
           console.error("Supabase plans fetch error:", error);
+          if (!cancelled) setErrorMsg("Impossible de charger les prix (Supabase).");
           return;
         }
 
@@ -448,9 +446,6 @@ export default function PricingPage() {
     window.history.replaceState(null, "", newUrl);
   };
 
-  /* ===========================
-     PLAN MERGE (DB -> UI)
-  ============================ */
   const displayPlans = useMemo(() => {
     return t.plans.map((p) => {
       const db = p.id === "free" ? undefined : dbPlans[p.id];
@@ -473,10 +468,10 @@ export default function PricingPage() {
     router.push(`/signup?${params.toString()}`);
   };
 
-  const goToCreateAmoria = (planId: PlanId) => {
+  const goToCreateAmoria = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
-    params.set("plan", planId);
+    params.set("plan", "free");
     router.push(`/create-amoria?${params.toString()}`);
   };
 
@@ -486,20 +481,18 @@ export default function PricingPage() {
 
   /* ===========================
      ✅ Stripe Checkout (CLIENT)
-     -> appelle POST /api/checkout
-     -> envoie user_id + plan + lang
+     -> POST /api/checkout
+     -> envoie { plan, lang }
+     -> le serveur récupère user via cookies Supabase
   ============================ */
   const startStripeCheckout = async (planId: PaidPlanId) => {
-    // 1) user
+    // 1) user côté client (simple check)
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     if (userErr) {
       console.error("getUser error:", userErr);
       throw new Error("Erreur auth. Réessaie de te reconnecter.");
     }
-
-    const user = userData?.user;
-    if (!user) {
-      // pas connecté => signup avec le plan
+    if (!userData?.user) {
       goToSignupWithPlan(planId);
       return;
     }
@@ -508,11 +501,7 @@ export default function PricingPage() {
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        plan: planId,
-        lang: locale,
-        user_id: user.id, // ✅ IMPORTANT pour ton /api/checkout actuel
-      }),
+      body: JSON.stringify({ plan: planId, lang: locale }),
     });
 
     const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
@@ -521,43 +510,48 @@ export default function PricingPage() {
       throw new Error(json?.error || "Erreur serveur lors du paiement.");
     }
 
-    // 3) redirect stripe
+    // 3) redirect
     window.location.href = json.url;
   };
 
   const handleChoosePlan = async (planId: PlanId) => {
     setErrorMsg("");
-    setSessionLoading(true);
+    setActivePlanLoading(planId);
+
     try {
-      // free => create-amoria si déjà connecté, sinon signup
+      // free => si connecté => create-amoria, sinon signup
       if (planId === "free") {
         const { data } = await supabase.auth.getUser();
         if (!data?.user) {
           goToSignupWithPlan("free");
           return;
         }
-        goToCreateAmoria("free");
+        goToCreateAmoria();
         return;
       }
 
-      // paid => Stripe checkout direct
+      // paid => Stripe
       await startStripeCheckout(planId);
     } catch (e: any) {
       console.error("handleChoosePlan error:", e);
       setErrorMsg(e?.message || "Erreur. Réessaie.");
     } finally {
-      setSessionLoading(false);
+      setActivePlanLoading(null);
     }
   };
 
-  const disabledAll = sessionLoading || plansLoading;
+  const disabledAll = plansLoading || activePlanLoading !== null;
 
   return (
     <main className="amoria-root">
       {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-          <img src="/AmorIA_logo_transparent.png" alt="Logo AmorIAI.app" className="amoria-logo-full" />
+          <img
+            src="/AmorIA_logo_transparent.png"
+            alt="Logo AmorIAI.app"
+            className="amoria-logo-full"
+          />
           <div className="amoria-logo-text">
             <div className="amoria-logo-title">AmorIAI.app</div>
             <div className="amoria-logo-tagline">{ui.brandTagline}</div>
@@ -565,9 +559,15 @@ export default function PricingPage() {
         </div>
 
         <nav className="amoria-nav">
-          <a href={withLang("/")} className="amoria-nav-link">{ui.nav.home}</a>
-          <a href={withLang("/#features")} className="amoria-nav-link">{ui.nav.features}</a>
-          <a href={withLang("/pricing")} className="amoria-nav-link amoria-nav-link--active">{ui.nav.pricing}</a>
+          <a href={withLang("/")} className="amoria-nav-link">
+            {ui.nav.home}
+          </a>
+          <a href={withLang("/#features")} className="amoria-nav-link">
+            {ui.nav.features}
+          </a>
+          <a href={withLang("/pricing")} className="amoria-nav-link amoria-nav-link--active">
+            {ui.nav.pricing}
+          </a>
         </nav>
 
         <div className="amoria-nav-right">
@@ -584,8 +584,12 @@ export default function PricingPage() {
             ))}
           </div>
 
-          <a href={withLang("/login")} className="amoria-nav-btn amoria-nav-btn--ghost">{ui.navLogin}</a>
-          <a href={withLang("/signup")} className="amoria-nav-btn amoria-nav-btn--primary">{ui.navSignup}</a>
+          <a href={withLang("/login")} className="amoria-nav-btn amoria-nav-btn--ghost">
+            {ui.navLogin}
+          </a>
+          <a href={withLang("/signup")} className="amoria-nav-btn amoria-nav-btn--primary">
+            {ui.navSignup}
+          </a>
         </div>
       </header>
 
@@ -594,7 +598,12 @@ export default function PricingPage() {
         <h1 className="amoria-pricing-title">{t.heroTitle}</h1>
         <p className="amoria-pricing-subtitle">{t.heroSubtitle}</p>
 
-        <button className="amoria-pricing-hero-btn" onClick={handleHeroCta} disabled={disabledAll}>
+        <button
+          type="button"
+          className="amoria-pricing-hero-btn"
+          onClick={handleHeroCta}
+          disabled={disabledAll}
+        >
           {t.heroCta}
         </button>
 
@@ -614,40 +623,57 @@ export default function PricingPage() {
         <p className="amoria-pricing-section-note">{t.usdNote}</p>
 
         <div className="amoria-pricing-grid">
-          {displayPlans.map((plan) => (
-            <article
-              key={plan.id}
-              className={[
-                "amoria-pricing-card",
-                plan.badgeVariant === "popular" ? "amoria-pricing-card--popular" : "",
-                plan.badgeVariant === "value" ? "amoria-pricing-card--value" : "",
-              ].filter(Boolean).join(" ")}
-            >
-              {plan.badgeLabel && (
-                <div className={`amoria-pricing-badge amoria-pricing-badge--${plan.badgeVariant ?? "popular"}`}>
-                  {plan.badgeLabel.toUpperCase()}
-                </div>
-              )}
+          {displayPlans.map((plan) => {
+            const isThisLoading = activePlanLoading === plan.id;
 
-              <header className="amoria-pricing-card-header">
-                <h3 className="amoria-pricing-card-name">{plan.name}</h3>
-                <p className="amoria-pricing-card-price">{plan.price}</p>
-                <p className="amoria-pricing-card-tagline">{plan.tagline}</p>
-              </header>
-
-              <ul className="amoria-pricing-card-features">
-                {plan.features.map((f) => <li key={f}>{f}</li>)}
-              </ul>
-
-              <button
-                className="amoria-pricing-card-btn"
-                onClick={() => handleChoosePlan(plan.id)}
-                disabled={disabledAll}
+            return (
+              <article
+                key={plan.id}
+                className={[
+                  "amoria-pricing-card",
+                  plan.badgeVariant === "popular" ? "amoria-pricing-card--popular" : "",
+                  plan.badgeVariant === "value" ? "amoria-pricing-card--value" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               >
-                {sessionLoading ? "..." : plan.ctaLabel}
-              </button>
-            </article>
-          ))}
+                {plan.badgeLabel && (
+                  <div className={`amoria-pricing-badge amoria-pricing-badge--${plan.badgeVariant ?? "popular"}`}>
+                    {plan.badgeLabel.toUpperCase()}
+                  </div>
+                )}
+
+                <header className="amoria-pricing-card-header">
+                  <h3 className="amoria-pricing-card-name">{plan.name}</h3>
+                  <p className="amoria-pricing-card-price">{plan.price}</p>
+                  <p className="amoria-pricing-card-tagline">{plan.tagline}</p>
+                </header>
+
+                <ul className="amoria-pricing-card-features">
+                  {plan.features.map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+
+                <button
+                  type="button"
+                  className={"amoria-pricing-card-btn" + (isThisLoading ? " is-loading" : "")}
+                  onClick={() => handleChoosePlan(plan.id)}
+                  disabled={disabledAll}
+                >
+                  {isThisLoading ? (
+                    <span className="amoria-dots" aria-label="Chargement">
+                      <span />
+                      <span />
+                      <span />
+                    </span>
+                  ) : (
+                    plan.ctaLabel
+                  )}
+                </button>
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -670,18 +696,27 @@ export default function PricingPage() {
           <span>{ui.footerCopy}</span>
         </div>
         <div className="amoria-footer-links">
-          <a href={withLang("/legal")} className="amoria-footer-link">{ui.footerLinks.legal}</a>
-          <a href={withLang("/legal/privacy")} className="amoria-footer-link">{ui.footerLinks.privacy}</a>
-          <a href={withLang("/legal/terms")} className="amoria-footer-link">{ui.footerLinks.terms}</a>
-          <a href={withLang("/contact")} className="amoria-footer-link">{ui.footerLinks.contact}</a>
-          <a href={withLang("/about")} className="amoria-footer-link">{ui.footerLinks.about}</a>
+          <a href={withLang("/legal")} className="amoria-footer-link">
+            {ui.footerLinks.legal}
+          </a>
+          <a href={withLang("/legal/privacy")} className="amoria-footer-link">
+            {ui.footerLinks.privacy}
+          </a>
+          <a href={withLang("/legal/terms")} className="amoria-footer-link">
+            {ui.footerLinks.terms}
+          </a>
+          <a href={withLang("/contact")} className="amoria-footer-link">
+            {ui.footerLinks.contact}
+          </a>
+          <a href={withLang("/about")} className="amoria-footer-link">
+            {ui.footerLinks.about}
+          </a>
         </div>
       </footer>
 
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
-          --amoria-bg-elevated: #02081f;
           --amoria-border-subtle: rgba(148, 163, 184, 0.35);
           --amoria-text-main: #e5e7eb;
           --amoria-text-muted: #9ca3af;
@@ -734,11 +769,6 @@ export default function PricingPage() {
         .amoria-logo-full {
           height: 36px;
           width: auto;
-        }
-
-        .amoria-logo-text {
-          display: flex;
-          flex-direction: column;
         }
 
         .amoria-logo-title {
@@ -978,10 +1008,6 @@ export default function PricingPage() {
           color: #052e16;
         }
 
-        .amoria-pricing-card-header {
-          margin-bottom: 0.9rem;
-        }
-
         .amoria-pricing-card-name {
           font-size: 1rem;
           font-weight: 600;
@@ -1036,11 +1062,57 @@ export default function PricingPage() {
           cursor: pointer;
           width: 100%;
           box-shadow: 0 14px 35px rgba(248, 113, 113, 0.55);
+          transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+          min-height: 44px;
         }
 
         .amoria-pricing-card-btn:hover {
           transform: translateY(-1px);
           box-shadow: 0 18px 45px rgba(248, 113, 113, 0.8);
+        }
+
+        .amoria-pricing-card-btn:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: 0 14px 35px rgba(248, 113, 113, 0.25);
+        }
+
+        .amoria-pricing-card-btn.is-loading {
+          opacity: 0.9;
+        }
+
+        .amoria-dots {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+        }
+
+        .amoria-dots span {
+          width: 6px;
+          height: 6px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.95);
+          animation: amoriaDot 1s infinite ease-in-out;
+        }
+
+        .amoria-dots span:nth-child(2) {
+          animation-delay: 0.15s;
+        }
+        .amoria-dots span:nth-child(3) {
+          animation-delay: 0.3s;
+        }
+
+        @keyframes amoriaDot {
+          0%, 80%, 100% {
+            transform: translateY(0);
+            opacity: 0.6;
+          }
+          40% {
+            transform: translateY(-4px);
+            opacity: 1;
+          }
         }
 
         .amoria-pricing-faq {
@@ -1095,10 +1167,6 @@ export default function PricingPage() {
           text-align: center;
         }
 
-        .amoria-footer-top {
-          margin-bottom: 0.4rem;
-        }
-
         .amoria-footer-links {
           display: flex;
           flex-wrap: wrap;
@@ -1150,4 +1218,4 @@ export default function PricingPage() {
       `}</style>
     </main>
   );
-          }
+    }
