@@ -2,11 +2,12 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
 export const runtime = "nodejs";
 
 type PlanId = "chat" | "plus" | "unlimited";
-
 const PLANS_TABLE = "pricing_plans";
 
 // ENV
@@ -21,7 +22,6 @@ function isPlan(v: unknown): v is PlanId {
 }
 
 function cleanSiteUrl(url: string): string {
-  // Enlève le slash final pour éviter //payment/...
   return url.endsWith("/") ? url.slice(0, -1) : url;
 }
 
@@ -31,7 +31,7 @@ const stripe =
     ? new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" })
     : null;
 
-// Supabase (service role) — serveur seulement
+// Supabase service-role (server only) pour lire pricing_plans
 const supabaseServer =
   supabaseUrl && supabaseServiceKey
     ? createClient(supabaseUrl, supabaseServiceKey, {
@@ -41,28 +41,7 @@ const supabaseServer =
 
 export async function POST(req: Request) {
   try {
-    // 1) Parse body
-    const body = (await req.json().catch(() => ({}))) as {
-      plan?: unknown;
-      user_id?: unknown;
-    };
-
-    const plan = body.plan;
-    const user_id = body.user_id;
-
-    // 2) Validation
-    if (!isPlan(plan)) {
-      return NextResponse.json({ error: "Plan invalide." }, { status: 400 });
-    }
-
-    if (!user_id || typeof user_id !== "string") {
-      return NextResponse.json(
-        { error: "user_id manquant pour la session Stripe." },
-        { status: 400 }
-      );
-    }
-
-    // 3) Vérifier config
+    // 0) Vérifier config
     if (!stripe) {
       console.error("Stripe non initialisé : STRIPE_SECRET_KEY manquante");
       return NextResponse.json(
@@ -91,8 +70,41 @@ export async function POST(req: Request) {
 
     const siteUrl = cleanSiteUrl(siteUrlRaw);
 
-    // 4) Lire le stripe_price_id dans Supabase
-    // IMPORTANT: le champ doit être pricing_plans.code = "chat"|"plus"|"unlimited"
+    // 1) Parse body (PLUS de user_id ici)
+    const body = (await req.json().catch(() => ({}))) as {
+      plan?: unknown;
+      lang?: unknown;
+    };
+
+    const plan = body.plan;
+    const lang = typeof body.lang === "string" ? body.lang : undefined;
+
+    // 2) Validation plan
+    if (!isPlan(plan)) {
+      return NextResponse.json({ error: "Plan invalide." }, { status: 400 });
+    }
+
+    // 3) Récupérer le user côté serveur via cookies Supabase
+    const supabaseAuth = createRouteHandlerClient({ cookies });
+    const { data: userData, error: userErr } = await supabaseAuth.auth.getUser();
+
+    if (userErr) {
+      console.error("supabase getUser error:", userErr);
+      return NextResponse.json(
+        { error: "Erreur auth. Réessaie de te reconnecter." },
+        { status: 401 }
+      );
+    }
+
+    const user = userData?.user;
+    if (!user) {
+      return NextResponse.json(
+        { error: "Non authentifié. Connecte-toi pour payer." },
+        { status: 401 }
+      );
+    }
+
+    // 4) Lire stripe_price_id dans Supabase (service role)
     const { data: planRow, error: planErr } = await supabaseServer
       .from(PLANS_TABLE)
       .select("code, stripe_price_id")
@@ -122,16 +134,32 @@ export async function POST(req: Request) {
       );
     }
 
-    // 5) Créer la session Stripe Checkout (subscription)
+    // 5) URLs (optionnel: garder lang)
+    const successUrl =
+      lang && lang.length > 0
+        ? `${siteUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}&lang=${encodeURIComponent(lang)}`
+        : `${siteUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`;
+
+    const cancelUrl =
+      lang && lang.length > 0
+        ? `${siteUrl}/payment/cancel?lang=${encodeURIComponent(lang)}`
+        : `${siteUrl}/payment/cancel`;
+
+    // 6) Créer session Stripe Checkout
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: planRow.stripe_price_id, quantity: 1 }],
-      success_url: `${siteUrl}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/payment/cancel`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+
+      // ✅ utile (facultatif) pour retrouver le user dans Stripe sans webhook
+      client_reference_id: user.id,
+
+      // ✅ IMPORTANT: ce que ton webhook attend
       metadata: {
-        user_id,
-        plan_code: plan, // IMPORTANT: utilisé par ton webhook
+        user_id: user.id,
+        plan_code: plan,
       },
     });
 
@@ -145,7 +173,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (err: any) {
-    // Logs détaillés Stripe (super important pour diagnostiquer)
     console.error("Stripe checkout error (détails):", {
       message: err?.message,
       type: err?.type,
