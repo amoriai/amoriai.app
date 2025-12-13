@@ -16,7 +16,6 @@ type UiStrings = {
   createNow: string;
   backHome: string;
   planHint: string;
-
   retry: string;
   diagTitle: string;
   diagNoAccess: string;
@@ -59,7 +58,7 @@ const STRINGS: Record<Locale, UiStrings> = {
     retry: "Retry",
     diagTitle: "Diagnostics",
     diagNoAccess:
-      "Access denied (RLS / policies). Check your Supabase policies.",
+      "Access denied (RLS / policies). Check Supabase policies.",
     diagUnknown: "Something went wrong. Check the browser console (F12).",
   },
   es: {
@@ -74,8 +73,8 @@ const STRINGS: Record<Locale, UiStrings> = {
     planHint: "Tu plan se respeta automáticamente (Free, Plus, Unlimited).",
     retry: "Reintentar",
     diagTitle: "Diagnóstico",
-    diagNoAccess: "Acceso denegado (RLS / policies). Revisa tus policies.",
-    diagUnknown: "Ocurrió un error. Revisa la consola del navegador (F12).",
+    diagNoAccess: "Acceso denegado (RLS / policies).",
+    diagUnknown: "Ocurrió un error. Revisa la consola (F12).",
   },
 };
 
@@ -95,16 +94,15 @@ function looksLikeRlsError(message: string) {
   );
 }
 
-function planFromPricingName(name: any): PlanId {
-  const n = (name || "").toString().toLowerCase().trim();
+function planFromPricingName(name: string | null | undefined): PlanId {
+  const n = (name || "").toLowerCase();
 
-  if (n === "free") return "free";
-  if (n.includes("découverte") || n.includes("decouverte")) return "free";
-  if (n.includes("plus")) return "plus";
-  if (n.includes("illimité") || n.includes("illimite") || n.includes("unlimited"))
-    return "unlimited";
+  // Tes noms: "AmorIA Chat", "AmorIA Plus", "AmorIA illimité", "AmorIA Découverte", "free"
   if (n.includes("chat")) return "chat";
+  if (n.includes("plus")) return "plus";
+  if (n.includes("illimit")) return "unlimited";
 
+  // "Découverte" et "free" => on les traite comme free (selon ton PlanId actuel)
   return "free";
 }
 
@@ -112,10 +110,7 @@ export default function MyAmoriaClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const lang = useMemo(
-    () => normalizeLocale(searchParams.get("lang")),
-    [searchParams]
-  );
+  const lang = useMemo(() => normalizeLocale(searchParams.get("lang")), [searchParams]);
   const t = STRINGS[lang];
 
   const [state, setState] = useState<LoadState>({ status: "loading" });
@@ -136,12 +131,11 @@ export default function MyAmoriaClient() {
     const userId = user.id;
     console.log("[MY-AMORIA] userId:", userId);
 
-    // 2) IA existante (colonne = user_id)
+    // 2) IA existante (colonne vue dans tes captures: user_id)
     const { data: aiList, error: aiErr } = await supabase
       .from("user_amoria")
       .select("id")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false })
       .limit(1);
 
     if (aiErr) {
@@ -157,18 +151,18 @@ export default function MyAmoriaClient() {
 
     console.log("[MY-AMORIA] aiList:", aiList);
 
-    if (aiList?.[0]?.id) {
+    if (aiList && aiList.length > 0 && aiList[0]?.id) {
       router.replace(`/chat?iaId=${aiList[0].id}&lang=${lang}`);
       return;
     }
 
-    // 3) Subscriptions: lire pricing_plan_id (pas "plan")
-    const { data: subList, error: subErr } = await supabase
+    // 3) Subscription -> pricing_plan_id (pas "plan")
+    const { data: sub, error: subErr } = await supabase
       .from("user_subscriptions")
-      .select("pricing_plan_id,current,created_at")
+      .select("pricing_plan_id,current")
       .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(5);
+      .eq("current", true)
+      .maybeSingle();
 
     if (subErr) {
       console.error("user_subscriptions SELECT error:", subErr);
@@ -181,35 +175,34 @@ export default function MyAmoriaClient() {
       return;
     }
 
-    console.log("[MY-AMORIA] subList:", subList);
+    console.log("[MY-AMORIA] sub:", sub);
 
-    // Priorité: current=true si présent, sinon la plus récente
-    const currentSub =
-      subList?.find((r: any) => r?.current === true) ?? subList?.[0];
+    // 4) pricing_plans -> name
+    let plan: PlanId = "free";
 
-    const pricingPlanId = currentSub?.pricing_plan_id;
+    if (sub?.pricing_plan_id) {
+      const { data: pricing, error: pricingErr } = await supabase
+        .from("pricing_plans")
+        .select("name")
+        .eq("id", sub.pricing_plan_id)
+        .maybeSingle();
 
-    // Si aucun plan en DB → Free
-    if (!pricingPlanId) {
-      setState({ status: "ready", plan: "free" });
-      return;
+      if (pricingErr) {
+        console.error("pricing_plans SELECT error:", pricingErr);
+        const rls = looksLikeRlsError(pricingErr.message || "");
+        setState({
+          status: "error",
+          kind: rls ? "no_access" : "unknown",
+          message: rls ? t.diagNoAccess : t.diagUnknown,
+        });
+        return;
+      }
+
+      console.log("[MY-AMORIA] pricing:", pricing);
+      plan = planFromPricingName(pricing?.name);
     }
 
-    // 4) pricing_plans: récupérer le name via l'id
-    const { data: planRow, error: planErr } = await supabase
-      .from("pricing_plans")
-      .select("name")
-      .eq("id", pricingPlanId)
-      .maybeSingle();
-
-    if (planErr) {
-      console.error("pricing_plans SELECT error:", planErr);
-      // fallback safe
-      setState({ status: "ready", plan: "free" });
-      return;
-    }
-
-    const plan = planFromPricingName(planRow?.name);
+    // Aucune IA trouvée -> afficher écran "Créer"
     setState({ status: "ready", plan });
   };
 
@@ -275,9 +268,7 @@ export default function MyAmoriaClient() {
 
         <div className="space-y-3">
           <button
-            onClick={() =>
-              router.push(`/create-amoria?plan=${plan}&lang=${lang}`)
-            }
+            onClick={() => router.push(`/create-amoria?plan=${plan}&lang=${lang}`)}
             className="w-full py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 font-semibold"
           >
             {t.createNow}
@@ -295,4 +286,4 @@ export default function MyAmoriaClient() {
       </section>
     </main>
   );
-      }
+}
