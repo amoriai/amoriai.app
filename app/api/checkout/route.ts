@@ -24,7 +24,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 function isPlan(v: unknown): v is PlanId {
   return v === "chat" || v === "plus" || v === "unlimited";
 }
-
 function cleanSiteUrl(url: string): string {
   return url.endsWith("/") ? url.slice(0, -1) : url;
 }
@@ -33,13 +32,12 @@ function cleanSiteUrl(url: string): string {
    STRIPE INIT
 =========================== */
 const stripe =
-  stripeSecretKey !== ""
+  stripeSecretKey
     ? new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" })
     : null;
 
 /* ===========================
    SUPABASE SERVICE ROLE (server-only)
-   -> juste pour lire pricing_plans
 =========================== */
 const supabaseServer =
   supabaseUrl && supabaseServiceKey
@@ -50,40 +48,29 @@ const supabaseServer =
 
 export async function POST(req: Request) {
   try {
-    /* ===========================
-       0) CONFIG CHECK
-    =========================== */
+    // 0) config
     if (!stripe) {
-      console.error("Stripe non initialisé : STRIPE_SECRET_KEY manquante");
       return NextResponse.json(
-        { error: "Configuration Stripe manquante côté serveur." },
+        { error: "STRIPE_SECRET_KEY manquante." },
         { status: 500 }
       );
     }
-
     if (!siteUrlRaw) {
-      console.error("NEXT_PUBLIC_SITE_URL manquante");
       return NextResponse.json(
-        { error: "Configuration siteUrl manquante côté serveur." },
+        { error: "NEXT_PUBLIC_SITE_URL manquante." },
         { status: 500 }
       );
     }
-
     if (!supabaseServer) {
-      console.error(
-        "Supabase server non initialisé : NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquante"
-      );
       return NextResponse.json(
-        { error: "Configuration Supabase manquante côté serveur." },
+        { error: "Supabase server (service role) non configuré." },
         { status: 500 }
       );
     }
 
     const siteUrl = cleanSiteUrl(siteUrlRaw);
 
-    /* ===========================
-       1) PARSE BODY (SANS user_id)
-    =========================== */
+    // 1) body
     const body = (await req.json().catch(() => ({}))) as {
       plan?: unknown;
       lang?: unknown;
@@ -92,23 +79,22 @@ export async function POST(req: Request) {
     const plan = body.plan;
     const lang = typeof body.lang === "string" ? body.lang : "";
 
-    /* ===========================
-       2) VALIDATE PLAN
-    =========================== */
     if (!isPlan(plan)) {
       return NextResponse.json({ error: "Plan invalide." }, { status: 400 });
     }
 
-    /* ===========================
-       3) AUTH VIA SUPABASE COOKIES (SERVER)
-    =========================== */
-    const supabaseAuth = createRouteHandlerClient({ cookies });
+    // 2) ✅ AUTH SERVER via cookies Supabase
+    // IMPORTANT: on passe une fonction qui retourne le cookieStore
+    const supabaseAuth = createRouteHandlerClient({
+      cookies: () => cookies(),
+    });
+
     const { data: userData, error: userErr } = await supabaseAuth.auth.getUser();
 
     if (userErr) {
-      console.error("Supabase getUser error:", userErr);
+      console.error("getUser error:", userErr);
       return NextResponse.json(
-        { error: "Non authentifié. Connecte-toi pour payer." },
+        { error: "Non authentifié (cookie session absent/invalid)." },
         { status: 401 }
       );
     }
@@ -116,14 +102,12 @@ export async function POST(req: Request) {
     const userId = userData?.user?.id;
     if (!userId) {
       return NextResponse.json(
-        { error: "Non authentifié. Connecte-toi pour payer." },
+        { error: "Non authentifié (pas de userId)." },
         { status: 401 }
       );
     }
 
-    /* ===========================
-       4) GET STRIPE PRICE ID FROM SUPABASE (SERVICE ROLE)
-    =========================== */
+    // 3) get stripe_price_id
     const { data: planRow, error: planErr } = await supabaseServer
       .from(PLANS_TABLE)
       .select("code, stripe_price_id")
@@ -131,78 +115,50 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     if (planErr) {
-      console.error("Supabase fetch pricing_plans error:", planErr);
+      console.error("pricing_plans fetch error:", planErr);
       return NextResponse.json(
-        { error: `Impossible de récupérer le plan (Supabase): ${planErr.message}` },
+        { error: "Erreur Supabase en lisant pricing_plans." },
         { status: 500 }
       );
     }
 
-    if (!planRow) {
+    if (!planRow?.stripe_price_id) {
       return NextResponse.json(
-        { error: `Plan introuvable (code=${plan}). Vérifie pricing_plans.code.` },
-        { status: 400 }
-      );
-    }
-
-    if (!planRow.stripe_price_id) {
-      console.error("stripe_price_id manquant pour le plan :", plan, planRow);
-      return NextResponse.json(
-        { error: `Aucun price Stripe configuré pour le plan ${plan}.` },
+        { error: `stripe_price_id manquant pour ${plan}.` },
         { status: 500 }
       );
     }
 
-    /* ===========================
-       5) STRIPE RETURN URLs
-    =========================== */
+    // 4) urls
     const langParam = lang ? `&lang=${encodeURIComponent(lang)}` : "";
     const successUrl = `${siteUrl}/stripe/return?session_id={CHECKOUT_SESSION_ID}${langParam}`;
     const cancelUrl = `${siteUrl}/payment/cancel${
       lang ? `?lang=${encodeURIComponent(lang)}` : ""
     }`;
 
-    /* ===========================
-       6) CREATE STRIPE CHECKOUT SESSION
-    =========================== */
+    // 5) create checkout session
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      payment_method_types: ["card"],
       line_items: [{ price: planRow.stripe_price_id, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
-
-      // utile côté Stripe
       client_reference_id: userId,
-
-      // utile pour webhook
-      metadata: {
-        user_id: userId,
-        plan_code: plan,
-      },
+      metadata: { user_id: userId, plan_code: plan },
     });
 
     if (!session.url) {
-      console.error("Stripe a créé la session, mais sans URL :", session.id);
       return NextResponse.json(
-        { error: "Impossible de générer l’URL de paiement Stripe." },
+        { error: "Stripe session créée mais sans URL." },
         { status: 500 }
       );
     }
 
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (err: any) {
-    console.error("Stripe checkout error (détails):", {
-      message: err?.message,
-      type: err?.type,
-      code: err?.code,
-      statusCode: err?.statusCode,
-      raw: err?.raw,
-    });
-
+    console.error("checkout error:", err?.message);
     return NextResponse.json(
-      { error: err?.message ?? "Erreur serveur lors de la création du checkout." },
+      { error: err?.message ?? "Erreur serveur checkout." },
       { status: 500 }
     );
   }
-      }
+}
