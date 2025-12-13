@@ -1,7 +1,7 @@
 // app/api/verify-recaptcha/route.ts
 import { NextResponse } from "next/server";
 
-export const runtime = "nodejs"; // important: reCAPTCHA = appel externe
+export const runtime = "nodejs";
 
 type GoogleVerifyResponse = {
   success: boolean;
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     };
 
     const token = body.token;
-    const expectedAction = body.action; // ex: "signup"
+    const expectedAction = body.action;
 
     if (!token || typeof token !== "string") {
       return NextResponse.json(
@@ -39,16 +39,26 @@ export async function POST(req: Request) {
       );
     }
 
-    // Appel Google
     const params = new URLSearchParams();
     params.set("secret", secret);
     params.set("response", token);
+
+    // Optionnel: IP
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+    if (ip) params.set("remoteip", ip);
 
     const googleRes = await fetch("https://www.google.com/recaptcha/api/siteverify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params.toString(),
     });
+
+    if (!googleRes.ok) {
+      return NextResponse.json(
+        { success: false, message: "Erreur Google reCAPTCHA", status: googleRes.status },
+        { status: 502 }
+      );
+    }
 
     const data = (await googleRes.json().catch(() => null)) as GoogleVerifyResponse | null;
 
@@ -59,7 +69,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Si Google dit non => non
     if (!data.success) {
       return NextResponse.json(
         {
@@ -73,21 +82,22 @@ export async function POST(req: Request) {
       );
     }
 
-    // Vérifie l'action si on en attend une
-    if (expectedAction && data.action && data.action !== expectedAction) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Action reCAPTCHA invalide",
-          score: data.score ?? null,
-          action: data.action ?? null,
-          errors: ["action-mismatch"],
-        },
-        { status: 200 }
-      );
+    // ✅ Exiger action si attendue
+    if (expectedAction) {
+      if (!data.action || data.action !== expectedAction) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Action reCAPTCHA invalide",
+            score: data.score ?? null,
+            action: data.action ?? null,
+            errors: ["action-mismatch"],
+          },
+          { status: 200 }
+        );
+      }
     }
 
-    // Seuil de score (ajustable)
     const score = typeof data.score === "number" ? data.score : 0;
     const MIN_SCORE = 0.5;
 
@@ -97,14 +107,13 @@ export async function POST(req: Request) {
           success: false,
           message: "Score reCAPTCHA trop bas",
           score,
-          action: data.action ?? null,
+          action: data.action ?? expectedAction ?? null,
           errors: ["low-score"],
         },
         { status: 200 }
       );
     }
 
-    // OK
     return NextResponse.json(
       {
         success: true,
