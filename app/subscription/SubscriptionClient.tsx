@@ -6,14 +6,16 @@ import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
 
+type PlanCode = "free" | "chat" | "plus" | "unlimited";
+
 type PricingPlan = {
   id: string;
-  code: "free" | "chat" | "plus" | "unlimited"; // ✅ important pour checkout/webhook
+  code: PlanCode; // ✅ important pour checkout/webhook
   name: string;
   price: number | null; // ✅ ex: 0, 9.99, 19.99, 39.99
   ai_limit: number | null;
   message_limit: number | null;
-  stripe_price_id: string | null; // optionnel si tu veux aussi supporter un endpoint priceId
+  stripe_price_id: string | null;
   has_voice: boolean | null;
   voice_limit: number | null;
 };
@@ -88,37 +90,44 @@ export default function SubscriptionPage() {
     };
   }, []);
 
-  // ✅ Version recommandée : on paye via /api/checkout (plan_code + user_id côté serveur)
+  /**
+   * ✅ Modif clé:
+   * - on n’envoie PLUS user_id au serveur (pas fiable / modifiable)
+   * - /api/checkout doit récupérer le user côté serveur (cookies/session)
+   */
   const handleSubscribe = async (plan: PricingPlan) => {
     const isFree = plan.code === "free" || plan.price === 0;
 
+    // Free => pas de Stripe
     if (isFree) {
       router.push(`/create-amoria?lang=${locale}&plan=free`);
       return;
     }
 
     try {
+      setError(null);
       setLoadingPlanId(plan.id);
 
-      // Optionnel : si tu veux forcer login ici (sinon ton /payment le fait déjà)
+      // Si pas connecté → login (avec retour plan)
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
         router.push(`/login?lang=${locale}&plan=${plan.code}`);
         return;
       }
 
+      // ✅ Appel checkout : on envoie seulement le code du plan
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          plan: plan.code, // ✅ correspond à metadata.plan_code
-          user_id: userData.user.id,
+          plan: plan.code,   // ✅ plan_code (server -> stripe price)
+          lang: locale,      // optionnel, pratique pour success_url
         }),
       });
 
       if (!res.ok) {
         const body = await res.text();
-        console.error(body);
+        console.error("checkout error:", body);
         setError("Erreur lors de la création de la session de paiement.");
         return;
       }
@@ -161,11 +170,25 @@ export default function SubscriptionPage() {
 
   return (
     <main style={{ padding: "3rem 1.5rem", maxWidth: "960px", margin: "0 auto" }}>
-      <h1 style={{ fontSize: "2.2rem", fontWeight: 700, marginBottom: "1rem", textAlign: "center" }}>
+      <h1
+        style={{
+          fontSize: "2.2rem",
+          fontWeight: 700,
+          marginBottom: "1rem",
+          textAlign: "center",
+        }}
+      >
         {title}
       </h1>
 
-      <p style={{ textAlign: "center", maxWidth: "640px", margin: "0 auto 2.5rem", opacity: 0.8 }}>
+      <p
+        style={{
+          textAlign: "center",
+          maxWidth: "640px",
+          margin: "0 auto 2.5rem",
+          opacity: 0.8,
+        }}
+      >
         {subtitle}
       </p>
 
@@ -306,7 +329,7 @@ export default function SubscriptionPage() {
 
                 <button
                   onClick={() => handleSubscribe(plan)}
-                  disabled={loadingPlanId === plan.id}
+                  disabled={loadingPlanId === plan.id || isFree}
                   style={{
                     width: "100%",
                     borderRadius: "999px",
@@ -331,4 +354,4 @@ export default function SubscriptionPage() {
       )}
     </main>
   );
-}
+          }
