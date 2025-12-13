@@ -1,26 +1,16 @@
 "use client";
 
-import React, { FormEvent, useEffect, useState } from "react";
+import React, { FormEvent, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
-
 /* ===========================
-   ⚠️ CLÉ RECAPTCHA (PUBLIC)
+   reCAPTCHA v3 (PUBLIC KEY)
 =========================== */
 
-/**
- * ✅ CONSEILLÉ : utiliser process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
- * MAIS je garde ton const pour rester 1:1 avec ton code.
- *
- * IMPORTANT: ceci doit être la clé "site key" (publique), pas la secret key.
- * Source Google: https://developers.google.com/recaptcha/docs/v3
- */
-const RECAPTCHA_SITE_KEY = "6LcTvCcsAAAAAMaNReYdUv0Q3S7MB-CBzQN-APnS";
-
-// Ajuste si tu veux plus strict (0.7), ou plus permissif (0.3)
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 const MIN_RECAPTCHA_SCORE = 0.5;
 
 type Locale = "fr" | "en" | "es";
@@ -122,7 +112,7 @@ export default function LoginClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const locale = normalizeLocale(searchParams.get("lang"));
+  const locale = useMemo(() => normalizeLocale(searchParams.get("lang")), [searchParams]);
   const t = STRINGS[locale];
 
   const [email, setEmail] = useState("");
@@ -131,18 +121,35 @@ export default function LoginClient() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // (optionnel) on peut vérifier si grecaptcha est prêt
   const [recaptchaReady, setRecaptchaReady] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const timer = setInterval(() => {
-      if (window.grecaptcha?.execute) {
-        setRecaptchaReady(true);
-        clearInterval(timer);
+    if (!RECAPTCHA_SITE_KEY) {
+      // Si tu oublies la variable d'env, on bloque recaptchaReady (et donc login)
+      setRecaptchaReady(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const tick = () => {
+      if (cancelled) return;
+
+      if (window.grecaptcha?.ready && window.grecaptcha?.execute) {
+        window.grecaptcha.ready(() => {
+          if (!cancelled) setRecaptchaReady(true);
+        });
+        return;
       }
-    }, 150);
-    return () => clearInterval(timer);
+
+      setTimeout(tick, 150);
+    };
+
+    tick();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const redirectToMyAmoria = () => {
@@ -159,15 +166,12 @@ export default function LoginClient() {
 
   const getRecaptchaToken = async (action: "login" | "google_login") => {
     if (!RECAPTCHA_SITE_KEY) return null;
-    if (typeof window === "undefined") return null;
     if (!window.grecaptcha?.execute || !window.grecaptcha?.ready) return null;
 
     return new Promise<string | null>((resolve) => {
       window.grecaptcha!.ready(async () => {
         try {
-          const token = await window.grecaptcha!.execute(RECAPTCHA_SITE_KEY, {
-            action,
-          });
+          const token = await window.grecaptcha!.execute(RECAPTCHA_SITE_KEY, { action });
           resolve(token);
         } catch {
           resolve(null);
@@ -185,7 +189,6 @@ export default function LoginClient() {
 
     const json = await res.json();
 
-    // Ton route renvoie { success, score, action, errors }
     const ok =
       res.ok &&
       json?.success === true &&
@@ -203,7 +206,6 @@ export default function LoginClient() {
     setErrorMsg(null);
 
     try {
-      // 1) reCAPTCHA token
       const token = await getRecaptchaToken("login");
       if (!token) {
         setErrorMsg(t.errorRecaptcha);
@@ -211,7 +213,6 @@ export default function LoginClient() {
         return;
       }
 
-      // 2) verify serveur
       const { ok, json } = await verifyRecaptcha(token, "login");
       if (!ok) {
         console.error("reCAPTCHA verify failed:", json);
@@ -220,19 +221,13 @@ export default function LoginClient() {
         return;
       }
 
-      // 3) login supabase
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
         console.error("supabase signIn error", error);
         const msg = (error.message || "").toLowerCase();
         const looksAuthError =
-          msg.includes("invalid") ||
-          msg.includes("user not found") ||
-          msg.includes("credentials");
+          msg.includes("invalid") || msg.includes("user not found") || msg.includes("credentials");
 
         setErrorMsg(looksAuthError ? t.errorInvalid : t.errorGeneric);
         setLoading(false);
@@ -253,7 +248,6 @@ export default function LoginClient() {
     setErrorMsg(null);
 
     try {
-      // (Optionnel mais cohérent) reCAPTCHA avant OAuth
       const token = await getRecaptchaToken("google_login");
       if (!token) {
         setErrorMsg(t.errorRecaptcha);
@@ -269,8 +263,7 @@ export default function LoginClient() {
         return;
       }
 
-      const origin =
-        typeof window !== "undefined" ? window.location.origin : "";
+      const origin = window.location.origin;
 
       const params = new URLSearchParams();
       params.set("lang", locale);
@@ -294,12 +287,18 @@ export default function LoginClient() {
     }
   };
 
+  const recaptchaMissing = !RECAPTCHA_SITE_KEY;
+
   return (
     <>
-      <Script
-        src={`https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`}
-        strategy="afterInteractive"
-      />
+      {RECAPTCHA_SITE_KEY ? (
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(
+            RECAPTCHA_SITE_KEY
+          )}`}
+          strategy="afterInteractive"
+        />
+      ) : null}
 
       <main className="auth-root">
         <div className="auth-gradient-orbit" />
@@ -312,6 +311,16 @@ export default function LoginClient() {
             <h1 className="auth-title">{t.title}</h1>
             <p className="auth-subtitle">{t.subtitle}</p>
           </header>
+
+          {recaptchaMissing ? (
+            <p className="auth-error" style={{ marginBottom: "1rem" }}>
+              {locale === "en"
+                ? "Missing reCAPTCHA key (NEXT_PUBLIC_RECAPTCHA_SITE_KEY)."
+                : locale === "es"
+                ? "Falta la clave reCAPTCHA (NEXT_PUBLIC_RECAPTCHA_SITE_KEY)."
+                : "Clé reCAPTCHA manquante (NEXT_PUBLIC_RECAPTCHA_SITE_KEY)."}
+            </p>
+          ) : null}
 
           <button
             type="button"
@@ -386,11 +395,7 @@ export default function LoginClient() {
 
           <div className="auth-footer">
             {t.noAccount}{" "}
-            <button
-              type="button"
-              onClick={goToSignup}
-              className="auth-link-btn"
-            >
+            <button type="button" onClick={goToSignup} className="auth-link-btn">
               {t.signupLink}
             </button>
           </div>
@@ -711,4 +716,4 @@ export default function LoginClient() {
       </main>
     </>
   );
-       }
+}
