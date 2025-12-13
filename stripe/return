@@ -1,0 +1,83 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+
+export default function StripeReturnPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const waitForSessionAndRedirect = async () => {
+      const lang = searchParams.get("lang") || "fr";
+
+      // ⏱️ On attend que Supabase restaure la session (important)
+      for (let i = 0; i < 15; i++) {
+        if (cancelled) return;
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          // ✅ Session OK → on redirige vers l’app
+          router.replace(`/my-amoria?lang=${lang}`);
+          return;
+        }
+
+        // attendre 300 ms avant de réessayer
+        await new Promise((r) => setTimeout(r, 300));
+      }
+
+      // ❌ Toujours pas de session → login
+      router.replace(`/login?lang=${lang}`);
+    };
+
+    waitForSessionAndRedirect();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router, searchParams]);
+
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#020617",
+        color: "#e5e7eb",
+        fontFamily:
+          "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      }}
+    >
+      <div style={{ textAlign: "center" }}>
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: "50%",
+            border: "4px solid rgba(255,255,255,0.2)",
+            borderTopColor: "#fb7185",
+            margin: "0 auto 1rem",
+            animation: "spin 1s linear infinite",
+          }}
+        />
+        <p>Finalisation de ton paiement…</p>
+
+        <style>{`
+          @keyframes spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+        `}</style>
+      </div>
+    </main>
+  );
+}
