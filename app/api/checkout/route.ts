@@ -1,25 +1,37 @@
+// app/api/checkout/route.ts
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
+export const runtime = "nodejs";
+
 type PlanId = "chat" | "plus" | "unlimited";
 
-// Env
+const PLANS_TABLE = "pricing_plans";
+
+// ENV
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+const siteUrlRaw = process.env.NEXT_PUBLIC_SITE_URL || "";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
-// Table
-const PLANS_TABLE = "pricing_plans";
+// Helpers
+function isPlan(v: unknown): v is PlanId {
+  return v === "chat" || v === "plus" || v === "unlimited";
+}
 
-// Stripe init
+function cleanSiteUrl(url: string): string {
+  // Enlève le slash final pour éviter //payment/...
+  return url.endsWith("/") ? url.slice(0, -1) : url;
+}
+
+// Stripe
 const stripe =
   stripeSecretKey !== ""
     ? new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" })
     : null;
 
-// Supabase server client (service role) - côté serveur seulement
+// Supabase (service role) — serveur seulement
 const supabaseServer =
   supabaseUrl && supabaseServiceKey
     ? createClient(supabaseUrl, supabaseServiceKey, {
@@ -27,21 +39,18 @@ const supabaseServer =
       })
     : null;
 
-function isPlan(v: any): v is PlanId {
-  return v === "chat" || v === "plus" || v === "unlimited";
-}
-
 export async function POST(req: Request) {
   try {
+    // 1) Parse body
     const body = (await req.json().catch(() => ({}))) as {
-      plan?: PlanId;
-      user_id?: string;
+      plan?: unknown;
+      user_id?: unknown;
     };
 
     const plan = body.plan;
     const user_id = body.user_id;
 
-    // 1) Validation
+    // 2) Validation
     if (!isPlan(plan)) {
       return NextResponse.json({ error: "Plan invalide." }, { status: 400 });
     }
@@ -53,7 +62,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2) Vérifier config
+    // 3) Vérifier config
     if (!stripe) {
       console.error("Stripe non initialisé : STRIPE_SECRET_KEY manquante");
       return NextResponse.json(
@@ -62,7 +71,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!siteUrl) {
+    if (!siteUrlRaw) {
       console.error("NEXT_PUBLIC_SITE_URL manquante");
       return NextResponse.json(
         { error: "Configuration siteUrl manquante côté serveur." },
@@ -80,9 +89,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3) Récupérer le stripe_price_id du plan dans Supabase
-    // IMPORTANT: on n'utilise PAS is_active ici pour éviter erreur si colonne absente
-    // IMPORTANT: maybeSingle() pour éviter erreur si la ligne n'existe pas
+    const siteUrl = cleanSiteUrl(siteUrlRaw);
+
+    // 4) Lire le stripe_price_id dans Supabase
+    // IMPORTANT: le champ doit être pricing_plans.code = "chat"|"plus"|"unlimited"
     const { data: planRow, error: planErr } = await supabaseServer
       .from(PLANS_TABLE)
       .select("code, stripe_price_id")
@@ -112,7 +122,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4) Créer la session checkout Stripe
+    // 5) Créer la session Stripe Checkout (subscription)
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
@@ -121,7 +131,7 @@ export async function POST(req: Request) {
       cancel_url: `${siteUrl}/payment/cancel`,
       metadata: {
         user_id,
-        plan_code: plan,
+        plan_code: plan, // IMPORTANT: utilisé par ton webhook
       },
     });
 
@@ -135,9 +145,17 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (err: any) {
-    console.error("Stripe checkout error:", err?.message || err);
+    // Logs détaillés Stripe (super important pour diagnostiquer)
+    console.error("Stripe checkout error (détails):", {
+      message: err?.message,
+      type: err?.type,
+      code: err?.code,
+      statusCode: err?.statusCode,
+      raw: err?.raw,
+    });
+
     return NextResponse.json(
-      { error: "Erreur serveur lors de la création du checkout." },
+      { error: err?.message ?? "Erreur serveur lors de la création du checkout." },
       { status: 500 }
     );
   }
