@@ -11,7 +11,7 @@ type PlanId = "free" | PaidPlanId;
 type DbPlanRow = {
   code: PaidPlanId;
   name: string | null;
-  price: number | null;
+  price: number | null; // ex: 9.99, 19.99, 39.99
   ai_limit: number | null;
   message_limit: number | null;
   voice_limit: number | null;
@@ -333,9 +333,18 @@ const LABELS: Record<Locale, Labels> = {
     ],
     faqTitle: "Preguntas frecuentes",
     faqs: [
-      { q: "¿Puedo cambiar o cancelar mi plan cuando quiera?", a: "Sí. Puedes cambiar o cancelar tu suscripción en cualquier momento desde tu cuenta." },
-      { q: "¿Puedo probar AmorIAI de forma gratuita?", a: "Sí. Puedes crear una cuenta gratuita, probar la experiencia básica por texto y activar un plan de pago solo si quieres continuar." },
-      { q: "¿Qué pasa si alcanzo el límite de mensajes de mi plan?", a: "Tu AmorIAI te avisará cuando estés cerca del límite. Puedes esperar al mes siguiente o subir de plan." },
+      {
+        q: "¿Puedo cambiar o cancelar mi plan cuando quiera?",
+        a: "Sí. Puedes cambiar o cancelar tu suscripción en cualquier momento desde tu cuenta.",
+      },
+      {
+        q: "¿Puedo probar AmorIAI de forma gratuita?",
+        a: "Sí. Puedes crear una cuenta gratuita, probar la experiencia básica por texto y activar un plan de pago solo si quieres continuar.",
+      },
+      {
+        q: "¿Qué pasa si alcanzo el límite de mensajes de mi plan?",
+        a: "Tu AmorIAI te avisará cuando estés cerca del límite. Puedes esperar al mes siguiente o subir de plan.",
+      },
     ],
   },
 };
@@ -360,7 +369,6 @@ function formatUsd(locale: Locale, amount: number): string {
   return new Intl.NumberFormat(localeTag, {
     style: "currency",
     currency: "USD",
-    currencyDisplay: "symbol",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
@@ -381,9 +389,9 @@ export default function PricingPage() {
   const [locale, setLocale] = useState<Locale>("fr");
   const [plansLoading, setPlansLoading] = useState(false);
   const [dbPlans, setDbPlans] = useState<Partial<Record<PaidPlanId, DbPlanRow>>>({});
-  const [errorMsg, setErrorMsg] = useState<string>("");
+  const [errorMsg, setErrorMsg] = useState("");
 
-  // ✅ loading seulement sur le bouton cliqué
+  // ✅ un seul bouton loading (celui cliqué)
   const [activePlanLoading, setActivePlanLoading] = useState<PlanId | null>(null);
 
   // Init locale + force ?lang=
@@ -393,8 +401,7 @@ export default function PricingPage() {
 
     const params = new URLSearchParams(window.location.search);
     params.set("lang", initial);
-    const newUrl = window.location.pathname + "?" + params.toString();
-    window.history.replaceState(null, "", newUrl);
+    window.history.replaceState(null, "", window.location.pathname + "?" + params.toString());
   }, []);
 
   // Fetch plans from Supabase (paid only)
@@ -442,8 +449,7 @@ export default function PricingPage() {
     setLocale(code);
     const params = new URLSearchParams(window.location.search);
     params.set("lang", code);
-    const newUrl = window.location.pathname + "?" + params.toString();
-    window.history.replaceState(null, "", newUrl);
+    window.history.replaceState(null, "", window.location.pathname + "?" + params.toString());
   };
 
   const displayPlans = useMemo(() => {
@@ -452,15 +458,14 @@ export default function PricingPage() {
 
       const hasDbPrice = typeof db?.price === "number" && Number.isFinite(db.price);
       const mergedName = db?.name ? db.name : p.name;
-      const mergedPrice = hasDbPrice ? `${formatUsd(locale, db!.price!)}${priceSuffix(locale)}` : p.price;
+      const mergedPrice = hasDbPrice
+        ? `${formatUsd(locale, db!.price!)}${priceSuffix(locale)}`
+        : p.price;
 
       return { ...p, name: mergedName, price: mergedPrice };
     });
   }, [t.plans, dbPlans, locale]);
 
-  /* ===========================
-     NAV HELPERS
-  ============================ */
   const goToSignupWithPlan = (planId: PlanId) => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -468,7 +473,7 @@ export default function PricingPage() {
     router.push(`/signup?${params.toString()}`);
   };
 
-  const goToCreateAmoria = () => {
+  const goToCreateAmoriaFree = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
     params.set("plan", "free");
@@ -479,14 +484,11 @@ export default function PricingPage() {
     router.push(withLang("/signup"));
   };
 
-  /* ===========================
-     ✅ Stripe Checkout (CLIENT)
-     -> POST /api/checkout
-     -> envoie { plan, lang }
-     -> le serveur récupère user via cookies Supabase
-  ============================ */
+  /**
+   * ✅ Stripe Checkout (CLIENT) — version "user_id"
+   * -> POST /api/checkout { plan, lang, user_id }
+   */
   const startStripeCheckout = async (planId: PaidPlanId) => {
-    // 1) user côté client (simple check)
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     if (userErr) {
       console.error("getUser error:", userErr);
@@ -497,11 +499,12 @@ export default function PricingPage() {
       return;
     }
 
-    // 2) call API
+    const userId = userData.user.id;
+
     const res = await fetch("/api/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: planId, lang: locale }),
+      body: JSON.stringify({ plan: planId, lang: locale, user_id: userId }),
     });
 
     const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
@@ -510,7 +513,6 @@ export default function PricingPage() {
       throw new Error(json?.error || "Erreur serveur lors du paiement.");
     }
 
-    // 3) redirect
     window.location.href = json.url;
   };
 
@@ -519,18 +521,16 @@ export default function PricingPage() {
     setActivePlanLoading(planId);
 
     try {
-      // free => si connecté => create-amoria, sinon signup
       if (planId === "free") {
         const { data } = await supabase.auth.getUser();
         if (!data?.user) {
           goToSignupWithPlan("free");
           return;
         }
-        goToCreateAmoria();
+        goToCreateAmoriaFree();
         return;
       }
 
-      // paid => Stripe
       await startStripeCheckout(planId);
     } catch (e: any) {
       console.error("handleChoosePlan error:", e);
@@ -540,18 +540,15 @@ export default function PricingPage() {
     }
   };
 
-  const disabledAll = plansLoading || activePlanLoading !== null;
+  // ✅ Pendant checkout, on désactive tout pour éviter double paiement
+  const disableEverything = plansLoading || activePlanLoading !== null;
 
   return (
     <main className="amoria-root">
       {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
-          <img
-            src="/AmorIA_logo_transparent.png"
-            alt="Logo AmorIAI.app"
-            className="amoria-logo-full"
-          />
+          <img src="/AmorIA_logo_transparent.png" alt="Logo AmorIAI.app" className="amoria-logo-full" />
           <div className="amoria-logo-text">
             <div className="amoria-logo-title">AmorIAI.app</div>
             <div className="amoria-logo-tagline">{ui.brandTagline}</div>
@@ -559,15 +556,9 @@ export default function PricingPage() {
         </div>
 
         <nav className="amoria-nav">
-          <a href={withLang("/")} className="amoria-nav-link">
-            {ui.nav.home}
-          </a>
-          <a href={withLang("/#features")} className="amoria-nav-link">
-            {ui.nav.features}
-          </a>
-          <a href={withLang("/pricing")} className="amoria-nav-link amoria-nav-link--active">
-            {ui.nav.pricing}
-          </a>
+          <a href={withLang("/")} className="amoria-nav-link">{ui.nav.home}</a>
+          <a href={withLang("/#features")} className="amoria-nav-link">{ui.nav.features}</a>
+          <a href={withLang("/pricing")} className="amoria-nav-link amoria-nav-link--active">{ui.nav.pricing}</a>
         </nav>
 
         <div className="amoria-nav-right">
@@ -578,18 +569,15 @@ export default function PricingPage() {
                 type="button"
                 onClick={() => handleLocaleChange(code)}
                 className={"amoria-lang-pill" + (locale === code ? " amoria-lang-pill--active" : "")}
+                disabled={disableEverything}
               >
                 {code.toUpperCase()}
               </button>
             ))}
           </div>
 
-          <a href={withLang("/login")} className="amoria-nav-btn amoria-nav-btn--ghost">
-            {ui.navLogin}
-          </a>
-          <a href={withLang("/signup")} className="amoria-nav-btn amoria-nav-btn--primary">
-            {ui.navSignup}
-          </a>
+          <a href={withLang("/login")} className="amoria-nav-btn amoria-nav-btn--ghost">{ui.navLogin}</a>
+          <a href={withLang("/signup")} className="amoria-nav-btn amoria-nav-btn--primary">{ui.navSignup}</a>
         </div>
       </header>
 
@@ -602,7 +590,7 @@ export default function PricingPage() {
           type="button"
           className="amoria-pricing-hero-btn"
           onClick={handleHeroCta}
-          disabled={disabledAll}
+          disabled={disableEverything}
         >
           {t.heroCta}
         </button>
@@ -610,11 +598,7 @@ export default function PricingPage() {
         <p className="amoria-pricing-hero-stat">{t.heroStat}</p>
         <p className="amoria-pricing-billing-note">{t.billingNote}</p>
 
-        {!!errorMsg && (
-          <p className="amoria-error" role="alert">
-            {errorMsg}
-          </p>
-        )}
+        {!!errorMsg && <p className="amoria-error" role="alert">{errorMsg}</p>}
       </section>
 
       {/* PLANS */}
@@ -633,9 +617,7 @@ export default function PricingPage() {
                   "amoria-pricing-card",
                   plan.badgeVariant === "popular" ? "amoria-pricing-card--popular" : "",
                   plan.badgeVariant === "value" ? "amoria-pricing-card--value" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
+                ].filter(Boolean).join(" ")}
               >
                 {plan.badgeLabel && (
                   <div className={`amoria-pricing-badge amoria-pricing-badge--${plan.badgeVariant ?? "popular"}`}>
@@ -650,16 +632,14 @@ export default function PricingPage() {
                 </header>
 
                 <ul className="amoria-pricing-card-features">
-                  {plan.features.map((f) => (
-                    <li key={f}>{f}</li>
-                  ))}
+                  {plan.features.map((f) => <li key={f}>{f}</li>)}
                 </ul>
 
                 <button
                   type="button"
                   className={"amoria-pricing-card-btn" + (isThisLoading ? " is-loading" : "")}
                   onClick={() => handleChoosePlan(plan.id)}
-                  disabled={disabledAll}
+                  disabled={disableEverything}
                 >
                   {isThisLoading ? (
                     <span className="amoria-dots" aria-label="Chargement">
@@ -696,21 +676,11 @@ export default function PricingPage() {
           <span>{ui.footerCopy}</span>
         </div>
         <div className="amoria-footer-links">
-          <a href={withLang("/legal")} className="amoria-footer-link">
-            {ui.footerLinks.legal}
-          </a>
-          <a href={withLang("/legal/privacy")} className="amoria-footer-link">
-            {ui.footerLinks.privacy}
-          </a>
-          <a href={withLang("/legal/terms")} className="amoria-footer-link">
-            {ui.footerLinks.terms}
-          </a>
-          <a href={withLang("/contact")} className="amoria-footer-link">
-            {ui.footerLinks.contact}
-          </a>
-          <a href={withLang("/about")} className="amoria-footer-link">
-            {ui.footerLinks.about}
-          </a>
+          <a href={withLang("/legal")} className="amoria-footer-link">{ui.footerLinks.legal}</a>
+          <a href={withLang("/legal/privacy")} className="amoria-footer-link">{ui.footerLinks.privacy}</a>
+          <a href={withLang("/legal/terms")} className="amoria-footer-link">{ui.footerLinks.terms}</a>
+          <a href={withLang("/contact")} className="amoria-footer-link">{ui.footerLinks.contact}</a>
+          <a href={withLang("/about")} className="amoria-footer-link">{ui.footerLinks.about}</a>
         </div>
       </footer>
 
@@ -769,6 +739,11 @@ export default function PricingPage() {
         .amoria-logo-full {
           height: 36px;
           width: auto;
+        }
+
+        .amoria-logo-text {
+          display: flex;
+          flex-direction: column;
         }
 
         .amoria-logo-title {
@@ -888,11 +863,19 @@ export default function PricingPage() {
           cursor: pointer;
           margin-bottom: 0.8rem;
           box-shadow: 0 16px 40px rgba(248, 113, 113, 0.5);
+          transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
         }
 
         .amoria-pricing-hero-btn:hover {
           transform: translateY(-1px);
           box-shadow: 0 22px 55px rgba(248, 113, 113, 0.7);
+        }
+
+        .amoria-pricing-hero-btn:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: 0 16px 40px rgba(248, 113, 113, 0.25);
         }
 
         .amoria-pricing-hero-stat {
@@ -1079,7 +1062,7 @@ export default function PricingPage() {
         }
 
         .amoria-pricing-card-btn.is-loading {
-          opacity: 0.9;
+          opacity: 0.92;
         }
 
         .amoria-dots {
@@ -1097,22 +1080,12 @@ export default function PricingPage() {
           animation: amoriaDot 1s infinite ease-in-out;
         }
 
-        .amoria-dots span:nth-child(2) {
-          animation-delay: 0.15s;
-        }
-        .amoria-dots span:nth-child(3) {
-          animation-delay: 0.3s;
-        }
+        .amoria-dots span:nth-child(2) { animation-delay: 0.15s; }
+        .amoria-dots span:nth-child(3) { animation-delay: 0.3s; }
 
         @keyframes amoriaDot {
-          0%, 80%, 100% {
-            transform: translateY(0);
-            opacity: 0.6;
-          }
-          40% {
-            transform: translateY(-4px);
-            opacity: 1;
-          }
+          0%, 80%, 100% { transform: translateY(0); opacity: 0.6; }
+          40% { transform: translateY(-4px); opacity: 1; }
         }
 
         .amoria-pricing-faq {
@@ -1167,6 +1140,10 @@ export default function PricingPage() {
           text-align: center;
         }
 
+        .amoria-footer-top {
+          margin-bottom: 0.4rem;
+        }
+
         .amoria-footer-links {
           display: flex;
           flex-wrap: wrap;
@@ -1191,31 +1168,16 @@ export default function PricingPage() {
             justify-content: center;
             gap: 0.6rem 1rem;
           }
-
-          .amoria-nav {
-            display: none;
-          }
-
-          .amoria-pricing-hero {
-            padding-inline: 1.3rem;
-          }
+          .amoria-nav { display: none; }
+          .amoria-pricing-hero { padding-inline: 1.3rem; }
         }
 
         @media (max-width: 640px) {
-          .amoria-header {
-            padding-inline: 1rem;
-          }
-
-          .amoria-pricing-section,
-          .amoria-pricing-faq {
-            padding-inline: 1rem;
-          }
-
-          .amoria-nav-right a.amoria-nav-btn--ghost {
-            display: none;
-          }
+          .amoria-header { padding-inline: 1rem; }
+          .amoria-pricing-section, .amoria-pricing-faq { padding-inline: 1rem; }
+          .amoria-nav-right a.amoria-nav-btn--ghost { display: none; }
         }
       `}</style>
     </main>
   );
-    }
+                  }
