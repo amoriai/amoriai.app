@@ -501,14 +501,14 @@ export default function PricingPage() {
 
   const res = await fetch("/api/checkout", {
   method: "POST",
-  credentials: "include",
   headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     plan: planId,
     lang: locale,
-    user_id: userData.user.id,
+    user_id: userData.user.id, // ✅ AJOUTE ÇA
   }),
 });
+;
 
     const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
 
