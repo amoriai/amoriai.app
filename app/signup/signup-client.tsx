@@ -4,12 +4,6 @@ import React, { useEffect, useMemo, useState, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
-declare global {
-  interface Window {
-    grecaptcha?: any;
-  }
-}
-
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
