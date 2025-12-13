@@ -9,7 +9,7 @@ type PaidPlanId = "chat" | "plus" | "unlimited";
 type PlanId = "free" | PaidPlanId;
 
 type DbPlanRow = {
-  code: PaidPlanId; // IMPORTANT: pas "free" dans la DB
+  code: PaidPlanId;
   name: string | null;
   price: number | null; // ex: 9.99, 19.99, 39.99
   ai_limit: number | null;
@@ -59,9 +59,6 @@ type LayoutStrings = {
   };
 };
 
-/* ===========================
-   CONFIG SUPABASE (TABLE PRIX)
-=========================== */
 const PLANS_TABLE = "pricing_plans";
 
 /* ===========================
@@ -113,7 +110,7 @@ const LAYOUT_STRINGS: Record<Locale, LayoutStrings> = {
 };
 
 /* ===========================
-   STRINGS PRICING (SANS FREE)
+   STRINGS PRICING
 =========================== */
 const LABELS: Record<Locale, Labels> = {
   fr: {
@@ -278,8 +275,7 @@ const LABELS: Record<Locale, Labels> = {
     heroStat: "⭐ Cientos de conversaciones cada semana.",
     billingNote: "Facturación segura con Stripe · Cambia o cancela cuando quieras · Sin cargos ocultos",
     chooseIntro: "Elige cómo AmorIAI toma su lugar en tu vida.",
-    usdNote:
-      "Los precios están en dólares estadounidenses (USD). Puedes cambiar o cancelar tu plan en cualquier momento.",
+    usdNote: "Los precios están en dólares estadounidenses (USD). Puedes cambiar o cancelar tu plan en cualquier momento.",
     plans: [
       {
         id: "chat",
@@ -333,9 +329,18 @@ const LABELS: Record<Locale, Labels> = {
     ],
     faqTitle: "Preguntas frecuentes",
     faqs: [
-      { q: "¿Puedo cambiar o cancelar mi plan cuando quiera?", a: "Sí. Puedes cambiar o cancelar tu suscripción en cualquier momento desde tu cuenta." },
-      { q: "¿Puedo probar AmorIAI de forma gratuita?", a: "Sí. Puedes crear una cuenta gratuita, probar la experiencia básica por texto y activar un plan de pago solo si quieres continuar." },
-      { q: "¿Qué pasa si alcanzo el límite de mensajes de mi plan?", a: "Tu AmorIAI te avisará cuando estés cerca del límite. Puedes esperar al mes siguiente o subir de plan." },
+      {
+        q: "¿Puedo cambiar o cancelar mi plan cuando quiera?",
+        a: "Sí. Puedes cambiar o cancelar tu suscripción en cualquier momento desde tu cuenta.",
+      },
+      {
+        q: "¿Puedo probar AmorIAI de forma gratuita?",
+        a: "Sí. Puedes crear una cuenta gratuita, probar la experiencia básica por texto y activar un plan de pago solo si quieres continuar.",
+      },
+      {
+        q: "¿Qué pasa si alcanzo el límite de mensajes de mi plan?",
+        a: "Tu AmorIAI te avisará cuando estés cerca del límite. Puedes esperar al mes siguiente o subir de plan.",
+      },
     ],
   },
 };
@@ -382,6 +387,7 @@ export default function PricingPage() {
   const [sessionLoading, setSessionLoading] = useState(false);
   const [plansLoading, setPlansLoading] = useState(false);
   const [dbPlans, setDbPlans] = useState<Partial<Record<PaidPlanId, DbPlanRow>>>({});
+  const [errorMsg, setErrorMsg] = useState<string>("");
 
   // Init locale + force ?lang=
   useEffect(() => {
@@ -474,38 +480,71 @@ export default function PricingPage() {
     router.push(`/create-amoria?${params.toString()}`);
   };
 
-  const goToPayment = (planId: PaidPlanId) => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    params.set("plan", planId);
-    router.push(`/payment?${params.toString()}`);
-  };
-
   const handleHeroCta = () => {
     router.push(withLang("/signup"));
   };
 
+  /* ===========================
+     ✅ Stripe Checkout (CLIENT)
+     -> appelle POST /api/checkout
+     -> envoie user_id + plan + lang
+  ============================ */
+  const startStripeCheckout = async (planId: PaidPlanId) => {
+    // 1) user
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr) {
+      console.error("getUser error:", userErr);
+      throw new Error("Erreur auth. Réessaie de te reconnecter.");
+    }
+
+    const user = userData?.user;
+    if (!user) {
+      // pas connecté => signup avec le plan
+      goToSignupWithPlan(planId);
+      return;
+    }
+
+    // 2) call API
+    const res = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        plan: planId,
+        lang: locale,
+        user_id: user.id, // ✅ IMPORTANT pour ton /api/checkout actuel
+      }),
+    });
+
+    const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+
+    if (!res.ok || !json.url) {
+      throw new Error(json?.error || "Erreur serveur lors du paiement.");
+    }
+
+    // 3) redirect stripe
+    window.location.href = json.url;
+  };
+
   const handleChoosePlan = async (planId: PlanId) => {
+    setErrorMsg("");
     setSessionLoading(true);
     try {
-      const { data, error } = await supabase.auth.getSession();
-      const currentSession = data?.session;
-      if (error) console.error("getSession error", error);
-
-      // 1) pas connecté => signup avec le plan
-      if (!currentSession?.user) {
-        goToSignupWithPlan(planId);
+      // free => create-amoria si déjà connecté, sinon signup
+      if (planId === "free") {
+        const { data } = await supabase.auth.getUser();
+        if (!data?.user) {
+          goToSignupWithPlan("free");
+          return;
+        }
+        goToCreateAmoria("free");
         return;
       }
 
-      // 2) connecté + paid => payment
-      if (planId !== "free") {
-        goToPayment(planId);
-        return;
-      }
-
-      // 3) free => create-amoria
-      goToCreateAmoria("free");
+      // paid => Stripe checkout direct
+      await startStripeCheckout(planId);
+    } catch (e: any) {
+      console.error("handleChoosePlan error:", e);
+      setErrorMsg(e?.message || "Erreur. Réessaie.");
     } finally {
       setSessionLoading(false);
     }
@@ -554,11 +593,19 @@ export default function PricingPage() {
       <section className="amoria-pricing-hero">
         <h1 className="amoria-pricing-title">{t.heroTitle}</h1>
         <p className="amoria-pricing-subtitle">{t.heroSubtitle}</p>
+
         <button className="amoria-pricing-hero-btn" onClick={handleHeroCta} disabled={disabledAll}>
           {t.heroCta}
         </button>
+
         <p className="amoria-pricing-hero-stat">{t.heroStat}</p>
         <p className="amoria-pricing-billing-note">{t.billingNote}</p>
+
+        {!!errorMsg && (
+          <p className="amoria-error" role="alert">
+            {errorMsg}
+          </p>
+        )}
       </section>
 
       {/* PLANS */}
@@ -597,7 +644,7 @@ export default function PricingPage() {
                 onClick={() => handleChoosePlan(plan.id)}
                 disabled={disabledAll}
               >
-                {plan.ctaLabel}
+                {sessionLoading ? "..." : plan.ctaLabel}
               </button>
             </article>
           ))}
@@ -827,6 +874,12 @@ export default function PricingPage() {
         .amoria-pricing-billing-note {
           font-size: 0.8rem;
           color: #9ca3af;
+        }
+
+        .amoria-error {
+          margin-top: 0.9rem;
+          font-size: 0.9rem;
+          color: #fecaca;
         }
 
         .amoria-pricing-section {
@@ -1097,4 +1150,4 @@ export default function PricingPage() {
       `}</style>
     </main>
   );
-}
+          }
