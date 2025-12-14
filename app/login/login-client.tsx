@@ -30,6 +30,7 @@ type Strings = {
   errorGeneric: string;
   errorInvalid: string;
   errorRecaptcha: string;
+  errorRls: string;
 };
 
 const STRINGS: Record<Locale, Strings> = {
@@ -54,6 +55,8 @@ const STRINGS: Record<Locale, Strings> = {
       "Courriel ou mot de passe invalide. Vérifie tes infos ou crée un compte.",
     errorRecaptcha:
       "Connexion refusée (vérification de sécurité). Recharge la page et réessaie.",
+    errorRls:
+      "Connexion OK, mais accès refusé à la table user_amoria (RLS). Il faut ajouter la policy SELECT pour lire tes propres lignes.",
   },
   en: {
     title: "Log in",
@@ -75,6 +78,8 @@ const STRINGS: Record<Locale, Strings> = {
     errorInvalid: "Invalid email or password.",
     errorRecaptcha:
       "Login blocked (security check). Refresh the page and try again.",
+    errorRls:
+      "Login OK, but access denied to user_amoria table (RLS). Add a SELECT policy so users can read their own rows.",
   },
   es: {
     title: "Iniciar sesión",
@@ -96,6 +101,8 @@ const STRINGS: Record<Locale, Strings> = {
     errorInvalid: "Correo o contraseña inválidos.",
     errorRecaptcha:
       "Inicio bloqueado (verificación de seguridad). Recarga la página e inténtalo de nuevo.",
+    errorRls:
+      "Login OK, pero acceso denegado a la tabla user_amoria (RLS). Agrega una policy SELECT para leer tus filas.",
   },
 };
 
@@ -194,7 +201,8 @@ export default function LoginClient() {
     return { ok, json };
   };
 
-  // ✅ Redirection: si un AmorIA existe -> /my-amoria sinon -> /create-amoria
+  // ✅ Redirection: si une Amoria existe -> /my-amoria sinon -> /create-amoria
+  // ⚠️ Important: si RLS bloque user_amoria, on affiche un message au lieu de rediriger n’importe où.
   const redirectAfterLogin = async () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -214,10 +222,30 @@ export default function LoginClient() {
       .select("id")
       .eq("user_id", user.id)
       .eq("is_archived", false)
+      // évite erreur si plusieurs lignes
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (error) {
       console.error("user_amoria lookup error:", error);
+
+      // Si c’est un blocage RLS / permission, ne redirige pas -> tu veux le voir.
+      const msg = String((error as any)?.message ?? "").toLowerCase();
+      const code = String((error as any)?.code ?? "");
+      const looksLikeRls =
+        code === "42501" ||
+        msg.includes("permission") ||
+        msg.includes("not allowed") ||
+        msg.includes("row level security") ||
+        msg.includes("rls");
+
+      if (looksLikeRls) {
+        setErrorMsg(t.errorRls);
+        return;
+      }
+
+      // sinon on reste sur un comportement safe
       router.replace(`/create-amoria?${params.toString()}`);
       return;
     }
@@ -265,12 +293,14 @@ export default function LoginClient() {
           msg.includes("invalid") ||
           msg.includes("user not found") ||
           msg.includes("credentials");
+
         setErrorMsg(looksAuthError ? t.errorInvalid : t.errorGeneric);
         setLoading(false);
         return;
       }
 
       await redirectAfterLogin();
+      // pas besoin de setLoading(false) ici : on va naviguer
     } catch (err) {
       console.error("login error", err);
       setErrorMsg(t.errorGeneric);
@@ -316,6 +346,7 @@ export default function LoginClient() {
         setErrorMsg(t.errorGeneric);
         setLoading(false);
       }
+      // sinon Supabase va rediriger
     } catch (err) {
       console.error("google login error", err);
       setErrorMsg(t.errorGeneric);
@@ -719,4 +750,4 @@ export default function LoginClient() {
       </main>
     </>
   );
-}
+  }
