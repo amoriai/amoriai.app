@@ -112,7 +112,10 @@ export default function LoginClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const locale = useMemo(() => normalizeLocale(searchParams.get("lang")), [searchParams]);
+  const locale = useMemo(
+    () => normalizeLocale(searchParams.get("lang")),
+    [searchParams]
+  );
   const t = STRINGS[locale];
 
   const [email, setEmail] = useState("");
@@ -125,7 +128,6 @@ export default function LoginClient() {
 
   useEffect(() => {
     if (!RECAPTCHA_SITE_KEY) {
-      // Si tu oublies la variable d'env, on bloque recaptchaReady (et donc login)
       setRecaptchaReady(false);
       return;
     }
@@ -152,12 +154,6 @@ export default function LoginClient() {
     };
   }, []);
 
-  const redirectToMyAmoria = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    router.replace(`/my-amoria?${params.toString()}`);
-  };
-
   const goToSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -171,7 +167,9 @@ export default function LoginClient() {
     return new Promise<string | null>((resolve) => {
       window.grecaptcha!.ready(async () => {
         try {
-          const token = await window.grecaptcha!.execute(RECAPTCHA_SITE_KEY, { action });
+          const token = await window.grecaptcha!.execute(RECAPTCHA_SITE_KEY, {
+            action,
+          });
           resolve(token);
         } catch {
           resolve(null);
@@ -198,6 +196,42 @@ export default function LoginClient() {
     return { ok, json };
   };
 
+  // ✅ Redirection conditionnelle selon TA table: public.user_amoria
+  const redirectAfterLogin = async () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+
+    const {
+      data: { user },
+      error: userErr,
+    } = await supabase.auth.getUser();
+
+    if (userErr || !user) {
+      router.replace(`/login?${params.toString()}`);
+      return;
+    }
+
+    const { data: amoria, error } = await supabase
+      .from("user_amoria")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_archived", false)
+      .maybeSingle();
+
+    if (error) {
+      console.error("user_amoria lookup error:", error);
+      // fallback prudent
+      router.replace(`/create-amoria?${params.toString()}`);
+      return;
+    }
+
+    router.replace(
+      amoria?.id
+        ? `/my-amoria?${params.toString()}`
+        : `/create-amoria?${params.toString()}`
+    );
+  };
+
   const handleEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -221,20 +255,25 @@ export default function LoginClient() {
         return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
       if (error) {
         console.error("supabase signIn error", error);
         const msg = (error.message || "").toLowerCase();
         const looksAuthError =
-          msg.includes("invalid") || msg.includes("user not found") || msg.includes("credentials");
+          msg.includes("invalid") ||
+          msg.includes("user not found") ||
+          msg.includes("credentials");
 
         setErrorMsg(looksAuthError ? t.errorInvalid : t.errorGeneric);
         setLoading(false);
         return;
       }
 
-      redirectToMyAmoria();
+      await redirectAfterLogin();
     } catch (err) {
       console.error("login error", err);
       setErrorMsg(t.errorGeneric);
@@ -264,10 +303,10 @@ export default function LoginClient() {
       }
 
       const origin = window.location.origin;
-
       const params = new URLSearchParams();
       params.set("lang", locale);
 
+      // ✅ après OAuth, /auth/callback décidera my-amoria vs create-amoria
       const redirectTo = `${origin}/auth/callback?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
