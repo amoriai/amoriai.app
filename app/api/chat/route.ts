@@ -93,7 +93,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "ia_not_found" }, { status: 404 });
     }
 
-    // Si tu utilises is_archived et qu’il peut être NULL, ceci protège :
     if (iaRow.is_archived === true) {
       return NextResponse.json({ error: "ia_archived" }, { status: 403 });
     }
@@ -129,16 +128,17 @@ export async function POST(req: Request) {
         hasVoiceFromPlan = !!plan.has_voice;
         voiceLimitFromPlan = plan.voice_limit ?? 0;
       } else {
-        // si plan introuvable, on retombe en free
         if (planError) console.error("planError:", planError);
         planCode = "free";
         planName = "Free";
       }
     } else {
-      // Aucun abonnement actif
       planCode = "free";
       planName = "Free";
     }
+
+    // ✅ Historique PAYANT seulement
+    const canStoreHistory = planCode !== "free";
 
     /* ===========================
        4) Appliquer quota JOURNALIER (RPC)
@@ -187,10 +187,9 @@ export async function POST(req: Request) {
     const systemPrompt = iaRow.system_prompt || defaultSystemPrompt;
 
     /* ===========================
-       6) Sauver le message user (Option B)
-       (tu peux commenter si tu veux “no history”)
+       6) Sauver le message user (PAYANT seulement)
     =========================== */
-    {
+    if (canStoreHistory) {
       const { error: saveUserMsgErr } = await supabaseAuth.from("chat_messages").insert({
         user_id: userId,
         amoria_id: iaRow.id,
@@ -230,9 +229,9 @@ export async function POST(req: Request) {
       chatData?.choices?.[0]?.message?.content?.trim() || "Je ne sais pas.";
 
     /* ===========================
-       8) Sauver la réponse assistant (Option B)
+       8) Sauver la réponse assistant (PAYANT seulement)
     =========================== */
-    {
+    if (canStoreHistory) {
       const { error: saveAsstMsgErr } = await supabaseAuth.from("chat_messages").insert({
         user_id: userId,
         amoria_id: iaRow.id,
@@ -296,6 +295,7 @@ export async function POST(req: Request) {
       iaName: iaRow.name,
       quota_per_day: quota,
       remaining_today: usage?.remaining ?? null,
+      history_enabled: canStoreHistory,
     });
   } catch (e) {
     console.error("Server error in /api/chat:", e);
