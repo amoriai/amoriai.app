@@ -209,11 +209,13 @@ export default function LoginClient() {
     }
 
     const { data: amoria, error } = await supabase
-      .from("user_amoria")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("is_archived", false)
-      .maybeSingle();
+  .from("user_amoria")
+  .select("id, user_id, is_archived, created_at")
+  .eq("user_id", user.id)
+  .or("is_archived.is.null,is_archived.eq.false")
+  .order("created_at", { ascending: false })
+  .limit(1)
+  .maybeSingle();
 
     if (error) {
       console.error("user_amoria lookup error:", error);
