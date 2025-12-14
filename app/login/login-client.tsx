@@ -6,9 +6,6 @@ import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
-/* ===========================
-   reCAPTCHA v3 (PUBLIC KEY)
-=========================== */
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 const MIN_RECAPTCHA_SCORE = 0.5;
 
@@ -107,6 +104,15 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
+declare global {
+  interface Window {
+    grecaptcha?: {
+      ready: (cb: () => void) => void;
+      execute: (siteKey: string, options: { action: string }) => Promise<string>;
+    };
+  }
+}
+
 export default function LoginClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -196,7 +202,10 @@ export default function LoginClient() {
     return { ok, json };
   };
 
-  // ✅ Redirection: si un AmorIA existe -> /my-amoria sinon -> /create-amoria
+  /**
+   * ✅ Redirection: si un AmorIA existe -> /my-amoria sinon -> /create-amoria
+   * IMPORTANT: on ne touche PAS à user_subscriptions ici.
+   */
   const redirectAfterLogin = async () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -213,24 +222,28 @@ export default function LoginClient() {
 
     const { data: amoria, error } = await supabase
       .from("user_amoria")
-      .select("id")
+      .select("id, user_id, is_archived, created_at")
       .eq("user_id", user.id)
-      .eq("is_archived", false)
+      .or("is_archived.is.null,is_archived.eq.false")
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (error) {
       console.error("user_amoria lookup error:", error);
-      router.replace(`/create-amoria?${params.toString()}`);
+      // En cas d'erreur de lecture, on ne force pas create-amoria à l'aveugle:
+      // mais si tu préfères, tu peux le remettre.
+      router.replace(`/login?${params.toString()}`);
       return;
     }
 
-    if (!amoria) {
+    if (!amoria?.id) {
       router.replace(`/create-amoria?${params.toString()}`);
       return;
     }
 
     router.replace(`/my-amoria?${params.toString()}`);
-  }; // ✅ IMPORTANT: fermeture de la fonction
+  };
 
   const handleEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -307,7 +320,6 @@ export default function LoginClient() {
       const params = new URLSearchParams();
       params.set("lang", locale);
 
-      // après OAuth, /auth/callback décidera my-amoria vs create-amoria
       const redirectTo = `${origin}/auth/callback?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -574,11 +586,6 @@ export default function LoginClient() {
           }
 
           .auth-google-btn:not(:disabled):hover {
-            background: radial-gradient(
-              circle at top left,
-              rgba(15, 23, 42, 0.95),
-              rgba(15, 23, 42, 1)
-            );
             transform: translateY(-1px);
             border-color: rgba(248, 250, 252, 0.7);
             box-shadow: 0 20px 50px rgba(15, 23, 42, 0.95);
@@ -591,7 +598,6 @@ export default function LoginClient() {
             align-items: center;
             justify-content: center;
             border-radius: 999px;
-            background: transparent;
           }
 
           .auth-divider {
@@ -649,8 +655,6 @@ export default function LoginClient() {
             font-size: 0.9rem;
             color: #e5e7eb;
             outline: none;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease,
-              background 0.15s ease;
           }
 
           .auth-input::placeholder {
@@ -683,7 +687,6 @@ export default function LoginClient() {
             font-size: 0.75rem;
             padding: 0.2rem 0.5rem;
             cursor: pointer;
-            transition: color 0.15s ease, background 0.15s ease;
           }
 
           .auth-password-toggle:hover {
@@ -709,20 +712,12 @@ export default function LoginClient() {
             cursor: pointer;
             background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
             box-shadow: 0 18px 48px rgba(248, 113, 113, 0.7);
-            transition: transform 0.1s ease, box-shadow 0.15s ease,
-              filter 0.1s ease;
           }
 
           .auth-submit-btn:disabled {
             opacity: 0.75;
             cursor: default;
             box-shadow: none;
-            filter: grayscale(0.1);
-          }
-
-          .auth-submit-btn:not(:disabled):hover {
-            transform: translateY(-1px);
-            box-shadow: 0 24px 60px rgba(248, 113, 113, 0.9);
           }
 
           .auth-footer {
