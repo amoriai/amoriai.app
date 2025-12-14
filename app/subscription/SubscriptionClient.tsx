@@ -5,14 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
 type Locale = "fr" | "en" | "es";
-
 type PlanCode = "free" | "chat" | "plus" | "unlimited";
 
 type PricingPlan = {
   id: string;
-  code: PlanCode; // ✅ important pour checkout/webhook
+  code: PlanCode;
   name: string;
-  price: number | null; // ✅ ex: 0, 9.99, 19.99, 39.99
+  price: number | null; // 0, 9.99, 19.99...
   ai_limit: number | null;
   message_limit: number | null;
   stripe_price_id: string | null;
@@ -20,8 +19,8 @@ type PricingPlan = {
   voice_limit: number | null;
 };
 
-function detectLocaleFromUrl(searchParams: URLSearchParams): Locale {
-  const lang = (searchParams.get("lang") || "").toLowerCase();
+function detectLocaleFromUrl(params: URLSearchParams): Locale {
+  const lang = (params.get("lang") || "").toLowerCase();
   if (lang === "fr" || lang === "en" || lang === "es") return lang;
   return "fr";
 }
@@ -42,21 +41,99 @@ function suffix(locale: Locale): string {
   return " / month";
 }
 
+function t(locale: Locale) {
+  return {
+    title:
+      locale === "en"
+        ? "Choose your AmorIAI plan"
+        : locale === "es"
+        ? "Elige tu plan AmorIAI"
+        : "Choisis ton forfait AmorIAI",
+
+    subtitle:
+      locale === "en"
+        ? "Same core AI on every plan. You pay for message volume, number of AmorIAI, and voice."
+        : locale === "es"
+        ? "La misma IA base en todos los planes. Pagas por mensajes, número de AmorIAI y voz."
+        : "Tous les forfaits utilisent la même IA de base. Tu payes en fonction de la quantité de messages, du nombre d’AmorIAI personnalisés et de la voix.",
+
+    loading:
+      locale === "en"
+        ? "Loading plans…"
+        : locale === "es"
+        ? "Cargando planes…"
+        : "Chargement des forfaits…",
+
+    loadError:
+      locale === "en"
+        ? "Unable to load plans. Please try again later."
+        : locale === "es"
+        ? "No se pueden cargar los planes. Inténtalo más tarde."
+        : "Impossible de charger les forfaits. Réessaie plus tard.",
+
+    checkoutError:
+      locale === "en"
+        ? "Could not create the payment session."
+        : locale === "es"
+        ? "Error al crear la sesión de pago."
+        : "Erreur lors de la création de la session de paiement.",
+
+    unexpected:
+      locale === "en"
+        ? "Unexpected payment API response."
+        : locale === "es"
+        ? "Respuesta inesperada de la API de pago."
+        : "Réponse inattendue de l’API de paiement.",
+
+    generic:
+      locale === "en"
+        ? "Something went wrong. Please try again."
+        : locale === "es"
+        ? "Ocurrió un error. Inténtalo de nuevo."
+        : "Une erreur est survenue. Réessaie plus tard.",
+
+    billed:
+      locale === "en"
+        ? "Billed monthly, cancel anytime."
+        : locale === "es"
+        ? "Facturación mensual, cancela cuando quieras."
+        : "Facturé mensuellement, résiliable en tout temps.",
+
+    freeLabel: locale === "en" ? "Free" : locale === "es" ? "Gratis" : "Gratuit",
+
+    freeBtn:
+      locale === "en"
+        ? "Start for free"
+        : locale === "es"
+        ? "Empezar gratis"
+        : "Commencer gratuitement",
+
+    chooseBtn:
+      locale === "en" ? "Choose this plan" : locale === "es" ? "Elegir este plan" : "Choisir ce forfait",
+
+    stripeBtn:
+      locale === "en"
+        ? "Redirecting to Stripe…"
+        : locale === "es"
+        ? "Redirigiendo a Stripe…"
+        : "Redirection vers Stripe…",
+  };
+}
+
 export default function SubscriptionPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const sp = useSearchParams();
 
-  const locale = useMemo(
-    () => detectLocaleFromUrl(new URLSearchParams(searchParams.toString())),
-    [searchParams]
-  );
+  const locale = useMemo(() => detectLocaleFromUrl(new URLSearchParams(sp.toString())), [sp]);
+  const copy = useMemo(() => t(locale), [locale]);
 
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
 
-  // Charger les plans depuis Supabase
+  // ✅ Charger les plans
   useEffect(() => {
     let cancelled = false;
 
@@ -66,19 +143,17 @@ export default function SubscriptionPage() {
 
       const { data, error } = await supabase
         .from("pricing_plans")
-        .select(
-          "id,code,name,price,ai_limit,message_limit,stripe_price_id,has_voice,voice_limit"
-        )
+        .select("id,code,name,price,ai_limit,message_limit,stripe_price_id,has_voice,voice_limit")
         .order("price", { ascending: true });
 
       if (cancelled) return;
 
       if (error) {
-        console.error(error);
-        setError("Impossible de charger les forfaits. Réessaie plus tard.");
+        console.error("pricing_plans load error:", error);
+        setError(copy.loadError);
         setPlans([]);
       } else {
-        setPlans((data as PricingPlan[]) ?? []);
+        setPlans(((data ?? []) as PricingPlan[]).filter(Boolean));
       }
 
       setLoading(false);
@@ -88,117 +163,75 @@ export default function SubscriptionPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [copy.loadError]);
 
-  /**
-   * ✅ Modif clé:
-   * - on n’envoie PLUS user_id au serveur (pas fiable / modifiable)
-   * - /api/checkout doit récupérer le user côté serveur (cookies/session)
-   */
   const handleSubscribe = async (plan: PricingPlan) => {
     const isFree = plan.code === "free" || plan.price === 0;
 
-    // Free => pas de Stripe
-    if (isFree) {
-      router.push(`/create-amoria?lang=${locale}&plan=free`);
-      return;
-    }
+    setError(null);
+    setLoadingPlanId(plan.id);
 
     try {
-      setError(null);
-      setLoadingPlanId(plan.id);
-
-      // Si pas connecté → login (avec retour plan)
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
-        router.push(`/login?lang=${locale}&plan=${plan.code}`);
+      // ✅ Free: pas de Stripe, mais on laisse CLIQUABLE
+      if (isFree) {
+        router.push(`/create-amoria?lang=${locale}&plan=free`);
         return;
       }
 
-      // ✅ Appel checkout : on envoie seulement le code du plan
+      // ✅ Si pas connecté: login et revenir ici avec plan
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+      if (userErr) console.error("getUser error:", userErr);
+
+      if (!userData?.user) {
+        // retour = subscription
+        router.push(`/login?lang=${locale}&plan=${plan.code}&return=subscription`);
+        return;
+      }
+
+      // ✅ Checkout (server doit récupérer user via cookies/session)
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan: plan.code,   // ✅ plan_code (server -> stripe price)
-          lang: locale,      // optionnel, pratique pour success_url
-        }),
+        body: JSON.stringify({ plan: plan.code, lang: locale }),
       });
 
       if (!res.ok) {
-        const body = await res.text();
-        console.error("checkout error:", body);
-        setError("Erreur lors de la création de la session de paiement.");
+        const bodyText = await res.text().catch(() => "");
+        console.error("checkout error:", res.status, bodyText);
+        setError(copy.checkoutError);
         return;
       }
 
-      const body = (await res.json()) as { url?: string };
-      if (!body.url) {
-        setError("Réponse inattendue de l’API de paiement.");
+      const json = (await res.json().catch(() => ({}))) as { url?: string };
+
+      if (!json.url) {
+        console.error("checkout missing url:", json);
+        setError(copy.unexpected);
         return;
       }
 
-      window.location.href = body.url;
-    } catch (err) {
-      console.error(err);
-      setError("Une erreur est survenue. Réessaie plus tard.");
+      window.location.href = json.url;
+    } catch (e) {
+      console.error("handleSubscribe error:", e);
+      setError(copy.generic);
     } finally {
       setLoadingPlanId(null);
     }
   };
 
-  const title =
-    locale === "en"
-      ? "Choose your AmorIAI plan"
-      : locale === "es"
-      ? "Elige tu plan AmorIAI"
-      : "Choisis ton forfait AmorIAI";
-
-  const subtitle =
-    locale === "en"
-      ? "Same core AI on every plan. You pay for message volume, number of AmorIAI, and voice."
-      : locale === "es"
-      ? "La misma IA base en todos los planes. Pagas por mensajes, número de AmorIAI y voz."
-      : "Tous les forfaits utilisent la même IA de base. Tu payes en fonction de la quantité de messages, du nombre d’AmorIAI personnalisés et de la voix.";
-
-  const loadingText =
-    locale === "en"
-      ? "Loading plans…"
-      : locale === "es"
-      ? "Cargando planes…"
-      : "Chargement des forfaits…";
-
   return (
     <main style={{ padding: "3rem 1.5rem", maxWidth: "960px", margin: "0 auto" }}>
-      <h1
-        style={{
-          fontSize: "2.2rem",
-          fontWeight: 700,
-          marginBottom: "1rem",
-          textAlign: "center",
-        }}
-      >
-        {title}
+      <h1 style={{ fontSize: "2.2rem", fontWeight: 700, marginBottom: "1rem", textAlign: "center" }}>
+        {copy.title}
       </h1>
 
-      <p
-        style={{
-          textAlign: "center",
-          maxWidth: "640px",
-          margin: "0 auto 2.5rem",
-          opacity: 0.8,
-        }}
-      >
-        {subtitle}
+      <p style={{ textAlign: "center", maxWidth: "640px", margin: "0 auto 2.5rem", opacity: 0.8 }}>
+        {copy.subtitle}
       </p>
 
-      {loading && <p style={{ textAlign: "center" }}>{loadingText}</p>}
+      {loading && <p style={{ textAlign: "center" }}>{copy.loading}</p>}
 
-      {error && (
-        <p style={{ textAlign: "center", color: "#e11d48", marginBottom: "1rem" }}>
-          {error}
-        </p>
-      )}
+      {error && <p style={{ textAlign: "center", color: "#e11d48", marginBottom: "1rem" }}>{error}</p>}
 
       {!loading && !error && (
         <div
@@ -212,11 +245,7 @@ export default function SubscriptionPage() {
             const isFree = plan.code === "free" || plan.price === 0;
 
             const priceLabel = isFree
-              ? locale === "en"
-                ? "Free"
-                : locale === "es"
-                ? "Gratis"
-                : "Gratuit"
+              ? copy.freeLabel
               : `${formatUsd(locale, plan.price ?? 0)} USD${suffix(locale)}`;
 
             const hasVoice = !!plan.has_voice;
@@ -271,23 +300,9 @@ export default function SubscriptionPage() {
                 ? "1 AmorIAI"
                 : "1 AmorIA personnalisé";
 
-            const btnLabel = isFree
-              ? locale === "en"
-                ? "Included with your account"
-                : locale === "es"
-                ? "Incluido con tu cuenta"
-                : "Inclus avec ton compte"
-              : loadingPlanId === plan.id
-              ? locale === "en"
-                ? "Redirecting to Stripe…"
-                : locale === "es"
-                ? "Redirigiendo a Stripe…"
-                : "Redirection vers Stripe…"
-              : locale === "en"
-              ? "Choose this plan"
-              : locale === "es"
-              ? "Elegir este plan"
-              : "Choisir ce forfait";
+            const isBusy = loadingPlanId === plan.id;
+
+            const btnLabel = isFree ? copy.freeBtn : isBusy ? copy.stripeBtn : copy.chooseBtn;
 
             return (
               <div
@@ -303,22 +318,12 @@ export default function SubscriptionPage() {
                   backdropFilter: "blur(20px)",
                 }}
               >
-                <h2 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: "0.6rem" }}>
-                  {plan.name}
-                </h2>
+                <h2 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: "0.6rem" }}>{plan.name}</h2>
 
-                <p style={{ fontSize: "1.6rem", fontWeight: 700, marginBottom: "0.25rem" }}>
-                  {priceLabel}
-                </p>
+                <p style={{ fontSize: "1.6rem", fontWeight: 700, marginBottom: "0.25rem" }}>{priceLabel}</p>
 
                 {!isFree && (
-                  <p style={{ fontSize: "0.9rem", opacity: 0.7, marginBottom: "1rem" }}>
-                    {locale === "en"
-                      ? "Billed monthly, cancel anytime."
-                      : locale === "es"
-                      ? "Facturación mensual, cancela cuando quieras."
-                      : "Facturé mensuellement, résiliable en tout temps."}
-                  </p>
+                  <p style={{ fontSize: "0.9rem", opacity: 0.7, marginBottom: "1rem" }}>{copy.billed}</p>
                 )}
 
                 <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.5rem", fontSize: "0.95rem" }}>
@@ -329,20 +334,20 @@ export default function SubscriptionPage() {
 
                 <button
                   onClick={() => handleSubscribe(plan)}
-                  disabled={loadingPlanId === plan.id || isFree}
+                  disabled={isBusy}
                   style={{
                     width: "100%",
                     borderRadius: "999px",
                     border: "none",
                     padding: "0.75rem 1rem",
                     fontWeight: 600,
-                    cursor: isFree ? "default" : "pointer",
+                    cursor: isBusy ? "default" : "pointer",
                     fontSize: "0.95rem",
                     background: isFree
                       ? "rgba(148, 163, 184, 0.2)"
                       : "linear-gradient(90deg, #ec4899, #6366f1)",
                     color: "white",
-                    opacity: loadingPlanId === plan.id ? 0.7 : 1,
+                    opacity: isBusy ? 0.7 : 1,
                   }}
                 >
                   {btnLabel}
@@ -354,4 +359,4 @@ export default function SubscriptionPage() {
       )}
     </main>
   );
-          }
+              }
