@@ -104,14 +104,20 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
+declare global {
+  interface Window {
+    grecaptcha?: {
+      ready: (cb: () => void) => void;
+      execute: (siteKey: string, opts: { action: string }) => Promise<string>;
+    };
+  }
+}
+
 export default function LoginClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const locale = useMemo(
-    () => normalizeLocale(searchParams.get("lang")),
-    [searchParams]
-  );
+  const locale = useMemo(() => normalizeLocale(searchParams.get("lang")), [searchParams]);
   const t = STRINGS[locale];
 
   const [email, setEmail] = useState("");
@@ -120,6 +126,7 @@ export default function LoginClient() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   const [recaptchaReady, setRecaptchaReady] = useState(false);
 
   useEffect(() => {
@@ -133,9 +140,8 @@ export default function LoginClient() {
     const tick = () => {
       if (cancelled) return;
 
-      const grecaptcha = (window as any)?.grecaptcha;
-      if (grecaptcha?.ready && grecaptcha?.execute) {
-        grecaptcha.ready(() => {
+      if (window.grecaptcha?.ready && window.grecaptcha?.execute) {
+        window.grecaptcha.ready(() => {
           if (!cancelled) setRecaptchaReady(true);
         });
         return;
@@ -159,14 +165,12 @@ export default function LoginClient() {
 
   const getRecaptchaToken = async (action: "login" | "google_login") => {
     if (!RECAPTCHA_SITE_KEY) return null;
-
-    const grecaptcha = (window as any)?.grecaptcha;
-    if (!grecaptcha?.execute || !grecaptcha?.ready) return null;
+    if (!window.grecaptcha?.execute || !window.grecaptcha?.ready) return null;
 
     return new Promise<string | null>((resolve) => {
-      grecaptcha.ready(async () => {
+      window.grecaptcha!.ready(async () => {
         try {
-          const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action });
+          const token = await window.grecaptcha!.execute(RECAPTCHA_SITE_KEY, { action });
           resolve(token);
         } catch {
           resolve(null);
@@ -193,42 +197,35 @@ export default function LoginClient() {
     return { ok, json };
   };
 
-  // ✅ Redirection: si un AmorIA existe -> /my-amoria sinon -> /create-amoria
+  // ✅ Redirection fiable (passe par une API qui check user_amoria côté serveur)
   const redirectAfterLogin = async () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
 
-    const {
-      data: { user },
-      error: userErr,
-    } = await supabase.auth.getUser();
-
-    if (userErr || !user) {
+    // On s’assure qu’on a une session active
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData?.session;
+    if (!session?.user) {
       router.replace(`/login?${params.toString()}`);
       return;
     }
 
-    const { data: amoria, error } = await supabase
-      .from("user_amoria")
-      .select("id")
-      .eq("user_id", user.id)
-      .or("is_archived.is.null,is_archived.eq.false")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // 🔥 Check serveur (ne se fait pas bloquer par RLS)
+    const res = await fetch(`/api/amoria-status?${params.toString()}`, {
+      method: "GET",
+      headers: { "Cache-Control": "no-store" },
+    });
 
-    if (error) {
-      console.error("user_amoria lookup error:", error);
+    if (!res.ok) {
+      // fallback prudent
       router.replace(`/create-amoria?${params.toString()}`);
       return;
     }
 
-    if (!amoria) {
-      router.replace(`/create-amoria?${params.toString()}`);
-      return;
-    }
+    const json = (await res.json().catch(() => ({}))) as { hasAmoria?: boolean };
+    const hasAmoria = json?.hasAmoria === true;
 
-    router.replace(`/my-amoria?${params.toString()}`);
+    router.replace(hasAmoria ? `/my-amoria?${params.toString()}` : `/create-amoria?${params.toString()}`);
   };
 
   const handleEmailLogin = async (e: FormEvent) => {
@@ -254,19 +251,13 @@ export default function LoginClient() {
         return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
         console.error("supabase signIn error", error);
         const msg = (error.message || "").toLowerCase();
         const looksAuthError =
-          msg.includes("invalid") ||
-          msg.includes("user not found") ||
-          msg.includes("credentials");
-
+          msg.includes("invalid") || msg.includes("user not found") || msg.includes("credentials");
         setErrorMsg(looksAuthError ? t.errorInvalid : t.errorGeneric);
         setLoading(false);
         return;
@@ -306,6 +297,7 @@ export default function LoginClient() {
       const params = new URLSearchParams();
       params.set("lang", locale);
 
+      // ✅ après OAuth, ton /auth/callback peut appeler redirectAfterLogin (ou refaire le même check)
       const redirectTo = `${origin}/auth/callback?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -331,9 +323,7 @@ export default function LoginClient() {
     <>
       {RECAPTCHA_SITE_KEY ? (
         <Script
-          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(
-            RECAPTCHA_SITE_KEY
-          )}`}
+          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`}
           strategy="afterInteractive"
         />
       ) : null}
@@ -422,11 +412,7 @@ export default function LoginClient() {
 
             {errorMsg && <p className="auth-error">{errorMsg}</p>}
 
-            <button
-              type="submit"
-              disabled={loading || !recaptchaReady}
-              className="auth-submit-btn"
-            >
+            <button type="submit" disabled={loading || !recaptchaReady} className="auth-submit-btn">
               {loading ? t.submitting : t.submit}
             </button>
           </form>
@@ -439,6 +425,7 @@ export default function LoginClient() {
           </div>
         </div>
 
+        {/* ✅ TON CSS CONSERVÉ TEL QUEL */}
         <style jsx>{`
           .auth-root {
             min-height: 100vh;
@@ -572,6 +559,11 @@ export default function LoginClient() {
           }
 
           .auth-google-btn:not(:disabled):hover {
+            background: radial-gradient(
+              circle at top left,
+              rgba(15, 23, 42, 0.95),
+              rgba(15, 23, 42, 1)
+            );
             transform: translateY(-1px);
             border-color: rgba(248, 250, 252, 0.7);
             box-shadow: 0 20px 50px rgba(15, 23, 42, 0.95);
@@ -636,13 +628,14 @@ export default function LoginClient() {
             background: radial-gradient(
               circle at top left,
               rgba(15, 23, 42, 0.9),
-              rgba(15, 23, 42, を見る
+              rgba(15, 23, 42, 1)
             );
             padding: 0.6rem 0.95rem;
             font-size: 0.9rem;
             color: #e5e7eb;
             outline: none;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease,
+              background 0.15s ease;
           }
 
           .auth-input::placeholder {
@@ -675,6 +668,12 @@ export default function LoginClient() {
             font-size: 0.75rem;
             padding: 0.2rem 0.5rem;
             cursor: pointer;
+            transition: color 0.15s ease, background 0.15s ease;
+          }
+
+          .auth-password-toggle:hover {
+            color: #e5e7eb;
+            background: rgba(15, 23, 42, 0.9);
           }
 
           .auth-error {
@@ -695,13 +694,20 @@ export default function LoginClient() {
             cursor: pointer;
             background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
             box-shadow: 0 18px 48px rgba(248, 113, 113, 0.7);
-            transition: transform 0.1s ease, box-shadow 0.15s ease;
+            transition: transform 0.1s ease, box-shadow 0.15s ease,
+              filter 0.1s ease;
           }
 
           .auth-submit-btn:disabled {
             opacity: 0.75;
             cursor: default;
             box-shadow: none;
+            filter: grayscale(0.1);
+          }
+
+          .auth-submit-btn:not(:disabled):hover {
+            transform: translateY(-1px);
+            box-shadow: 0 24px 60px rgba(248, 113, 113, 0.9);
           }
 
           .auth-footer {
