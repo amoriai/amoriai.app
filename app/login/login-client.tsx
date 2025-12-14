@@ -6,6 +6,9 @@ import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
+/* ===========================
+   reCAPTCHA v3 (PUBLIC KEY)
+=========================== */
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 const MIN_RECAPTCHA_SCORE = 0.5;
 
@@ -208,27 +211,26 @@ export default function LoginClient() {
       return;
     }
 
-   const { data: amoria, error } = await supabase
-  .from("user_amoria")
-  .select("id")
-  .eq("user_id", user.id)
-  .eq("is_archived", false)
-  .maybeSingle();
+    const { data: amoria, error } = await supabase
+      .from("user_amoria")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_archived", false)
+      .maybeSingle();
 
-if (error) {
-  console.error("user_amoria lookup error:", error);
-  router.replace(`/create-amoria?${params.toString()}`);
-  return;
-}
+    if (error) {
+      console.error("user_amoria lookup error:", error);
+      router.replace(`/create-amoria?${params.toString()}`);
+      return;
+    }
 
-if (!amoria) {
-  // aucune Amoria trouvée
-  router.replace(`/create-amoria?${params.toString()}`);
-  return;
-}
+    if (!amoria) {
+      router.replace(`/create-amoria?${params.toString()}`);
+      return;
+    }
 
-// ✅ Amoria existe
-router.replace(`/my-amoria?${params.toString()}`);
+    router.replace(`/my-amoria?${params.toString()}`);
+  }; // ✅ IMPORTANT: fermeture de la fonction
 
   const handleEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -305,6 +307,7 @@ router.replace(`/my-amoria?${params.toString()}`);
       const params = new URLSearchParams();
       params.set("lang", locale);
 
+      // après OAuth, /auth/callback décidera my-amoria vs create-amoria
       const redirectTo = `${origin}/auth/callback?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
