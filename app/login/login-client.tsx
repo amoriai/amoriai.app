@@ -13,6 +13,15 @@ import { supabase } from "../../lib/supabaseClient";
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 const MIN_RECAPTCHA_SCORE = 0.5;
 
+declare global {
+  interface Window {
+    grecaptcha?: {
+      ready: (cb: () => void) => void;
+      execute: (siteKey: string, opts: { action: string }) => Promise<string>;
+    };
+  }
+}
+
 type Locale = "fr" | "en" | "es";
 
 type Strings = {
@@ -121,6 +130,7 @@ export default function LoginClient() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -185,7 +195,7 @@ export default function LoginClient() {
       body: JSON.stringify({ token, action }),
     });
 
-    const json = await res.json();
+    const json = await res.json().catch(() => ({}));
 
     const ok =
       res.ok &&
@@ -196,15 +206,17 @@ export default function LoginClient() {
     return { ok, json };
   };
 
-  // ✅ Redirection conditionnelle selon TA table: public.user_amoria
+  /**
+   * ✅ Redirection selon existence du profil user_amoria
+   * - si la requête est bloquée (RLS), on fallback vers /my-amoria
+   *   (comme ça tu ne renvoies pas à "créer" par erreur)
+   */
   const redirectAfterLogin = async () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
 
-    const {
-      data: { user },
-      error: userErr,
-    } = await supabase.auth.getUser();
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    const user = userData?.user;
 
     if (userErr || !user) {
       router.replace(`/login?${params.toString()}`);
@@ -216,12 +228,13 @@ export default function LoginClient() {
       .select("id")
       .eq("user_id", user.id)
       .eq("is_archived", false)
+      .limit(1)
       .maybeSingle();
 
     if (error) {
+      // Très souvent: RLS (select interdit). On ne veut pas forcer "create".
       console.error("user_amoria lookup error:", error);
-      // fallback prudent
-      router.replace(`/create-amoria?${params.toString()}`);
+      router.replace(`/my-amoria?${params.toString()}`);
       return;
     }
 
@@ -256,7 +269,7 @@ export default function LoginClient() {
       }
 
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -306,7 +319,10 @@ export default function LoginClient() {
       const params = new URLSearchParams();
       params.set("lang", locale);
 
-      // ✅ après OAuth, /auth/callback décidera my-amoria vs create-amoria
+      // IMPORTANT: ton route /auth/callback doit ensuite faire:
+      // - getUser()
+      // - lookup user_amoria
+      // - redirect /my-amoria ou /create-amoria
       const redirectTo = `${origin}/auth/callback?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
