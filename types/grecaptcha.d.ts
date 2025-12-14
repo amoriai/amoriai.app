@@ -2,7 +2,7 @@ export {};
 
 declare global {
   interface Window {
-    grecaptcha: {
+    grecaptcha?: {
       ready: (cb: () => void) => void;
       execute: (
         siteKey: string,
