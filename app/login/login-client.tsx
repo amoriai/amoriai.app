@@ -208,27 +208,27 @@ export default function LoginClient() {
       return;
     }
 
-    const { data: amoria, error } = await supabase
+   const { data: amoria, error } = await supabase
   .from("user_amoria")
-  .select("id, user_id, is_archived, created_at")
+  .select("id")
   .eq("user_id", user.id)
-  .or("is_archived.is.null,is_archived.eq.false")
-  .order("created_at", { ascending: false })
-  .limit(1)
+  .eq("is_archived", false)
   .maybeSingle();
 
-    if (error) {
-      console.error("user_amoria lookup error:", error);
-      router.replace(`/create-amoria?${params.toString()}`);
-      return;
-    }
+if (error) {
+  console.error("user_amoria lookup error:", error);
+  router.replace(`/create-amoria?${params.toString()}`);
+  return;
+}
 
-    router.replace(
-      amoria?.id
-        ? `/my-amoria?${params.toString()}`
-        : `/create-amoria?${params.toString()}`
-    );
-  };
+if (!amoria) {
+  // aucune Amoria trouvée
+  router.replace(`/create-amoria?${params.toString()}`);
+  return;
+}
+
+// ✅ Amoria existe
+router.replace(`/my-amoria?${params.toString()}`);
 
   const handleEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
