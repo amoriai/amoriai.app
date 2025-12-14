@@ -104,29 +104,23 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-declare global {
-  interface Window {
-    grecaptcha?: {
-      ready: (cb: () => void) => void;
-      execute: (siteKey: string, opts: { action: string }) => Promise<string>;
-    };
-  }
-}
-
 export default function LoginClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const locale = useMemo(() => normalizeLocale(searchParams.get("lang")), [searchParams]);
+  const locale = useMemo(
+    () => normalizeLocale(searchParams.get("lang")),
+    [searchParams]
+  );
   const t = STRINGS[locale];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [showPassword, setShowPassword] = useState(false);
-
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [recaptchaReady, setRecaptchaReady] = useState(false);
 
   useEffect(() => {
@@ -140,8 +134,9 @@ export default function LoginClient() {
     const tick = () => {
       if (cancelled) return;
 
-      if (window.grecaptcha?.ready && window.grecaptcha?.execute) {
-        window.grecaptcha.ready(() => {
+      const g = (window as any)?.grecaptcha;
+      if (g?.ready && g?.execute) {
+        g.ready(() => {
           if (!cancelled) setRecaptchaReady(true);
         });
         return;
@@ -165,12 +160,14 @@ export default function LoginClient() {
 
   const getRecaptchaToken = async (action: "login" | "google_login") => {
     if (!RECAPTCHA_SITE_KEY) return null;
-    if (!window.grecaptcha?.execute || !window.grecaptcha?.ready) return null;
+
+    const g = (window as any)?.grecaptcha;
+    if (!g?.execute || !g?.ready) return null;
 
     return new Promise<string | null>((resolve) => {
-      window.grecaptcha!.ready(async () => {
+      g.ready(async () => {
         try {
-          const token = await window.grecaptcha!.execute(RECAPTCHA_SITE_KEY, { action });
+          const token = await g.execute(RECAPTCHA_SITE_KEY, { action });
           resolve(token);
         } catch {
           resolve(null);
@@ -197,35 +194,40 @@ export default function LoginClient() {
     return { ok, json };
   };
 
-  // ✅ Redirection fiable (passe par une API qui check user_amoria côté serveur)
+  // ✅ Redirection: si un AmorIA existe -> /my-amoria sinon -> /create-amoria
   const redirectAfterLogin = async () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
 
-    // On s’assure qu’on a une session active
-    const { data: sessionData } = await supabase.auth.getSession();
-    const session = sessionData?.session;
-    if (!session?.user) {
+    const {
+      data: { user },
+      error: userErr,
+    } = await supabase.auth.getUser();
+
+    if (userErr || !user) {
       router.replace(`/login?${params.toString()}`);
       return;
     }
 
-    // 🔥 Check serveur (ne se fait pas bloquer par RLS)
-    const res = await fetch(`/api/amoria-status?${params.toString()}`, {
-      method: "GET",
-      headers: { "Cache-Control": "no-store" },
-    });
+    const { data: amoria, error } = await supabase
+      .from("user_amoria")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("is_archived", false)
+      .maybeSingle();
 
-    if (!res.ok) {
-      // fallback prudent
+    if (error) {
+      console.error("user_amoria lookup error:", error);
       router.replace(`/create-amoria?${params.toString()}`);
       return;
     }
 
-    const json = (await res.json().catch(() => ({}))) as { hasAmoria?: boolean };
-    const hasAmoria = json?.hasAmoria === true;
+    if (!amoria) {
+      router.replace(`/create-amoria?${params.toString()}`);
+      return;
+    }
 
-    router.replace(hasAmoria ? `/my-amoria?${params.toString()}` : `/create-amoria?${params.toString()}`);
+    router.replace(`/my-amoria?${params.toString()}`);
   };
 
   const handleEmailLogin = async (e: FormEvent) => {
@@ -251,13 +253,18 @@ export default function LoginClient() {
         return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
       if (error) {
         console.error("supabase signIn error", error);
         const msg = (error.message || "").toLowerCase();
         const looksAuthError =
-          msg.includes("invalid") || msg.includes("user not found") || msg.includes("credentials");
+          msg.includes("invalid") ||
+          msg.includes("user not found") ||
+          msg.includes("credentials");
         setErrorMsg(looksAuthError ? t.errorInvalid : t.errorGeneric);
         setLoading(false);
         return;
@@ -297,7 +304,6 @@ export default function LoginClient() {
       const params = new URLSearchParams();
       params.set("lang", locale);
 
-      // ✅ après OAuth, ton /auth/callback peut appeler redirectAfterLogin (ou refaire le même check)
       const redirectTo = `${origin}/auth/callback?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -323,7 +329,9 @@ export default function LoginClient() {
     <>
       {RECAPTCHA_SITE_KEY ? (
         <Script
-          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`}
+          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(
+            RECAPTCHA_SITE_KEY
+          )}`}
           strategy="afterInteractive"
         />
       ) : null}
@@ -412,7 +420,11 @@ export default function LoginClient() {
 
             {errorMsg && <p className="auth-error">{errorMsg}</p>}
 
-            <button type="submit" disabled={loading || !recaptchaReady} className="auth-submit-btn">
+            <button
+              type="submit"
+              disabled={loading || !recaptchaReady}
+              className="auth-submit-btn"
+            >
               {loading ? t.submitting : t.submit}
             </button>
           </form>
@@ -425,7 +437,6 @@ export default function LoginClient() {
           </div>
         </div>
 
-        {/* ✅ TON CSS CONSERVÉ TEL QUEL */}
         <style jsx>{`
           .auth-root {
             min-height: 100vh;
@@ -442,7 +453,6 @@ export default function LoginClient() {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
               "Helvetica Neue", Arial, sans-serif;
           }
-
           .auth-gradient-orbit {
             position: absolute;
             width: 520px;
@@ -459,7 +469,6 @@ export default function LoginClient() {
             left: -120px;
             pointer-events: none;
           }
-
           .auth-gradient-orbit--right {
             top: auto;
             bottom: -160px;
@@ -471,7 +480,6 @@ export default function LoginClient() {
               transparent 65%
             );
           }
-
           .auth-card {
             position: relative;
             width: 100%;
@@ -495,7 +503,6 @@ export default function LoginClient() {
             backdrop-filter: blur(20px);
             z-index: 1;
           }
-
           .auth-badge {
             display: inline-flex;
             align-items: center;
@@ -510,25 +517,21 @@ export default function LoginClient() {
             color: #9ca3af;
             margin-bottom: 1rem;
           }
-
           .auth-header {
             margin-bottom: 1.5rem;
           }
-
           .auth-title {
             font-size: 1.7rem;
             font-weight: 700;
             margin: 0 0 0.4rem;
             letter-spacing: 0.02em;
           }
-
           .auth-subtitle {
             margin: 0;
             font-size: 0.98rem;
             line-height: 1.45;
             color: #9ca3af;
           }
-
           .auth-google-btn {
             width: 100%;
             border-radius: 999px;
@@ -547,17 +550,15 @@ export default function LoginClient() {
             justify-content: center;
             gap: 0.55rem;
             cursor: pointer;
-            transition: background 0.15s ease, transform 0.1s ease,
-              box-shadow 0.15s ease, border-color 0.15s ease;
+            transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease,
+              border-color 0.15s ease;
             box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
           }
-
           .auth-google-btn:disabled {
             opacity: 0.75;
             cursor: default;
             box-shadow: none;
           }
-
           .auth-google-btn:not(:disabled):hover {
             background: radial-gradient(
               circle at top left,
@@ -568,7 +569,6 @@ export default function LoginClient() {
             border-color: rgba(248, 250, 252, 0.7);
             box-shadow: 0 20px 50px rgba(15, 23, 42, 0.95);
           }
-
           .auth-google-icon {
             width: 1.4rem;
             height: 1.4rem;
@@ -578,14 +578,12 @@ export default function LoginClient() {
             border-radius: 999px;
             background: transparent;
           }
-
           .auth-divider {
             display: flex;
             align-items: center;
             gap: 0.75rem;
             margin: 1.4rem 0 1.2rem;
           }
-
           .auth-divider-line {
             flex: 1;
             height: 1px;
@@ -596,31 +594,26 @@ export default function LoginClient() {
               transparent
             );
           }
-
           .auth-divider-label {
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.16em;
             color: #6b7280;
           }
-
           .auth-form {
             display: flex;
             flex-direction: column;
             gap: 0.9rem;
           }
-
           .auth-field {
             display: flex;
             flex-direction: column;
             gap: 0.25rem;
           }
-
           .auth-label {
             font-size: 0.8rem;
             color: #e5e7eb;
           }
-
           .auth-input {
             width: 100%;
             border-radius: 999px;
@@ -634,28 +627,22 @@ export default function LoginClient() {
             font-size: 0.9rem;
             color: #e5e7eb;
             outline: none;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease,
-              background 0.15s ease;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
           }
-
           .auth-input::placeholder {
             color: #6b7280;
           }
-
           .auth-input:focus {
             border-color: #f97316;
             box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.65),
               0 14px 38px rgba(15, 23, 42, 0.9);
           }
-
           .auth-password-wrapper {
             position: relative;
           }
-
           .auth-input-password {
             padding-right: 2.7rem;
           }
-
           .auth-password-toggle {
             position: absolute;
             right: 0.7rem;
@@ -670,18 +657,15 @@ export default function LoginClient() {
             cursor: pointer;
             transition: color 0.15s ease, background 0.15s ease;
           }
-
           .auth-password-toggle:hover {
             color: #e5e7eb;
             background: rgba(15, 23, 42, 0.9);
           }
-
           .auth-error {
             font-size: 0.8rem;
             color: #fecaca;
             margin: 0.2rem 0 0.1rem;
           }
-
           .auth-submit-btn {
             width: 100%;
             margin-top: 0.3rem;
@@ -694,29 +678,24 @@ export default function LoginClient() {
             cursor: pointer;
             background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
             box-shadow: 0 18px 48px rgba(248, 113, 113, 0.7);
-            transition: transform 0.1s ease, box-shadow 0.15s ease,
-              filter 0.1s ease;
+            transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.1s ease;
           }
-
           .auth-submit-btn:disabled {
             opacity: 0.75;
             cursor: default;
             box-shadow: none;
             filter: grayscale(0.1);
           }
-
           .auth-submit-btn:not(:disabled):hover {
             transform: translateY(-1px);
             box-shadow: 0 24px 60px rgba(248, 113, 113, 0.9);
           }
-
           .auth-footer {
             margin-top: 1.15rem;
             font-size: 0.85rem;
             text-align: center;
             color: #9ca3af;
           }
-
           .auth-link-btn {
             border: none;
             background: none;
@@ -728,7 +707,6 @@ export default function LoginClient() {
             text-decoration: underline;
             text-underline-offset: 2px;
           }
-
           @media (max-width: 480px) {
             .auth-root {
               padding-inline: 1.1rem;
