@@ -104,15 +104,6 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-declare global {
-  interface Window {
-    grecaptcha?: {
-      ready: (cb: () => void) => void;
-      execute: (siteKey: string, options: { action: string }) => Promise<string>;
-    };
-  }
-}
-
 export default function LoginClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -129,7 +120,6 @@ export default function LoginClient() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
   const [recaptchaReady, setRecaptchaReady] = useState(false);
 
   useEffect(() => {
@@ -143,8 +133,9 @@ export default function LoginClient() {
     const tick = () => {
       if (cancelled) return;
 
-      if (window.grecaptcha?.ready && window.grecaptcha?.execute) {
-        window.grecaptcha.ready(() => {
+      const grecaptcha = (window as any)?.grecaptcha;
+      if (grecaptcha?.ready && grecaptcha?.execute) {
+        grecaptcha.ready(() => {
           if (!cancelled) setRecaptchaReady(true);
         });
         return;
@@ -168,14 +159,14 @@ export default function LoginClient() {
 
   const getRecaptchaToken = async (action: "login" | "google_login") => {
     if (!RECAPTCHA_SITE_KEY) return null;
-    if (!window.grecaptcha?.execute || !window.grecaptcha?.ready) return null;
+
+    const grecaptcha = (window as any)?.grecaptcha;
+    if (!grecaptcha?.execute || !grecaptcha?.ready) return null;
 
     return new Promise<string | null>((resolve) => {
-      window.grecaptcha!.ready(async () => {
+      grecaptcha.ready(async () => {
         try {
-          const token = await window.grecaptcha!.execute(RECAPTCHA_SITE_KEY, {
-            action,
-          });
+          const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action });
           resolve(token);
         } catch {
           resolve(null);
@@ -202,10 +193,7 @@ export default function LoginClient() {
     return { ok, json };
   };
 
-  /**
-   * ✅ Redirection: si un AmorIA existe -> /my-amoria sinon -> /create-amoria
-   * IMPORTANT: on ne touche PAS à user_subscriptions ici.
-   */
+  // ✅ Redirection: si un AmorIA existe -> /my-amoria sinon -> /create-amoria
   const redirectAfterLogin = async () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -222,7 +210,7 @@ export default function LoginClient() {
 
     const { data: amoria, error } = await supabase
       .from("user_amoria")
-      .select("id, user_id, is_archived, created_at")
+      .select("id")
       .eq("user_id", user.id)
       .or("is_archived.is.null,is_archived.eq.false")
       .order("created_at", { ascending: false })
@@ -231,13 +219,11 @@ export default function LoginClient() {
 
     if (error) {
       console.error("user_amoria lookup error:", error);
-      // En cas d'erreur de lecture, on ne force pas create-amoria à l'aveugle:
-      // mais si tu préfères, tu peux le remettre.
-      router.replace(`/login?${params.toString()}`);
+      router.replace(`/create-amoria?${params.toString()}`);
       return;
     }
 
-    if (!amoria?.id) {
+    if (!amoria) {
       router.replace(`/create-amoria?${params.toString()}`);
       return;
     }
@@ -598,6 +584,7 @@ export default function LoginClient() {
             align-items: center;
             justify-content: center;
             border-radius: 999px;
+            background: transparent;
           }
 
           .auth-divider {
@@ -649,12 +636,13 @@ export default function LoginClient() {
             background: radial-gradient(
               circle at top left,
               rgba(15, 23, 42, 0.9),
-              rgba(15, 23, 42, 1)
+              rgba(15, 23, 42, を見る
             );
             padding: 0.6rem 0.95rem;
             font-size: 0.9rem;
             color: #e5e7eb;
             outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
           }
 
           .auth-input::placeholder {
@@ -689,11 +677,6 @@ export default function LoginClient() {
             cursor: pointer;
           }
 
-          .auth-password-toggle:hover {
-            color: #e5e7eb;
-            background: rgba(15, 23, 42, 0.9);
-          }
-
           .auth-error {
             font-size: 0.8rem;
             color: #fecaca;
@@ -712,6 +695,7 @@ export default function LoginClient() {
             cursor: pointer;
             background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
             box-shadow: 0 18px 48px rgba(248, 113, 113, 0.7);
+            transition: transform 0.1s ease, box-shadow 0.15s ease;
           }
 
           .auth-submit-btn:disabled {
