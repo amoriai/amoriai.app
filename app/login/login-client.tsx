@@ -309,50 +309,35 @@ export default function LoginClient() {
   };
 
   const handleGoogleLogin = async () => {
-    if (loading) return;
+  if (loading) return;
 
-    setLoading(true);
-    setErrorMsg(null);
+  setLoading(true);
+  setErrorMsg(null);
 
-    try {
-      const token = await getRecaptchaToken("google_login");
-      if (!token) {
-        setErrorMsg(t.errorRecaptcha);
-        setLoading(false);
-        return;
-      }
+  try {
+    const origin = window.location.origin;
+    const params = new URLSearchParams();
+    params.set("lang", locale);
 
-      const { ok, json } = await verifyRecaptcha(token, "google_login");
-      if (!ok) {
-        console.error("reCAPTCHA verify failed:", json);
-        setErrorMsg(t.errorRecaptcha);
-        setLoading(false);
-        return;
-      }
+    const redirectTo = `${origin}/auth/callback?${params.toString()}`;
 
-      const origin = window.location.origin;
-      const params = new URLSearchParams();
-      params.set("lang", locale);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo },
+    });
 
-      const redirectTo = `${origin}/auth/callback?${params.toString()}`;
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo },
-      });
-
-      if (error) {
-        console.error("google oauth error", error);
-        setErrorMsg(t.errorGeneric);
-        setLoading(false);
-      }
-      // sinon Supabase va rediriger
-    } catch (err) {
-      console.error("google login error", err);
+    if (error) {
+      console.error("google oauth error", error);
       setErrorMsg(t.errorGeneric);
       setLoading(false);
     }
-  };
+    // sinon Supabase redirige automatiquement
+  } catch (err) {
+    console.error("google login error", err);
+    setErrorMsg(t.errorGeneric);
+    setLoading(false);
+  }
+};
 
   const recaptchaMissing = !RECAPTCHA_SITE_KEY;
 
