@@ -18,94 +18,111 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
+function normalizePlan(raw: string | null): PlanId {
+  if (raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
+  return "free";
+}
+
 export default function AuthCallbackClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const lang = normalizeLocale(searchParams.get("lang"));
-  const plan: PlanId = "free";
+  const plan = normalizePlan(searchParams.get("plan"));
 
   useEffect(() => {
+    let cancelled = false;
+
+    const goLogin = () => {
+      const params = new URLSearchParams();
+      params.set("lang", lang);
+      router.replace(`/login?${params.toString()}`);
+    };
+
+    const goCreate = () => {
+      const params = new URLSearchParams();
+      params.set("lang", lang);
+      params.set("plan", plan);
+      router.replace(`/create-amoria?${params.toString()}`);
+    };
+
+    const goSubscription = () => {
+      const params = new URLSearchParams();
+      params.set("lang", lang);
+      params.set("plan", plan);
+      router.replace(`/subscription?${params.toString()}`);
+    };
+
     const finalizeAuth = async () => {
       try {
         const code = searchParams.get("code");
 
-        // 1) IMPORTANT : on échange le code reçu dans l'URL
         if (code) {
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) {
             console.error("Erreur exchangeCodeForSession:", error);
-          } else {
-            console.log("Session après exchangeCodeForSession:", data.session?.user?.id);
+            if (!cancelled) goLogin();
+            return;
           }
         }
 
-        // 2) Maintenant on peut lire la session réelle
-        const { data, error } = await supabase.auth.getSession();
+        const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+        const user = sessionData.session?.user;
 
-        if (error || !data.session?.user) {
-          console.error("Aucune session après callback:", error);
-          // Ici on t’envoie vers /login car ton email est déjà confirmé
-          const params = new URLSearchParams();
-          params.set("lang", lang);
-          router.replace(`/login?${params.toString()}`);
+        if (sessionErr || !user) {
+          console.error("Aucune session après callback:", sessionErr);
+          if (!cancelled) goLogin();
           return;
         }
 
-        const user = data.session.user;
+        if (plan !== "free") {
+          if (!cancelled) goSubscription();
+          return;
+        }
 
-        // 3) Vérifier / créer la subscription FREE si besoin
-        const { data: existingSub, error: subError } = await supabase
+        const { data: currentSub, error: subErr } = await supabase
           .from("user_subscriptions")
           .select("id")
           .eq("user_id", user.id)
           .eq("current", true)
           .maybeSingle();
 
-        if (subError) {
-          console.error("Erreur lecture user_subscriptions:", subError);
-        }
+        if (subErr) console.error("Erreur lecture user_subscriptions:", subErr);
 
-        if (!existingSub) {
-          const { data: pricingPlan, error: pricingError } = await supabase
+        if (!currentSub?.id) {
+          const { data: freePlan, error: planErr } = await supabase
             .from("pricing_plans")
             .select("id")
-            .eq("code", plan)
+            .eq("code", "free")
             .maybeSingle();
 
-          if (pricingError) {
-            console.error("Erreur pricing_plans:", pricingError);
-          }
+          if (planErr) console.error("Erreur lecture pricing_plans:", planErr);
 
-          if (pricingPlan?.id) {
-            const { error: insertError } = await supabase
-              .from("user_subscriptions")
-              .insert({
-                user_id: user.id,
-                pricing_plan_id: pricingPlan.id,
-                current: true,
-              });
+          if (freePlan?.id) {
+            const { error: insertErr } = await supabase.from("user_subscriptions").insert({
+              user_id: user.id,
+              pricing_plan_id: freePlan.id,
+              current: true,
+              stripe_customer_id: null,
+              subscription_id: null,
+            });
 
-            if (insertError) {
-              console.error("Erreur insert user_subscriptions:", insertError);
-            }
+            if (insertErr) console.error("Erreur insert user_subscriptions:", insertErr);
           }
         }
 
-        // 4) Redirection finale vers la création d’AmorIAI
-        const params = new URLSearchParams();
-        params.set("lang", lang);
-        params.set("plan", plan);
-        router.replace(`/create-amoria?${params.toString()}`);
+        if (!cancelled) goCreate();
       } catch (err) {
         console.error("Erreur finalizeAuth:", err);
-        const params = new URLSearchParams();
-        params.set("lang", lang);
-        router.replace(`/login?${params.toString()}`);
+        if (!cancelled) goLogin();
       }
     };
 
     void finalizeAuth();
+
+    return () => {
+      cancelled = true;
+    };
   }, [router, searchParams, lang, plan]);
 
   return (
