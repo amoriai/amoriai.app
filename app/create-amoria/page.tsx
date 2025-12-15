@@ -114,8 +114,7 @@ const STRINGS: Record<Locale, Copy> = {
     saving: "Création en cours…",
     genericError:
       "Une erreur est survenue pendant la création de ton AmorIAI. Merci de réessayer.",
-    formError:
-      "Merci de remplir tous les champs avant de créer ton AmorIAI.",
+    formError: "Merci de remplir tous les champs avant de créer ton AmorIAI.",
     previewTitle: "Ta configuration d’abord, la magie ensuite ✨",
     previewText:
       'Ici, tu définis simplement la personnalité et le rôle de ton AmorIAI. Il sera réellement créé quand tu cliqueras sur « Créer mon AmorIAI ».',
@@ -149,8 +148,7 @@ const STRINGS: Record<Locale, Copy> = {
     saving: "Creating your AmorIAI…",
     genericError:
       "Something went wrong while creating your AmorIAI. Please try again.",
-    formError:
-      "Please fill in all fields before creating your AmorIAI.",
+    formError: "Please fill in all fields before creating your AmorIAI.",
     previewTitle: "Set things up first, magic comes after ✨",
     previewText:
       'Here you only define your AmorIAI’s personality and role. It will actually be created when you click “Create my AmorIAI”.',
@@ -184,8 +182,7 @@ const STRINGS: Record<Locale, Copy> = {
     saving: "Creando tu AmorIAI…",
     genericError:
       "Ocurrió un error al crear tu AmorIAI. Inténtalo de nuevo, por favor.",
-    formError:
-      "Por favor, completa todos los campos antes de crear tu AmorIAI.",
+    formError: "Por favor, completa todos los campos antes de crear tu AmorIAI.",
     previewTitle: "Primero la configuración, luego la magia ✨",
     previewText:
       'Aquí solo defines la personalidad y el papel de tu AmorIAI. Se creará realmente cuando pulses «Crear mi AmorIAI».',
@@ -278,42 +275,77 @@ export default function CreateAmoriaPage() {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // lecture query + session (avec window.location.search)
+  // ✅ lecture query + session + check "déjà créé ?"
   useEffect(() => {
     const init = async () => {
       const params = new URLSearchParams(window.location.search);
       const langParam = params.get("lang");
       const planParam = params.get("plan");
 
-      if (langParam === "fr" || langParam === "en" || langParam === "es") {
-        setLocale(langParam);
-      }
-      if (
+      const force = params.get("force") === "1";
+
+      const nextLocale: Locale =
+        langParam === "fr" || langParam === "en" || langParam === "es"
+          ? (langParam as Locale)
+          : "fr";
+
+      const nextPlan: PlanId =
         planParam === "free" ||
         planParam === "chat" ||
         planParam === "plus" ||
         planParam === "unlimited"
-      ) {
-        setPlan(planParam);
-      }
+          ? (planParam as PlanId)
+          : "free";
 
-      const { data, error } = await supabase.auth.getSession();
+      setLocale(nextLocale);
+      setPlan(nextPlan);
 
-      if (error || !data?.session) {
+      // 1) session obligatoire
+      const { data: sessionData, error: sessionError } =
+        await supabase.auth.getSession();
+
+      if (sessionError || !sessionData?.session) {
         const qp = new URLSearchParams();
-        qp.set(
-          "lang",
-          langParam === "en" || langParam === "es" ? langParam : "fr"
-        );
-        if (planParam) qp.set("plan", planParam);
+        qp.set("lang", nextLocale);
+        qp.set("plan", nextPlan);
         router.replace(`/login?${qp.toString()}`);
         return;
+      }
+
+      // 2) user
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData?.user) {
+        const qp = new URLSearchParams();
+        qp.set("lang", nextLocale);
+        qp.set("plan", nextPlan);
+        router.replace(`/login?${qp.toString()}`);
+        return;
+      }
+
+      // 3) ✅ si déjà une AmorIAI active → /my-ai
+      if (!force) {
+        const { data: existing, error: existingError } = await supabase
+          .from("user_amoria")
+          .select("id")
+          .eq("user_id", userData.user.id)
+          .eq("is_archived", false)
+          .limit(1);
+
+        if (existingError) {
+          console.error("Erreur check user_amoria:", existingError);
+          // on continue (non bloquant)
+        } else if (existing && existing.length > 0) {
+          const qp = new URLSearchParams();
+          qp.set("lang", nextLocale);
+          router.replace(`/my-ai?${qp.toString()}`);
+          return;
+        }
       }
 
       setReady(true);
     };
 
-    init();
+    void init();
   }, [router]);
 
   const t = STRINGS[locale];
@@ -433,9 +465,7 @@ sans jugement, en respectant les limites de l’utilisateur.
 
         <section className="amoria-card">
           {errorMsg && (
-            <div className="amoria-banner amoria-banner--error">
-              {errorMsg}
-            </div>
+            <div className="amoria-banner amoria-banner--error">{errorMsg}</div>
           )}
 
           <form className="amoria-layout" onSubmit={handleSubmit} noValidate>
@@ -568,12 +598,11 @@ sans jugement, en respectant les limites de l’utilisateur.
         .amoria-create-root {
           min-height: 100vh;
           padding: 2rem 1.5rem;
-          background:
-            radial-gradient(circle at top, #020617 0, #020617 40%, #000 80%),
+          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 80%),
             radial-gradient(circle at bottom, #020617, #000);
           color: #e5e7eb;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+            "Helvetica Neue", Arial, sans-serif;
           display: flex;
           align-items: flex-start;
           justify-content: center;
@@ -662,8 +691,7 @@ sans jugement, en respectant les limites de l’utilisateur.
           border-radius: 1.6rem;
           padding: 1.7rem 1.5rem 1.5rem;
           border: 1px solid rgba(148, 163, 184, 0.45);
-          background:
-            radial-gradient(
+          background: radial-gradient(
               circle at top left,
               rgba(251, 113, 133, 0.2),
               transparent 55%
@@ -747,14 +775,9 @@ sans jugement, en respectant les limites de l’utilisateur.
           appearance: none;
           -webkit-appearance: none;
           padding-right: 2.4rem;
-          background-image: linear-gradient(
-              45deg,
-              transparent 50%,
-              #e5e7eb 50%
-            ),
+          background-image: linear-gradient(45deg, transparent 50%, #e5e7eb 50%),
             linear-gradient(135deg, #e5e7eb 50%, transparent 50%);
-          background-position: calc(100% - 1.1rem) 50%,
-            calc(100% - 0.7rem) 50%;
+          background-position: calc(100% - 1.1rem) 50%, calc(100% - 0.7rem) 50%;
           background-size: 6px 6px, 6px 6px;
           background-repeat: no-repeat;
         }
