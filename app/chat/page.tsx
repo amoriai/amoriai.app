@@ -172,6 +172,152 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
+/**
+ * Loop MP4 PRO : double <video> + crossfade juste avant la fin.
+ * Résultat : pas de "coupure" visible, même si ton mp4 a une frame de retour.
+ */
+function LoopCrossfadeVideo({
+  src,
+  className,
+  fadeMs = 180,
+  preRollMs = 220,
+}: {
+  src: string;
+  className?: string;
+  fadeMs?: number;
+  preRollMs?: number;
+}) {
+  const aRef = useRef<HTMLVideoElement | null>(null);
+  const bRef = useRef<HTMLVideoElement | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  const [top, setTop] = useState<"a" | "b">("a");
+  const switchingRef = useRef(false);
+  const topRef = useRef<"a" | "b">("a");
+
+  useEffect(() => {
+    topRef.current = top;
+  }, [top]);
+
+  // reset propre si src change
+  useEffect(() => {
+    const a = aRef.current;
+    const b = bRef.current;
+    if (!a || !b) return;
+
+    const stopAll = () => {
+      try {
+        a.pause();
+        b.pause();
+      } catch {}
+      switchingRef.current = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
+
+    const prime = async () => {
+      stopAll();
+
+      a.style.opacity = "1";
+      b.style.opacity = "0";
+
+      try {
+        a.currentTime = 0;
+      } catch {}
+      try {
+        b.currentTime = 0;
+      } catch {}
+
+      try {
+        await a.play();
+      } catch {}
+
+      tick();
+    };
+
+    const tick = () => {
+      const currentTop = topRef.current;
+      const topVid = currentTop === "a" ? a : b;
+      const backVid = currentTop === "a" ? b : a;
+
+      const dur = topVid.duration;
+      if (!Number.isFinite(dur) || dur <= 0) {
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
+
+      const timeLeft = dur - topVid.currentTime;
+      const trigger = preRollMs / 1000;
+
+      if (!switchingRef.current && timeLeft <= trigger) {
+        switchingRef.current = true;
+
+        try {
+          backVid.currentTime = 0;
+        } catch {}
+        backVid.play().catch(() => {});
+
+        const startAt = performance.now();
+
+        const step = (now: number) => {
+          const p = Math.min(1, (now - startAt) / fadeMs);
+
+          topVid.style.opacity = String(1 - p);
+          backVid.style.opacity = String(p);
+
+          if (p < 1) {
+            requestAnimationFrame(step);
+            return;
+          }
+
+          try {
+            topVid.pause();
+          } catch {}
+          try {
+            topVid.currentTime = 0;
+          } catch {}
+
+          setTop((prev) => (prev === "a" ? "b" : "a"));
+          switchingRef.current = false;
+        };
+
+        requestAnimationFrame(step);
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    prime();
+
+    return () => {
+      stopAll();
+    };
+  }, [src, fadeMs, preRollMs]);
+
+  return (
+    <div className={className}>
+      <video
+        ref={aRef}
+        src={src}
+        muted
+        playsInline
+        preload="auto"
+        className="loop-video"
+        aria-hidden="true"
+      />
+      <video
+        ref={bRef}
+        src={src}
+        muted
+        playsInline
+        preload="auto"
+        className="loop-video"
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
 export default function ChatPage() {
   return (
     <Suspense
@@ -736,9 +882,9 @@ function ChatClient() {
               <div className={avatarRingClass}>
                 {avatarImageUrl ? (
                   canPlayAvatarVideo && avatarVideoUrl ? (
-                    <video src={avatarVideoUrl} autoPlay loop muted playsInline className="chat-avatar-img" />
+                    <LoopCrossfadeVideo src={avatarVideoUrl} className="chat-avatar-img" />
                   ) : (
-                    <img src={avatarImageUrl} alt={`Avatar de ${displayName}`} className="chat-avatar-img" />
+                    <img src={avatarImageUrl} alt={`Avatar de ${displayName}`} className="chat-avatar-img--img" />
                   )
                 ) : (
                   <div className="chat-avatar-placeholder">{displayName.charAt(0).toUpperCase()}</div>
@@ -967,14 +1113,43 @@ function ChatClient() {
         .chat-avatar-ring.live {
           animation: slowPulse 4s ease-in-out infinite;
         }
+
+        /* IMPORTANT : .chat-avatar-img est maintenant un CONTAINER (pour 2 vidéos superposées) */
         .chat-avatar-img {
+          width: 154px;
+          height: 154px;
+          border-radius: 999px;
+          overflow: hidden;
+          position: relative;
+          background: #020617;
+          transform: translateZ(0);
+          backface-visibility: hidden;
+          will-change: opacity;
+        }
+
+        /* Les 2 vidéos internes du loop */
+        .loop-video {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: 50% 20%;
+          border-radius: 999px;
+          background: #020617;
+        }
+
+        /* Image fallback (quand pas de vidéo) */
+        .chat-avatar-img--img {
           width: 154px;
           height: 154px;
           border-radius: 999px;
           object-fit: cover;
           object-position: 50% 20%;
           background: #020617;
+          display: block;
         }
+
         .chat-avatar-placeholder {
           width: 154px;
           height: 154px;
@@ -1368,24 +1543,14 @@ function ChatClient() {
         }
 
         .skeleton {
-          background: linear-gradient(
-            90deg,
-            rgba(148, 163, 184, 0.2),
-            rgba(148, 163, 184, 0.4),
-            rgba(148, 163, 184, 0.2)
-          );
+          background: linear-gradient(90deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.4), rgba(148, 163, 184, 0.2));
           background-size: 200% 100%;
           animation: shimmer 1.4s infinite;
         }
         .skeleton-text {
           height: 0.9rem;
           width: 60%;
-          background: linear-gradient(
-            90deg,
-            rgba(148, 163, 184, 0.2),
-            rgba(148, 163, 184, 0.4),
-            rgba(148, 163, 184, 0.2)
-          );
+          background: linear-gradient(90deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.4), rgba(148, 163, 184, 0.2));
           background-size: 200% 100%;
           animation: shimmer 1.4s infinite;
           border-radius: 999px;
@@ -1421,6 +1586,7 @@ function ChatClient() {
             height: 150px;
           }
           .chat-avatar-img,
+          .chat-avatar-img--img,
           .chat-avatar-placeholder {
             width: 144px;
             height: 144px;
