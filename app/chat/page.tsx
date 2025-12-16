@@ -738,19 +738,7 @@ function ChatClient() {
                       <div className="chat-bubble-row">
                         <div className="chat-bubble-text">{m.content}</div>
 
-                        {showVoiceBtn && (
-                          <button
-                            type="button"
-                            className="chat-voice-btn"
-                            onClick={() => void playAssistantVoice(m.id, m.content)}
-                            disabled={busy || !m.content?.trim() || !audioUnlocked || !voiceEnabled}
-                            aria-label={t.voicePlay}
-                            title={t.voicePlay}
-                          >
-                            {busy ? t.voiceLoading : "🔊"}
-                          </button>
-                        )}
-                      </div>
+                        </div>
                     </div>
                   </li>
                 );
