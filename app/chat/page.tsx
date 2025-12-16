@@ -199,7 +199,6 @@ function LoopCrossfadeVideo({
     topRef.current = top;
   }, [top]);
 
-  // reset propre si src change
   useEffect(() => {
     const a = aRef.current;
     const b = bRef.current;
@@ -213,26 +212,6 @@ function LoopCrossfadeVideo({
       switchingRef.current = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
-    };
-
-    const prime = async () => {
-      stopAll();
-
-      a.style.opacity = "1";
-      b.style.opacity = "0";
-
-      try {
-        a.currentTime = 0;
-      } catch {}
-      try {
-        b.currentTime = 0;
-      } catch {}
-
-      try {
-        await a.play();
-      } catch {}
-
-      tick();
     };
 
     const tick = () => {
@@ -287,6 +266,24 @@ function LoopCrossfadeVideo({
       rafRef.current = requestAnimationFrame(tick);
     };
 
+    const prime = async () => {
+      stopAll();
+
+      a.style.opacity = "1";
+      b.style.opacity = "0";
+
+      try {
+        a.currentTime = 0;
+        b.currentTime = 0;
+      } catch {}
+
+      try {
+        await a.play();
+      } catch {}
+
+      tick();
+    };
+
     prime();
 
     return () => {
@@ -296,24 +293,8 @@ function LoopCrossfadeVideo({
 
   return (
     <div className={className}>
-      <video
-        ref={aRef}
-        src={src}
-        muted
-        playsInline
-        preload="auto"
-        className="loop-video"
-        aria-hidden="true"
-      />
-      <video
-        ref={bRef}
-        src={src}
-        muted
-        playsInline
-        preload="auto"
-        className="loop-video"
-        aria-hidden="true"
-      />
+      <video ref={aRef} src={src} muted playsInline preload="auto" className="loop-video" aria-hidden="true" />
+      <video ref={bRef} src={src} muted playsInline preload="auto" className="loop-video" aria-hidden="true" />
     </div>
   );
 }
@@ -322,22 +303,69 @@ export default function ChatPage() {
   return (
     <Suspense
       fallback={
-        <main className="chat-root">
-          <p className="chat-loading">Chargement du chat…</p>
+        <main className="chat-shell">
+          <div className="chat-shell__loader">
+            <span className="chat-shell__dot" />
+            <span className="chat-shell__dot" />
+            <span className="chat-shell__dot" />
+          </div>
+          <p className="chat-shell__text">Chargement du chat…</p>
+
           <style jsx>{`
-            .chat-root {
+            .chat-shell {
               min-height: 100vh;
-              display: flex;
+              display: grid;
+              place-items: center;
+              padding: 24px 16px;
+              color: rgba(226, 232, 240, 0.92);
+              background: radial-gradient(1200px 800px at 50% -10%, rgba(251, 55, 255, 0.25), transparent 60%),
+                radial-gradient(900px 700px at 90% 10%, rgba(56, 189, 248, 0.22), transparent 55%),
+                radial-gradient(1000px 900px at 10% 25%, rgba(249, 115, 22, 0.14), transparent 60%),
+                linear-gradient(180deg, #020617, #000);
+              font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+                "Segoe UI Emoji";
+            }
+            .chat-shell__loader {
+              display: inline-flex;
+              gap: 10px;
               align-items: center;
               justify-content: center;
-              background: radial-gradient(circle at top, #020617, #000);
-              color: #e5e7eb;
-              font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-              padding: 1rem;
+              padding: 14px 18px;
+              border-radius: 999px;
+              border: 1px solid rgba(148, 163, 184, 0.22);
+              background: rgba(2, 6, 23, 0.55);
+              box-shadow: 0 16px 60px rgba(15, 23, 42, 0.9);
+              backdrop-filter: blur(10px);
             }
-            .chat-loading {
-              font-size: 0.95rem;
-              color: #9ca3af;
+            .chat-shell__dot {
+              width: 10px;
+              height: 10px;
+              border-radius: 999px;
+              background: rgba(226, 232, 240, 0.85);
+              animation: chatDot 900ms ease-in-out infinite;
+            }
+            .chat-shell__dot:nth-child(2) {
+              animation-delay: 120ms;
+            }
+            .chat-shell__dot:nth-child(3) {
+              animation-delay: 240ms;
+            }
+            .chat-shell__text {
+              margin-top: 14px;
+              font-size: 0.9rem;
+              color: rgba(148, 163, 184, 0.9);
+              text-align: center;
+            }
+            @keyframes chatDot {
+              0%,
+              100% {
+                transform: translateY(0);
+                opacity: 0.45;
+              }
+              50% {
+                transform: translateY(-6px);
+                opacity: 1;
+              }
             }
           `}</style>
         </main>
@@ -379,7 +407,6 @@ function ChatClient() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
-
   const [voiceBusyMsgId, setVoiceBusyMsgId] = useState<string | null>(null);
 
   const windowRef = useRef<HTMLDivElement | null>(null);
@@ -430,7 +457,6 @@ function ChatClient() {
     }
   };
 
-  // Auto-scroll smart (only if user is near bottom)
   const handleWindowScroll = () => {
     const el = windowRef.current;
     if (!el) return;
@@ -637,13 +663,11 @@ function ChatClient() {
     loadHistory();
   }, [iaId, isPaidPlan]);
 
-  // Auto-scroll when messages change
   useEffect(() => {
     scrollToBottomIfNeeded();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length]);
 
-  // cleanup audio on unmount
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
@@ -685,10 +709,7 @@ function ChatClient() {
 
       const res = await fetch("/api/voice", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ iaId, text }),
       });
 
@@ -698,14 +719,9 @@ function ChatClient() {
         if (contentType.includes("application/json")) {
           const data = await res.json().catch(() => ({}));
           console.error("Voice API error:", res.status, data);
-
-          if (data?.error === "audio_limit_reached") {
-            setSendError("Tu as atteint la limite de messages vocaux pour ton forfait actuel.");
-          } else if (data?.error) {
-            setSendError(`Voice error: ${data.error}`);
-          } else {
-            setSendError("Erreur voice. Vérifie la configuration serveur.");
-          }
+          if (data?.error === "audio_limit_reached") setSendError("Tu as atteint la limite de messages vocaux pour ton forfait actuel.");
+          else if (data?.error) setSendError(`Voice error: ${data.error}`);
+          else setSendError("Erreur voice. Vérifie la configuration serveur.");
         } else {
           const raw = await res.text().catch(() => "");
           console.error("Voice API error:", res.status, raw);
@@ -716,7 +732,6 @@ function ChatClient() {
 
       const audioBlob = await res.blob();
 
-      // stop + cleanup previous
       if (audioRef.current) {
         try {
           audioRef.current.pause();
@@ -788,10 +803,7 @@ function ChatClient() {
 
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ iaId, message: content, lang: locale }),
       });
 
@@ -812,20 +824,10 @@ function ChatClient() {
 
       if (!res.ok) {
         console.error("ERREUR API /api/chat:", res.status, data);
-        if (data?.error === "not_authenticated") {
-          setSendError(t.notAuthenticated);
-          return;
-        }
-        if (data?.error === "profile_not_found") {
-          setSendError(t.profileNotFound);
-          return;
-        }
-        if (data?.message) {
-          setSendError(data.message);
-          return;
-        }
-        setSendError("Erreur serveur : " + (data?.error ?? "Impossible d’envoyer le message."));
-        return;
+        if (data?.error === "not_authenticated") return setSendError(t.notAuthenticated);
+        if (data?.error === "profile_not_found") return setSendError(t.profileNotFound);
+        if (data?.message) return setSendError(data.message);
+        return setSendError("Erreur serveur : " + (data?.error ?? "Impossible d’envoyer le message."));
       }
 
       const assistantMessage: ChatMessage = {
@@ -838,9 +840,7 @@ function ChatClient() {
       setMessages((prev) => [...prev, assistantMessage]);
 
       if (assistantMessage.content && canUseVoice && voiceEnabled && audioUnlocked && !isBlocked) {
-        setTimeout(() => {
-          void playAssistantVoice(assistantMessage.id, assistantMessage.content);
-        }, 80);
+        setTimeout(() => void playAssistantVoice(assistantMessage.id, assistantMessage.content), 80);
       }
     } catch (err) {
       console.error("Erreur réseau /api/chat:", err);
@@ -850,64 +850,64 @@ function ChatClient() {
     }
   };
 
-  const avatarRingClass = canPulseAvatar ? "chat-avatar-ring live" : "chat-avatar-ring";
+  const avatarRingClass = canPulseAvatar ? "avatarRing avatarRing--live" : "avatarRing";
 
   return (
-    <main className="chat-root">
-      <header className="chat-header">
-        <a href={homeUrl} className="chat-back">
+    <main className="page">
+      <header className="topbar">
+        <a href={homeUrl} className="topbar__back">
           {t.backHome}
         </a>
         <LogoutButton />
       </header>
 
-      <section className="chat-card">
-        <div className="chat-ai-header">
+      <section className="card">
+        <div className="hero">
           {aiLoading ? (
             <>
-              <div className="chat-avatar-ring skeleton" />
-              <p className="chat-ai-name skeleton-text" />
-              <p className="chat-ai-subtitle skeleton-text" />
+              <div className="avatarRing avatarRing--skeleton" />
+              <div className="skeletonLine skeletonLine--title" />
+              <div className="skeletonLine skeletonLine--sub" />
             </>
           ) : aiError || !ai ? (
             <>
-              <div className="chat-avatar-ring error">
-                <span className="chat-avatar-error">!</span>
+              <div className="avatarRing avatarRing--error">
+                <span className="avatarRing__bang">!</span>
               </div>
-              <p className="chat-ai-name">{t.aiNotFoundTitle}</p>
-              <p className="chat-ai-subtitle">{aiError}</p>
+              <p className="hero__name">{t.aiNotFoundTitle}</p>
+              <p className="hero__subtitle">{aiError}</p>
             </>
           ) : (
             <>
               <div className={avatarRingClass}>
                 {avatarImageUrl ? (
                   canPlayAvatarVideo && avatarVideoUrl ? (
-                    <LoopCrossfadeVideo src={avatarVideoUrl} className="chat-avatar-img" />
+                    <LoopCrossfadeVideo src={avatarVideoUrl} className="avatarMedia" />
                   ) : (
-                    <img src={avatarImageUrl} alt={`Avatar de ${displayName}`} className="chat-avatar-img--img" />
+                    <img src={avatarImageUrl} alt={`Avatar de ${displayName}`} className="avatarImg" />
                   )
                 ) : (
-                  <div className="chat-avatar-placeholder">{displayName.charAt(0).toUpperCase()}</div>
+                  <div className="avatarFallback">{displayName.charAt(0).toUpperCase()}</div>
                 )}
               </div>
 
-              <p className="chat-ai-name">{displayNameUpper}</p>
-              <p className="chat-ai-subtitle">{t.subtitle(displayName)}</p>
+              <p className="hero__name">{displayNameUpper}</p>
+              <p className="hero__subtitle">{t.subtitle(displayName)}</p>
             </>
           )}
         </div>
 
         {/* VOICE TOGGLE */}
         {canUseVoice && !isBlocked && (
-          <div className="chat-voice-toggle">
+          <div className="voiceToggle">
             {!audioUnlocked ? (
-              <button type="button" className="chat-voice-toggle-btn" onClick={() => void unlockAudio()}>
+              <button type="button" className="pillBtn pillBtn--ghost" onClick={() => void unlockAudio()}>
                 {t.voiceUnlock}
               </button>
             ) : (
               <button
                 type="button"
-                className="chat-voice-toggle-btn"
+                className="pillBtn pillBtn--ghost"
                 onClick={() => setVoiceEnabled((v) => !v)}
                 aria-label="Activer ou désactiver la voix"
               >
@@ -917,29 +917,26 @@ function ChatClient() {
           </div>
         )}
 
-        <div className="chat-window" ref={windowRef} onScroll={handleWindowScroll}>
+        <div className="chatBox" ref={windowRef} onScroll={handleWindowScroll}>
           {messages.length === 0 ? (
-            <div className="chat-empty">{t.emptyState(displayName)}</div>
+            <div className="empty">{t.emptyState(displayName)}</div>
           ) : (
-            <ul className="chat-message-list">
+            <ul className="list">
               {messages.map((m) => {
                 const isAssistant = m.role === "assistant";
                 const showVoiceBtn = isAssistant && canUseVoice && !isBlocked;
                 const busy = voiceBusyMsgId === m.id;
 
                 return (
-                  <li
-                    key={m.id}
-                    className={m.role === "user" ? "chat-message chat-message--user" : "chat-message chat-message--assistant"}
-                  >
-                    <div className="chat-bubble">
-                      <div className="chat-bubble-row">
-                        <div className="chat-bubble-text">{m.content}</div>
+                  <li key={m.id} className={m.role === "user" ? "row row--user" : "row row--assistant"}>
+                    <div className={m.role === "user" ? "bubble bubble--user" : "bubble bubble--assistant"}>
+                      <div className="bubble__grid">
+                        <div className="bubble__text">{m.content}</div>
 
                         {showVoiceBtn && (
                           <button
                             type="button"
-                            className="chat-voice-btn"
+                            className="miniBtn"
                             onClick={() => void playAssistantVoice(m.id, m.content)}
                             disabled={!audioUnlocked || busy || !voiceEnabled}
                             aria-label="Lire la réponse en audio"
@@ -957,40 +954,40 @@ function ChatClient() {
           )}
         </div>
 
-        {sendError && <p className="chat-error">{sendError}</p>}
+        {sendError && <p className="error">{sendError}</p>}
 
         {!isBlocked && isFreePlan && (
-          <div className="chat-promo">
-            <div className="chat-promo-tag">PLUS</div>
-            <div className="chat-promo-texts">
-              <p className="chat-promo-title">{t.promoTitle}</p>
-              <p className="chat-promo-text">{t.promoText}</p>
+          <div className="promo">
+            <div className="badge">PLUS</div>
+            <div className="promo__texts">
+              <p className="promo__title">{t.promoTitle}</p>
+              <p className="promo__text">{t.promoText}</p>
             </div>
-            <button type="button" className="chat-promo-btn" onClick={handleUpgradeClick}>
+            <button type="button" className="pillBtn pillBtn--primary" onClick={handleUpgradeClick}>
               {t.promoCta}
             </button>
           </div>
         )}
 
         {isBlocked && isFreePlan && (
-          <div className="chat-paywall">
-            <div className="chat-paywall-chip">PLUS</div>
-            <p className="chat-paywall-title">{t.paywallTitle}</p>
-            <p className="chat-paywall-text">{t.paywallText}</p>
-            <button type="button" className="chat-paywall-btn" onClick={handleUpgradeClick}>
-              <span className="chat-paywall-btn-label">{t.paywallCta}</span>
-              <span className="chat-paywall-btn-icon">➜</span>
+          <div className="paywall">
+            <div className="badge">PLUS</div>
+            <p className="paywall__title">{t.paywallTitle}</p>
+            <p className="paywall__text">{t.paywallText}</p>
+            <button type="button" className="pillBtn pillBtn--primary paywall__btn" onClick={handleUpgradeClick}>
+              <span>{t.paywallCta}</span>
+              <span aria-hidden="true">➜</span>
             </button>
-            <a href={pricingUrl} className="chat-paywall-link">
+            <a href={pricingUrl} className="paywall__link">
               {t.paywallSeePlans}
             </a>
           </div>
         )}
 
-        <form className="chat-input-bar" onSubmit={handleSubmit}>
-          <div className="chat-input-wrapper">
+        <form className="composer" onSubmit={handleSubmit}>
+          <div className="composer__field">
             <textarea
-              className="chat-input"
+              className="composer__input"
               placeholder={t.inputPlaceholder(displayName)}
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
@@ -999,135 +996,196 @@ function ChatClient() {
             />
           </div>
 
-          <div className="chat-actions">
+          <div className="composer__actions">
             {canUseVoice && !isBlocked && (
               <button
                 type="button"
-                className={`chat-mic-btn ${isRecording ? "chat-mic-btn--active" : ""}`}
+                className={isRecording ? "iconBtn iconBtn--active" : "iconBtn"}
                 onClick={handleToggleRecording}
                 disabled={!sttSupported || sending}
                 aria-label="Dicter mon message"
                 title={!sttSupported ? "Dictée non supportée sur ce navigateur" : isRecording ? t.sttStop : t.sttStart}
               >
-                <span className="chat-mic-icon">{isRecording ? "■" : "🎤"}</span>
+                <span className="iconBtn__icon">{isRecording ? "■" : "🎤"}</span>
               </button>
             )}
 
             <button
               type="submit"
-              className="chat-send-btn"
+              className="sendBtn"
               disabled={sending || !newMessage.trim() || (isBlocked && isFreePlan)}
               aria-label={t.send}
               title={sending ? t.sending : t.send}
             >
-              <span className="chat-send-icon">➤</span>
+              <span className="sendBtn__icon">➤</span>
             </button>
           </div>
         </form>
 
-        <p className="chat-privacy-note">Tes messages sont privés et ne sont jamais visibles par les autres utilisateurs.</p>
+        <p className="note">Tes messages sont privés et ne sont jamais visibles par les autres utilisateurs.</p>
       </section>
 
       <style jsx>{`
-        .chat-root {
+        /* =========================
+           THEME TOKENS
+        ========================== */
+        :global(html) {
+          color-scheme: dark;
+        }
+        .page {
+          --bg0: #000;
+          --bg1: #020617;
+          --glass: rgba(2, 6, 23, 0.55);
+          --card: rgba(15, 23, 42, 0.78);
+          --card2: rgba(2, 6, 23, 0.72);
+          --line: rgba(148, 163, 184, 0.22);
+          --line2: rgba(148, 163, 184, 0.35);
+          --text: rgba(226, 232, 240, 0.92);
+          --muted: rgba(148, 163, 184, 0.9);
+          --muted2: rgba(148, 163, 184, 0.65);
+
+          --g1: #fb37ff;
+          --g2: #ff6b9c;
+          --g3: #38bdf8;
+          --g4: #f97316;
+
+          --shadow: 0 26px 90px rgba(0, 0, 0, 0.75);
+          --shadow2: 0 18px 50px rgba(15, 23, 42, 0.75);
+
           min-height: 100vh;
-          padding: 1.4rem 1rem 1.7rem;
-          background: radial-gradient(circle at top, #020617 0, #000 70%);
-          color: #e5e7eb;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+          padding: 22px 16px 28px;
           display: flex;
           flex-direction: column;
           align-items: center;
+
+          color: var(--text);
+          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+            "Segoe UI Emoji";
+
+          background: radial-gradient(1100px 700px at 50% -10%, rgba(251, 55, 255, 0.24), transparent 60%),
+            radial-gradient(900px 700px at 90% 10%, rgba(56, 189, 248, 0.18), transparent 55%),
+            radial-gradient(950px 700px at 10% 25%, rgba(249, 115, 22, 0.12), transparent 60%),
+            linear-gradient(180deg, var(--bg1), var(--bg0));
         }
 
-        .chat-header {
+        /* =========================
+           TOPBAR
+        ========================== */
+        .topbar {
           width: 100%;
-          max-width: 900px;
-          margin-bottom: 1rem;
+          max-width: 920px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 0.75rem;
+          gap: 12px;
+          margin-bottom: 14px;
         }
-        .chat-back {
-          font-size: 0.8rem;
-          color: #9ca3af;
+        .topbar__back {
+          font-size: 0.82rem;
+          color: rgba(148, 163, 184, 0.88);
           text-decoration: none;
+          padding: 10px 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.16);
+          background: rgba(2, 6, 23, 0.35);
+          backdrop-filter: blur(10px);
+          transition: transform 120ms ease, border-color 120ms ease, color 120ms ease;
         }
-        .chat-back:hover {
-          color: #e5e7eb;
+        .topbar__back:hover {
+          transform: translateY(-1px);
+          border-color: rgba(148, 163, 184, 0.3);
+          color: rgba(226, 232, 240, 0.92);
         }
 
-        .chat-card {
+        /* =========================
+           CARD
+        ========================== */
+        .card {
           width: 100%;
-          max-width: 900px;
-          border-radius: 1.6rem;
-          border: 1px solid rgba(148, 163, 184, 0.42);
-          background: radial-gradient(
-            circle at top,
-            rgba(2, 6, 23, 0.96) 0,
-            rgba(15, 23, 42, 0.98) 45%,
-            rgba(0, 0, 0, 0.98) 100%
-          );
-          box-shadow: 0 26px 70px rgba(15, 23, 42, 0.95);
-          padding: 1.6rem 1.6rem 1.1rem;
+          max-width: 920px;
+          border-radius: 26px;
+          border: 1px solid rgba(148, 163, 184, 0.26);
+          background: radial-gradient(900px 600px at 50% 0%, rgba(251, 55, 255, 0.16), transparent 60%),
+            radial-gradient(800px 520px at 80% 0%, rgba(56, 189, 248, 0.12), transparent 55%),
+            linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.78));
+          box-shadow: var(--shadow);
+          padding: 18px 18px 14px;
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          gap: 14px;
+          backdrop-filter: blur(12px);
         }
 
-        .chat-ai-header {
+        /* =========================
+           HERO
+        ========================== */
+        .hero {
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
-          gap: 0.35rem;
+          gap: 6px;
+          padding-top: 2px;
+        }
+        .hero__name {
+          margin-top: 8px;
+          font-weight: 750;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          font-size: 0.92rem;
+        }
+        .hero__subtitle {
+          font-size: 0.86rem;
+          color: rgba(148, 163, 184, 0.92);
+          max-width: 620px;
+          line-height: 1.35;
         }
 
-        @keyframes slowPulse {
+        /* =========================
+           AVATAR
+        ========================== */
+        @keyframes ringPulse {
           0% {
-            box-shadow: 0 0 26px rgba(251, 55, 255, 0.35);
             transform: scale(1);
+            filter: saturate(1);
           }
           50% {
-            box-shadow: 0 0 52px rgba(56, 189, 248, 0.55);
             transform: scale(1.02);
+            filter: saturate(1.15);
           }
           100% {
-            box-shadow: 0 0 26px rgba(251, 55, 255, 0.35);
             transform: scale(1);
+            filter: saturate(1);
           }
         }
 
-        .chat-avatar-ring {
-          width: 160px;
-          height: 160px;
+        .avatarRing {
+          width: 162px;
+          height: 162px;
           border-radius: 999px;
           padding: 3px;
-          background: conic-gradient(from 180deg, #fb37ff, #ff6b9c, #38bdf8, #fb37ff);
+          background: conic-gradient(from 180deg, var(--g1), var(--g2), var(--g3), var(--g1));
           display: flex;
           align-items: center;
           justify-content: center;
-          overflow: hidden;
+          box-shadow: var(--shadow2);
         }
-        .chat-avatar-ring.live {
-          animation: slowPulse 4s ease-in-out infinite;
+        .avatarRing--live {
+          animation: ringPulse 4s ease-in-out infinite;
         }
 
-        /* IMPORTANT : .chat-avatar-img est maintenant un CONTAINER (pour 2 vidéos superposées) */
-        .chat-avatar-img {
-          width: 154px;
-          height: 154px;
+        /* Container pour les 2 <video> */
+        .avatarMedia {
+          width: 156px;
+          height: 156px;
           border-radius: 999px;
           overflow: hidden;
           position: relative;
-          background: #020617;
+          background: rgba(2, 6, 23, 0.9);
           transform: translateZ(0);
           backface-visibility: hidden;
-          will-change: opacity;
         }
 
-        /* Les 2 vidéos internes du loop */
         .loop-video {
           position: absolute;
           inset: 0;
@@ -1136,435 +1194,47 @@ function ChatClient() {
           object-fit: cover;
           object-position: 50% 20%;
           border-radius: 999px;
-          background: #020617;
+          background: rgba(2, 6, 23, 0.9);
+          opacity: 0;
+          will-change: opacity;
         }
 
-        /* Image fallback (quand pas de vidéo) */
-        .chat-avatar-img--img {
-          width: 154px;
-          height: 154px;
+        .avatarImg {
+          width: 156px;
+          height: 156px;
           border-radius: 999px;
           object-fit: cover;
           object-position: 50% 20%;
-          background: #020617;
           display: block;
+          background: rgba(2, 6, 23, 0.9);
         }
 
-        .chat-avatar-placeholder {
-          width: 154px;
-          height: 154px;
+        .avatarFallback {
+          width: 156px;
+          height: 156px;
           border-radius: 999px;
-          background: #1e293b;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 3rem;
-          font-weight: 600;
-          color: #e5e7eb;
-        }
-
-        .chat-ai-name {
-          margin-top: 0.35rem;
-          font-weight: 700;
-          letter-spacing: 0.18em;
-          text-transform: uppercase;
-          font-size: 0.9rem;
-        }
-        .chat-ai-subtitle {
-          font-size: 0.84rem;
-          color: #9ca3af;
-          max-width: 560px;
-        }
-
-        .chat-voice-toggle {
-          display: flex;
-          justify-content: center;
-          margin-top: 0.2rem;
-          margin-bottom: -0.2rem;
-        }
-        .chat-voice-toggle-btn {
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.6);
-          background: rgba(2, 6, 23, 0.7);
-          color: #e5e7eb;
-          padding: 0.35rem 0.9rem;
-          cursor: pointer;
-          font-size: 0.82rem;
-          line-height: 1;
-        }
-
-        .chat-window {
-          margin-top: 0.4rem;
-          border-radius: 1rem;
-          border: 1px solid rgba(30, 64, 175, 0.56);
-          background: radial-gradient(circle at top, rgba(15, 23, 42, 0.97), rgba(15, 23, 42, 0.99));
-          height: 360px;
-          max-height: 55vh;
-          padding: 0.7rem;
-          overflow-y: auto;
-          overscroll-behavior: contain;
-        }
-        .chat-window::-webkit-scrollbar {
-          width: 10px;
-        }
-        .chat-window::-webkit-scrollbar-thumb {
-          background: rgba(148, 163, 184, 0.35);
-          border-radius: 999px;
-          border: 2px solid rgba(15, 23, 42, 0.8);
-        }
-        .chat-window::-webkit-scrollbar-track {
-          background: rgba(2, 6, 23, 0.2);
-          border-radius: 999px;
-        }
-
-        .chat-empty {
-          font-size: 0.9rem;
-          color: #9ca3af;
-          text-align: center;
-          padding-top: 2.1rem;
-        }
-
-        .chat-message-list {
-          list-style: none;
-          margin: 0;
-          padding: 0;
-          display: flex;
-          flex-direction: column;
-          gap: 0.45rem;
-        }
-        .chat-message {
-          display: flex;
-        }
-        .chat-message--user {
-          justify-content: flex-end;
-        }
-        .chat-message--assistant {
-          justify-content: flex-start;
-        }
-
-        .chat-bubble {
-          max-width: 78%;
-          padding: 0.55rem 0.85rem;
-          border-radius: 1rem;
-          font-size: 0.9rem;
-          line-height: 1.4;
-          white-space: pre-wrap;
-          word-wrap: break-word;
-        }
-        .chat-message--user .chat-bubble {
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
-          color: #f9fafb;
-          border-bottom-right-radius: 0.24rem;
-        }
-        .chat-message--assistant .chat-bubble {
-          background: rgba(15, 23, 42, 0.96);
-          border: 1px solid rgba(148, 163, 184, 0.55);
-          color: #e5e7eb;
-          border-bottom-left-radius: 0.24rem;
-        }
-
-        .chat-bubble-row {
-          display: flex;
-          gap: 0.6rem;
-          align-items: flex-start;
-        }
-        .chat-bubble-text {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .chat-voice-btn {
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.6);
-          background: rgba(2, 6, 23, 0.7);
-          color: #e5e7eb;
-          padding: 0.25rem 0.55rem;
-          cursor: pointer;
-          font-size: 0.85rem;
-          line-height: 1;
-          white-space: nowrap;
-          transition: transform 120ms ease, opacity 120ms ease;
-        }
-        .chat-voice-btn:hover {
-          transform: translateY(-1px);
-        }
-        .chat-voice-btn:disabled {
-          opacity: 0.5;
-          cursor: default;
-          transform: none;
-        }
-
-        .chat-error {
-          font-size: 0.8rem;
-          color: #fecaca;
-          text-align: center;
-        }
-
-        .chat-promo {
-          margin-top: 0.5rem;
-          margin-bottom: 0.1rem;
-          border-radius: 999px;
-          padding: 0.55rem 0.9rem;
-          background: radial-gradient(circle at left, rgba(251, 55, 255, 0.25), rgba(15, 23, 42, 0.98));
-          border: 1px solid rgba(251, 113, 133, 0.7);
-          display: flex;
-          align-items: center;
-          gap: 0.55rem;
-        }
-        .chat-promo-tag {
-          font-size: 0.7rem;
-          text-transform: uppercase;
-          letter-spacing: 0.16em;
-          padding: 0.15rem 0.55rem;
-          border-radius: 999px;
-          border: 1px solid rgba(248, 250, 252, 0.4);
-          background: rgba(15, 23, 42, 0.9);
-        }
-        .chat-promo-texts {
-          flex: 1;
-          min-width: 0;
-        }
-        .chat-promo-title {
-          font-size: 0.8rem;
-          font-weight: 600;
-          margin-bottom: 0.1rem;
-        }
-        .chat-promo-text {
-          font-size: 0.75rem;
-          color: #e5e7eb;
-        }
-        .chat-promo-btn {
-          border-radius: 999px;
-          border: none;
-          padding: 0.38rem 0.9rem;
-          font-size: 0.78rem;
-          cursor: pointer;
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
-          color: #f9fafb;
-          white-space: nowrap;
-          transition: transform 120ms ease, filter 120ms ease;
-        }
-        .chat-promo-btn:hover {
-          transform: translateY(-1px);
-          filter: brightness(1.03);
-        }
-
-        .chat-paywall {
-          margin-top: 0.6rem;
-          margin-bottom: 0.4rem;
-          border-radius: 1.25rem;
-          padding: 1rem 1.1rem 0.9rem;
-          background: radial-gradient(circle at top left, rgba(251, 55, 255, 0.25), rgba(15, 23, 42, 0.98));
-          border: 1px solid rgba(251, 113, 133, 0.7);
-          display: flex;
-          flex-direction: column;
-          gap: 0.4rem;
-          align-items: flex-start;
-          position: relative;
-          overflow: hidden;
-        }
-        .chat-paywall::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(circle at 120% 0%, rgba(248, 250, 252, 0.25), transparent 60%);
-          opacity: 0.6;
-          pointer-events: none;
-        }
-        .chat-paywall-chip {
-          position: relative;
-          z-index: 1;
-          font-size: 0.7rem;
-          text-transform: uppercase;
-          letter-spacing: 0.16em;
-          padding: 0.18rem 0.6rem;
-          border-radius: 999px;
-          border: 1px solid rgba(248, 250, 252, 0.4);
-          background: rgba(15, 23, 42, 0.82);
-        }
-        .chat-paywall-title {
-          position: relative;
-          z-index: 1;
-          font-size: 0.95rem;
-          font-weight: 600;
-        }
-        .chat-paywall-text {
-          position: relative;
-          z-index: 1;
-          font-size: 0.8rem;
-          color: #e5e7eb;
-          max-width: 420px;
-        }
-        .chat-paywall-btn {
-          position: relative;
-          z-index: 1;
-          margin-top: 0.2rem;
-          border-radius: 999px;
-          border: none;
-          padding: 0.55rem 1.5rem;
-          font-size: 0.85rem;
-          cursor: pointer;
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
-          color: #f9fafb;
-          box-shadow: 0 14px 36px rgba(248, 113, 113, 0.7);
-          display: inline-flex;
-          align-items: center;
-          gap: 0.45rem;
-          font-weight: 600;
-          transition: transform 120ms ease, filter 120ms ease;
-        }
-        .chat-paywall-btn:hover {
-          transform: translateY(-1px);
-          filter: brightness(1.03);
-        }
-        .chat-paywall-btn-label {
-          white-space: nowrap;
-        }
-        .chat-paywall-btn-icon {
-          font-size: 0.9rem;
-          transform: translateY(0.5px);
-        }
-        .chat-paywall-link {
-          position: relative;
-          z-index: 1;
-          margin-top: 0.1rem;
-          font-size: 0.76rem;
-          color: #f9fafb;
-          text-decoration: underline;
-          text-underline-offset: 2px;
-        }
-
-        .chat-input-bar {
-          margin-top: 0.4rem;
           display: grid;
-          grid-template-columns: 1fr auto;
-          gap: 0.55rem;
-          align-items: flex-end;
-        }
-        .chat-input-wrapper {
-          border-radius: 999px;
-          padding: 0.1rem 0.75rem;
-          background: rgba(15, 23, 42, 0.95);
-          border: 1px solid rgba(148, 163, 184, 0.7);
-          display: flex;
-          align-items: center;
-        }
-        .chat-input {
-          width: 100%;
-          border-radius: 999px;
-          border: none;
-          background: transparent;
-          color: #e5e7eb;
-          font-size: 0.9rem;
-          padding: 0.4rem 0;
-          resize: none;
-          outline: none;
-        }
-        .chat-input::placeholder {
-          color: #6b7280;
-        }
-        .chat-input:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .chat-actions {
-          display: flex;
-          flex-direction: row;
-          gap: 0.35rem;
-          align-items: center;
-        }
-        .chat-mic-btn {
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.7);
-          background: rgba(15, 23, 42, 0.96);
-          color: #e5e7eb;
-          width: 42px;
-          height: 42px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          font-size: 1.05rem;
-          transition: transform 120ms ease;
-        }
-        .chat-mic-btn:hover {
-          transform: translateY(-1px);
-        }
-        .chat-mic-btn--active {
-          border-color: #fb37ff;
-          box-shadow: 0 0 18px rgba(251, 55, 255, 0.8);
-          background: radial-gradient(circle at top, #1e293b, #020617);
-        }
-        .chat-mic-btn:disabled {
-          opacity: 0.4;
-          cursor: default;
-          transform: none;
-        }
-        .chat-mic-icon {
-          transform: translateY(1px);
-        }
-
-        .chat-send-btn {
-          border-radius: 999px;
-          border: none;
-          width: 44px;
-          height: 44px;
-          cursor: pointer;
-          background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
-          color: #f9fafb;
-          box-shadow: 0 16px 40px rgba(248, 113, 113, 0.75);
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          transition: transform 120ms ease, filter 120ms ease;
-        }
-        .chat-send-btn:hover {
-          transform: translateY(-1px);
-          filter: brightness(1.03);
-        }
-        .chat-send-btn:disabled {
-          opacity: 0.4;
-          cursor: default;
-          box-shadow: none;
-          transform: none;
-          filter: none;
-        }
-        .chat-send-icon {
-          font-size: 1rem;
-          transform: translateX(1px);
-        }
-
-        .chat-privacy-note {
-          margin-top: 0.3rem;
-          font-size: 0.78rem;
-          color: #6b7280;
-          text-align: right;
-        }
-
-        .skeleton {
-          background: linear-gradient(90deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.4), rgba(148, 163, 184, 0.2));
-          background-size: 200% 100%;
-          animation: shimmer 1.4s infinite;
-        }
-        .skeleton-text {
-          height: 0.9rem;
-          width: 60%;
-          background: linear-gradient(90deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.4), rgba(148, 163, 184, 0.2));
-          background-size: 200% 100%;
-          animation: shimmer 1.4s infinite;
-          border-radius: 999px;
-        }
-
-        .chat-avatar-ring.error {
-          background: radial-gradient(circle at center, #b91c1c, #7f1d1d);
-          box-shadow: 0 0 35px rgba(248, 113, 113, 0.7);
-        }
-        .chat-avatar-error {
-          font-size: 2.1rem;
+          place-items: center;
+          background: rgba(30, 41, 59, 0.92);
+          color: rgba(226, 232, 240, 0.92);
           font-weight: 700;
+          font-size: 3rem;
+          letter-spacing: 0.02em;
         }
 
+        .avatarRing--error {
+          background: radial-gradient(circle at center, rgba(185, 28, 28, 1), rgba(127, 29, 29, 1));
+          border: 1px solid rgba(248, 113, 113, 0.45);
+          box-shadow: 0 0 44px rgba(248, 113, 113, 0.34);
+        }
+        .avatarRing__bang {
+          font-size: 2.1rem;
+          font-weight: 800;
+        }
+
+        /* =========================
+           SKELETON
+        ========================== */
         @keyframes shimmer {
           0% {
             background-position: -200% 0;
@@ -1573,86 +1243,465 @@ function ChatClient() {
             background-position: 200% 0;
           }
         }
+        .avatarRing--skeleton {
+          background: linear-gradient(90deg, rgba(148, 163, 184, 0.16), rgba(148, 163, 184, 0.32), rgba(148, 163, 184, 0.16));
+          background-size: 200% 100%;
+          animation: shimmer 1.3s infinite;
+        }
+        .skeletonLine {
+          border-radius: 999px;
+          background: linear-gradient(90deg, rgba(148, 163, 184, 0.14), rgba(148, 163, 184, 0.28), rgba(148, 163, 184, 0.14));
+          background-size: 200% 100%;
+          animation: shimmer 1.3s infinite;
+        }
+        .skeletonLine--title {
+          height: 14px;
+          width: 180px;
+          margin-top: 10px;
+        }
+        .skeletonLine--sub {
+          height: 12px;
+          width: min(520px, 86%);
+          margin-top: 6px;
+        }
 
+        /* =========================
+           VOICE TOGGLE / BUTTONS
+        ========================== */
+        .voiceToggle {
+          display: flex;
+          justify-content: center;
+          margin-top: -2px;
+        }
+
+        .pillBtn {
+          border-radius: 999px;
+          padding: 10px 14px;
+          border: 1px solid rgba(148, 163, 184, 0.22);
+          background: rgba(2, 6, 23, 0.35);
+          color: rgba(226, 232, 240, 0.92);
+          cursor: pointer;
+          font-size: 0.86rem;
+          line-height: 1;
+          transition: transform 120ms ease, filter 120ms ease, border-color 120ms ease;
+          backdrop-filter: blur(10px);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          user-select: none;
+        }
+        .pillBtn:hover {
+          transform: translateY(-1px);
+          border-color: rgba(148, 163, 184, 0.35);
+          filter: brightness(1.02);
+        }
+        .pillBtn:disabled {
+          opacity: 0.5;
+          cursor: default;
+          transform: none;
+          filter: none;
+        }
+        .pillBtn--ghost {
+          background: rgba(2, 6, 23, 0.4);
+        }
+        .pillBtn--primary {
+          border: none;
+          background: linear-gradient(135deg, var(--g1), var(--g2), var(--g4));
+          color: rgba(248, 250, 252, 0.98);
+          box-shadow: 0 16px 42px rgba(248, 113, 113, 0.45);
+        }
+
+        /* =========================
+           CHAT BOX
+        ========================== */
+        .chatBox {
+          border-radius: 18px;
+          border: 1px solid rgba(148, 163, 184, 0.22);
+          background: radial-gradient(800px 420px at 50% 0%, rgba(56, 189, 248, 0.06), transparent 55%),
+            linear-gradient(180deg, rgba(2, 6, 23, 0.55), rgba(2, 6, 23, 0.68));
+          height: 380px;
+          max-height: 58vh;
+          padding: 12px;
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          box-shadow: inset 0 0 0 1px rgba(2, 6, 23, 0.25);
+        }
+
+        .chatBox::-webkit-scrollbar {
+          width: 10px;
+        }
+        .chatBox::-webkit-scrollbar-thumb {
+          background: rgba(148, 163, 184, 0.26);
+          border-radius: 999px;
+          border: 2px solid rgba(2, 6, 23, 0.7);
+        }
+        .chatBox::-webkit-scrollbar-track {
+          background: rgba(2, 6, 23, 0.25);
+          border-radius: 999px;
+        }
+
+        .empty {
+          padding-top: 34px;
+          text-align: center;
+          color: rgba(148, 163, 184, 0.9);
+          font-size: 0.95rem;
+        }
+
+        .list {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .row {
+          display: flex;
+        }
+        .row--user {
+          justify-content: flex-end;
+        }
+        .row--assistant {
+          justify-content: flex-start;
+        }
+
+        .bubble {
+          max-width: 78%;
+          border-radius: 18px;
+          padding: 10px 12px;
+          font-size: 0.92rem;
+          line-height: 1.42;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
+          border: 1px solid rgba(148, 163, 184, 0.14);
+          backdrop-filter: blur(10px);
+        }
+        .bubble--user {
+          background: linear-gradient(135deg, rgba(251, 55, 255, 0.95), rgba(255, 107, 156, 0.95), rgba(249, 115, 22, 0.92));
+          color: rgba(248, 250, 252, 0.98);
+          border-bottom-right-radius: 6px;
+          border: none;
+        }
+        .bubble--assistant {
+          background: rgba(2, 6, 23, 0.5);
+          color: rgba(226, 232, 240, 0.92);
+          border-bottom-left-radius: 6px;
+          border: 1px solid rgba(148, 163, 184, 0.22);
+        }
+
+        .bubble__grid {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+        }
+        .bubble__text {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .miniBtn {
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.22);
+          background: rgba(2, 6, 23, 0.35);
+          color: rgba(226, 232, 240, 0.92);
+          padding: 7px 10px;
+          cursor: pointer;
+          font-size: 0.86rem;
+          line-height: 1;
+          white-space: nowrap;
+          transition: transform 120ms ease, opacity 120ms ease, border-color 120ms ease;
+        }
+        .miniBtn:hover {
+          transform: translateY(-1px);
+          border-color: rgba(148, 163, 184, 0.35);
+        }
+        .miniBtn:disabled {
+          opacity: 0.5;
+          cursor: default;
+          transform: none;
+        }
+
+        /* =========================
+           ERROR
+        ========================== */
+        .error {
+          margin: 2px 0 0;
+          font-size: 0.84rem;
+          color: rgba(254, 202, 202, 0.98);
+          text-align: center;
+        }
+
+        /* =========================
+           PROMO / PAYWALL
+        ========================== */
+        .badge {
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          padding: 6px 10px;
+          border-radius: 999px;
+          border: 1px solid rgba(248, 250, 252, 0.2);
+          background: rgba(2, 6, 23, 0.55);
+          color: rgba(248, 250, 252, 0.92);
+          width: fit-content;
+        }
+
+        .promo {
+          border-radius: 999px;
+          padding: 12px 12px;
+          border: 1px solid rgba(251, 113, 133, 0.35);
+          background: radial-gradient(800px 260px at 0% 50%, rgba(251, 55, 255, 0.16), transparent 60%),
+            linear-gradient(180deg, rgba(2, 6, 23, 0.45), rgba(2, 6, 23, 0.6));
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          justify-content: space-between;
+        }
+        .promo__texts {
+          flex: 1;
+          min-width: 0;
+          padding: 0 6px;
+        }
+        .promo__title {
+          font-size: 0.86rem;
+          font-weight: 650;
+          margin: 0;
+        }
+        .promo__text {
+          font-size: 0.8rem;
+          margin: 2px 0 0;
+          color: rgba(226, 232, 240, 0.9);
+          line-height: 1.25;
+        }
+
+        .paywall {
+          border-radius: 20px;
+          padding: 14px 14px 12px;
+          border: 1px solid rgba(251, 113, 133, 0.35);
+          background: radial-gradient(900px 520px at 0% 0%, rgba(251, 55, 255, 0.18), transparent 55%),
+            linear-gradient(180deg, rgba(2, 6, 23, 0.45), rgba(2, 6, 23, 0.65));
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          position: relative;
+          overflow: hidden;
+        }
+        .paywall::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(700px 360px at 120% 0%, rgba(248, 250, 252, 0.16), transparent 60%);
+          opacity: 0.7;
+          pointer-events: none;
+        }
+        .paywall__title {
+          position: relative;
+          margin: 0;
+          font-size: 0.98rem;
+          font-weight: 700;
+        }
+        .paywall__text {
+          position: relative;
+          margin: 0;
+          font-size: 0.86rem;
+          color: rgba(226, 232, 240, 0.9);
+          line-height: 1.35;
+          max-width: 520px;
+        }
+        .paywall__btn {
+          position: relative;
+          width: fit-content;
+          padding-inline: 14px;
+        }
+        .paywall__link {
+          position: relative;
+          font-size: 0.82rem;
+          color: rgba(248, 250, 252, 0.94);
+          text-decoration: underline;
+          text-underline-offset: 3px;
+          width: fit-content;
+        }
+
+        /* =========================
+           COMPOSER
+        ========================== */
+        .composer {
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: 10px;
+          align-items: end;
+          margin-top: 2px;
+        }
+
+        .composer__field {
+          border-radius: 999px;
+          padding: 4px 14px;
+          border: 1px solid rgba(148, 163, 184, 0.22);
+          background: rgba(2, 6, 23, 0.5);
+          backdrop-filter: blur(10px);
+          box-shadow: inset 0 0 0 1px rgba(2, 6, 23, 0.25);
+        }
+
+        .composer__input {
+          width: 100%;
+          border: none;
+          outline: none;
+          background: transparent;
+          color: rgba(226, 232, 240, 0.92);
+          font-size: 0.92rem;
+          padding: 10px 0;
+          resize: none;
+          line-height: 1.35;
+        }
+        .composer__input::placeholder {
+          color: rgba(148, 163, 184, 0.65);
+        }
+        .composer__input:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .composer__actions {
+          display: inline-flex;
+          gap: 8px;
+          align-items: center;
+        }
+
+        .iconBtn {
+          width: 44px;
+          height: 44px;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.22);
+          background: rgba(2, 6, 23, 0.45);
+          color: rgba(226, 232, 240, 0.92);
+          cursor: pointer;
+          display: grid;
+          place-items: center;
+          transition: transform 120ms ease, border-color 120ms ease, filter 120ms ease;
+        }
+        .iconBtn:hover {
+          transform: translateY(-1px);
+          border-color: rgba(148, 163, 184, 0.35);
+        }
+        .iconBtn:disabled {
+          opacity: 0.45;
+          cursor: default;
+          transform: none;
+        }
+        .iconBtn--active {
+          border-color: rgba(251, 55, 255, 0.55);
+          box-shadow: 0 0 22px rgba(251, 55, 255, 0.22);
+          background: radial-gradient(80px 80px at 50% 0%, rgba(251, 55, 255, 0.18), rgba(2, 6, 23, 0.55));
+        }
+        .iconBtn__icon {
+          font-size: 1.05rem;
+          transform: translateY(1px);
+        }
+
+        .sendBtn {
+          width: 46px;
+          height: 46px;
+          border-radius: 999px;
+          border: none;
+          cursor: pointer;
+          background: linear-gradient(135deg, var(--g1), var(--g2), var(--g4));
+          color: rgba(248, 250, 252, 0.98);
+          box-shadow: 0 18px 46px rgba(248, 113, 113, 0.42);
+          display: grid;
+          place-items: center;
+          transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease;
+        }
+        .sendBtn:hover {
+          transform: translateY(-1px);
+          filter: brightness(1.03);
+        }
+        .sendBtn:disabled {
+          opacity: 0.45;
+          cursor: default;
+          box-shadow: none;
+          transform: none;
+          filter: none;
+        }
+        .sendBtn__icon {
+          font-size: 1.02rem;
+          transform: translateX(1px);
+        }
+
+        /* =========================
+           FOOTNOTE
+        ========================== */
+        .note {
+          margin: 4px 0 0;
+          font-size: 0.8rem;
+          color: rgba(148, 163, 184, 0.7);
+          text-align: right;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================== */
         @media (max-width: 768px) {
-          .chat-card {
-            padding-inline: 1.2rem;
+          .card {
+            padding: 16px 14px 12px;
+            border-radius: 24px;
           }
-          .chat-window {
-            height: 320px;
+          .chatBox {
+            height: 340px;
           }
-          .chat-avatar-ring {
-            width: 150px;
-            height: 150px;
+          .avatarRing {
+            width: 154px;
+            height: 154px;
           }
-          .chat-avatar-img,
-          .chat-avatar-img--img,
-          .chat-avatar-placeholder {
-            width: 144px;
-            height: 144px;
+          .avatarMedia,
+          .avatarImg,
+          .avatarFallback {
+            width: 148px;
+            height: 148px;
           }
         }
 
         @media (max-width: 480px) {
-          .chat-root {
-            padding-inline: 0.7rem;
+          .page {
+            padding-inline: 12px;
           }
-          .chat-privacy-note {
+          .note {
             text-align: center;
           }
 
-          .chat-promo {
-            border-radius: 1.25rem;
-            padding: 0.85rem 0.9rem;
+          .promo {
+            border-radius: 18px;
+            padding: 12px;
             display: grid;
             grid-template-columns: auto 1fr;
-            grid-template-areas: "tag texts" "btn btn";
-            gap: 0.75rem;
+            grid-template-areas: "badge texts" "btn btn";
+            gap: 10px;
             align-items: start;
           }
-          .chat-promo-tag {
-            grid-area: tag;
-            align-self: start;
+          .promo .badge {
+            grid-area: badge;
           }
-          .chat-promo-texts {
+          .promo__texts {
             grid-area: texts;
+            padding: 0;
           }
-          .chat-promo-title {
-            font-size: 0.88rem;
-            line-height: 1.2;
-          }
-          .chat-promo-text {
-            font-size: 0.8rem;
-            line-height: 1.35;
-          }
-          .chat-promo-btn {
+          .promo .pillBtn--primary {
             grid-area: btn;
             width: 100%;
-            padding: 0.6rem 0.9rem;
-            font-size: 0.9rem;
-            white-space: normal;
           }
 
-          .chat-paywall {
-            border-radius: 1.3rem;
-            padding: 1rem 0.95rem 0.95rem;
-            gap: 0.55rem;
-          }
-          .chat-paywall-text {
-            max-width: none;
-            font-size: 0.84rem;
-            line-height: 1.35;
-          }
-          .chat-paywall-btn {
+          .paywall__btn {
             width: 100%;
             justify-content: center;
-            padding: 0.65rem 1rem;
-            font-size: 0.92rem;
           }
-          .chat-paywall-link {
+          .paywall__link {
             width: 100%;
             text-align: center;
-            margin-top: 0.2rem;
+          }
+
+          .bubble {
+            max-width: 90%;
           }
         }
       `}</style>
