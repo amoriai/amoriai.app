@@ -56,6 +56,10 @@ type UiCopy = {
 
   voicePlay: string;
   voiceLoading: string;
+
+  voiceUnlock: string;
+  voiceOn: string;
+  voiceOff: string;
 };
 
 const STRINGS: Record<Locale, UiCopy> = {
@@ -71,12 +75,10 @@ const STRINGS: Record<Locale, UiCopy> = {
     aiNotFoundTitle: "AmorIA introuvable",
     genericError: "Impossible de charger cette conversation pour le moment. Vérifie le lien ou réessaie plus tard.",
     notAuthenticated: "Nous n’avons pas pu vérifier ta session. Actualise la page ou reconnecte-toi, puis réessaie.",
-    profileNotFound:
-      "Aucun profil AmorIA trouvé. Crée ton profil dans « Mon AmorIA » puis reviens sur ce lien.",
+    profileNotFound: "Aucun profil AmorIA trouvé. Crée ton profil dans « Mon AmorIA » puis reviens sur ce lien.",
 
     paywallTitle: "🔒 Tu as atteint la limite de ton accès gratuit.",
-    paywallText:
-      "Pour continuer à discuter plus librement et débloquer la voix de ton AmorIAI, passe à AmorIAI Plus.",
+    paywallText: "Pour continuer à discuter plus librement et débloquer la voix de ton AmorIAI, passe à AmorIAI Plus.",
     paywallCta: "Débloquer AmorIAI Plus",
     paywallSeePlans: "Voir tous les forfaits →",
 
@@ -86,6 +88,10 @@ const STRINGS: Record<Locale, UiCopy> = {
 
     voicePlay: "Écouter",
     voiceLoading: "Voix…",
+
+    voiceUnlock: "🔓 Activer la voix",
+    voiceOn: "🔊 Voix : ON",
+    voiceOff: "🔇 Voix : OFF",
   },
   en: {
     backHome: "← Back to home",
@@ -112,6 +118,10 @@ const STRINGS: Record<Locale, UiCopy> = {
 
     voicePlay: "Play",
     voiceLoading: "Voice…",
+
+    voiceUnlock: "🔓 Enable voice",
+    voiceOn: "🔊 Voice: ON",
+    voiceOff: "🔇 Voice: OFF",
   },
   es: {
     backHome: "← Volver al inicio",
@@ -125,8 +135,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     aiNotFoundTitle: "Compañero no encontrado",
     genericError: "No pudimos cargar esta conversación. Verifica el enlace o inténtalo más tarde.",
     notAuthenticated: "No pudimos verificar tu sesión. Actualiza la página o vuelve a iniciar sesión y prueba de nuevo.",
-    profileNotFound:
-      "No se encontró ningún perfil de AmorIA. Crea tu perfil en « Mi AmorIA » y vuelve a este enlace.",
+    profileNotFound: "No se encontró ningún perfil de AmorIA. Crea tu perfil en « Mi AmorIA » y vuelve a este enlace.",
 
     paywallTitle: "🔒 Has alcanzado el límite de tu acceso gratuito.",
     paywallText: "Para seguir hablando con más libertad y desbloquear la voz de tu AmorIAI, pasa a AmorIAI Plus.",
@@ -139,6 +148,10 @@ const STRINGS: Record<Locale, UiCopy> = {
 
     voicePlay: "Escuchar",
     voiceLoading: "Voz…",
+
+    voiceUnlock: "🔓 Activar voz",
+    voiceOn: "🔊 Voz: ON",
+    voiceOff: "🔇 Voz: OFF",
   },
 };
 
@@ -196,6 +209,10 @@ function ChatClient() {
   const [canPulseAvatar, setCanPulseAvatar] = useState(false);
   const [canPlayAvatarVideo, setCanPlayAvatarVideo] = useState(false);
 
+  // VOICE TOGGLE + unlock mobile
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+
   const [isRecording, setIsRecording] = useState(false);
   const [sttSupported, setSttSupported] = useState(false);
   const recognitionRef = useRef<any | null>(null);
@@ -238,6 +255,20 @@ function ChatClient() {
     params.set("lang", locale);
     params.set("plan", "plus");
     window.location.href = `/pricing?${params.toString()}`;
+  };
+
+  const unlockAudio = async () => {
+    try {
+      // Sur mobile, il faut un "user gesture" avant play(). On fait un mini play muet.
+      const a = new Audio();
+      a.muted = true;
+      a.src =
+        "data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA" +
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+      await a.play().catch(() => {});
+    } finally {
+      setAudioUnlocked(true);
+    }
   };
 
   // 1) Subscription / droits
@@ -434,9 +465,11 @@ function ChatClient() {
     loadHistory();
   }, [iaId, isPaidPlan]);
 
-  // 5) Voice (bouton 🔊 par message)
+  // 5) Voice (TTS)
   const playAssistantVoice = async (msgId: string, text: string) => {
     if (!canUseVoice || isBlocked) return;
+    if (!voiceEnabled) return;
+    if (!audioUnlocked) return;
     if (!iaId || !text?.trim()) return;
 
     setSendError(null);
@@ -604,6 +637,13 @@ function ChatClient() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+
+      // ✅ auto-play si voice ON + unlocked
+      if (assistantMessage.content && canUseVoice && voiceEnabled && audioUnlocked && !isBlocked) {
+        setTimeout(() => {
+          void playAssistantVoice(assistantMessage.id, assistantMessage.content);
+        }, 80);
+      }
     } catch (err) {
       console.error("Erreur réseau /api/chat:", err);
       setSendError("Erreur réseau. Vérifie ta connexion Internet et réessaie dans quelques secondes.");
@@ -659,6 +699,26 @@ function ChatClient() {
           )}
         </div>
 
+        {/* ✅ VOICE TOGGLE */}
+        {canUseVoice && !isBlocked && (
+          <div className="chat-voice-toggle">
+            {!audioUnlocked ? (
+              <button type="button" className="chat-voice-toggle-btn" onClick={() => void unlockAudio()}>
+                {t.voiceUnlock}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="chat-voice-toggle-btn"
+                onClick={() => setVoiceEnabled((v) => !v)}
+                aria-label="Activer ou désactiver la voix"
+              >
+                {voiceEnabled ? t.voiceOn : t.voiceOff}
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="chat-window">
           {messages.length === 0 ? (
             <div className="chat-empty">{t.emptyState(displayName)}</div>
@@ -683,9 +743,9 @@ function ChatClient() {
                             type="button"
                             className="chat-voice-btn"
                             onClick={() => void playAssistantVoice(m.id, m.content)}
-                            disabled={busy || !m.content?.trim()}
-                            aria-label="Écouter la réponse"
-                            title="Écouter"
+                            disabled={busy || !m.content?.trim() || !audioUnlocked || !voiceEnabled}
+                            aria-label={t.voicePlay}
+                            title={t.voicePlay}
                           >
                             {busy ? t.voiceLoading : "🔊"}
                           </button>
@@ -764,7 +824,6 @@ function ChatClient() {
       </section>
 
       <style jsx>{`
-        /* === TON CSS + petit ajout pour bouton voice === */
         .chat-root {
           min-height: 100vh;
           padding: 1.4rem 1rem 1.7rem;
@@ -813,18 +872,9 @@ function ChatClient() {
         }
 
         @keyframes slowPulse {
-          0% {
-            box-shadow: 0 0 26px rgba(251, 55, 255, 0.35);
-            transform: scale(1);
-          }
-          50% {
-            box-shadow: 0 0 52px rgba(56, 189, 248, 0.55);
-            transform: scale(1.02);
-          }
-          100% {
-            box-shadow: 0 0 26px rgba(251, 55, 255, 0.35);
-            transform: scale(1);
-          }
+          0% { box-shadow: 0 0 26px rgba(251, 55, 255, 0.35); transform: scale(1); }
+          50% { box-shadow: 0 0 52px rgba(56, 189, 248, 0.55); transform: scale(1.02); }
+          100% { box-shadow: 0 0 26px rgba(251, 55, 255, 0.35); transform: scale(1); }
         }
 
         .chat-avatar-ring {
@@ -838,9 +888,7 @@ function ChatClient() {
           justify-content: center;
           overflow: hidden;
         }
-        .chat-avatar-ring.live {
-          animation: slowPulse 4s ease-in-out infinite;
-        }
+        .chat-avatar-ring.live { animation: slowPulse 4s ease-in-out infinite; }
         .chat-avatar-img {
           width: 154px;
           height: 154px;
@@ -874,6 +922,23 @@ function ChatClient() {
           max-width: 560px;
         }
 
+        .chat-voice-toggle {
+          display: flex;
+          justify-content: center;
+          margin-top: 0.2rem;
+          margin-bottom: -0.2rem;
+        }
+        .chat-voice-toggle-btn {
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.6);
+          background: rgba(2, 6, 23, 0.7);
+          color: #e5e7eb;
+          padding: 0.35rem 0.9rem;
+          cursor: pointer;
+          font-size: 0.82rem;
+          line-height: 1;
+        }
+
         .chat-window {
           margin-top: 0.4rem;
           border-radius: 1rem;
@@ -898,15 +963,10 @@ function ChatClient() {
           flex-direction: column;
           gap: 0.45rem;
         }
-        .chat-message {
-          display: flex;
-        }
-        .chat-message--user {
-          justify-content: flex-end;
-        }
-        .chat-message--assistant {
-          justify-content: flex-start;
-        }
+        .chat-message { display: flex; }
+        .chat-message--user { justify-content: flex-end; }
+        .chat-message--assistant { justify-content: flex-start; }
+
         .chat-bubble {
           max-width: 78%;
           padding: 0.55rem 0.85rem;
@@ -933,10 +993,8 @@ function ChatClient() {
           gap: 0.6rem;
           align-items: flex-start;
         }
-        .chat-bubble-text {
-          flex: 1;
-          min-width: 0;
-        }
+        .chat-bubble-text { flex: 1; min-width: 0; }
+
         .chat-voice-btn {
           border-radius: 999px;
           border: 1px solid rgba(148, 163, 184, 0.6);
@@ -979,19 +1037,9 @@ function ChatClient() {
           border: 1px solid rgba(248, 250, 252, 0.4);
           background: rgba(15, 23, 42, 0.9);
         }
-        .chat-promo-texts {
-          flex: 1;
-          min-width: 0;
-        }
-        .chat-promo-title {
-          font-size: 0.8rem;
-          font-weight: 600;
-          margin-bottom: 0.1rem;
-        }
-        .chat-promo-text {
-          font-size: 0.75rem;
-          color: #e5e7eb;
-        }
+        .chat-promo-texts { flex: 1; min-width: 0; }
+        .chat-promo-title { font-size: 0.8rem; font-weight: 600; margin-bottom: 0.1rem; }
+        .chat-promo-text { font-size: 0.75rem; color: #e5e7eb; }
         .chat-promo-btn {
           border-radius: 999px;
           border: none;
@@ -1036,19 +1084,8 @@ function ChatClient() {
           border: 1px solid rgba(248, 250, 252, 0.4);
           background: rgba(15, 23, 42, 0.82);
         }
-        .chat-paywall-title {
-          position: relative;
-          z-index: 1;
-          font-size: 0.95rem;
-          font-weight: 600;
-        }
-        .chat-paywall-text {
-          position: relative;
-          z-index: 1;
-          font-size: 0.8rem;
-          color: #e5e7eb;
-          max-width: 420px;
-        }
+        .chat-paywall-title { position: relative; z-index: 1; font-size: 0.95rem; font-weight: 600; }
+        .chat-paywall-text { position: relative; z-index: 1; font-size: 0.8rem; color: #e5e7eb; max-width: 420px; }
         .chat-paywall-btn {
           position: relative;
           z-index: 1;
@@ -1066,21 +1103,8 @@ function ChatClient() {
           gap: 0.45rem;
           font-weight: 600;
         }
-        .chat-paywall-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 18px 48px rgba(248, 113, 113, 0.9);
-        }
-        .chat-paywall-btn:active {
-          transform: translateY(0);
-          box-shadow: 0 10px 26px rgba(248, 113, 113, 0.6);
-        }
-        .chat-paywall-btn-label {
-          white-space: nowrap;
-        }
-        .chat-paywall-btn-icon {
-          font-size: 0.9rem;
-          transform: translateY(0.5px);
-        }
+        .chat-paywall-btn-label { white-space: nowrap; }
+        .chat-paywall-btn-icon { font-size: 0.9rem; transform: translateY(0.5px); }
         .chat-paywall-link {
           position: relative;
           z-index: 1;
@@ -1117,13 +1141,9 @@ function ChatClient() {
           resize: none;
           outline: none;
         }
-        .chat-input::placeholder {
-          color: #6b7280;
-        }
-        .chat-input:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
+        .chat-input::placeholder { color: #6b7280; }
+        .chat-input:disabled { opacity: 0.6; cursor: not-allowed; }
+
         .chat-actions {
           display: flex;
           flex-direction: row;
@@ -1148,13 +1168,9 @@ function ChatClient() {
           box-shadow: 0 0 18px rgba(251, 55, 255, 0.8);
           background: radial-gradient(circle at top, #1e293b, #020617);
         }
-        .chat-mic-btn:disabled {
-          opacity: 0.4;
-          cursor: default;
-        }
-        .chat-mic-icon {
-          transform: translateY(1px);
-        }
+        .chat-mic-btn:disabled { opacity: 0.4; cursor: default; }
+        .chat-mic-icon { transform: translateY(1px); }
+
         .chat-send-btn {
           border-radius: 999px;
           border: none;
@@ -1168,23 +1184,8 @@ function ChatClient() {
           align-items: center;
           justify-content: center;
         }
-        .chat-send-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 20px 52px rgba(248, 113, 113, 0.9);
-        }
-        .chat-send-btn:active:not(:disabled) {
-          transform: translateY(0);
-          box-shadow: 0 10px 26px rgba(248, 113, 113, 0.6);
-        }
-        .chat-send-btn:disabled {
-          opacity: 0.4;
-          cursor: default;
-          box-shadow: none;
-        }
-        .chat-send-icon {
-          font-size: 1rem;
-          transform: translateX(1px);
-        }
+        .chat-send-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+        .chat-send-icon { font-size: 1rem; transform: translateX(1px); }
 
         .chat-privacy-note {
           margin-top: 0.3rem;
@@ -1210,44 +1211,24 @@ function ChatClient() {
           background: radial-gradient(circle at center, #b91c1c, #7f1d1d);
           box-shadow: 0 0 35px rgba(248, 113, 113, 0.7);
         }
-        .chat-avatar-error {
-          font-size: 2.1rem;
-          font-weight: 700;
-        }
+        .chat-avatar-error { font-size: 2.1rem; font-weight: 700; }
+
         @keyframes shimmer {
-          0% {
-            background-position: -200% 0;
-          }
-          100% {
-            background-position: 200% 0;
-          }
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
         }
 
         @media (max-width: 768px) {
-          .chat-card {
-            padding-inline: 1.2rem;
-          }
-          .chat-window {
-            height: 320px;
-          }
-          .chat-avatar-ring {
-            width: 150px;
-            height: 150px;
-          }
-          .chat-avatar-img,
-          .chat-avatar-placeholder {
-            width: 144px;
-            height: 144px;
-          }
+          .chat-card { padding-inline: 1.2rem; }
+          .chat-window { height: 320px; }
+          .chat-avatar-ring { width: 150px; height: 150px; }
+          .chat-avatar-img, .chat-avatar-placeholder { width: 144px; height: 144px; }
         }
 
         @media (max-width: 480px) {
-          .chat-root {
-            padding-inline: 0.7rem;
-          }
-          .chat-privacy-note {
-            text-align: center;
-          }
+          .chat-root { padding-inline: 0.7rem; }
+          .chat-privacy-note { text-align: center; }
+
           .chat-promo {
             border-radius: 1.25rem;
             padding: 0.85rem 0.9rem;
@@ -1257,21 +1238,10 @@ function ChatClient() {
             gap: 0.75rem;
             align-items: start;
           }
-          .chat-promo-tag {
-            grid-area: tag;
-            align-self: start;
-          }
-          .chat-promo-texts {
-            grid-area: texts;
-          }
-          .chat-promo-title {
-            font-size: 0.88rem;
-            line-height: 1.2;
-          }
-          .chat-promo-text {
-            font-size: 0.8rem;
-            line-height: 1.35;
-          }
+          .chat-promo-tag { grid-area: tag; align-self: start; }
+          .chat-promo-texts { grid-area: texts; }
+          .chat-promo-title { font-size: 0.88rem; line-height: 1.2; }
+          .chat-promo-text { font-size: 0.8rem; line-height: 1.35; }
           .chat-promo-btn {
             grid-area: btn;
             width: 100%;
@@ -1285,24 +1255,11 @@ function ChatClient() {
             padding: 1rem 0.95rem 0.95rem;
             gap: 0.55rem;
           }
-          .chat-paywall-text {
-            max-width: none;
-            font-size: 0.84rem;
-            line-height: 1.35;
-          }
-          .chat-paywall-btn {
-            width: 100%;
-            justify-content: center;
-            padding: 0.65rem 1rem;
-            font-size: 0.92rem;
-          }
-          .chat-paywall-link {
-            width: 100%;
-            text-align: center;
-            margin-top: 0.2rem;
-          }
+          .chat-paywall-text { max-width: none; font-size: 0.84rem; line-height: 1.35; }
+          .chat-paywall-btn { width: 100%; justify-content: center; padding: 0.65rem 1rem; font-size: 0.92rem; }
+          .chat-paywall-link { width: 100%; text-align: center; margin-top: 0.2rem; }
         }
       `}</style>
     </main>
   );
-          }
+  }
