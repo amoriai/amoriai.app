@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { FormEvent, Suspense, useEffect, useState, useRef } from "react";
+import React, { FormEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 import { LogoutButton } from "../components/LogoutButton";
@@ -45,35 +45,32 @@ type UiCopy = {
   notAuthenticated: string;
   profileNotFound: string;
 
-  // 🔒 Paywall
   paywallTitle: string;
   paywallText: string;
   paywallCta: string;
   paywallSeePlans: string;
 
-  // 🔼 Bandeau pub upgrade (free)
   promoTitle: string;
   promoText: string;
   promoCta: string;
+
+  voicePlay: string;
+  voiceLoading: string;
 };
 
 const STRINGS: Record<Locale, UiCopy> = {
   fr: {
     backHome: "← Retour à l’accueil",
     title: (name) => `Chat avec ${name}`,
-    subtitle: (name) =>
-      `${name} est là pour t’écouter et t’aider à mettre des mots sur ce que tu vis.`,
-    emptyState: (name) =>
-      `Aucun message pour l’instant. Dis bonjour à ${name} pour commencer 💬`,
+    subtitle: (name) => `${name} est là pour t’écouter et t’aider à mettre des mots sur ce que tu vis.`,
+    emptyState: (name) => `Aucun message pour l’instant. Dis bonjour à ${name} pour commencer 💬`,
     inputPlaceholder: (name) => `Écris quelque chose à ${name}…`,
     send: "Envoyer",
     sending: "Envoi…",
     loading: "Chargement du chat…",
     aiNotFoundTitle: "AmorIA introuvable",
-    genericError:
-      "Impossible de charger cette conversation pour le moment. Vérifie le lien ou réessaie plus tard.",
-    notAuthenticated:
-      "Nous n’avons pas pu vérifier ta session. Actualise la page ou reconnecte-toi, puis réessaie.",
+    genericError: "Impossible de charger cette conversation pour le moment. Vérifie le lien ou réessaie plus tard.",
+    notAuthenticated: "Nous n’avons pas pu vérifier ta session. Actualise la page ou reconnecte-toi, puis réessaie.",
     profileNotFound:
       "Aucun profil AmorIA trouvé. Crée ton profil dans « Mon AmorIA » puis reviens sur ce lien.",
 
@@ -84,68 +81,64 @@ const STRINGS: Record<Locale, UiCopy> = {
     paywallSeePlans: "Voir tous les forfaits →",
 
     promoTitle: "Plus de temps avec ton AmorIAI ?",
-    promoText:
-      "Passe à AmorIAI Plus pour beaucoup plus de messages chaque mois et la voix de ton compagnon.",
+    promoText: "Passe à AmorIAI Plus pour beaucoup plus de messages chaque mois et la voix de ton compagnon.",
     promoCta: "Découvrir AmorIAI Plus",
+
+    voicePlay: "Écouter",
+    voiceLoading: "Voix…",
   },
   en: {
     backHome: "← Back to home",
     title: (name) => `Chat with ${name}`,
-    subtitle: (name) =>
-      `${name} is here to listen and help you put words on what you’re feeling.`,
+    subtitle: (name) => `${name} is here to listen and help you put words on what you’re feeling.`,
     emptyState: (name) => `No messages yet. Say hi to ${name} to get started 💬`,
     inputPlaceholder: (name) => `Write something to ${name}…`,
     send: "Send",
     sending: "Sending…",
     loading: "Loading your chat…",
     aiNotFoundTitle: "Companion not found",
-    genericError:
-      "We couldn’t load this conversation. Please check the link or try again later.",
-    notAuthenticated:
-      "We couldn’t verify your session. Please refresh the page or log in again, then try once more.",
-    profileNotFound:
-      "No AmorIA profile was found. Create your profile in “My AmorIA”, then come back to this link.",
+    genericError: "We couldn’t load this conversation. Please check the link or try again later.",
+    notAuthenticated: "We couldn’t verify your session. Please refresh the page or log in again, then try once more.",
+    profileNotFound: "No AmorIA profile was found. Create your profile in “My AmorIA”, then come back to this link.",
 
     paywallTitle: "🔒 You’ve reached your free access limit.",
-    paywallText:
-      "To keep talking more freely and unlock your AmorIAI’s voice, switch to AmorIAI Plus.",
+    paywallText: "To keep talking more freely and unlock your AmorIAI’s voice, switch to AmorIAI Plus.",
     paywallCta: "Unlock AmorIAI Plus",
     paywallSeePlans: "See all plans →",
 
     promoTitle: "Want more time with your AmorIAI?",
-    promoText:
-      "Upgrade to AmorIAI Plus for more messages every month and your companion’s voice.",
+    promoText: "Upgrade to AmorIAI Plus for more messages every month and your companion’s voice.",
     promoCta: "Discover AmorIAI Plus",
+
+    voicePlay: "Play",
+    voiceLoading: "Voice…",
   },
   es: {
     backHome: "← Volver al inicio",
     title: (name) => `Chat con ${name}`,
-    subtitle: (name) =>
-      `${name} está aquí para escucharte y ayudarte a poner en palabras lo que sientes.`,
-    emptyState: (name) =>
-      `Todavía no hay mensajes. Saluda a ${name} para empezar 💬`,
+    subtitle: (name) => `${name} está aquí para escucharte y ayudarte a poner en palabras lo que sientes.`,
+    emptyState: (name) => `Todavía no hay mensajes. Saluda a ${name} para empezar 💬`,
     inputPlaceholder: (name) => `Escribe algo a ${name}…`,
     send: "Enviar",
     sending: "Enviando…",
     loading: "Cargando tu chat…",
     aiNotFoundTitle: "Compañero no encontrado",
-    genericError:
-      "No pudimos cargar esta conversación. Verifica el enlace o inténtalo más tarde.",
-    notAuthenticated:
-      "No pudimos verificar tu sesión. Actualiza la página o vuelve a iniciar sesión y prueba de nuevo.",
+    genericError: "No pudimos cargar esta conversación. Verifica el enlace o inténtalo más tarde.",
+    notAuthenticated: "No pudimos verificar tu sesión. Actualiza la página o vuelve a iniciar sesión y prueba de nuevo.",
     profileNotFound:
       "No se encontró ningún perfil de AmorIA. Crea tu perfil en « Mi AmorIA » y vuelve a este enlace.",
 
     paywallTitle: "🔒 Has alcanzado el límite de tu acceso gratuito.",
-    paywallText:
-      "Para seguir hablando con más libertad y desbloquear la voz de tu AmorIAI, pasa a AmorIAI Plus.",
+    paywallText: "Para seguir hablando con más libertad y desbloquear la voz de tu AmorIAI, pasa a AmorIAI Plus.",
     paywallCta: "Desbloquear AmorIAI Plus",
     paywallSeePlans: "Ver todos los planes →",
 
     promoTitle: "¿Quieres más tiempo con tu AmorIAI?",
-    promoText:
-      "Pasa a AmorIAI Plus para muchos más mensajes cada mes y la voz de tu compañero.",
+    promoText: "Pasa a AmorIAI Plus para muchos más mensajes cada mes y la voz de tu compañero.",
     promoCta: "Descubrir AmorIAI Plus",
+
+    voicePlay: "Escuchar",
+    voiceLoading: "Voz…",
   },
 };
 
@@ -168,8 +161,8 @@ export default function ChatPage() {
               justify-content: center;
               background: radial-gradient(circle at top, #020617, #000);
               color: #e5e7eb;
-              font-family: system-ui, -apple-system, BlinkMacSystemFont,
-                "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial,
+                sans-serif;
             }
             .chat-loading {
               font-size: 0.95rem;
@@ -198,10 +191,10 @@ function ChatClient() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
+  const [planCode, setPlanCode] = useState<string | null>(null);
   const [canUseVoice, setCanUseVoice] = useState(false);
   const [canPulseAvatar, setCanPulseAvatar] = useState(false);
   const [canPlayAvatarVideo, setCanPlayAvatarVideo] = useState(false);
-  const [planCode, setPlanCode] = useState<string | null>(null);
 
   const [isRecording, setIsRecording] = useState(false);
   const [sttSupported, setSttSupported] = useState(false);
@@ -209,13 +202,45 @@ function ChatClient() {
 
   const [isBlocked, setIsBlocked] = useState(false);
 
-  // ✅ audio refs (évite overlap + libère URL)
+  // audio (évite overlap + libère URL)
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
+
+  const [voiceBusyMsgId, setVoiceBusyMsgId] = useState<string | null>(null);
 
   const isFreePlan = !planCode || planCode === "free";
   const isPaidPlan = !isFreePlan;
 
+  const displayName = useMemo(() => (ai?.name?.trim() || "AmorIAI").trim(), [ai?.name]);
+  const displayNameUpper = useMemo(() => displayName.toUpperCase(), [displayName]);
+
+  const avatarImageUrl = ai?.avatar_image_url ?? null;
+  const avatarVideoUrl = useMemo(() => {
+    if (!avatarImageUrl) return null;
+    if (!/\.(png|jpe?g|webp)$/i.test(avatarImageUrl)) return null;
+    return avatarImageUrl.replace(/\.(png|jpe?g|webp)$/i, ".mp4");
+  }, [avatarImageUrl]);
+
+  const homeUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/?${params.toString()}`;
+  }, [locale]);
+
+  const pricingUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/pricing?${params.toString()}`;
+  }, [locale]);
+
+  const handleUpgradeClick = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    params.set("plan", "plus");
+    window.location.href = `/pricing?${params.toString()}`;
+  };
+
+  // 1) Subscription / droits
   useEffect(() => {
     const loadSubscription = async () => {
       try {
@@ -223,11 +248,11 @@ function ChatClient() {
         const user = userData?.user;
 
         if (!user) {
+          setPlanCode(null);
           setCanUseVoice(false);
           setCanPulseAvatar(false);
           setCanPlayAvatarVideo(false);
           setSttSupported(false);
-          setPlanCode(null);
           return;
         }
 
@@ -236,9 +261,10 @@ function ChatClient() {
           .select(
             `
               pricing_plans (
+                code,
                 has_voice,
-                allow_animated_avatar,
-                code
+                voice_limit,
+                allow_animated_avatar
               )
             `
           )
@@ -247,62 +273,56 @@ function ChatClient() {
           .maybeSingle();
 
         if (error || !sub) {
+          setPlanCode(null);
           setCanUseVoice(false);
           setCanPulseAvatar(false);
           setCanPlayAvatarVideo(false);
           setSttSupported(false);
-          setPlanCode(null);
           return;
         }
 
         const rawPlans: any = (sub as any).pricing_plans;
 
-        let hasVoiceFromDB = false;
-        let planCodeFromDB: string | null = null;
+        let code: string | null = null;
+        let hasVoice = false;
+        let voiceLimit = 0;
         let allowVideo = false;
 
-        if (Array.isArray(rawPlans)) {
-          const p = rawPlans[0] ?? {};
-          hasVoiceFromDB = !!p.has_voice;
-          planCodeFromDB = p.code ?? null;
+        const pickPlan = (p: any) => {
+          code = p?.code ?? null;
+          hasVoice = !!p?.has_voice;
+          voiceLimit = Number(p?.voice_limit ?? 0);
+          if (typeof p?.allow_animated_avatar === "boolean") allowVideo = p.allow_animated_avatar;
+          else if (p?.code === "unlimited") allowVideo = true;
+        };
 
-          if (typeof p.allow_animated_avatar === "boolean") {
-            allowVideo = p.allow_animated_avatar;
-          } else if (p.code === "unlimited") {
-            allowVideo = true;
-          }
-        } else if (rawPlans && typeof rawPlans === "object") {
-          hasVoiceFromDB = !!rawPlans.has_voice;
-          planCodeFromDB = rawPlans.code ?? null;
+        if (Array.isArray(rawPlans)) pickPlan(rawPlans[0] ?? {});
+        else if (rawPlans && typeof rawPlans === "object") pickPlan(rawPlans);
 
-          if (typeof rawPlans.allow_animated_avatar === "boolean") {
-            allowVideo = rawPlans.allow_animated_avatar;
-          } else if (rawPlans.code === "unlimited") {
-            allowVideo = true;
-          }
-        }
+        setPlanCode(code);
 
-        setPlanCode(planCodeFromDB);
-        const isPaid = !!planCodeFromDB && planCodeFromDB !== "free";
-
-        setCanUseVoice(hasVoiceFromDB);
-        setCanPulseAvatar(isPaid);
+        const paid = !!code && code !== "free";
+        setCanPulseAvatar(paid);
         setCanPlayAvatarVideo(allowVideo);
 
-        if (!hasVoiceFromDB) setSttSupported(false);
+        // Voice = has_voice ET voice_limit > 0
+        const voiceOk = hasVoice && voiceLimit > 0;
+        setCanUseVoice(voiceOk);
+        if (!voiceOk) setSttSupported(false);
       } catch (err) {
         console.error("Erreur loadSubscription:", err);
+        setPlanCode(null);
         setCanUseVoice(false);
         setCanPulseAvatar(false);
         setCanPlayAvatarVideo(false);
         setSttSupported(false);
-        setPlanCode(null);
       }
     };
 
     loadSubscription();
   }, []);
 
+  // 2) STT support (micro)
   useEffect(() => {
     if (!canUseVoice) {
       setSttSupported(false);
@@ -310,8 +330,7 @@ function ChatClient() {
     }
     if (typeof window === "undefined") return;
 
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     setSttSupported(!!SpeechRecognition);
   }, [canUseVoice]);
 
@@ -319,8 +338,7 @@ function ChatClient() {
     if (!canUseVoice || isBlocked) return;
     if (typeof window === "undefined") return;
 
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
@@ -369,21 +387,70 @@ function ChatClient() {
     else startRecording();
   };
 
-  // ✅ FIX complet voice (avec Authorization + lecture audio robuste)
-  const playAssistantVoice = async (text: string) => {
+  // 3) Charger AI
+  useEffect(() => {
+    const loadAI = async () => {
+      if (!iaId) {
+        setAiError(t.genericError);
+        setAiLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.from("user_amoria").select("*").eq("id", iaId).maybeSingle();
+        if (error || !data) setAiError(t.genericError);
+        else setAi(data as AmoriaRow);
+      } catch {
+        setAiError(t.genericError);
+      } finally {
+        setAiLoading(false);
+      }
+    };
+
+    loadAI();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [iaId, locale]);
+
+  // 4) Historique (paid)
+  useEffect(() => {
+    const loadHistory = async () => {
+      if (!iaId) return;
+      if (!isPaidPlan) return;
+
+      try {
+        const res = await fetch(`/api/chat/history?iaId=${encodeURIComponent(iaId)}`);
+        if (!res.ok) return;
+        const data = (await res.json()) as ChatMessage[];
+        setMessages(
+          data
+            .map((m) => ({ ...m, createdAt: m.createdAt ?? new Date().toISOString() }))
+            .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+        );
+      } catch {
+        // silence
+      }
+    };
+
+    loadHistory();
+  }, [iaId, isPaidPlan]);
+
+  // 5) Voice (bouton 🔊 par message)
+  const playAssistantVoice = async (msgId: string, text: string) => {
     if (!canUseVoice || isBlocked) return;
-    if (!iaId || !text.trim()) return;
+    if (!iaId || !text?.trim()) return;
+
+    setSendError(null);
+    setVoiceBusyMsgId(msgId);
 
     try {
-      // 1) token
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
       if (!accessToken) {
         console.error("Voice: pas de session/access_token");
+        setSendError(t.notAuthenticated);
         return;
       }
 
-      // 2) appel API voice (avec Authorization)
       const res = await fetch("/api/voice", {
         method: "POST",
         headers: {
@@ -404,6 +471,8 @@ function ChatClient() {
             setSendError("Tu as atteint la limite de messages vocaux pour ton forfait actuel.");
           } else if (data?.error) {
             setSendError(`Voice error: ${data.error}`);
+          } else {
+            setSendError("Erreur voice. Vérifie la configuration serveur.");
           }
         } else {
           const raw = await res.text().catch(() => "");
@@ -413,10 +482,9 @@ function ChatClient() {
         return;
       }
 
-      // 3) blob audio
       const audioBlob = await res.blob();
 
-      // Nettoyer audio précédent
+      // stop + cleanup previous
       if (audioRef.current) {
         try {
           audioRef.current.pause();
@@ -445,73 +513,21 @@ function ChatClient() {
         audioRef.current = null;
       };
 
-      try {
-        await audio.play();
-      } catch (err) {
-        console.error("audio.play() blocked:", err);
-        // Sur certains mobiles: autoplay peut être bloqué si ce n'est pas considéré comme user-gesture.
-        // Ici on log, mais le backend est correct; si besoin on ajoutera un bouton 🔊 par message.
-      }
+      await audio.play();
     } catch (err) {
       console.error("Erreur /api/voice:", err);
+      setSendError("Erreur voice. Vérifie ta connexion et réessaie.");
+    } finally {
+      setVoiceBusyMsgId(null);
     }
   };
 
-  useEffect(() => {
-    const loadAI = async () => {
-      if (!iaId) {
-        setAiError(t.genericError);
-        setAiLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from("user_amoria")
-          .select("*")
-          .eq("id", iaId)
-          .maybeSingle();
-        if (error || !data) setAiError(t.genericError);
-        else setAi(data as AmoriaRow);
-      } catch {
-        setAiError(t.genericError);
-      } finally {
-        setAiLoading(false);
-      }
-    };
-
-    loadAI();
-  }, [iaId, t.genericError]);
-
-  useEffect(() => {
-    const loadHistory = async () => {
-      if (!iaId) return;
-      if (!isPaidPlan) return;
-
-      try {
-        const res = await fetch(`/api/chat/history?iaId=${encodeURIComponent(iaId)}`);
-        if (!res.ok) return;
-
-        const data = (await res.json()) as ChatMessage[];
-        setMessages(
-          data
-            .map((m) => ({ ...m, createdAt: m.createdAt ?? new Date().toISOString() }))
-            .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-        );
-      } catch {
-        // silencieux
-      }
-    };
-
-    loadHistory();
-  }, [iaId, isPaidPlan]);
-
+  // 6) Send message
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setSendError(null);
 
     if (!newMessage.trim() || !iaId || isBlocked) return;
-
     if (isRecording) stopRecording();
 
     const content = newMessage.trim();
@@ -535,7 +551,6 @@ function ChatClient() {
       const accessToken = sessionData?.session?.access_token;
       if (!accessToken) {
         setSendError(t.notAuthenticated);
-        setSending(false);
         return;
       }
 
@@ -556,13 +571,10 @@ function ChatClient() {
       if (
         !res.ok &&
         isFreePlan &&
-        (data?.error === "text_quota_reached" ||
-          data?.error === "free_limit_reached" ||
-          data?.error === "quota_exceeded")
+        (data?.error === "text_quota_reached" || data?.error === "free_limit_reached" || data?.error === "quota_exceeded")
       ) {
         setIsBlocked(true);
         setSendError(null);
-        setSending(false);
         return;
       }
 
@@ -592,47 +604,12 @@ function ChatClient() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
-
-      if (assistantMessage.content) {
-        // ✅ mini-pause (plus stable mobile)
-        setTimeout(() => {
-          void playAssistantVoice(assistantMessage.content);
-        }, 50);
-      }
     } catch (err) {
       console.error("Erreur réseau /api/chat:", err);
       setSendError("Erreur réseau. Vérifie ta connexion Internet et réessaie dans quelques secondes.");
     } finally {
       setSending(false);
     }
-  };
-
-  const homeUrl = (() => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/?${params.toString()}`;
-  })();
-
-  const pricingUrl = (() => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/pricing?${params.toString()}`;
-  })();
-
-  const displayName = (ai?.name?.trim() || "AmorIAI").trim();
-  const displayNameUpper = displayName.toUpperCase();
-
-  const avatarImageUrl = ai?.avatar_image_url ?? null;
-  const avatarVideoUrl =
-    avatarImageUrl && /\.(png|jpe?g|webp)$/i.test(avatarImageUrl)
-      ? avatarImageUrl.replace(/\.(png|jpe?g|webp)$/i, ".mp4")
-      : null;
-
-  const handleUpgradeClick = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    params.set("plan", "plus");
-    window.location.href = `/pricing?${params.toString()}`;
   };
 
   const avatarRingClass = canPulseAvatar ? "chat-avatar-ring live" : "chat-avatar-ring";
@@ -667,25 +644,12 @@ function ChatClient() {
               <div className={avatarRingClass}>
                 {avatarImageUrl ? (
                   canPlayAvatarVideo && avatarVideoUrl ? (
-                    <video
-                      src={avatarVideoUrl}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="chat-avatar-img"
-                    />
+                    <video src={avatarVideoUrl} autoPlay loop muted playsInline className="chat-avatar-img" />
                   ) : (
-                    <img
-                      src={avatarImageUrl}
-                      alt={`Avatar de ${displayName}`}
-                      className="chat-avatar-img"
-                    />
+                    <img src={avatarImageUrl} alt={`Avatar de ${displayName}`} className="chat-avatar-img" />
                   )
                 ) : (
-                  <div className="chat-avatar-placeholder">
-                    {displayName.charAt(0).toUpperCase()}
-                  </div>
+                  <div className="chat-avatar-placeholder">{displayName.charAt(0).toUpperCase()}</div>
                 )}
               </div>
 
@@ -700,25 +664,43 @@ function ChatClient() {
             <div className="chat-empty">{t.emptyState(displayName)}</div>
           ) : (
             <ul className="chat-message-list">
-              {messages.map((m) => (
-                <li
-                  key={m.id}
-                  className={
-                    m.role === "user"
-                      ? "chat-message chat-message--user"
-                      : "chat-message chat-message--assistant"
-                  }
-                >
-                  <div className="chat-bubble">{m.content}</div>
-                </li>
-              ))}
+              {messages.map((m) => {
+                const isAssistant = m.role === "assistant";
+                const showVoiceBtn = isAssistant && canUseVoice && !isBlocked;
+                const busy = voiceBusyMsgId === m.id;
+
+                return (
+                  <li
+                    key={m.id}
+                    className={m.role === "user" ? "chat-message chat-message--user" : "chat-message chat-message--assistant"}
+                  >
+                    <div className="chat-bubble">
+                      <div className="chat-bubble-row">
+                        <div className="chat-bubble-text">{m.content}</div>
+
+                        {showVoiceBtn && (
+                          <button
+                            type="button"
+                            className="chat-voice-btn"
+                            onClick={() => void playAssistantVoice(m.id, m.content)}
+                            disabled={busy || !m.content?.trim()}
+                            aria-label="Écouter la réponse"
+                            title="Écouter"
+                          >
+                            {busy ? t.voiceLoading : "🔊"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
 
         {sendError && <p className="chat-error">{sendError}</p>}
 
-        {/* 🔼 Promo (FREE) */}
         {!isBlocked && isFreePlan && (
           <div className="chat-promo">
             <div className="chat-promo-tag">PLUS</div>
@@ -732,7 +714,6 @@ function ChatClient() {
           </div>
         )}
 
-        {/* 🔒 Paywall (FREE bloqué) */}
         {isBlocked && isFreePlan && (
           <div className="chat-paywall">
             <div className="chat-paywall-chip">PLUS</div>
@@ -748,7 +729,6 @@ function ChatClient() {
           </div>
         )}
 
-        {/* Input */}
         <form className="chat-input-bar" onSubmit={handleSubmit}>
           <div className="chat-input-wrapper">
             <textarea
@@ -774,30 +754,23 @@ function ChatClient() {
               </button>
             )}
 
-            <button
-              type="submit"
-              className="chat-send-btn"
-              disabled={sending || !newMessage.trim() || (isBlocked && isFreePlan)}
-            >
+            <button type="submit" className="chat-send-btn" disabled={sending || !newMessage.trim() || (isBlocked && isFreePlan)}>
               <span className="chat-send-icon">➤</span>
             </button>
           </div>
         </form>
 
-        <p className="chat-privacy-note">
-          Tes messages sont privés et ne sont jamais visibles par les autres utilisateurs.
-        </p>
+        <p className="chat-privacy-note">Tes messages sont privés et ne sont jamais visibles par les autres utilisateurs.</p>
       </section>
 
       <style jsx>{`
-        /* === TON CSS INTACT (copié tel quel) === */
+        /* === TON CSS + petit ajout pour bouton voice === */
         .chat-root {
           min-height: 100vh;
           padding: 1.4rem 1rem 1.7rem;
           background: radial-gradient(circle at top, #020617 0, #000 70%);
           color: #e5e7eb;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-            "Helvetica Neue", Arial, sans-serif;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -824,12 +797,7 @@ function ChatClient() {
           max-width: 900px;
           border-radius: 1.6rem;
           border: 1px solid rgba(148, 163, 184, 0.42);
-          background: radial-gradient(
-            circle at top,
-            rgba(2, 6, 23, 0.96) 0,
-            rgba(15, 23, 42, 0.98) 45%,
-            rgba(0, 0, 0, 0.98) 100%
-          );
+          background: radial-gradient(circle at top, rgba(2, 6, 23, 0.96) 0, rgba(15, 23, 42, 0.98) 45%, rgba(0, 0, 0, 0.98) 100%);
           box-shadow: 0 26px 70px rgba(15, 23, 42, 0.95);
           padding: 1.6rem 1.6rem 1.1rem;
           display: flex;
@@ -910,11 +878,7 @@ function ChatClient() {
           margin-top: 0.4rem;
           border-radius: 1rem;
           border: 1px solid rgba(30, 64, 175, 0.56);
-          background: radial-gradient(
-            circle at top,
-            rgba(15, 23, 42, 0.97),
-            rgba(15, 23, 42, 0.99)
-          );
+          background: radial-gradient(circle at top, rgba(15, 23, 42, 0.97), rgba(15, 23, 42, 0.99));
           height: 360px;
           max-height: 55vh;
           padding: 0.7rem;
@@ -963,6 +927,32 @@ function ChatClient() {
           color: #e5e7eb;
           border-bottom-left-radius: 0.24rem;
         }
+
+        .chat-bubble-row {
+          display: flex;
+          gap: 0.6rem;
+          align-items: flex-start;
+        }
+        .chat-bubble-text {
+          flex: 1;
+          min-width: 0;
+        }
+        .chat-voice-btn {
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.6);
+          background: rgba(2, 6, 23, 0.7);
+          color: #e5e7eb;
+          padding: 0.25rem 0.55rem;
+          cursor: pointer;
+          font-size: 0.85rem;
+          line-height: 1;
+          white-space: nowrap;
+        }
+        .chat-voice-btn:disabled {
+          opacity: 0.5;
+          cursor: default;
+        }
+
         .chat-error {
           font-size: 0.8rem;
           color: #fecaca;
@@ -974,11 +964,7 @@ function ChatClient() {
           margin-bottom: 0.1rem;
           border-radius: 999px;
           padding: 0.55rem 0.9rem;
-          background: radial-gradient(
-            circle at left,
-            rgba(251, 55, 255, 0.25),
-            rgba(15, 23, 42, 0.98)
-          );
+          background: radial-gradient(circle at left, rgba(251, 55, 255, 0.25), rgba(15, 23, 42, 0.98));
           border: 1px solid rgba(251, 113, 133, 0.7);
           display: flex;
           align-items: center;
@@ -1022,11 +1008,7 @@ function ChatClient() {
           margin-bottom: 0.4rem;
           border-radius: 1.25rem;
           padding: 1rem 1.1rem 0.9rem;
-          background: radial-gradient(
-            circle at top left,
-            rgba(251, 55, 255, 0.25),
-            rgba(15, 23, 42, 0.98)
-          );
+          background: radial-gradient(circle at top left, rgba(251, 55, 255, 0.25), rgba(15, 23, 42, 0.98));
           border: 1px solid rgba(251, 113, 133, 0.7);
           display: flex;
           flex-direction: column;
@@ -1039,11 +1021,7 @@ function ChatClient() {
           content: "";
           position: absolute;
           inset: 0;
-          background: radial-gradient(
-            circle at 120% 0%,
-            rgba(248, 250, 252, 0.25),
-            transparent 60%
-          );
+          background: radial-gradient(circle at 120% 0%, rgba(248, 250, 252, 0.25), transparent 60%);
           opacity: 0.6;
           pointer-events: none;
         }
@@ -1216,24 +1194,14 @@ function ChatClient() {
         }
 
         .skeleton {
-          background: linear-gradient(
-            90deg,
-            rgba(148, 163, 184, 0.2),
-            rgba(148, 163, 184, 0.4),
-            rgba(148, 163, 184, 0.2)
-          );
+          background: linear-gradient(90deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.4), rgba(148, 163, 184, 0.2));
           background-size: 200% 100%;
           animation: shimmer 1.4s infinite;
         }
         .skeleton-text {
           height: 0.9rem;
           width: 60%;
-          background: linear-gradient(
-            90deg,
-            rgba(148, 163, 184, 0.2),
-            rgba(148, 163, 184, 0.4),
-            rgba(148, 163, 184, 0.2)
-          );
+          background: linear-gradient(90deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.4), rgba(148, 163, 184, 0.2));
           background-size: 200% 100%;
           animation: shimmer 1.4s infinite;
           border-radius: 999px;
@@ -1277,19 +1245,15 @@ function ChatClient() {
           .chat-root {
             padding-inline: 0.7rem;
           }
-
           .chat-privacy-note {
             text-align: center;
           }
-
           .chat-promo {
             border-radius: 1.25rem;
             padding: 0.85rem 0.9rem;
             display: grid;
             grid-template-columns: auto 1fr;
-            grid-template-areas:
-              "tag texts"
-              "btn btn";
+            grid-template-areas: "tag texts" "btn btn";
             gap: 0.75rem;
             align-items: start;
           }
@@ -1341,4 +1305,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-        }
+          }
