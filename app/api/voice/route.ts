@@ -1,4 +1,5 @@
 export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -8,60 +9,76 @@ const supabase = createClient(
 );
 
 export async function POST(req: Request) {
-  // 1️⃣ Récupérer l'utilisateur connecté
+  // 0) Vérifier Authorization header
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader) {
+    return NextResponse.json(
+      { error: "Missing Authorization header" },
+      { status: 401 }
+    );
+  }
+
+  // 1) Récupérer l'utilisateur connecté via le token
   const supabaseAuth = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       global: {
         headers: {
-          Authorization: req.headers.get("authorization")!,
+          Authorization: authHeader,
         },
       },
     }
   );
 
-  const {
-    data: { user },
-  } = await supabaseAuth.auth.getUser();
+  const { data: { user }, error: userErr } = await supabaseAuth.auth.getUser();
 
-  if (!user) {
+  if (userErr || !user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // 2️⃣ Lire abonnement + forfait
-  const { data: subscription } = await supabase
+  // 2) Lire abonnement actif
+  const { data: subscription, error: subErr } = await supabase
     .from("user_subscriptions")
     .select("pricing_plan_id")
     .eq("user_id", user.id)
     .eq("status", "active")
     .single();
 
-  if (!subscription) {
+  if (subErr || !subscription?.pricing_plan_id) {
     return NextResponse.json({ error: "No active subscription" }, { status: 403 });
   }
 
-  const { data: plan } = await supabase
+  // 3) Lire le plan (⚠️ par CODE, pas par ID)
+  const { data: plan, error: planErr } = await supabase
     .from("pricing_plans")
     .select("has_voice, voice_limit")
-    .eq("id", subscription.pricing_plan_id)
+    .eq("code", subscription.pricing_plan_id) // <-- IMPORTANT
     .single();
 
-  if (!plan || !plan.has_voice || plan.voice_limit <= 0) {
+  const voiceLimit = Number(plan?.voice_limit ?? 0);
+
+  if (planErr || !plan || !plan.has_voice || voiceLimit <= 0) {
     return NextResponse.json(
       { error: "Voice not allowed for this plan" },
       { status: 403 }
     );
   }
 
-  // 3️⃣ Lire le texte
-  const { text } = await req.json();
+  // 4) Lire le texte
+  let body: any = {};
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
-  if (!text) {
+  const text = body?.text;
+  if (!text || typeof text !== "string") {
     return NextResponse.json({ error: "No text" }, { status: 400 });
   }
 
-  // 4️⃣ Appel OpenAI TTS
+  // 5) Appel OpenAI TTS
   const openaiRes = await fetch("https://api.openai.com/v1/audio/speech", {
     method: "POST",
     headers: {
@@ -76,15 +93,13 @@ export async function POST(req: Request) {
   });
 
   if (!openaiRes.ok) {
-    const err = await openaiRes.text();
-    return NextResponse.json({ error: err }, { status: 500 });
+    const errText = await openaiRes.text();
+    return NextResponse.json({ error: errText }, { status: 500 });
   }
 
   const audioBuffer = await openaiRes.arrayBuffer();
 
   return new NextResponse(audioBuffer, {
-    headers: {
-      "Content-Type": "audio/mpeg",
-    },
+    headers: { "Content-Type": "audio/mpeg" },
   });
 }
