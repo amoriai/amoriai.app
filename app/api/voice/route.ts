@@ -3,14 +3,17 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
+// ✅ Client "admin" (service role) pour lire tables (bypass RLS)
+const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 export async function POST(req: Request) {
-  // 0) Vérifier Authorization header
-  const authHeader = req.headers.get("authorization");
+  // ✅ 0) Lire le header Authorization proprement (pas de "!")
+  const authHeader =
+    req.headers.get("authorization") ?? req.headers.get("Authorization");
+
   if (!authHeader) {
     return NextResponse.json(
       { error: "Missing Authorization header" },
@@ -18,67 +21,72 @@ export async function POST(req: Request) {
     );
   }
 
-  // 1) Récupérer l'utilisateur connecté via le token
+  // ✅ 1) Client "anon" qui utilise le token du user
   const supabaseAuth = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       global: {
         headers: {
-          Authorization: authHeader,
+          Authorization: authHeader, // ✅ IMPORTANT
         },
       },
     }
   );
 
-  const { data: { user }, error: userErr } = await supabaseAuth.auth.getUser();
+  const { data: userData, error: userErr } = await supabaseAuth.auth.getUser();
 
-  if (userErr || !user) {
+  if (userErr) {
+    return NextResponse.json({ error: userErr.message }, { status: 401 });
+  }
+
+  const user = userData?.user;
+  if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // 2) Lire abonnement actif
-  const { data: subscription, error: subErr } = await supabase
+  // ✅ 2) Lire abonnement actif
+  const { data: subscription, error: subErr } = await supabaseAdmin
     .from("user_subscriptions")
     .select("pricing_plan_id")
     .eq("user_id", user.id)
     .eq("status", "active")
     .single();
 
-  if (subErr || !subscription?.pricing_plan_id) {
-    return NextResponse.json({ error: "No active subscription" }, { status: 403 });
+  if (subErr || !subscription) {
+    return NextResponse.json(
+      { error: "No active subscription" },
+      { status: 403 }
+    );
   }
 
-  // 3) Lire le plan (⚠️ par CODE, pas par ID)
-  const { data: plan, error: planErr } = await supabase
+  // ✅ 3) Lire le plan
+  const { data: plan, error: planErr } = await supabaseAdmin
     .from("pricing_plans")
     .select("has_voice, voice_limit")
-    .eq("code", subscription.pricing_plan_id) // <-- IMPORTANT
+    .eq("id", subscription.pricing_plan_id)
     .single();
 
-  const voiceLimit = Number(plan?.voice_limit ?? 0);
+  if (planErr || !plan) {
+    return NextResponse.json({ error: "Plan not found" }, { status: 403 });
+  }
 
-  if (planErr || !plan || !plan.has_voice || voiceLimit <= 0) {
+  if (!plan.has_voice || (plan.voice_limit ?? 0) <= 0) {
     return NextResponse.json(
       { error: "Voice not allowed for this plan" },
       { status: 403 }
     );
   }
 
-  // 4) Lire le texte
-  let body: any = {};
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
+  // ✅ 4) Lire le texte
+  const body = await req.json().catch(() => ({}));
   const text = body?.text;
+
   if (!text || typeof text !== "string") {
     return NextResponse.json({ error: "No text" }, { status: 400 });
   }
 
-  // 5) Appel OpenAI TTS
+  // ✅ 5) OpenAI TTS
   const openaiRes = await fetch("https://api.openai.com/v1/audio/speech", {
     method: "POST",
     headers: {
@@ -93,13 +101,17 @@ export async function POST(req: Request) {
   });
 
   if (!openaiRes.ok) {
-    const errText = await openaiRes.text();
-    return NextResponse.json({ error: errText }, { status: 500 });
+    const err = await openaiRes.text();
+    return NextResponse.json({ error: err }, { status: 500 });
   }
 
   const audioBuffer = await openaiRes.arrayBuffer();
 
   return new NextResponse(audioBuffer, {
-    headers: { "Content-Type": "audio/mpeg" },
+    status: 200,
+    headers: {
+      "Content-Type": "audio/mpeg",
+      "Cache-Control": "no-store",
+    },
   });
 }
