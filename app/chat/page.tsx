@@ -60,6 +60,9 @@ type UiCopy = {
   voiceUnlock: string;
   voiceOn: string;
   voiceOff: string;
+
+  sttStart: string;
+  sttStop: string;
 };
 
 const STRINGS: Record<Locale, UiCopy> = {
@@ -92,6 +95,9 @@ const STRINGS: Record<Locale, UiCopy> = {
     voiceUnlock: "🔓 Activer la voix",
     voiceOn: "🔊 Voix : ON",
     voiceOff: "🔇 Voix : OFF",
+
+    sttStart: "Dicter",
+    sttStop: "Stop",
   },
   en: {
     backHome: "← Back to home",
@@ -122,6 +128,9 @@ const STRINGS: Record<Locale, UiCopy> = {
     voiceUnlock: "🔓 Enable voice",
     voiceOn: "🔊 Voice: ON",
     voiceOff: "🔇 Voice: OFF",
+
+    sttStart: "Dictate",
+    sttStop: "Stop",
   },
   es: {
     backHome: "← Volver al inicio",
@@ -152,6 +161,9 @@ const STRINGS: Record<Locale, UiCopy> = {
     voiceUnlock: "🔓 Activar voz",
     voiceOn: "🔊 Voz: ON",
     voiceOff: "🔇 Voz: OFF",
+
+    sttStart: "Dictar",
+    sttStop: "Stop",
   },
 };
 
@@ -174,11 +186,12 @@ export default function ChatPage() {
               justify-content: center;
               background: radial-gradient(circle at top, #020617, #000);
               color: #e5e7eb;
-              font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial,
-                sans-serif;
+              font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+              padding: 1rem;
             }
             .chat-loading {
               font-size: 0.95rem;
+              color: #9ca3af;
             }
           `}</style>
         </main>
@@ -209,7 +222,6 @@ function ChatClient() {
   const [canPulseAvatar, setCanPulseAvatar] = useState(false);
   const [canPlayAvatarVideo, setCanPlayAvatarVideo] = useState(false);
 
-  // VOICE TOGGLE + unlock mobile
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [audioUnlocked, setAudioUnlocked] = useState(false);
 
@@ -219,11 +231,13 @@ function ChatClient() {
 
   const [isBlocked, setIsBlocked] = useState(false);
 
-  // audio (évite overlap + libère URL)
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
 
   const [voiceBusyMsgId, setVoiceBusyMsgId] = useState<string | null>(null);
+
+  const windowRef = useRef<HTMLDivElement | null>(null);
+  const shouldAutoScrollRef = useRef(true);
 
   const isFreePlan = !planCode || planCode === "free";
   const isPaidPlan = !isFreePlan;
@@ -259,7 +273,6 @@ function ChatClient() {
 
   const unlockAudio = async () => {
     try {
-      // Sur mobile, il faut un "user gesture" avant play(). On fait un mini play muet.
       const a = new Audio();
       a.muted = true;
       a.src =
@@ -269,6 +282,21 @@ function ChatClient() {
     } finally {
       setAudioUnlocked(true);
     }
+  };
+
+  // Auto-scroll smart (only if user is near bottom)
+  const handleWindowScroll = () => {
+    const el = windowRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
+    shouldAutoScrollRef.current = nearBottom;
+  };
+
+  const scrollToBottomIfNeeded = () => {
+    const el = windowRef.current;
+    if (!el) return;
+    if (!shouldAutoScrollRef.current) return;
+    el.scrollTop = el.scrollHeight;
   };
 
   // 1) Subscription / droits
@@ -336,7 +364,6 @@ function ChatClient() {
         setCanPulseAvatar(paid);
         setCanPlayAvatarVideo(allowVideo);
 
-        // Voice = has_voice ET voice_limit > 0
         const voiceOk = hasVoice && voiceLimit > 0;
         setCanUseVoice(voiceOk);
         if (!voiceOk) setSttSupported(false);
@@ -360,7 +387,6 @@ function ChatClient() {
       return;
     }
     if (typeof window === "undefined") return;
-
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     setSttSupported(!!SpeechRecognition);
   }, [canUseVoice]);
@@ -464,6 +490,33 @@ function ChatClient() {
 
     loadHistory();
   }, [iaId, isPaidPlan]);
+
+  // Auto-scroll when messages change
+  useEffect(() => {
+    scrollToBottomIfNeeded();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length]);
+
+  // cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+        } catch {}
+      }
+      if (audioUrlRef.current) {
+        try {
+          URL.revokeObjectURL(audioUrlRef.current);
+        } catch {}
+      }
+    };
+  }, []);
 
   // 5) Voice (TTS)
   const playAssistantVoice = async (msgId: string, text: string) => {
@@ -638,7 +691,6 @@ function ChatClient() {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // ✅ auto-play si voice ON + unlocked
       if (assistantMessage.content && canUseVoice && voiceEnabled && audioUnlocked && !isBlocked) {
         setTimeout(() => {
           void playAssistantVoice(assistantMessage.id, assistantMessage.content);
@@ -699,7 +751,7 @@ function ChatClient() {
           )}
         </div>
 
-        {/* ✅ VOICE TOGGLE */}
+        {/* VOICE TOGGLE */}
         {canUseVoice && !isBlocked && (
           <div className="chat-voice-toggle">
             {!audioUnlocked ? (
@@ -719,7 +771,7 @@ function ChatClient() {
           </div>
         )}
 
-        <div className="chat-window">
+        <div className="chat-window" ref={windowRef} onScroll={handleWindowScroll}>
           {messages.length === 0 ? (
             <div className="chat-empty">{t.emptyState(displayName)}</div>
           ) : (
@@ -738,7 +790,19 @@ function ChatClient() {
                       <div className="chat-bubble-row">
                         <div className="chat-bubble-text">{m.content}</div>
 
-                        </div>
+                        {showVoiceBtn && (
+                          <button
+                            type="button"
+                            className="chat-voice-btn"
+                            onClick={() => void playAssistantVoice(m.id, m.content)}
+                            disabled={!audioUnlocked || busy || !voiceEnabled}
+                            aria-label="Lire la réponse en audio"
+                            title={!audioUnlocked ? "Active d’abord la voix" : "Lire en audio"}
+                          >
+                            {busy ? t.voiceLoading : t.voicePlay}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </li>
                 );
@@ -797,12 +861,19 @@ function ChatClient() {
                 onClick={handleToggleRecording}
                 disabled={!sttSupported || sending}
                 aria-label="Dicter mon message"
+                title={!sttSupported ? "Dictée non supportée sur ce navigateur" : isRecording ? t.sttStop : t.sttStart}
               >
                 <span className="chat-mic-icon">{isRecording ? "■" : "🎤"}</span>
               </button>
             )}
 
-            <button type="submit" className="chat-send-btn" disabled={sending || !newMessage.trim() || (isBlocked && isFreePlan)}>
+            <button
+              type="submit"
+              className="chat-send-btn"
+              disabled={sending || !newMessage.trim() || (isBlocked && isFreePlan)}
+              aria-label={t.send}
+              title={sending ? t.sending : t.send}
+            >
               <span className="chat-send-icon">➤</span>
             </button>
           </div>
@@ -822,6 +893,7 @@ function ChatClient() {
           flex-direction: column;
           align-items: center;
         }
+
         .chat-header {
           width: 100%;
           max-width: 900px;
@@ -839,18 +911,25 @@ function ChatClient() {
         .chat-back:hover {
           color: #e5e7eb;
         }
+
         .chat-card {
           width: 100%;
           max-width: 900px;
           border-radius: 1.6rem;
           border: 1px solid rgba(148, 163, 184, 0.42);
-          background: radial-gradient(circle at top, rgba(2, 6, 23, 0.96) 0, rgba(15, 23, 42, 0.98) 45%, rgba(0, 0, 0, 0.98) 100%);
+          background: radial-gradient(
+            circle at top,
+            rgba(2, 6, 23, 0.96) 0,
+            rgba(15, 23, 42, 0.98) 45%,
+            rgba(0, 0, 0, 0.98) 100%
+          );
           box-shadow: 0 26px 70px rgba(15, 23, 42, 0.95);
           padding: 1.6rem 1.6rem 1.1rem;
           display: flex;
           flex-direction: column;
           gap: 1rem;
         }
+
         .chat-ai-header {
           display: flex;
           flex-direction: column;
@@ -860,9 +939,18 @@ function ChatClient() {
         }
 
         @keyframes slowPulse {
-          0% { box-shadow: 0 0 26px rgba(251, 55, 255, 0.35); transform: scale(1); }
-          50% { box-shadow: 0 0 52px rgba(56, 189, 248, 0.55); transform: scale(1.02); }
-          100% { box-shadow: 0 0 26px rgba(251, 55, 255, 0.35); transform: scale(1); }
+          0% {
+            box-shadow: 0 0 26px rgba(251, 55, 255, 0.35);
+            transform: scale(1);
+          }
+          50% {
+            box-shadow: 0 0 52px rgba(56, 189, 248, 0.55);
+            transform: scale(1.02);
+          }
+          100% {
+            box-shadow: 0 0 26px rgba(251, 55, 255, 0.35);
+            transform: scale(1);
+          }
         }
 
         .chat-avatar-ring {
@@ -876,7 +964,9 @@ function ChatClient() {
           justify-content: center;
           overflow: hidden;
         }
-        .chat-avatar-ring.live { animation: slowPulse 4s ease-in-out infinite; }
+        .chat-avatar-ring.live {
+          animation: slowPulse 4s ease-in-out infinite;
+        }
         .chat-avatar-img {
           width: 154px;
           height: 154px;
@@ -897,6 +987,7 @@ function ChatClient() {
           font-weight: 600;
           color: #e5e7eb;
         }
+
         .chat-ai-name {
           margin-top: 0.35rem;
           font-weight: 700;
@@ -936,13 +1027,28 @@ function ChatClient() {
           max-height: 55vh;
           padding: 0.7rem;
           overflow-y: auto;
+          overscroll-behavior: contain;
         }
+        .chat-window::-webkit-scrollbar {
+          width: 10px;
+        }
+        .chat-window::-webkit-scrollbar-thumb {
+          background: rgba(148, 163, 184, 0.35);
+          border-radius: 999px;
+          border: 2px solid rgba(15, 23, 42, 0.8);
+        }
+        .chat-window::-webkit-scrollbar-track {
+          background: rgba(2, 6, 23, 0.2);
+          border-radius: 999px;
+        }
+
         .chat-empty {
           font-size: 0.9rem;
           color: #9ca3af;
           text-align: center;
           padding-top: 2.1rem;
         }
+
         .chat-message-list {
           list-style: none;
           margin: 0;
@@ -951,9 +1057,15 @@ function ChatClient() {
           flex-direction: column;
           gap: 0.45rem;
         }
-        .chat-message { display: flex; }
-        .chat-message--user { justify-content: flex-end; }
-        .chat-message--assistant { justify-content: flex-start; }
+        .chat-message {
+          display: flex;
+        }
+        .chat-message--user {
+          justify-content: flex-end;
+        }
+        .chat-message--assistant {
+          justify-content: flex-start;
+        }
 
         .chat-bubble {
           max-width: 78%;
@@ -981,7 +1093,10 @@ function ChatClient() {
           gap: 0.6rem;
           align-items: flex-start;
         }
-        .chat-bubble-text { flex: 1; min-width: 0; }
+        .chat-bubble-text {
+          flex: 1;
+          min-width: 0;
+        }
 
         .chat-voice-btn {
           border-radius: 999px;
@@ -993,10 +1108,15 @@ function ChatClient() {
           font-size: 0.85rem;
           line-height: 1;
           white-space: nowrap;
+          transition: transform 120ms ease, opacity 120ms ease;
+        }
+        .chat-voice-btn:hover {
+          transform: translateY(-1px);
         }
         .chat-voice-btn:disabled {
           opacity: 0.5;
           cursor: default;
+          transform: none;
         }
 
         .chat-error {
@@ -1025,9 +1145,19 @@ function ChatClient() {
           border: 1px solid rgba(248, 250, 252, 0.4);
           background: rgba(15, 23, 42, 0.9);
         }
-        .chat-promo-texts { flex: 1; min-width: 0; }
-        .chat-promo-title { font-size: 0.8rem; font-weight: 600; margin-bottom: 0.1rem; }
-        .chat-promo-text { font-size: 0.75rem; color: #e5e7eb; }
+        .chat-promo-texts {
+          flex: 1;
+          min-width: 0;
+        }
+        .chat-promo-title {
+          font-size: 0.8rem;
+          font-weight: 600;
+          margin-bottom: 0.1rem;
+        }
+        .chat-promo-text {
+          font-size: 0.75rem;
+          color: #e5e7eb;
+        }
         .chat-promo-btn {
           border-radius: 999px;
           border: none;
@@ -1037,6 +1167,11 @@ function ChatClient() {
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
           white-space: nowrap;
+          transition: transform 120ms ease, filter 120ms ease;
+        }
+        .chat-promo-btn:hover {
+          transform: translateY(-1px);
+          filter: brightness(1.03);
         }
 
         .chat-paywall {
@@ -1072,8 +1207,19 @@ function ChatClient() {
           border: 1px solid rgba(248, 250, 252, 0.4);
           background: rgba(15, 23, 42, 0.82);
         }
-        .chat-paywall-title { position: relative; z-index: 1; font-size: 0.95rem; font-weight: 600; }
-        .chat-paywall-text { position: relative; z-index: 1; font-size: 0.8rem; color: #e5e7eb; max-width: 420px; }
+        .chat-paywall-title {
+          position: relative;
+          z-index: 1;
+          font-size: 0.95rem;
+          font-weight: 600;
+        }
+        .chat-paywall-text {
+          position: relative;
+          z-index: 1;
+          font-size: 0.8rem;
+          color: #e5e7eb;
+          max-width: 420px;
+        }
         .chat-paywall-btn {
           position: relative;
           z-index: 1;
@@ -1090,9 +1236,19 @@ function ChatClient() {
           align-items: center;
           gap: 0.45rem;
           font-weight: 600;
+          transition: transform 120ms ease, filter 120ms ease;
         }
-        .chat-paywall-btn-label { white-space: nowrap; }
-        .chat-paywall-btn-icon { font-size: 0.9rem; transform: translateY(0.5px); }
+        .chat-paywall-btn:hover {
+          transform: translateY(-1px);
+          filter: brightness(1.03);
+        }
+        .chat-paywall-btn-label {
+          white-space: nowrap;
+        }
+        .chat-paywall-btn-icon {
+          font-size: 0.9rem;
+          transform: translateY(0.5px);
+        }
         .chat-paywall-link {
           position: relative;
           z-index: 1;
@@ -1129,8 +1285,13 @@ function ChatClient() {
           resize: none;
           outline: none;
         }
-        .chat-input::placeholder { color: #6b7280; }
-        .chat-input:disabled { opacity: 0.6; cursor: not-allowed; }
+        .chat-input::placeholder {
+          color: #6b7280;
+        }
+        .chat-input:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
 
         .chat-actions {
           display: flex;
@@ -1150,14 +1311,24 @@ function ChatClient() {
           justify-content: center;
           cursor: pointer;
           font-size: 1.05rem;
+          transition: transform 120ms ease;
+        }
+        .chat-mic-btn:hover {
+          transform: translateY(-1px);
         }
         .chat-mic-btn--active {
           border-color: #fb37ff;
           box-shadow: 0 0 18px rgba(251, 55, 255, 0.8);
           background: radial-gradient(circle at top, #1e293b, #020617);
         }
-        .chat-mic-btn:disabled { opacity: 0.4; cursor: default; }
-        .chat-mic-icon { transform: translateY(1px); }
+        .chat-mic-btn:disabled {
+          opacity: 0.4;
+          cursor: default;
+          transform: none;
+        }
+        .chat-mic-icon {
+          transform: translateY(1px);
+        }
 
         .chat-send-btn {
           border-radius: 999px;
@@ -1171,9 +1342,23 @@ function ChatClient() {
           display: inline-flex;
           align-items: center;
           justify-content: center;
+          transition: transform 120ms ease, filter 120ms ease;
         }
-        .chat-send-btn:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
-        .chat-send-icon { font-size: 1rem; transform: translateX(1px); }
+        .chat-send-btn:hover {
+          transform: translateY(-1px);
+          filter: brightness(1.03);
+        }
+        .chat-send-btn:disabled {
+          opacity: 0.4;
+          cursor: default;
+          box-shadow: none;
+          transform: none;
+          filter: none;
+        }
+        .chat-send-icon {
+          font-size: 1rem;
+          transform: translateX(1px);
+        }
 
         .chat-privacy-note {
           margin-top: 0.3rem;
@@ -1183,39 +1368,72 @@ function ChatClient() {
         }
 
         .skeleton {
-          background: linear-gradient(90deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.4), rgba(148, 163, 184, 0.2));
+          background: linear-gradient(
+            90deg,
+            rgba(148, 163, 184, 0.2),
+            rgba(148, 163, 184, 0.4),
+            rgba(148, 163, 184, 0.2)
+          );
           background-size: 200% 100%;
           animation: shimmer 1.4s infinite;
         }
         .skeleton-text {
           height: 0.9rem;
           width: 60%;
-          background: linear-gradient(90deg, rgba(148, 163, 184, 0.2), rgba(148, 163, 184, 0.4), rgba(148, 163, 184, 0.2));
+          background: linear-gradient(
+            90deg,
+            rgba(148, 163, 184, 0.2),
+            rgba(148, 163, 184, 0.4),
+            rgba(148, 163, 184, 0.2)
+          );
           background-size: 200% 100%;
           animation: shimmer 1.4s infinite;
           border-radius: 999px;
         }
+
         .chat-avatar-ring.error {
           background: radial-gradient(circle at center, #b91c1c, #7f1d1d);
           box-shadow: 0 0 35px rgba(248, 113, 113, 0.7);
         }
-        .chat-avatar-error { font-size: 2.1rem; font-weight: 700; }
+        .chat-avatar-error {
+          font-size: 2.1rem;
+          font-weight: 700;
+        }
 
         @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
         }
 
         @media (max-width: 768px) {
-          .chat-card { padding-inline: 1.2rem; }
-          .chat-window { height: 320px; }
-          .chat-avatar-ring { width: 150px; height: 150px; }
-          .chat-avatar-img, .chat-avatar-placeholder { width: 144px; height: 144px; }
+          .chat-card {
+            padding-inline: 1.2rem;
+          }
+          .chat-window {
+            height: 320px;
+          }
+          .chat-avatar-ring {
+            width: 150px;
+            height: 150px;
+          }
+          .chat-avatar-img,
+          .chat-avatar-placeholder {
+            width: 144px;
+            height: 144px;
+          }
         }
 
         @media (max-width: 480px) {
-          .chat-root { padding-inline: 0.7rem; }
-          .chat-privacy-note { text-align: center; }
+          .chat-root {
+            padding-inline: 0.7rem;
+          }
+          .chat-privacy-note {
+            text-align: center;
+          }
 
           .chat-promo {
             border-radius: 1.25rem;
@@ -1226,10 +1444,21 @@ function ChatClient() {
             gap: 0.75rem;
             align-items: start;
           }
-          .chat-promo-tag { grid-area: tag; align-self: start; }
-          .chat-promo-texts { grid-area: texts; }
-          .chat-promo-title { font-size: 0.88rem; line-height: 1.2; }
-          .chat-promo-text { font-size: 0.8rem; line-height: 1.35; }
+          .chat-promo-tag {
+            grid-area: tag;
+            align-self: start;
+          }
+          .chat-promo-texts {
+            grid-area: texts;
+          }
+          .chat-promo-title {
+            font-size: 0.88rem;
+            line-height: 1.2;
+          }
+          .chat-promo-text {
+            font-size: 0.8rem;
+            line-height: 1.35;
+          }
           .chat-promo-btn {
             grid-area: btn;
             width: 100%;
@@ -1243,11 +1472,24 @@ function ChatClient() {
             padding: 1rem 0.95rem 0.95rem;
             gap: 0.55rem;
           }
-          .chat-paywall-text { max-width: none; font-size: 0.84rem; line-height: 1.35; }
-          .chat-paywall-btn { width: 100%; justify-content: center; padding: 0.65rem 1rem; font-size: 0.92rem; }
-          .chat-paywall-link { width: 100%; text-align: center; margin-top: 0.2rem; }
+          .chat-paywall-text {
+            max-width: none;
+            font-size: 0.84rem;
+            line-height: 1.35;
+          }
+          .chat-paywall-btn {
+            width: 100%;
+            justify-content: center;
+            padding: 0.65rem 1rem;
+            font-size: 0.92rem;
+          }
+          .chat-paywall-link {
+            width: 100%;
+            text-align: center;
+            margin-top: 0.2rem;
+          }
         }
       `}</style>
     </main>
   );
-  }
+}
