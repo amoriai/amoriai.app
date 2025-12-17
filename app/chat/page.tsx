@@ -255,10 +255,7 @@ function ChatClient() {
   const [planCode, setPlanCode] = useState<string | null>(null);
   const [canUseVoice, setCanUseVoice] = useState(false);
 
-  // ✅ pulse: chat/plus/unlimited (tous les payants)
   const [canPulseAvatar, setCanPulseAvatar] = useState(false);
-
-  // ✅ vidéo: SEULEMENT unlimited
   const [canPlayAvatarVideo, setCanPlayAvatarVideo] = useState(false);
 
   const [voiceEnabled, setVoiceEnabled] = useState(true);
@@ -273,13 +270,11 @@ function ChatClient() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
 
-  // ✅ évite 2 TTS en même temps (auto-lecture)
   const voiceBusyRef = useRef(false);
 
   const windowRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScrollRef = useRef(true);
 
-  // NEW: contrôle vidéo 10s -> PNG (unlimited seulement)
   const [avatarPlaying, setAvatarPlaying] = useState(false);
   const avatarTimerRef = useRef<number | null>(null);
 
@@ -291,7 +286,6 @@ function ChatClient() {
 
   const avatarImageUrl = ai?.avatar_image_url ?? null;
 
-  // ✅ on dérive l’URL vidéo depuis le PNG (Runway / D-ID etc. côté assets)
   const avatarVideoUrl = useMemo(() => {
     if (!avatarImageUrl) return null;
     if (!/\.(png|jpe?g|webp)$/i.test(avatarImageUrl)) return null;
@@ -317,7 +311,6 @@ function ChatClient() {
     window.location.href = `/pricing?${params.toString()}`;
   };
 
-  // ✅ important: “unlock” audio (Safari/Chrome iOS) – nécessite un geste utilisateur
   const unlockAudio = async () => {
     try {
       const a = new Audio();
@@ -345,9 +338,8 @@ function ChatClient() {
     el.scrollTop = el.scrollHeight;
   };
 
-  // helper: joue l’animation vidéo ~10s puis repasse PNG (UNLIMITED seulement)
   const triggerAvatarAnimation = () => {
-    if (!canPlayAvatarVideo) return; // donc seulement unlimited
+    if (!canPlayAvatarVideo) return;
     if (!avatarVideoUrl) return;
 
     if (avatarTimerRef.current) {
@@ -422,14 +414,12 @@ function ChatClient() {
         const paid = !!code && code !== "free";
         setCanPulseAvatar(paid);
 
-        // ✅ VIDEO UNIQUEMENT UNLIMITED
         setCanPlayAvatarVideo(code === "unlimited");
 
         const voiceOk = hasVoice && voiceLimit > 0;
         setCanUseVoice(voiceOk);
         if (!voiceOk) setSttSupported(false);
 
-        // si tu descends de unlimited -> autre, on coupe la vidéo
         if (code !== "unlimited") setAvatarPlaying(false);
       } catch (err) {
         console.error("Erreur loadSubscription:", err);
@@ -734,12 +724,10 @@ function ChatClient() {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // ✅ vidéo 10s UNIQUEMENT unlimited
       if (assistantMessage.content && !isBlocked) {
         triggerAvatarAnimation();
       }
 
-      // ✅ auto-lecture (si ON + débloqué)
       if (assistantMessage.content && canUseVoice && voiceEnabled && audioUnlocked && !isBlocked) {
         setTimeout(() => void playAssistantVoice(assistantMessage.content), 80);
       }
@@ -764,7 +752,7 @@ function ChatClient() {
       </header>
 
       <section className="card">
-        {/* ✅ Option A: header “sticky-like” visuel + contrôle voix unique (pas de bouton dans les bulles) */}
+        {/* HEADER COMPACT (reste visible, pas de scroll global) */}
         <div className="hero">
           {aiLoading ? (
             <>
@@ -830,6 +818,7 @@ function ChatClient() {
           )}
         </div>
 
+        {/* ✅ SEULE ZONE QUI SCROLL */}
         <div className="chatBox" ref={windowRef} onScroll={handleWindowScroll}>
           {messages.length === 0 ? (
             <div className="empty">{t.emptyState(displayName)}</div>
@@ -848,6 +837,7 @@ function ChatClient() {
 
         {sendError && <p className="error">{sendError}</p>}
 
+        {/* PROMO / PAYWALL - reste dans la card mais n’agrandit pas la page (card = 100% height) */}
         {!isBlocked && isFreePlan && (
           <div className="promo">
             <div className="badge">PLUS</div>
@@ -921,6 +911,12 @@ function ChatClient() {
         :global(html) {
           color-scheme: dark;
         }
+        /* ✅ IMPORTANT: pas de scroll global */
+        :global(body) {
+          margin: 0;
+          height: 100%;
+          overflow: hidden;
+        }
 
         .page {
           --bg0: #000;
@@ -938,8 +934,11 @@ function ChatClient() {
           --shadow: 0 26px 90px rgba(0, 0, 0, 0.75);
           --shadow2: 0 18px 50px rgba(15, 23, 42, 0.75);
 
-          min-height: 100vh;
-          padding: 22px 16px 28px;
+          /* ✅ PAGE = 100vh */
+          height: 100vh;
+          overflow: hidden;
+
+          padding: 18px 16px 18px;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -961,8 +960,10 @@ function ChatClient() {
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          margin-bottom: 14px;
+          margin-bottom: 12px;
+          flex: 0 0 auto;
         }
+
         .topbar__back {
           font-size: 0.82rem;
           color: rgba(148, 163, 184, 0.88);
@@ -980,6 +981,7 @@ function ChatClient() {
           color: rgba(226, 232, 240, 0.92);
         }
 
+        /* ✅ CARD prend le reste de la hauteur, et autorise les enfants à scroller */
         .card {
           width: 100%;
           max-width: 920px;
@@ -989,13 +991,18 @@ function ChatClient() {
             radial-gradient(800px 520px at 80% 0%, rgba(56, 189, 248, 0.12), transparent 55%),
             linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.78));
           box-shadow: var(--shadow);
-          padding: 18px 18px 14px;
+          padding: 16px 16px 12px;
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 10px;
           backdrop-filter: blur(12px);
+
+          flex: 1 1 auto;
+          min-height: 0; /* ✅ clé pour que .chatBox puisse scroller */
+          overflow: hidden; /* ✅ pas de scroll de card */
         }
 
+        /* ✅ HERO compact */
         .hero {
           display: flex;
           flex-direction: column;
@@ -1003,19 +1010,21 @@ function ChatClient() {
           text-align: center;
           gap: 6px;
           padding-top: 2px;
+          flex: 0 0 auto;
         }
         .hero__name {
-          margin-top: 8px;
+          margin-top: 6px;
           font-weight: 750;
           letter-spacing: 0.18em;
           text-transform: uppercase;
-          font-size: 0.92rem;
+          font-size: 0.9rem;
         }
         .hero__subtitle {
-          font-size: 0.86rem;
+          font-size: 0.84rem;
           color: rgba(148, 163, 184, 0.92);
-          max-width: 620px;
+          max-width: 640px;
           line-height: 1.35;
+          margin: 0;
         }
 
         @keyframes ringPulse {
@@ -1033,9 +1042,10 @@ function ChatClient() {
           }
         }
 
+        /* ✅ Avatar plus petit pour tenir sur laptop */
         .avatarRing {
-          width: 182px;
-          height: 182px;
+          width: 142px;
+          height: 142px;
           border-radius: 999px;
           padding: 3px;
           background: conic-gradient(from 180deg, var(--g1), var(--g2), var(--g3), var(--g1));
@@ -1050,8 +1060,8 @@ function ChatClient() {
 
         .avatarImg,
         .avatarVid {
-          width: 176px;
-          height: 176px;
+          width: 136px;
+          height: 136px;
           border-radius: 999px;
           object-fit: cover;
           object-position: 50% 20%;
@@ -1060,15 +1070,15 @@ function ChatClient() {
         }
 
         .avatarFallback {
-          width: 176px;
-          height: 176px;
+          width: 136px;
+          height: 136px;
           border-radius: 999px;
           display: grid;
           place-items: center;
           background: rgba(30, 41, 59, 0.92);
           color: rgba(226, 232, 240, 0.92);
           font-weight: 700;
-          font-size: 3rem;
+          font-size: 2.6rem;
           letter-spacing: 0.02em;
         }
 
@@ -1125,7 +1135,7 @@ function ChatClient() {
         .voiceToggle {
           display: flex;
           justify-content: center;
-          margin-top: 6px;
+          margin-top: 4px;
         }
 
         .pillBtn {
@@ -1166,15 +1176,18 @@ function ChatClient() {
           box-shadow: 0 16px 42px rgba(248, 113, 113, 0.45);
         }
 
+        /* ✅ LA CLÉ: chatBox est flex:1 et scrolle, pas de hauteur fixe */
         .chatBox {
           border-radius: 18px;
           border: 1px solid rgba(148, 163, 184, 0.22);
           background: radial-gradient(800px 420px at 50% 0%, rgba(56, 189, 248, 0.06), transparent 55%),
             linear-gradient(180deg, rgba(2, 6, 23, 0.55), rgba(2, 6, 23, 0.68));
-          height: 340px;
-          max-height: 55vh;
           padding: 12px;
+
+          flex: 1 1 auto;
+          min-height: 0; /* ✅ essentiel */
           overflow-y: auto;
+
           overscroll-behavior: contain;
           box-shadow: inset 0 0 0 1px rgba(2, 6, 23, 0.25);
         }
@@ -1238,6 +1251,7 @@ function ChatClient() {
           font-size: 0.84rem;
           color: rgba(254, 202, 202, 0.98);
           text-align: center;
+          flex: 0 0 auto;
         }
 
         .badge {
@@ -1254,7 +1268,7 @@ function ChatClient() {
 
         .promo {
           border-radius: 999px;
-          padding: 12px 12px;
+          padding: 10px 12px;
           border: 1px solid rgba(251, 113, 133, 0.35);
           background: radial-gradient(800px 260px at 0% 50%, rgba(251, 55, 255, 0.16), transparent 60%),
             linear-gradient(180deg, rgba(2, 6, 23, 0.45), rgba(2, 6, 23, 0.6));
@@ -1262,6 +1276,7 @@ function ChatClient() {
           align-items: center;
           gap: 10px;
           justify-content: space-between;
+          flex: 0 0 auto;
         }
         .promo__texts {
           flex: 1;
@@ -1282,7 +1297,7 @@ function ChatClient() {
 
         .paywall {
           border-radius: 20px;
-          padding: 14px 14px 12px;
+          padding: 12px 14px 12px;
           border: 1px solid rgba(251, 113, 133, 0.35);
           background: radial-gradient(900px 520px at 0% 0%, rgba(251, 55, 255, 0.18), transparent 55%),
             linear-gradient(180deg, rgba(2, 6, 23, 0.45), rgba(2, 6, 23, 0.65));
@@ -1291,6 +1306,7 @@ function ChatClient() {
           gap: 8px;
           position: relative;
           overflow: hidden;
+          flex: 0 0 auto;
         }
         .paywall__title {
           position: relative;
@@ -1326,6 +1342,7 @@ function ChatClient() {
           gap: 10px;
           align-items: end;
           margin-top: 2px;
+          flex: 0 0 auto;
         }
 
         .composer__field {
@@ -1423,29 +1440,30 @@ function ChatClient() {
         }
 
         .note {
-          margin: 4px 0 0;
+          margin: 2px 0 0;
           font-size: 0.8rem;
           color: rgba(148, 163, 184, 0.7);
           text-align: right;
+          flex: 0 0 auto;
         }
 
         @media (max-width: 768px) {
+          :global(body) {
+            overflow: hidden;
+          }
           .card {
-            padding: 16px 14px 12px;
+            padding: 14px 12px 12px;
             border-radius: 24px;
           }
-          .chatBox {
-            height: 320px;
-          }
           .avatarRing {
-            width: 170px;
-            height: 170px;
+            width: 150px;
+            height: 150px;
           }
           .avatarImg,
           .avatarVid,
           .avatarFallback {
-            width: 164px;
-            height: 164px;
+            width: 144px;
+            height: 144px;
           }
         }
 
@@ -1463,4 +1481,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-                }
+      }
