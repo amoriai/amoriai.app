@@ -172,134 +172,6 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
-/**
- * Loop MP4 PRO : double <video> + crossfade juste avant la fin.
- */
-function LoopCrossfadeVideo({
-  src,
-  className,
-  fadeMs = 180,
-  preRollMs = 220,
-}: {
-  src: string;
-  className?: string;
-  fadeMs?: number;
-  preRollMs?: number;
-}) {
-  const aRef = useRef<HTMLVideoElement | null>(null);
-  const bRef = useRef<HTMLVideoElement | null>(null);
-  const rafRef = useRef<number | null>(null);
-
-  const [top, setTop] = useState<"a" | "b">("a");
-  const switchingRef = useRef(false);
-  const topRef = useRef<"a" | "b">("a");
-
-  useEffect(() => {
-    topRef.current = top;
-  }, [top]);
-
-  useEffect(() => {
-    const a = aRef.current;
-    const b = bRef.current;
-    if (!a || !b) return;
-
-    const stopAll = () => {
-      try {
-        a.pause();
-        b.pause();
-      } catch {}
-      switchingRef.current = false;
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    };
-
-    const tick = () => {
-      const currentTop = topRef.current;
-      const topVid = currentTop === "a" ? a : b;
-      const backVid = currentTop === "a" ? b : a;
-
-      const dur = topVid.duration;
-      if (!Number.isFinite(dur) || dur <= 0) {
-        rafRef.current = requestAnimationFrame(tick);
-        return;
-      }
-
-      const timeLeft = dur - topVid.currentTime;
-      const trigger = preRollMs / 1000;
-
-      if (!switchingRef.current && timeLeft <= trigger) {
-        switchingRef.current = true;
-
-        try {
-          backVid.currentTime = 0;
-        } catch {}
-        backVid.play().catch(() => {});
-
-        const startAt = performance.now();
-
-        const step = (now: number) => {
-          const p = Math.min(1, (now - startAt) / fadeMs);
-
-          topVid.style.opacity = String(1 - p);
-          backVid.style.opacity = String(p);
-
-          if (p < 1) {
-            requestAnimationFrame(step);
-            return;
-          }
-
-          try {
-            topVid.pause();
-          } catch {}
-          try {
-            topVid.currentTime = 0;
-          } catch {}
-
-          setTop((prev) => (prev === "a" ? "b" : "a"));
-          switchingRef.current = false;
-        };
-
-        requestAnimationFrame(step);
-      }
-
-      rafRef.current = requestAnimationFrame(tick);
-    };
-
-    const prime = async () => {
-      stopAll();
-
-      // IMPORTANT: on reset les opacités ici
-      a.style.opacity = "1";
-      b.style.opacity = "0";
-
-      try {
-        a.currentTime = 0;
-        b.currentTime = 0;
-      } catch {}
-
-      try {
-        await a.play();
-      } catch {}
-
-      tick();
-    };
-
-    prime();
-
-    return () => {
-      stopAll();
-    };
-  }, [src, fadeMs, preRollMs]);
-
-  return (
-    <div className={className}>
-      {/* IMPORTANT: loop=false ici, on gère nous-mêmes */}
-      <video ref={aRef} src={src} muted playsInline preload="auto" className="loop-video" aria-hidden="true" />
-      <video ref={bRef} src={src} muted playsInline preload="auto" className="loop-video" aria-hidden="true" />
-    </div>
-  );
-}
-
 export default function ChatPage() {
   return (
     <Suspense
@@ -413,6 +285,10 @@ function ChatClient() {
   const windowRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScrollRef = useRef(true);
 
+  // NEW: contrôle vidéo 10s -> PNG
+  const [avatarPlaying, setAvatarPlaying] = useState(false);
+  const avatarTimerRef = useRef<number | null>(null);
+
   const isFreePlan = !planCode || planCode === "free";
   const isPaidPlan = !isFreePlan;
 
@@ -470,6 +346,24 @@ function ChatClient() {
     if (!el) return;
     if (!shouldAutoScrollRef.current) return;
     el.scrollTop = el.scrollHeight;
+  };
+
+  // helper: joue l’animation vidéo ~10s puis repasse PNG
+  const triggerAvatarAnimation = () => {
+    if (!canPlayAvatarVideo) return;
+    if (!avatarVideoUrl) return;
+
+    // reset timer si déjà en cours
+    if (avatarTimerRef.current) {
+      window.clearTimeout(avatarTimerRef.current);
+      avatarTimerRef.current = null;
+    }
+
+    setAvatarPlaying(true);
+    avatarTimerRef.current = window.setTimeout(() => {
+      setAvatarPlaying(false);
+      avatarTimerRef.current = null;
+    }, 10_000);
   };
 
   // 1) Subscription / droits
@@ -533,8 +427,11 @@ function ChatClient() {
 
         setPlanCode(code);
 
+        // ✅ pulse = tous les payants
         const paid = !!code && code !== "free";
         setCanPulseAvatar(paid);
+
+        // ✅ vidéo seulement si le plan le permet
         setCanPlayAvatarVideo(allowVideo);
 
         const voiceOk = hasVoice && voiceLimit > 0;
@@ -683,6 +580,12 @@ function ChatClient() {
         try {
           URL.revokeObjectURL(audioUrlRef.current);
         } catch {}
+      }
+      if (avatarTimerRef.current) {
+        try {
+          window.clearTimeout(avatarTimerRef.current);
+        } catch {}
+        avatarTimerRef.current = null;
       }
     };
   }, []);
@@ -839,6 +742,11 @@ function ChatClient() {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
+      // ✅ NEW: animation avatar 10s après réponse assistant (si plan autorise)
+      if (assistantMessage.content && !isBlocked) {
+        triggerAvatarAnimation();
+      }
+
       if (assistantMessage.content && canUseVoice && voiceEnabled && audioUnlocked && !isBlocked) {
         setTimeout(() => void playAssistantVoice(assistantMessage.id, assistantMessage.content), 80);
       }
@@ -851,6 +759,8 @@ function ChatClient() {
   };
 
   const avatarRingClass = canPulseAvatar ? "avatarRing avatarRing--live" : "avatarRing";
+
+  const showVideoNow = !!avatarImageUrl && canPlayAvatarVideo && !!avatarVideoUrl && avatarPlaying;
 
   return (
     <main className="page">
@@ -881,8 +791,18 @@ function ChatClient() {
             <>
               <div className={avatarRingClass}>
                 {avatarImageUrl ? (
-                  canPlayAvatarVideo && avatarVideoUrl ? (
-                    <LoopCrossfadeVideo src={avatarVideoUrl} className="avatarMedia" />
+                  showVideoNow ? (
+                    <video
+                      key={avatarVideoUrl} // force re-mount quand src change
+                      src={avatarVideoUrl}
+                      muted
+                      playsInline
+                      autoPlay
+                      preload="auto"
+                      className="avatarVid"
+                      onEnded={() => setAvatarPlaying(false)}
+                      aria-label="Avatar animé"
+                    />
                   ) : (
                     <img src={avatarImageUrl} alt={`Avatar de ${displayName}`} className="avatarImg" />
                   )
@@ -1155,33 +1075,8 @@ function ChatClient() {
           animation: ringPulse 4s ease-in-out infinite;
         }
 
-        /* IMPORTANT: :global ici, sinon styled-jsx ne touche pas le DOM interne du composant LoopCrossfadeVideo */
-        :global(.avatarMedia) {
-          width: 156px;
-          height: 156px;
-          border-radius: 999px;
-          overflow: hidden;
-          position: relative;
-          background: rgba(2, 6, 23, 0.9);
-          transform: translateZ(0);
-          backface-visibility: hidden;
-          -webkit-mask-image: -webkit-radial-gradient(white, black);
-        }
-
-        :global(.loop-video) {
-          position: absolute;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          display: block;
-          object-fit: cover;
-          object-position: 50% 20%;
-          background: rgba(2, 6, 23, 0.9);
-          opacity: 0;
-          will-change: opacity;
-        }
-
-        .avatarImg {
+        .avatarImg,
+        .avatarVid {
           width: 156px;
           height: 156px;
           border-radius: 999px;
@@ -1223,7 +1118,12 @@ function ChatClient() {
           }
         }
         .avatarRing--skeleton {
-          background: linear-gradient(90deg, rgba(148, 163, 184, 0.16), rgba(148, 163, 184, 0.32), rgba(148, 163, 184, 0.16));
+          background: linear-gradient(
+            90deg,
+            rgba(148, 163, 184, 0.16),
+            rgba(148, 163, 184, 0.32),
+            rgba(148, 163, 184, 0.16)
+          );
           background-size: 200% 100%;
           animation: shimmer 1.3s infinite;
         }
@@ -1591,8 +1491,8 @@ function ChatClient() {
             width: 154px;
             height: 154px;
           }
-          :global(.avatarMedia),
           .avatarImg,
+          .avatarVid,
           .avatarFallback {
             width: 148px;
             height: 148px;
