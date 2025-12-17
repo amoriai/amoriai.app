@@ -266,7 +266,11 @@ function ChatClient() {
 
   const [planCode, setPlanCode] = useState<string | null>(null);
   const [canUseVoice, setCanUseVoice] = useState(false);
+
+  // ✅ pulse: chat/plus/unlimited (tous les payants)
   const [canPulseAvatar, setCanPulseAvatar] = useState(false);
+
+  // ✅ vidéo: SEULEMENT unlimited
   const [canPlayAvatarVideo, setCanPlayAvatarVideo] = useState(false);
 
   const [voiceEnabled, setVoiceEnabled] = useState(true);
@@ -285,7 +289,7 @@ function ChatClient() {
   const windowRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScrollRef = useRef(true);
 
-  // NEW: contrôle vidéo 10s -> PNG
+  // NEW: contrôle vidéo 10s -> PNG (unlimited seulement)
   const [avatarPlaying, setAvatarPlaying] = useState(false);
   const avatarTimerRef = useRef<number | null>(null);
 
@@ -296,6 +300,7 @@ function ChatClient() {
   const displayNameUpper = useMemo(() => displayName.toUpperCase(), [displayName]);
 
   const avatarImageUrl = ai?.avatar_image_url ?? null;
+
   const avatarVideoUrl = useMemo(() => {
     if (!avatarImageUrl) return null;
     if (!/\.(png|jpe?g|webp)$/i.test(avatarImageUrl)) return null;
@@ -348,12 +353,11 @@ function ChatClient() {
     el.scrollTop = el.scrollHeight;
   };
 
-  // helper: joue l’animation vidéo ~10s puis repasse PNG
+  // helper: joue l’animation vidéo ~10s puis repasse PNG (UNLIMITED seulement)
   const triggerAvatarAnimation = () => {
-    if (!canPlayAvatarVideo) return;
+    if (!canPlayAvatarVideo) return; // donc seulement unlimited
     if (!avatarVideoUrl) return;
 
-    // reset timer si déjà en cours
     if (avatarTimerRef.current) {
       window.clearTimeout(avatarTimerRef.current);
       avatarTimerRef.current = null;
@@ -389,8 +393,7 @@ function ChatClient() {
               pricing_plans (
                 code,
                 has_voice,
-                voice_limit,
-                allow_animated_avatar
+                voice_limit
               )
             `
           )
@@ -412,14 +415,11 @@ function ChatClient() {
         let code: string | null = null;
         let hasVoice = false;
         let voiceLimit = 0;
-        let allowVideo = false;
 
         const pickPlan = (p: any) => {
           code = p?.code ?? null;
           hasVoice = !!p?.has_voice;
           voiceLimit = Number(p?.voice_limit ?? 0);
-          if (typeof p?.allow_animated_avatar === "boolean") allowVideo = p.allow_animated_avatar;
-          else if (p?.code === "unlimited") allowVideo = true;
         };
 
         if (Array.isArray(rawPlans)) pickPlan(rawPlans[0] ?? {});
@@ -427,16 +427,18 @@ function ChatClient() {
 
         setPlanCode(code);
 
-        // ✅ pulse = tous les payants
         const paid = !!code && code !== "free";
         setCanPulseAvatar(paid);
 
-        // ✅ vidéo seulement si le plan le permet
-        setCanPlayAvatarVideo(allowVideo);
+        // ✅ VIDEO UNIQUEMENT UNLIMITED
+        setCanPlayAvatarVideo(code === "unlimited");
 
         const voiceOk = hasVoice && voiceLimit > 0;
         setCanUseVoice(voiceOk);
         if (!voiceOk) setSttSupported(false);
+
+        // si tu descends de unlimited -> autre, on coupe la vidéo
+        if (code !== "unlimited") setAvatarPlaying(false);
       } catch (err) {
         console.error("Erreur loadSubscription:", err);
         setPlanCode(null);
@@ -742,7 +744,7 @@ function ChatClient() {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // ✅ NEW: animation avatar 10s après réponse assistant (si plan autorise)
+      // ✅ vidéo 10s UNIQUEMENT unlimited
       if (assistantMessage.content && !isBlocked) {
         triggerAvatarAnimation();
       }
@@ -759,7 +761,6 @@ function ChatClient() {
   };
 
   const avatarRingClass = canPulseAvatar ? "avatarRing avatarRing--live" : "avatarRing";
-
   const showVideoNow = !!avatarImageUrl && canPlayAvatarVideo && !!avatarVideoUrl && avatarPlaying;
 
   return (
@@ -793,8 +794,8 @@ function ChatClient() {
                 {avatarImageUrl ? (
                   showVideoNow ? (
                     <video
-                      key={avatarVideoUrl} // force re-mount quand src change
-                      src={avatarVideoUrl}
+                      key={avatarVideoUrl ?? "vid"}
+                      src={avatarVideoUrl ?? undefined}
                       muted
                       playsInline
                       autoPlay
@@ -1060,9 +1061,10 @@ function ChatClient() {
           }
         }
 
+        /* ✅ MODIF: plus gros */
         .avatarRing {
-          width: 162px;
-          height: 162px;
+          width: 182px;
+          height: 182px;
           border-radius: 999px;
           padding: 3px;
           background: conic-gradient(from 180deg, var(--g1), var(--g2), var(--g3), var(--g1));
@@ -1075,10 +1077,11 @@ function ChatClient() {
           animation: ringPulse 4s ease-in-out infinite;
         }
 
+        /* ✅ MODIF: plus gros */
         .avatarImg,
         .avatarVid {
-          width: 156px;
-          height: 156px;
+          width: 176px;
+          height: 176px;
           border-radius: 999px;
           object-fit: cover;
           object-position: 50% 20%;
@@ -1087,8 +1090,8 @@ function ChatClient() {
         }
 
         .avatarFallback {
-          width: 156px;
-          height: 156px;
+          width: 176px;
+          height: 176px;
           border-radius: 999px;
           display: grid;
           place-items: center;
@@ -1487,15 +1490,17 @@ function ChatClient() {
           .chatBox {
             height: 340px;
           }
+
+          /* ✅ MODIF mobile */
           .avatarRing {
-            width: 154px;
-            height: 154px;
+            width: 170px;
+            height: 170px;
           }
           .avatarImg,
           .avatarVid,
           .avatarFallback {
-            width: 148px;
-            height: 148px;
+            width: 164px;
+            height: 164px;
           }
         }
 
