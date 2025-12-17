@@ -111,17 +111,13 @@ function normalizeLocale(raw: string | null): Locale {
 // Séparer personnalité et mission à partir du system_prompt
 function extractPersonality(prompt: string): string {
   const idx = prompt.indexOf("Ta mission");
-  if (idx > 0) {
-    return prompt.slice(0, idx).trim();
-  }
+  if (idx > 0) return prompt.slice(0, idx).trim();
   return prompt.trim();
 }
 
 function extractMission(prompt: string): string {
   const idx = prompt.indexOf("Ta mission");
-  if (idx > -1) {
-    return prompt.slice(idx).trim();
-  }
+  if (idx > -1) return prompt.slice(idx).trim();
   return prompt.trim();
 }
 
@@ -131,10 +127,7 @@ export default function MyAIPage() {
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // plan & animation avatar
-  const [plan, setPlan] = useState<"free" | "chat" | "plus" | "unlimited">(
-    "free"
-  );
+  const [plan, setPlan] = useState<"free" | "chat" | "plus" | "unlimited">("free");
   const [canAnimateAvatar, setCanAnimateAvatar] = useState(false);
 
   // Langue depuis ?lang=
@@ -154,8 +147,7 @@ export default function MyAIPage() {
   useEffect(() => {
     const loadAI = async () => {
       try {
-        const { data: authData, error: authError } =
-          await supabase.auth.getUser();
+        const { data: authData, error: authError } = await supabase.auth.getUser();
         if (authError || !authData?.user) {
           setError(t.error);
           setLoading(false);
@@ -175,8 +167,12 @@ export default function MyAIPage() {
           (sub?.plan as "free" | "chat" | "plus" | "unlimited") ?? "free";
         setPlan(currentPlan);
 
-        // 👉 Avatar animé pour tout sauf le plan free
-        setCanAnimateAvatar(currentPlan !== "free");
+        // ✅ Pulse premium pour chat / plus / unlimited
+        const allowPulse =
+          currentPlan === "chat" ||
+          currentPlan === "plus" ||
+          currentPlan === "unlimited";
+        setCanAnimateAvatar(allowPulse);
 
         // IA
         const { data, error } = await supabase
@@ -222,8 +218,8 @@ export default function MyAIPage() {
             justify-content: center;
             background: radial-gradient(circle at top, #020617, #000);
             color: #e5e7eb;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont,
-              "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+              "Helvetica Neue", Arial, sans-serif;
           }
           .amoria-loading {
             font-size: 1rem;
@@ -255,8 +251,8 @@ export default function MyAIPage() {
             padding: 1.5rem;
             background: radial-gradient(circle at top, #020617, #000);
             color: #e5e7eb;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont,
-              "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+              "Helvetica Neue", Arial, sans-serif;
           }
           .amoria-ai-empty {
             max-width: 480px;
@@ -338,13 +334,12 @@ export default function MyAIPage() {
               <div className="amoria-avatar-placeholder">{t.noAvatar}</div>
             )}
           </div>
+
           <p className="amoria-ai-name">{displayNameUpper}</p>
 
           <div className="amoria-chip-row">
             <span className="amoria-chip amoria-chip--outline">{profileChip}</span>
-            <span className="amoria-chip amoria-chip--solid">
-              {t.companionChip}
-            </span>
+            <span className="amoria-chip amoria-chip--solid">{t.companionChip}</span>
           </div>
         </div>
 
@@ -354,7 +349,7 @@ export default function MyAIPage() {
             <p className="amoria-panel-text">{personalityText}</p>
           </article>
 
-        <article className="amoria-panel">
+          <article className="amoria-panel">
             <h2 className="amoria-panel-title">{t.missionTitle}</h2>
             <p className="amoria-panel-text">{missionText}</p>
           </article>
@@ -373,8 +368,8 @@ export default function MyAIPage() {
           padding: 1.5rem;
           background: radial-gradient(circle at top, #020617 0, #000 65%);
           color: #e5e7eb;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+            "Helvetica Neue", Arial, sans-serif;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -434,29 +429,61 @@ export default function MyAIPage() {
           margin-bottom: 1.6rem;
         }
 
+        /* ==========================
+           AVATAR RING (PREMIUM)
+        ========================== */
         .amoria-avatar-ring {
           width: 240px;
           height: 240px;
           border-radius: 999px;
           padding: 4px;
+
           background: conic-gradient(
             from 180deg,
-            #fb37ff,
-            #ff6b9c,
-            #38bdf8,
-            #fb37ff
+            rgba(251, 55, 255, 0.92),
+            rgba(255, 107, 156, 0.92),
+            rgba(56, 189, 248, 0.9),
+            rgba(251, 55, 255, 0.92)
           );
+
           display: flex;
           align-items: center;
           justify-content: center;
           overflow: hidden;
+
           box-shadow:
-            0 0 35px rgba(251, 55, 255, 0.6),
-            0 0 70px rgba(56, 189, 248, 0.4);
+            0 22px 60px rgba(0, 0, 0, 0.55),
+            0 0 0 1px rgba(148, 163, 184, 0.18);
+
+          position: relative;
+          transform: translateZ(0);
         }
 
+        /* Halo premium subtil */
+        .amoria-avatar-ring::before {
+          content: "";
+          position: absolute;
+          inset: -18px;
+          border-radius: 999px;
+          background: radial-gradient(
+            circle at 50% 45%,
+            rgba(251, 55, 255, 0.14),
+            rgba(56, 189, 248, 0.1),
+            transparent 60%
+          );
+          filter: blur(10px);
+          opacity: 0.9;
+          pointer-events: none;
+        }
+
+        /* Pulse seulement payé */
         .amoria-avatar-ring--live {
-          animation: amoriaPulse 4s ease-in-out infinite;
+          animation: amoriaPulse 5.2s ease-in-out infinite;
+        }
+
+        /* Micro mouvement du halo seulement payé */
+        .amoria-avatar-ring--live::before {
+          animation: haloDrift 6.8s ease-in-out infinite;
         }
 
         .amoria-avatar-img {
@@ -464,9 +491,11 @@ export default function MyAIPage() {
           height: 232px;
           border-radius: 999px;
           object-fit: cover;
-          background: #020617;
-          transform: scale(0.92);
           object-position: 50% 20%;
+          background: #020617;
+
+          transform: translateZ(0) scale(0.94);
+          box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.14);
         }
 
         .amoria-avatar-placeholder {
@@ -488,7 +517,7 @@ export default function MyAIPage() {
           letter-spacing: 0.16em;
           text-transform: uppercase;
           font-size: 0.95rem;
-          text-shadow: 0 0 6px rgba(251, 55, 255, 0.7);
+          text-shadow: 0 0 10px rgba(251, 55, 255, 0.35);
         }
 
         .amoria-chip-row {
@@ -516,7 +545,7 @@ export default function MyAIPage() {
           border-color: transparent;
           background: linear-gradient(135deg, #fb37ff, #ff6b9c);
           color: #f9fafb;
-          box-shadow: 0 10px 26px rgba(248, 113, 113, 0.45);
+          box-shadow: 0 10px 26px rgba(248, 113, 113, 0.35);
         }
 
         .amoria-ai-panels {
@@ -573,7 +602,7 @@ export default function MyAIPage() {
         .amoria-btn--primary {
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
-          box-shadow: 0 16px 40px rgba(248, 113, 113, 0.55);
+          box-shadow: 0 16px 40px rgba(248, 113, 113, 0.45);
         }
 
         @media (max-width: 860px) {
@@ -603,27 +632,39 @@ export default function MyAIPage() {
           }
         }
 
+        /* ==========================
+           ANIMATIONS (PREMIUM)
+        ========================== */
         @keyframes amoriaPulse {
           0% {
-            transform: scale(1);
-            box-shadow:
-              0 0 35px rgba(251, 55, 255, 0.6),
-              0 0 70px rgba(56, 189, 248, 0.4);
+            transform: translateZ(0) scale(1);
+            filter: saturate(1) brightness(1);
           }
-          50% {
-            transform: scale(1.03);
-            box-shadow:
-              0 0 45px rgba(251, 55, 255, 0.8),
-              0 0 90px rgba(56, 189, 248, 0.5);
+          45% {
+            transform: translateZ(0) scale(1.018);
+            filter: saturate(1.12) brightness(1.06);
           }
           100% {
-            transform: scale(1);
-            box-shadow:
-              0 0 35px rgba(251, 55, 255, 0.6),
-              0 0 70px rgba(56, 189, 248, 0.4);
+            transform: translateZ(0) scale(1);
+            filter: saturate(1) brightness(1);
+          }
+        }
+
+        @keyframes haloDrift {
+          0% {
+            transform: translateY(0) scale(1);
+            opacity: 0.85;
+          }
+          50% {
+            transform: translateY(-3px) scale(1.02);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(0) scale(1);
+            opacity: 0.85;
           }
         }
       `}</style>
     </main>
   );
-        }
+}
