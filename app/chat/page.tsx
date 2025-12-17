@@ -174,7 +174,6 @@ function normalizeLocale(raw: string | null): Locale {
 
 /**
  * Loop MP4 PRO : double <video> + crossfade juste avant la fin.
- * Résultat : pas de "coupure" visible, même si ton mp4 a une frame de retour.
  */
 function LoopCrossfadeVideo({
   src,
@@ -269,6 +268,7 @@ function LoopCrossfadeVideo({
     const prime = async () => {
       stopAll();
 
+      // IMPORTANT: on reset les opacités ici
       a.style.opacity = "1";
       b.style.opacity = "0";
 
@@ -293,6 +293,7 @@ function LoopCrossfadeVideo({
 
   return (
     <div className={className}>
+      {/* IMPORTANT: loop=false ici, on gère nous-mêmes */}
       <video ref={aRef} src={src} muted playsInline preload="auto" className="loop-video" aria-hidden="true" />
       <video ref={bRef} src={src} muted playsInline preload="auto" className="loop-video" aria-hidden="true" />
     </div>
@@ -655,9 +656,7 @@ function ChatClient() {
             .map((m) => ({ ...m, createdAt: m.createdAt ?? new Date().toISOString() }))
             .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
         );
-      } catch {
-        // silence
-      }
+      } catch {}
     };
 
     loadHistory();
@@ -719,7 +718,8 @@ function ChatClient() {
         if (contentType.includes("application/json")) {
           const data = await res.json().catch(() => ({}));
           console.error("Voice API error:", res.status, data);
-          if (data?.error === "audio_limit_reached") setSendError("Tu as atteint la limite de messages vocaux pour ton forfait actuel.");
+          if (data?.error === "audio_limit_reached")
+            setSendError("Tu as atteint la limite de messages vocaux pour ton forfait actuel.");
           else if (data?.error) setSendError(`Voice error: ${data.error}`);
           else setSendError("Erreur voice. Vérifie la configuration serveur.");
         } else {
@@ -897,7 +897,6 @@ function ChatClient() {
           )}
         </div>
 
-        {/* VOICE TOGGLE */}
         {canUseVoice && !isBlocked && (
           <div className="voiceToggle">
             {!audioUnlocked ? (
@@ -1026,23 +1025,17 @@ function ChatClient() {
       </section>
 
       <style jsx>{`
-        /* =========================
-           THEME TOKENS
-        ========================== */
         :global(html) {
           color-scheme: dark;
         }
+
         .page {
           --bg0: #000;
           --bg1: #020617;
           --glass: rgba(2, 6, 23, 0.55);
           --card: rgba(15, 23, 42, 0.78);
-          --card2: rgba(2, 6, 23, 0.72);
           --line: rgba(148, 163, 184, 0.22);
-          --line2: rgba(148, 163, 184, 0.35);
           --text: rgba(226, 232, 240, 0.92);
-          --muted: rgba(148, 163, 184, 0.9);
-          --muted2: rgba(148, 163, 184, 0.65);
 
           --g1: #fb37ff;
           --g2: #ff6b9c;
@@ -1068,9 +1061,6 @@ function ChatClient() {
             linear-gradient(180deg, var(--bg1), var(--bg0));
         }
 
-        /* =========================
-           TOPBAR
-        ========================== */
         .topbar {
           width: 100%;
           max-width: 920px;
@@ -1097,9 +1087,6 @@ function ChatClient() {
           color: rgba(226, 232, 240, 0.92);
         }
 
-        /* =========================
-           CARD
-        ========================== */
         .card {
           width: 100%;
           max-width: 920px;
@@ -1116,9 +1103,6 @@ function ChatClient() {
           backdrop-filter: blur(12px);
         }
 
-        /* =========================
-           HERO
-        ========================== */
         .hero {
           display: flex;
           flex-direction: column;
@@ -1141,9 +1125,6 @@ function ChatClient() {
           line-height: 1.35;
         }
 
-        /* =========================
-           AVATAR
-        ========================== */
         @keyframes ringPulse {
           0% {
             transform: scale(1);
@@ -1174,8 +1155,8 @@ function ChatClient() {
           animation: ringPulse 4s ease-in-out infinite;
         }
 
-        /* Container pour les 2 <video> */
-        .avatarMedia {
+        /* IMPORTANT: :global ici, sinon styled-jsx ne touche pas le DOM interne du composant LoopCrossfadeVideo */
+        :global(.avatarMedia) {
           width: 156px;
           height: 156px;
           border-radius: 999px;
@@ -1184,16 +1165,17 @@ function ChatClient() {
           background: rgba(2, 6, 23, 0.9);
           transform: translateZ(0);
           backface-visibility: hidden;
+          -webkit-mask-image: -webkit-radial-gradient(white, black);
         }
 
-        .loop-video {
+        :global(.loop-video) {
           position: absolute;
           inset: 0;
           width: 100%;
           height: 100%;
+          display: block;
           object-fit: cover;
           object-position: 50% 20%;
-          border-radius: 999px;
           background: rgba(2, 6, 23, 0.9);
           opacity: 0;
           will-change: opacity;
@@ -1232,9 +1214,6 @@ function ChatClient() {
           font-weight: 800;
         }
 
-        /* =========================
-           SKELETON
-        ========================== */
         @keyframes shimmer {
           0% {
             background-position: -200% 0;
@@ -1265,9 +1244,6 @@ function ChatClient() {
           margin-top: 6px;
         }
 
-        /* =========================
-           VOICE TOGGLE / BUTTONS
-        ========================== */
         .voiceToggle {
           display: flex;
           justify-content: center;
@@ -1312,9 +1288,6 @@ function ChatClient() {
           box-shadow: 0 16px 42px rgba(248, 113, 113, 0.45);
         }
 
-        /* =========================
-           CHAT BOX
-        ========================== */
         .chatBox {
           border-radius: 18px;
           border: 1px solid rgba(148, 163, 184, 0.22);
@@ -1326,19 +1299,6 @@ function ChatClient() {
           overflow-y: auto;
           overscroll-behavior: contain;
           box-shadow: inset 0 0 0 1px rgba(2, 6, 23, 0.25);
-        }
-
-        .chatBox::-webkit-scrollbar {
-          width: 10px;
-        }
-        .chatBox::-webkit-scrollbar-thumb {
-          background: rgba(148, 163, 184, 0.26);
-          border-radius: 999px;
-          border: 2px solid rgba(2, 6, 23, 0.7);
-        }
-        .chatBox::-webkit-scrollbar-track {
-          background: rgba(2, 6, 23, 0.25);
-          border-radius: 999px;
         }
 
         .empty {
@@ -1423,9 +1383,6 @@ function ChatClient() {
           transform: none;
         }
 
-        /* =========================
-           ERROR
-        ========================== */
         .error {
           margin: 2px 0 0;
           font-size: 0.84rem;
@@ -1433,9 +1390,6 @@ function ChatClient() {
           text-align: center;
         }
 
-        /* =========================
-           PROMO / PAYWALL
-        ========================== */
         .badge {
           font-size: 0.7rem;
           text-transform: uppercase;
@@ -1488,14 +1442,6 @@ function ChatClient() {
           position: relative;
           overflow: hidden;
         }
-        .paywall::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(700px 360px at 120% 0%, rgba(248, 250, 252, 0.16), transparent 60%);
-          opacity: 0.7;
-          pointer-events: none;
-        }
         .paywall__title {
           position: relative;
           margin: 0;
@@ -1524,9 +1470,6 @@ function ChatClient() {
           width: fit-content;
         }
 
-        /* =========================
-           COMPOSER
-        ========================== */
         .composer {
           display: grid;
           grid-template-columns: 1fr auto;
@@ -1629,9 +1572,6 @@ function ChatClient() {
           transform: translateX(1px);
         }
 
-        /* =========================
-           FOOTNOTE
-        ========================== */
         .note {
           margin: 4px 0 0;
           font-size: 0.8rem;
@@ -1639,9 +1579,6 @@ function ChatClient() {
           text-align: right;
         }
 
-        /* =========================
-           RESPONSIVE
-        ========================== */
         @media (max-width: 768px) {
           .card {
             padding: 16px 14px 12px;
@@ -1654,7 +1591,7 @@ function ChatClient() {
             width: 154px;
             height: 154px;
           }
-          .avatarMedia,
+          :global(.avatarMedia),
           .avatarImg,
           .avatarFallback {
             width: 148px;
@@ -1669,37 +1606,6 @@ function ChatClient() {
           .note {
             text-align: center;
           }
-
-          .promo {
-            border-radius: 18px;
-            padding: 12px;
-            display: grid;
-            grid-template-columns: auto 1fr;
-            grid-template-areas: "badge texts" "btn btn";
-            gap: 10px;
-            align-items: start;
-          }
-          .promo .badge {
-            grid-area: badge;
-          }
-          .promo__texts {
-            grid-area: texts;
-            padding: 0;
-          }
-          .promo .pillBtn--primary {
-            grid-area: btn;
-            width: 100%;
-          }
-
-          .paywall__btn {
-            width: 100%;
-            justify-content: center;
-          }
-          .paywall__link {
-            width: 100%;
-            text-align: center;
-          }
-
           .bubble {
             max-width: 90%;
           }
