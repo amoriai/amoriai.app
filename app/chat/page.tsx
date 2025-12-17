@@ -54,9 +54,6 @@ type UiCopy = {
   promoText: string;
   promoCta: string;
 
-  voicePlay: string;
-  voiceLoading: string;
-
   voiceUnlock: string;
   voiceOn: string;
   voiceOff: string;
@@ -89,9 +86,6 @@ const STRINGS: Record<Locale, UiCopy> = {
     promoText: "Passe à AmorIAI Plus pour beaucoup plus de messages chaque mois et la voix de ton compagnon.",
     promoCta: "Découvrir AmorIAI Plus",
 
-    voicePlay: "Écouter",
-    voiceLoading: "Voix…",
-
     voiceUnlock: "🔓 Activer la voix",
     voiceOn: "🔊 Voix : ON",
     voiceOff: "🔇 Voix : OFF",
@@ -122,9 +116,6 @@ const STRINGS: Record<Locale, UiCopy> = {
     promoText: "Upgrade to AmorIAI Plus for more messages every month and your companion’s voice.",
     promoCta: "Discover AmorIAI Plus",
 
-    voicePlay: "Play",
-    voiceLoading: "Voice…",
-
     voiceUnlock: "🔓 Enable voice",
     voiceOn: "🔊 Voice: ON",
     voiceOff: "🔇 Voice: OFF",
@@ -154,9 +145,6 @@ const STRINGS: Record<Locale, UiCopy> = {
     promoTitle: "¿Quieres más tiempo con tu AmorIAI?",
     promoText: "Pasa a AmorIAI Plus para muchos más mensajes cada mes y la voz de tu compañero.",
     promoCta: "Descubrir AmorIAI Plus",
-
-    voicePlay: "Escuchar",
-    voiceLoading: "Voz…",
 
     voiceUnlock: "🔓 Activar voz",
     voiceOn: "🔊 Voz: ON",
@@ -284,7 +272,9 @@ function ChatClient() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
-  const [voiceBusyMsgId, setVoiceBusyMsgId] = useState<string | null>(null);
+
+  // ✅ évite 2 TTS en même temps (auto-lecture)
+  const voiceBusyRef = useRef(false);
 
   const windowRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScrollRef = useRef(true);
@@ -301,6 +291,7 @@ function ChatClient() {
 
   const avatarImageUrl = ai?.avatar_image_url ?? null;
 
+  // ✅ on dérive l’URL vidéo depuis le PNG (Runway / D-ID etc. côté assets)
   const avatarVideoUrl = useMemo(() => {
     if (!avatarImageUrl) return null;
     if (!/\.(png|jpe?g|webp)$/i.test(avatarImageUrl)) return null;
@@ -326,6 +317,7 @@ function ChatClient() {
     window.location.href = `/pricing?${params.toString()}`;
   };
 
+  // ✅ important: “unlock” audio (Safari/Chrome iOS) – nécessite un geste utilisateur
   const unlockAudio = async () => {
     try {
       const a = new Audio();
@@ -566,6 +558,7 @@ function ChatClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length]);
 
+  // cleanup
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
@@ -592,21 +585,21 @@ function ChatClient() {
     };
   }, []);
 
-  // 5) Voice (TTS)
-  const playAssistantVoice = async (msgId: string, text: string) => {
+  // 5) Voice (TTS) — auto-lecture uniquement
+  const playAssistantVoice = async (text: string) => {
     if (!canUseVoice || isBlocked) return;
     if (!voiceEnabled) return;
     if (!audioUnlocked) return;
     if (!iaId || !text?.trim()) return;
+    if (voiceBusyRef.current) return;
 
+    voiceBusyRef.current = true;
     setSendError(null);
-    setVoiceBusyMsgId(msgId);
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
       if (!accessToken) {
-        console.error("Voice: pas de session/access_token");
         setSendError(t.notAuthenticated);
         return;
       }
@@ -622,14 +615,11 @@ function ChatClient() {
       if (!res.ok) {
         if (contentType.includes("application/json")) {
           const data = await res.json().catch(() => ({}));
-          console.error("Voice API error:", res.status, data);
           if (data?.error === "audio_limit_reached")
             setSendError("Tu as atteint la limite de messages vocaux pour ton forfait actuel.");
           else if (data?.error) setSendError(`Voice error: ${data.error}`);
           else setSendError("Erreur voice. Vérifie la configuration serveur.");
         } else {
-          const raw = await res.text().catch(() => "");
-          console.error("Voice API error:", res.status, raw);
           setSendError("Erreur voice. Vérifie la configuration serveur.");
         }
         return;
@@ -670,7 +660,7 @@ function ChatClient() {
       console.error("Erreur /api/voice:", err);
       setSendError("Erreur voice. Vérifie ta connexion et réessaie.");
     } finally {
-      setVoiceBusyMsgId(null);
+      voiceBusyRef.current = false;
     }
   };
 
@@ -749,8 +739,9 @@ function ChatClient() {
         triggerAvatarAnimation();
       }
 
+      // ✅ auto-lecture (si ON + débloqué)
       if (assistantMessage.content && canUseVoice && voiceEnabled && audioUnlocked && !isBlocked) {
-        setTimeout(() => void playAssistantVoice(assistantMessage.id, assistantMessage.content), 80);
+        setTimeout(() => void playAssistantVoice(assistantMessage.content), 80);
       }
     } catch (err) {
       console.error("Erreur réseau /api/chat:", err);
@@ -773,6 +764,7 @@ function ChatClient() {
       </header>
 
       <section className="card">
+        {/* ✅ Option A: header “sticky-like” visuel + contrôle voix unique (pas de bouton dans les bulles) */}
         <div className="hero">
           {aiLoading ? (
             <>
@@ -814,62 +806,42 @@ function ChatClient() {
 
               <p className="hero__name">{displayNameUpper}</p>
               <p className="hero__subtitle">{t.subtitle(displayName)}</p>
+
+              {canUseVoice && !isBlocked && (
+                <div className="voiceToggle">
+                  {!audioUnlocked ? (
+                    <button type="button" className="pillBtn pillBtn--ghost" onClick={() => void unlockAudio()}>
+                      {t.voiceUnlock}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="pillBtn pillBtn--ghost"
+                      onClick={() => setVoiceEnabled((v) => !v)}
+                      aria-label="Activer ou désactiver la voix"
+                      title={voiceEnabled ? "Désactiver la voix" : "Activer la voix"}
+                    >
+                      {voiceEnabled ? t.voiceOn : t.voiceOff}
+                    </button>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
-
-        {canUseVoice && !isBlocked && (
-          <div className="voiceToggle">
-            {!audioUnlocked ? (
-              <button type="button" className="pillBtn pillBtn--ghost" onClick={() => void unlockAudio()}>
-                {t.voiceUnlock}
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="pillBtn pillBtn--ghost"
-                onClick={() => setVoiceEnabled((v) => !v)}
-                aria-label="Activer ou désactiver la voix"
-              >
-                {voiceEnabled ? t.voiceOn : t.voiceOff}
-              </button>
-            )}
-          </div>
-        )}
 
         <div className="chatBox" ref={windowRef} onScroll={handleWindowScroll}>
           {messages.length === 0 ? (
             <div className="empty">{t.emptyState(displayName)}</div>
           ) : (
             <ul className="list">
-              {messages.map((m) => {
-                const isAssistant = m.role === "assistant";
-                const showVoiceBtn = isAssistant && canUseVoice && !isBlocked;
-                const busy = voiceBusyMsgId === m.id;
-
-                return (
-                  <li key={m.id} className={m.role === "user" ? "row row--user" : "row row--assistant"}>
-                    <div className={m.role === "user" ? "bubble bubble--user" : "bubble bubble--assistant"}>
-                      <div className="bubble__grid">
-                        <div className="bubble__text">{m.content}</div>
-
-                        {showVoiceBtn && (
-                          <button
-                            type="button"
-                            className="miniBtn"
-                            onClick={() => void playAssistantVoice(m.id, m.content)}
-                            disabled={!audioUnlocked || busy || !voiceEnabled}
-                            aria-label="Lire la réponse en audio"
-                            title={!audioUnlocked ? "Active d’abord la voix" : "Lire en audio"}
-                          >
-                            {busy ? t.voiceLoading : t.voicePlay}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
+              {messages.map((m) => (
+                <li key={m.id} className={m.role === "user" ? "row row--user" : "row row--assistant"}>
+                  <div className={m.role === "user" ? "bubble bubble--user" : "bubble bubble--assistant"}>
+                    <div className="bubble__text">{m.content}</div>
+                  </div>
+                </li>
+              ))}
             </ul>
           )}
         </div>
@@ -1020,7 +992,7 @@ function ChatClient() {
           padding: 18px 18px 14px;
           display: flex;
           flex-direction: column;
-          gap: 14px;
+          gap: 12px;
           backdrop-filter: blur(12px);
         }
 
@@ -1061,7 +1033,6 @@ function ChatClient() {
           }
         }
 
-        /* ✅ MODIF: plus gros */
         .avatarRing {
           width: 182px;
           height: 182px;
@@ -1077,7 +1048,6 @@ function ChatClient() {
           animation: ringPulse 4s ease-in-out infinite;
         }
 
-        /* ✅ MODIF: plus gros */
         .avatarImg,
         .avatarVid {
           width: 176px;
@@ -1132,7 +1102,12 @@ function ChatClient() {
         }
         .skeletonLine {
           border-radius: 999px;
-          background: linear-gradient(90deg, rgba(148, 163, 184, 0.14), rgba(148, 163, 184, 0.28), rgba(148, 163, 184, 0.14));
+          background: linear-gradient(
+            90deg,
+            rgba(148, 163, 184, 0.14),
+            rgba(148, 163, 184, 0.28),
+            rgba(148, 163, 184, 0.14)
+          );
           background-size: 200% 100%;
           animation: shimmer 1.3s infinite;
         }
@@ -1150,7 +1125,7 @@ function ChatClient() {
         .voiceToggle {
           display: flex;
           justify-content: center;
-          margin-top: -2px;
+          margin-top: 6px;
         }
 
         .pillBtn {
@@ -1196,8 +1171,8 @@ function ChatClient() {
           border: 1px solid rgba(148, 163, 184, 0.22);
           background: radial-gradient(800px 420px at 50% 0%, rgba(56, 189, 248, 0.06), transparent 55%),
             linear-gradient(180deg, rgba(2, 6, 23, 0.55), rgba(2, 6, 23, 0.68));
-          height: 380px;
-          max-height: 58vh;
+          height: 340px;
+          max-height: 55vh;
           padding: 12px;
           overflow-y: auto;
           overscroll-behavior: contain;
@@ -1254,36 +1229,8 @@ function ChatClient() {
           border: 1px solid rgba(148, 163, 184, 0.22);
         }
 
-        .bubble__grid {
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-        }
         .bubble__text {
-          flex: 1;
           min-width: 0;
-        }
-
-        .miniBtn {
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.22);
-          background: rgba(2, 6, 23, 0.35);
-          color: rgba(226, 232, 240, 0.92);
-          padding: 7px 10px;
-          cursor: pointer;
-          font-size: 0.86rem;
-          line-height: 1;
-          white-space: nowrap;
-          transition: transform 120ms ease, opacity 120ms ease, border-color 120ms ease;
-        }
-        .miniBtn:hover {
-          transform: translateY(-1px);
-          border-color: rgba(148, 163, 184, 0.35);
-        }
-        .miniBtn:disabled {
-          opacity: 0.5;
-          cursor: default;
-          transform: none;
         }
 
         .error {
@@ -1488,10 +1435,8 @@ function ChatClient() {
             border-radius: 24px;
           }
           .chatBox {
-            height: 340px;
+            height: 320px;
           }
-
-          /* ✅ MODIF mobile */
           .avatarRing {
             width: 170px;
             height: 170px;
@@ -1518,4 +1463,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-}
+                }
