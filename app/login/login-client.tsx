@@ -10,27 +10,38 @@ const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 const MIN_RECAPTCHA_SCORE = 0.5;
 
 type Locale = "fr" | "en" | "es";
+type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 type Strings = {
   title: string;
   subtitle: string;
   badge: string;
+
   google: string;
+  googleLoading: string;
+
   or: string;
+
   emailLabel: string;
   emailPlaceholder: string;
+
   passwordLabel: string;
   passwordPlaceholder: string;
+
   show: string;
   hide: string;
+
   submit: string;
   submitting: string;
+
   noAccount: string;
   signupLink: string;
+
   errorGeneric: string;
   errorInvalid: string;
   errorRecaptcha: string;
   errorRls: string;
+  missingKey: string;
 };
 
 const STRINGS: Record<Locale, Strings> = {
@@ -38,71 +49,97 @@ const STRINGS: Record<Locale, Strings> = {
     title: "Me connecter",
     subtitle: "Accède à ton AmorIAI personnel et reprends la conversation.",
     badge: "Connexion à AmorIAI",
+
     google: "Continuer avec Google",
+    googleLoading: "Redirection…",
+
     or: "ou",
+
     emailLabel: "Adresse courriel",
     emailPlaceholder: "ex. mon.adresse@email.com",
+
     passwordLabel: "Mot de passe",
     passwordPlaceholder: "Ton mot de passe AmorIAI",
+
     show: "Afficher",
     hide: "Masquer",
+
     submit: "Me connecter",
     submitting: "Connexion…",
+
     noAccount: "Pas encore de compte ?",
     signupLink: "Créer mon compte",
+
     errorGeneric: "Une erreur est survenue. Réessaie dans un instant.",
-    errorInvalid:
-      "Courriel ou mot de passe invalide. Vérifie tes infos ou crée un compte.",
-    errorRecaptcha:
-      "Connexion refusée (vérification de sécurité). Recharge la page et réessaie.",
+    errorInvalid: "Courriel ou mot de passe invalide. Vérifie tes infos ou crée un compte.",
+    errorRecaptcha: "Connexion refusée (vérification de sécurité). Recharge la page et réessaie.",
     errorRls:
       "Connexion OK, mais accès refusé à la table user_amoria (RLS). Il faut ajouter la policy SELECT pour lire tes propres lignes.",
+    missingKey: "Clé reCAPTCHA manquante (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
   },
   en: {
     title: "Log in",
     subtitle: "Access your personal AmorIAI and resume your conversation.",
     badge: "Sign in to AmorIAI",
+
     google: "Continue with Google",
+    googleLoading: "Redirecting…",
+
     or: "or",
+
     emailLabel: "Email address",
     emailPlaceholder: "e.g. my.address@email.com",
+
     passwordLabel: "Password",
     passwordPlaceholder: "Your AmorIAI password",
+
     show: "Show",
     hide: "Hide",
+
     submit: "Log in",
     submitting: "Logging in…",
+
     noAccount: "Don’t have an account yet?",
     signupLink: "Create my account",
+
     errorGeneric: "Something went wrong. Please try again.",
     errorInvalid: "Invalid email or password.",
-    errorRecaptcha:
-      "Login blocked (security check). Refresh the page and try again.",
+    errorRecaptcha: "Login blocked (security check). Refresh the page and try again.",
     errorRls:
       "Login OK, but access denied to user_amoria table (RLS). Add a SELECT policy so users can read their own rows.",
+    missingKey: "Missing reCAPTCHA key (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
   },
   es: {
     title: "Iniciar sesión",
     subtitle: "Accede a tu AmorIAI personal y continúa la conversación.",
     badge: "Conectarte a AmorIAI",
+
     google: "Continuar con Google",
+    googleLoading: "Redirigiendo…",
+
     or: "o",
+
     emailLabel: "Correo electrónico",
     emailPlaceholder: "ej. mi.direccion@email.com",
+
     passwordLabel: "Contraseña",
     passwordPlaceholder: "Tu contraseña de AmorIAI",
+
     show: "Mostrar",
     hide: "Ocultar",
+
     submit: "Iniciar sesión",
     submitting: "Conectando…",
+
     noAccount: "¿Todavía no tienes cuenta?",
     signupLink: "Crear mi cuenta",
+
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     errorInvalid: "Correo o contraseña inválidos.",
-    errorRecaptcha:
-      "Inicio bloqueado (verificación de seguridad). Recarga la página e inténtalo de nuevo.",
+    errorRecaptcha: "Inicio bloqueado (verificación de seguridad). Recarga la página e inténtalo de nuevo.",
     errorRls:
       "Login OK, pero acceso denegado a la tabla user_amoria (RLS). Agrega una policy SELECT para leer tus filas.",
+    missingKey: "Falta la clave reCAPTCHA (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
   },
 };
 
@@ -111,25 +148,40 @@ function normalizeLocale(raw: string | null): Locale {
   return "fr";
 }
 
+function normalizePlan(raw: string | null): PlanId {
+  if (raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
+  return "free";
+}
+
+// ✅ sécurité: returnTo doit être interne (évite open redirect)
+function safeReturnTo(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith("/")) return null;
+  if (raw.startsWith("//")) return null;
+  return raw;
+}
+
 export default function LoginClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const locale = useMemo(
-    () => normalizeLocale(searchParams.get("lang")),
-    [searchParams]
-  );
+  const locale = useMemo(() => normalizeLocale(searchParams.get("lang")), [searchParams]);
+  const plan = useMemo(() => normalizePlan(searchParams.get("plan")), [searchParams]);
+  const returnTo = useMemo(() => safeReturnTo(searchParams.get("returnTo")), [searchParams]);
   const t = STRINGS[locale];
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  const [loadingEmail, setLoadingEmail] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [recaptchaReady, setRecaptchaReady] = useState(false);
 
+  // ✅ reCAPTCHA ready (utilisé pour email/password seulement)
   useEffect(() => {
     if (!RECAPTCHA_SITE_KEY) {
       setRecaptchaReady(false);
@@ -162,10 +214,12 @@ export default function LoginClient() {
   const goToSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
+    params.set("plan", plan);
+    if (returnTo) params.set("returnTo", returnTo);
     router.push(`/signup?${params.toString()}`);
   };
 
-  const getRecaptchaToken = async (action: "login" | "google_login") => {
+  const getRecaptchaToken = async (action: "login") => {
     if (!RECAPTCHA_SITE_KEY) return null;
 
     const g = (window as any)?.grecaptcha;
@@ -201,9 +255,15 @@ export default function LoginClient() {
     return { ok, json };
   };
 
-  // ✅ Redirection: si une Amoria existe -> /my-amoria sinon -> /create-amoria
-  // ⚠️ Important: si RLS bloque user_amoria, on affiche un message au lieu de rediriger n’importe où.
-  const redirectAfterLogin = async () => {
+  // ✅ redirection après login EMAIL
+  const redirectAfterEmailLogin = async () => {
+    // 1) priorité au returnTo (ex: /chat?... )
+    if (returnTo) {
+      router.replace(returnTo);
+      return;
+    }
+
+    // 2) sinon: logique safe (my-amoria ou create-amoria)
     const params = new URLSearchParams();
     params.set("lang", locale);
 
@@ -222,7 +282,6 @@ export default function LoginClient() {
       .select("id")
       .eq("user_id", user.id)
       .eq("is_archived", false)
-      // évite erreur si plusieurs lignes
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -230,7 +289,6 @@ export default function LoginClient() {
     if (error) {
       console.error("user_amoria lookup error:", error);
 
-      // Si c’est un blocage RLS / permission, ne redirige pas -> tu veux le voir.
       const msg = String((error as any)?.message ?? "").toLowerCase();
       const code = String((error as any)?.code ?? "");
       const looksLikeRls =
@@ -245,7 +303,6 @@ export default function LoginClient() {
         return;
       }
 
-      // sinon on reste sur un comportement safe
       router.replace(`/create-amoria?${params.toString()}`);
       return;
     }
@@ -260,16 +317,22 @@ export default function LoginClient() {
 
   const handleEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
-    if (loading) return;
+    if (loadingEmail || loadingGoogle) return;
 
-    setLoading(true);
+    setLoadingEmail(true);
     setErrorMsg(null);
 
     try {
+      if (!RECAPTCHA_SITE_KEY) {
+        setErrorMsg(t.missingKey);
+        setLoadingEmail(false);
+        return;
+      }
+
       const token = await getRecaptchaToken("login");
       if (!token) {
         setErrorMsg(t.errorRecaptcha);
-        setLoading(false);
+        setLoadingEmail(false);
         return;
       }
 
@@ -277,77 +340,82 @@ export default function LoginClient() {
       if (!ok) {
         console.error("reCAPTCHA verify failed:", json);
         setErrorMsg(t.errorRecaptcha);
-        setLoading(false);
+        setLoadingEmail(false);
         return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
         console.error("supabase signIn error", error);
         const msg = (error.message || "").toLowerCase();
         const looksAuthError =
-          msg.includes("invalid") ||
-          msg.includes("user not found") ||
-          msg.includes("credentials");
+          msg.includes("invalid") || msg.includes("user not found") || msg.includes("credentials");
 
         setErrorMsg(looksAuthError ? t.errorInvalid : t.errorGeneric);
-        setLoading(false);
+        setLoadingEmail(false);
         return;
       }
 
-      await redirectAfterLogin();
-      // pas besoin de setLoading(false) ici : on va naviguer
+      await redirectAfterEmailLogin();
     } catch (err) {
       console.error("login error", err);
       setErrorMsg(t.errorGeneric);
-      setLoading(false);
+      setLoadingEmail(false);
     }
   };
 
+  // ✅ Google OAuth: on passe lang + plan + returnTo au callback
   const handleGoogleLogin = async () => {
-  if (loading) return;
+    if (loadingEmail || loadingGoogle) return;
 
-  setLoading(true);
-  setErrorMsg(null);
+    setLoadingGoogle(true);
+    setErrorMsg(null);
 
-  try {
-    const origin = window.location.origin;
-    const params = new URLSearchParams();
-    params.set("lang", locale);
+    try {
+      const origin =
+        typeof window !== "undefined"
+          ? window.location.origin
+          : process.env.NEXT_PUBLIC_SITE_URL || "";
 
-    const redirectTo = `${origin}/auth/callback?${params.toString()}`;
+      const cbParams = new URLSearchParams();
+      cbParams.set("lang", locale);
+      cbParams.set("plan", plan);
+      if (returnTo) cbParams.set("returnTo", returnTo);
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo },
-    });
+      const redirectTo = `${origin}/auth/callback?${cbParams.toString()}`;
 
-    if (error) {
-      console.error("google oauth error", error);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          // ✅ optionnel (mais aide certains flows)
+          queryParams: { prompt: "select_account" },
+        },
+      });
+
+      if (error) {
+        console.error("google oauth error", error);
+        setErrorMsg(t.errorGeneric);
+        setLoadingGoogle(false);
+        return;
+      }
+      // Supabase redirige automatiquement
+    } catch (err) {
+      console.error("google login error", err);
       setErrorMsg(t.errorGeneric);
-      setLoading(false);
+      setLoadingGoogle(false);
     }
-    // sinon Supabase redirige automatiquement
-  } catch (err) {
-    console.error("google login error", err);
-    setErrorMsg(t.errorGeneric);
-    setLoading(false);
-  }
-};
+  };
 
-  const recaptchaMissing = !RECAPTCHA_SITE_KEY;
+  const isBusy = loadingEmail || loadingGoogle;
 
   return (
     <>
+      {/* reCAPTCHA V3 (utilisé pour email/password) */}
       {RECAPTCHA_SITE_KEY ? (
         <Script
-          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(
-            RECAPTCHA_SITE_KEY
-          )}`}
+          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`}
           strategy="afterInteractive"
         />
       ) : null}
@@ -364,20 +432,11 @@ export default function LoginClient() {
             <p className="auth-subtitle">{t.subtitle}</p>
           </header>
 
-          {recaptchaMissing ? (
-            <p className="auth-error" style={{ marginBottom: "1rem" }}>
-              {locale === "en"
-                ? "Missing reCAPTCHA key (NEXT_PUBLIC_RECAPTCHA_SITE_KEY)."
-                : locale === "es"
-                ? "Falta la clave reCAPTCHA (NEXT_PUBLIC_RECAPTCHA_SITE_KEY)."
-                : "Clé reCAPTCHA manquante (NEXT_PUBLIC_RECAPTCHA_SITE_KEY)."}
-            </p>
-          ) : null}
-
+          {/* GOOGLE */}
           <button
             type="button"
             onClick={handleGoogleLogin}
-            disabled={loading || !recaptchaReady}
+            disabled={isBusy}
             className="auth-google-btn"
           >
             <span className="auth-google-icon">
@@ -389,7 +448,7 @@ export default function LoginClient() {
                 style={{ width: "18px", height: "18px", objectFit: "contain" }}
               />
             </span>
-            <span>{t.google}</span>
+            <span>{loadingGoogle ? t.googleLoading : t.google}</span>
           </button>
 
           <div className="auth-divider">
@@ -398,6 +457,7 @@ export default function LoginClient() {
             <span className="auth-divider-line" />
           </div>
 
+          {/* EMAIL */}
           <form onSubmit={handleEmailLogin} noValidate className="auth-form">
             <div className="auth-field">
               <label className="auth-label">{t.emailLabel}</label>
@@ -409,6 +469,7 @@ export default function LoginClient() {
                 placeholder={t.emailPlaceholder}
                 className="auth-input"
                 autoComplete="email"
+                disabled={isBusy}
               />
             </div>
 
@@ -423,11 +484,13 @@ export default function LoginClient() {
                   placeholder={t.passwordPlaceholder}
                   className="auth-input auth-input-password"
                   autoComplete="current-password"
+                  disabled={isBusy}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   className="auth-password-toggle"
+                  disabled={isBusy}
                 >
                   {showPassword ? t.hide : t.show}
                 </button>
@@ -438,16 +501,17 @@ export default function LoginClient() {
 
             <button
               type="submit"
-              disabled={loading || !recaptchaReady}
+              disabled={isBusy || !recaptchaReady}
               className="auth-submit-btn"
+              title={!recaptchaReady ? "reCAPTCHA pas prêt" : undefined}
             >
-              {loading ? t.submitting : t.submit}
+              {loadingEmail ? t.submitting : t.submit}
             </button>
           </form>
 
           <div className="auth-footer">
             {t.noAccount}{" "}
-            <button type="button" onClick={goToSignup} className="auth-link-btn">
+            <button type="button" onClick={goToSignup} className="auth-link-btn" disabled={isBusy}>
               {t.signupLink}
             </button>
           </div>
@@ -723,6 +787,10 @@ export default function LoginClient() {
             text-decoration: underline;
             text-underline-offset: 2px;
           }
+          .auth-link-btn:disabled {
+            opacity: 0.6;
+            cursor: default;
+          }
           @media (max-width: 480px) {
             .auth-root {
               padding-inline: 1.1rem;
@@ -735,4 +803,4 @@ export default function LoginClient() {
       </main>
     </>
   );
-  }
+                                      }
