@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, FormEvent } from "react";
+import React, { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -8,7 +8,10 @@ type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 const CREATE_AMORIA_PATH = "/create-amoria";
-const AUTH_CALLBACK_PATH = "/auth/callback";
+
+// ✅ LE BON CALLBACK (API ROUTE)
+const AUTH_CALLBACK_PATH = "/api/auth/callback";
+
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
 
 /* ===========================
@@ -35,6 +38,8 @@ type Strings = {
   errorRecaptcha: string;
   confirmTitle: string;
   confirmBody: string;
+  show: string;
+  hide: string;
 };
 
 const STRINGS: Record<Locale, Strings> = {
@@ -59,6 +64,8 @@ const STRINGS: Record<Locale, Strings> = {
     confirmTitle: "✅ Ton compte a bien été créé.",
     confirmBody:
       "📩 Vérifie ton courriel pour confirmer ton inscription.\nUne fois confirmé, tu pourras créer ton AmorIAI.",
+    show: "Afficher",
+    hide: "Cacher",
   },
   en: {
     badge: "Create your AmorIAI account",
@@ -81,6 +88,8 @@ const STRINGS: Record<Locale, Strings> = {
     confirmTitle: "✅ Your account has been created.",
     confirmBody:
       "📩 Check your email to confirm your registration.\nOnce confirmed, you’ll be able to create your AmorIAI.",
+    show: "Show",
+    hide: "Hide",
   },
   es: {
     badge: "Crear tu cuenta AmorIAI",
@@ -103,6 +112,8 @@ const STRINGS: Record<Locale, Strings> = {
     confirmTitle: "✅ Tu cuenta ha sido creada.",
     confirmBody:
       "📩 Revisa tu correo para confirmar tu inscripción.\nUna vez confirmada, podrás crear tu AmorIAI.",
+    show: "Mostrar",
+    hide: "Ocultar",
   },
 };
 
@@ -122,10 +133,20 @@ function buildRedirectParams(locale: Locale) {
 }
 
 function setTempCookie(name: string, value: string, maxAgeSeconds = 600) {
-  // Secure marche en HTTPS (prod). En local http, Secure empêche le cookie.
-  // Donc on conditionne Secure selon le protocole.
-  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
+  const secure =
+    typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(
+    value
+  )}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
+}
+
+declare global {
+  interface Window {
+    grecaptcha?: {
+      ready: (cb: () => void) => void;
+      execute: (siteKey: string, opts: { action: string }) => Promise<string>;
+    };
+  }
 }
 
 /* ===========================
@@ -159,7 +180,9 @@ export default function SignupClient() {
 
     const script = document.createElement("script");
     script.id = "recaptcha-script";
-    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+    script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(
+      RECAPTCHA_SITE_KEY
+    )}`;
     script.async = true;
     script.defer = true;
     document.body.appendChild(script);
@@ -171,14 +194,14 @@ export default function SignupClient() {
   const runRecaptcha = async (): Promise<string | null> => {
     if (!RECAPTCHA_SITE_KEY) return null;
     if (typeof window === "undefined") return null;
-    if (!window.grecaptcha) return null;
+    if (!window.grecaptcha?.ready || !window.grecaptcha?.execute) return null;
 
     return new Promise((resolve) => {
       try {
-        window.grecaptcha.ready(() => {
-          window.grecaptcha
+        window.grecaptcha!.ready(() => {
+          window.grecaptcha!
             .execute(RECAPTCHA_SITE_KEY, { action: "signup" })
-            .then((token: string) => resolve(token))
+            .then((token) => resolve(token))
             .catch(() => resolve(null));
         });
       } catch {
@@ -238,7 +261,7 @@ export default function SignupClient() {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
       const params = buildRedirectParams(locale);
 
-      // ✅ Email confirmation redirect (server callback)
+      // ✅ Email confirmation redirect (API callback)
       const emailRedirectTo = `${origin}${AUTH_CALLBACK_PATH}?${params.toString()}`;
 
       const { data, error } = await supabase.auth.signUp({
@@ -282,16 +305,16 @@ export default function SignupClient() {
     try {
       const origin = window.location.origin;
 
-      // ✅ Construire la destination finale (create-amoria)
+      // ✅ Destination finale
       const params = buildRedirectParams(locale);
       const finalReturnTo = `${CREATE_AMORIA_PATH}?${params.toString()}`;
 
-      // ✅ Sauver dans cookies temporaires (au lieu de query string)
+      // ✅ Cookies temporaires (lus par /api/auth/callback)
       setTempCookie("amoria_lang", locale);
       setTempCookie("amoria_plan", "free");
       setTempCookie("amoria_returnTo", finalReturnTo);
 
-      // ✅ IMPORTANT: redirectTo SANS query params
+      // ✅ IMPORTANT: redirectTo vers l’API callback (sans query params)
       const redirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -336,12 +359,7 @@ export default function SignupClient() {
 
         {errorMsg && <p className="auth-error auth-error--block">{errorMsg}</p>}
 
-        <button
-          type="button"
-          onClick={handleGoogle}
-          disabled={loading}
-          className="auth-google-btn"
-        >
+        <button type="button" onClick={handleGoogle} disabled={loading} className="auth-google-btn">
           <span className="auth-google-icon">
             <img src="/google-g.png" alt="Google" className="auth-google-img" />
           </span>
@@ -365,6 +383,7 @@ export default function SignupClient() {
               placeholder={t.emailPlaceholder}
               className="auth-input"
               autoComplete="email"
+              disabled={loading}
             />
           </div>
 
@@ -380,13 +399,15 @@ export default function SignupClient() {
                 placeholder={t.passwordPlaceholder}
                 className="auth-input auth-input-password"
                 autoComplete="new-password"
+                disabled={loading}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 className="auth-password-toggle"
+                disabled={loading}
               >
-                {showPassword ? "Cacher" : "Afficher"}
+                {showPassword ? t.hide : t.show}
               </button>
             </div>
             <p className="auth-password-hint">{t.passwordHint}</p>
@@ -399,7 +420,7 @@ export default function SignupClient() {
 
         <div className="auth-footer">
           {t.haveAccount}{" "}
-          <button type="button" onClick={goToLogin} className="auth-link-btn">
+          <button type="button" onClick={goToLogin} className="auth-link-btn" disabled={loading}>
             {t.loginLink}
           </button>
         </div>
@@ -546,8 +567,8 @@ export default function SignupClient() {
           justify-content: center;
           gap: 0.55rem;
           cursor: pointer;
-          transition: background 0.15s ease, transform 0.1s ease,
-            box-shadow 0.15s ease, border-color 0.15s ease;
+          transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease,
+            border-color 0.15s ease;
         }
 
         .auth-google-btn:disabled {
@@ -639,8 +660,7 @@ export default function SignupClient() {
           font-size: 0.9rem;
           color: #e5e7eb;
           outline: none;
-          transition: border-color 0.15s ease, box-shadow 0.15s ease,
-            background 0.15s ease;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
         }
 
         .auth-input::placeholder {
@@ -649,8 +669,7 @@ export default function SignupClient() {
 
         .auth-input:focus {
           border-color: #f97316;
-          box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.65),
-            0 14px 38px rgba(15, 23, 42, 0.9);
+          box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.65), 0 14px 38px rgba(15, 23, 42, 0.9);
         }
 
         .auth-password-wrapper {
@@ -708,8 +727,7 @@ export default function SignupClient() {
           cursor: pointer;
           background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
           box-shadow: 0 18px 48px rgba(248, 113, 113, 0.7);
-          transition: transform 0.1s ease, box-shadow 0.15s ease,
-            filter 0.1s ease;
+          transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.1s ease;
         }
 
         .auth-submit-btn:disabled {
