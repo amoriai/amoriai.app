@@ -382,7 +382,7 @@ export default function LoginClient() {
       if (returnTo) cbParams.set("returnTo", returnTo);
 
       // ✅ IMPORTANT: /auth/callback (pas /callback, pas /api/auth/callback)
-      const redirectTo = `${origin}/auth/callback?${cbParams.toString()}`;
+      const redirectTo = `${origin}/api/auth/callback?${cbParams.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
