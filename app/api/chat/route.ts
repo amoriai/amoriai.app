@@ -26,19 +26,52 @@ function normalizePlanCode(raw: unknown): PlanCode {
   return "free";
 }
 
+type Lang = "fr" | "en" | "es";
+
+function normalizeLang(raw: unknown): Lang {
+  const v = String(raw ?? "").toLowerCase();
+  if (v === "en" || v === "es" || v === "fr") return v;
+  return "fr";
+}
+
+const I18N = {
+  quotaExceeded: {
+    fr: "Tu as atteint la limite de messages pour aujourd’hui. Réessaie demain ou upgrade ton forfait.",
+    en: "You’ve reached today’s message limit. Try again tomorrow or upgrade your plan.",
+    es: "Has alcanzado el límite de mensajes de hoy. Inténtalo mañana o mejora tu plan.",
+  },
+  fallbackReply: {
+    fr: "Je ne sais pas.",
+    en: "I don’t know.",
+    es: "No lo sé.",
+  },
+  missingIaId: {
+    fr: "missing_iaId",
+    en: "missing_iaId",
+    es: "missing_iaId",
+  },
+  missingMessage: {
+    fr: "missing_message",
+    en: "missing_message",
+    es: "missing_message",
+  },
+} as const;
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { iaId, message, lang, withAudio } = body as {
       iaId?: string;
       message?: string;
-      lang?: "fr" | "en" | "es";
+      lang?: Lang;
       withAudio?: boolean;
     };
 
-    if (!iaId) return NextResponse.json({ error: "missing_iaId" }, { status: 400 });
+    const safeLang = normalizeLang(lang);
+
+    if (!iaId) return NextResponse.json({ error: I18N.missingIaId[safeLang] }, { status: 400 });
     if (!message || !message.trim())
-      return NextResponse.json({ error: "missing_message" }, { status: 400 });
+      return NextResponse.json({ error: I18N.missingMessage[safeLang] }, { status: 400 });
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -163,28 +196,37 @@ export async function POST(req: Request) {
           planName,
           planCode,
           details: usage,
-          message:
-            "Tu as atteint la limite de messages pour aujourd’hui. Réessaie demain ou upgrade ton forfait.",
+          message: I18N.quotaExceeded[safeLang],
         },
         { status: 429 }
       );
     }
 
     /* ===========================
-       5) System prompt selon la langue
-    =========================== */
+       5) System prompt + verrou de langue (PRO)
+=========================== */
+
     const defaultSystemPromptFr =
-      "Tu es une IA de compagnie bienveillante et chaleureuse. Tu réponds en français avec un ton naturel, doux et empathique.";
+      "Tu es une IA de compagnie bienveillante et chaleureuse. Tu réponds avec un ton naturel, doux et empathique.";
     const defaultSystemPromptEn =
-      "You are a caring, warm AI companion. Answer in natural, friendly, empathetic English.";
+      "You are a caring, warm AI companion. Answer with a natural, friendly, empathetic tone.";
     const defaultSystemPromptEs =
-      "Eres una IA compañera cálida y cariñosa. Respondes en español con un tono natural y empático.";
+      "Eres una IA compañera cálida y cariñosa. Responde con un tono natural y empático.";
 
     let defaultSystemPrompt = defaultSystemPromptFr;
-    if (lang === "en") defaultSystemPrompt = defaultSystemPromptEn;
-    if (lang === "es") defaultSystemPrompt = defaultSystemPromptEs;
+    if (safeLang === "en") defaultSystemPrompt = defaultSystemPromptEn;
+    if (safeLang === "es") defaultSystemPrompt = defaultSystemPromptEs;
 
-    const systemPrompt = iaRow.system_prompt || defaultSystemPrompt;
+    // Persona de la DB (si présent) sinon default
+    const personaPrompt = (iaRow.system_prompt?.trim() || defaultSystemPrompt).trim();
+
+    // 🔒 Verrou de langue (toujours en dernier)
+    const languageLock =
+      safeLang === "fr"
+        ? "RÈGLE ABSOLUE : réponds UNIQUEMENT en français. Ne change jamais de langue, même si l’utilisateur écrit en anglais ou en espagnol."
+        : safeLang === "en"
+        ? "ABSOLUTE RULE: reply ONLY in English. Never switch language, even if the user writes in French or Spanish."
+        : "REGLA ABSOLUTA: responde SOLO en español. No cambies de idioma, incluso si el usuario escribe en francés o en inglés.";
 
     /* ===========================
        6) Sauver le message user (PAYANT seulement)
@@ -212,7 +254,8 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: "gpt-4.1-mini",
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: personaPrompt },
+          { role: "system", content: languageLock },
           { role: "user", content: message.trim() },
         ],
       }),
@@ -226,7 +269,7 @@ export async function POST(req: Request) {
 
     const chatData = await chatRes.json();
     const text: string =
-      chatData?.choices?.[0]?.message?.content?.trim() || "Je ne sais pas.";
+      chatData?.choices?.[0]?.message?.content?.trim() || I18N.fallbackReply[safeLang];
 
     /* ===========================
        8) Sauver la réponse assistant (PAYANT seulement)
@@ -296,6 +339,7 @@ export async function POST(req: Request) {
       quota_per_day: quota,
       remaining_today: usage?.remaining ?? null,
       history_enabled: canStoreHistory,
+      lang: safeLang, // utile pour debug
     });
   } catch (e) {
     console.error("Server error in /api/chat:", e);
