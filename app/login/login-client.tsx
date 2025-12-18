@@ -151,7 +151,7 @@ function normalizePlan(raw: string | null): PlanId {
   return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
 }
 
-// sécurité: returnTo interne seulement (évite open redirect / bypass)
+// ✅ returnTo interne seulement
 function safeReturnTo(raw: string | null): string | null {
   if (!raw) return null;
   const v = raw.trim();
@@ -159,6 +159,12 @@ function safeReturnTo(raw: string | null): string | null {
   if (v.startsWith("//")) return null;
   if (v.includes("\\")) return null;
   return v;
+}
+
+// ✅ cookies temporaires (flow Google)
+function setTempCookie(name: string, value: string, maxAgeSeconds = 600) {
+  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
 }
 
 export default function LoginClient() {
@@ -181,7 +187,7 @@ export default function LoginClient() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [recaptchaReady, setRecaptchaReady] = useState(false);
 
-  // reCAPTCHA ready (utilisé pour email/password seulement)
+  // reCAPTCHA ready (email/password seulement)
   useEffect(() => {
     if (!RECAPTCHA_SITE_KEY) {
       setRecaptchaReady(false);
@@ -251,6 +257,7 @@ export default function LoginClient() {
     return { ok, json };
   };
 
+  // ✅ redirection après login email
   const redirectAfterEmailLogin = async () => {
     if (returnTo) {
       router.replace(returnTo);
@@ -259,6 +266,7 @@ export default function LoginClient() {
 
     const params = new URLSearchParams();
     params.set("lang", locale);
+    params.set("plan", plan);
 
     const {
       data: { user },
@@ -305,7 +313,8 @@ export default function LoginClient() {
       return;
     }
 
-    router.replace(`/my-amoria?${params.toString()}`);
+    // ✅ cohérent avec ton app actuelle
+    router.replace(`/my-ai?${params.toString()}`);
   };
 
   const handleEmailLogin = async (e: FormEvent) => {
@@ -357,7 +366,7 @@ export default function LoginClient() {
     }
   };
 
-  // Google OAuth: redirectTo => /api/auth/callback (route handler)
+  // ✅ Google OAuth (FIX): cookies + redirectTo sans query params
   const handleGoogleLogin = async () => {
     if (loadingEmail || loadingGoogle) return;
 
@@ -367,13 +376,20 @@ export default function LoginClient() {
     try {
       const origin = window.location.origin;
 
-      const cbParams = new URLSearchParams();
-      cbParams.set("lang", locale);
-      cbParams.set("plan", plan);
-      if (returnTo) cbParams.set("returnTo", returnTo);
+      // ✅ destination finale (après callback)
+      const params = new URLSearchParams();
+      params.set("lang", locale);
+      params.set("plan", plan);
 
-      // IMPORTANT: URL publique = /api/auth/callback (PAS /app/api/...)
-      const redirectTo = `${origin}/api/auth/callback?${cbParams.toString()}`;
+      // si on a returnTo, on le respecte; sinon on choisit create-amoria
+      const finalReturnTo = returnTo ? returnTo : `/create-amoria?${params.toString()}`;
+
+      setTempCookie("amoria_lang", locale);
+      setTempCookie("amoria_plan", plan);
+      setTempCookie("amoria_returnTo", finalReturnTo);
+
+      // ✅ IMPORTANT
+      const redirectTo = `${origin}/api/auth/callback`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -389,7 +405,6 @@ export default function LoginClient() {
         setLoadingGoogle(false);
         return;
       }
-      // Supabase redirige automatiquement
     } catch (err) {
       console.error("google login error", err);
       setErrorMsg(t.errorGeneric);
@@ -401,7 +416,7 @@ export default function LoginClient() {
 
   return (
     <>
-      {/* reCAPTCHA V3 (utilisé pour email/password) */}
+      {/* reCAPTCHA V3 (email/password seulement) */}
       {RECAPTCHA_SITE_KEY ? (
         <Script
           src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`}
@@ -787,4 +802,4 @@ export default function LoginClient() {
       </main>
     </>
   );
-}
+        }
