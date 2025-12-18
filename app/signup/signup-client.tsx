@@ -9,7 +9,9 @@ type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 const CREATE_AMORIA_PATH = "/create-amoria";
 const AUTH_CALLBACK_PATH = "/api/auth/callback";
+
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
+const MIN_RECAPTCHA_SCORE = 0.5;
 
 /* ===========================
    TEXTES PAR LANGUE
@@ -151,15 +153,6 @@ function setTempCookie(name: string, value: string, maxAgeSeconds = 600) {
   document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
 }
 
-declare global {
-  interface Window {
-    grecaptcha?: {
-      ready: (cb: () => void) => void;
-      execute: (siteKey: string, opts: { action: string }) => Promise<string>;
-    };
-  }
-}
-
 /* ===========================
    COMPONENT
 =========================== */
@@ -197,14 +190,15 @@ export default function SignupClient() {
   const runRecaptcha = async (action: "signup"): Promise<string | null> => {
     if (!RECAPTCHA_SITE_KEY) return null;
     if (typeof window === "undefined") return null;
-    if (!window.grecaptcha?.ready || !window.grecaptcha?.execute) return null;
+
+    const g = (window as any)?.grecaptcha;
+    if (!g?.ready || !g?.execute) return null;
 
     return new Promise((resolve) => {
       try {
-        window.grecaptcha!.ready(() => {
-          window.grecaptcha!
-            .execute(RECAPTCHA_SITE_KEY, { action })
-            .then((token) => resolve(token))
+        g.ready(() => {
+          g.execute(RECAPTCHA_SITE_KEY, { action })
+            .then((token: string) => resolve(token))
             .catch(() => resolve(null));
         });
       } catch {
@@ -221,7 +215,12 @@ export default function SignupClient() {
     });
 
     const json = await res.json().catch(() => ({}));
-    const ok = res.ok && (json as any)?.success === true;
+
+    const ok =
+      res.ok &&
+      (json as any)?.success === true &&
+      typeof (json as any)?.score === "number" &&
+      (json as any).score >= MIN_RECAPTCHA_SCORE;
 
     return { ok, json };
   };
@@ -235,9 +234,12 @@ export default function SignupClient() {
   };
 
   const redirectAfterSignup = () => {
+    if (returnTo) {
+      router.replace(returnTo);
+      return;
+    }
     const params = buildRedirectParams(locale, plan);
-    const dest = returnTo ? returnTo : `${CREATE_AMORIA_PATH}?${params.toString()}`;
-    router.replace(dest);
+    router.replace(`${CREATE_AMORIA_PATH}?${params.toString()}`);
   };
 
   /* ===========================
@@ -268,7 +270,7 @@ export default function SignupClient() {
       const origin = window.location.origin;
       const params = buildRedirectParams(locale, plan);
 
-      // Email confirmation => on repasse par l’API callback (avec query params)
+      // ✅ Email confirmation: OK d'avoir les query params ici
       const emailRedirectTo = `${origin}${AUTH_CALLBACK_PATH}?${params.toString()}`;
 
       const { data, error } = await supabase.auth.signUp({
@@ -283,7 +285,7 @@ export default function SignupClient() {
         return;
       }
 
-      // Si pas de session => email confirmation obligatoire
+      // Pas de session => confirmation email obligatoire
       if (!data?.session) {
         setWaitingConfirmation(true);
         return;
@@ -300,7 +302,7 @@ export default function SignupClient() {
   };
 
   /* ===========================
-     Google OAuth
+     Google OAuth (sans query params)
   =========================== */
   const handleGoogle = async () => {
     if (loading) return;
@@ -321,7 +323,7 @@ export default function SignupClient() {
       setTempCookie("amoria_plan", plan);
       setTempCookie("amoria_returnTo", finalReturnTo);
 
-      // redirectTo => API callback sans query params
+      // ✅ redirectTo => /api/auth/callback sans query params
       const redirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -765,4 +767,4 @@ export default function SignupClient() {
       `}</style>
     </main>
   );
-         }
+      }
