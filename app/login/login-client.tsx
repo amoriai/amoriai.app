@@ -257,13 +257,11 @@ export default function LoginClient() {
 
   // ✅ redirection après login EMAIL
   const redirectAfterEmailLogin = async () => {
-    // 1) priorité au returnTo (ex: /chat?... )
     if (returnTo) {
       router.replace(returnTo);
       return;
     }
 
-    // 2) sinon: logique safe (my-amoria ou create-amoria)
     const params = new URLSearchParams();
     params.set("lang", locale);
 
@@ -365,7 +363,7 @@ export default function LoginClient() {
     }
   };
 
-  // ✅ Google OAuth: on passe lang + plan + returnTo au callback
+  // ✅ Google OAuth: redirectTo => /auth/callback (route handler)
   const handleGoogleLogin = async () => {
     if (loadingEmail || loadingGoogle) return;
 
@@ -383,13 +381,13 @@ export default function LoginClient() {
       cbParams.set("plan", plan);
       if (returnTo) cbParams.set("returnTo", returnTo);
 
+      // ✅ IMPORTANT: /auth/callback (pas /callback, pas /api/auth/callback)
       const redirectTo = `${origin}/auth/callback?${cbParams.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo,
-          // ✅ optionnel (mais aide certains flows)
           queryParams: { prompt: "select_account" },
         },
       });
@@ -433,12 +431,7 @@ export default function LoginClient() {
           </header>
 
           {/* GOOGLE */}
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={isBusy}
-            className="auth-google-btn"
-          >
+          <button type="button" onClick={handleGoogleLogin} disabled={isBusy} className="auth-google-btn">
             <span className="auth-google-icon">
               <Image
                 src="/google-g.png"
@@ -803,4 +796,4 @@ export default function LoginClient() {
       </main>
     </>
   );
-                                      }
+}
