@@ -10,7 +10,9 @@ function normalizeLocale(raw: string | null): Locale {
 }
 
 function normalizePlan(raw: string | null): PlanId {
-  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
+    ? raw
+    : "free";
 }
 
 /**
@@ -48,7 +50,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   console.log("[api/auth/callback] hit:", url.toString());
 
-  // Provider error direct
+  // 1) Erreur renvoyée par le provider (Google)
   const oauthError = url.searchParams.get("error");
   const oauthErrorDesc = url.searchParams.get("error_description");
   if (oauthError) {
@@ -65,7 +67,7 @@ export async function GET(request: Request) {
     return res;
   }
 
-  // Code obligatoire
+  // 2) Code obligatoire (OAuth + email confirm)
   const code = url.searchParams.get("code");
   if (!code) {
     const langQ = normalizeLocale(url.searchParams.get("lang"));
@@ -77,10 +79,10 @@ export async function GET(request: Request) {
     return res;
   }
 
+  // 3) Exchange code -> session
   const supabase = createRouteHandlerClient({ cookies });
-
-  // Exchange code -> session
   const { error } = await supabase.auth.exchangeCodeForSession(code);
+
   if (error) {
     console.error("[api/auth/callback] exchangeCodeForSession error:", error);
 
@@ -93,7 +95,7 @@ export async function GET(request: Request) {
     return res;
   }
 
-  // Session check
+  // 4) Vérifie qu'on a bien une session
   const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
   if (sessionErr || !sessionData.session?.user) {
     console.error("[api/auth/callback] no session after exchange:", sessionErr);
@@ -108,25 +110,26 @@ export async function GET(request: Request) {
   }
 
   /**
-   * ✅ Lecture des infos :
+   * 5) Lecture des infos:
    * - Google OAuth: cookies temporaires (amoria_*)
    * - Email confirmation: query params (lang/plan/returnTo) car cookies peuvent manquer
    */
   const lang = normalizeLocale(url.searchParams.get("lang") ?? getCookieDecoded("amoria_lang"));
   const plan = normalizePlan(url.searchParams.get("plan") ?? getCookieDecoded("amoria_plan"));
-  const returnTo = safeReturnTo(url.searchParams.get("returnTo") ?? getCookieDecoded("amoria_returnTo"));
+  const returnTo = safeReturnTo(
+    url.searchParams.get("returnTo") ?? getCookieDecoded("amoria_returnTo")
+  );
 
-  // ✅ Destination finale
+  // 6) Destination finale
   let dest = `/create-amoria?lang=${lang}&plan=${plan}`;
 
   if (returnTo) {
     dest = returnTo;
   } else if (plan !== "free") {
-    // adapte à TES routes existantes
     dest = `/payment?lang=${lang}&plan=${plan}`;
   }
 
   const res = NextResponse.redirect(new URL(dest, url.origin));
   clearTempCookies(res);
   return res;
-      
+}
