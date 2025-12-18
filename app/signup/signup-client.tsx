@@ -41,8 +41,7 @@ const STRINGS: Record<Locale, Strings> = {
   fr: {
     badge: "Création de compte AmorIAI",
     title: "Créer ton compte",
-    subtitle:
-      "Active ton accès gratuit, puis crée ton premier AmorIAI en quelques secondes.",
+    subtitle: "Active ton accès gratuit, puis crée ton premier AmorIAI en quelques secondes.",
     google: "Continuer avec Google",
     or: "ou",
     emailLabel: "Adresse courriel",
@@ -56,8 +55,7 @@ const STRINGS: Record<Locale, Strings> = {
     loginLink: "Me connecter",
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
     errorGoogle: "Une erreur est survenue avec la connexion Google.",
-    errorRecaptcha:
-      "La vérification de sécurité (reCAPTCHA) a échoué. Merci de réessayer.",
+    errorRecaptcha: "La vérification de sécurité (reCAPTCHA) a échoué. Merci de réessayer.",
     confirmTitle: "✅ Ton compte a bien été créé.",
     confirmBody:
       "📩 Vérifie ton courriel pour confirmer ton inscription.\nUne fois confirmé, tu pourras créer ton AmorIAI.",
@@ -65,8 +63,7 @@ const STRINGS: Record<Locale, Strings> = {
   en: {
     badge: "Create your AmorIAI account",
     title: "Create your account",
-    subtitle:
-      "Activate your free access, then create your first AmorIAI in a few seconds.",
+    subtitle: "Activate your free access, then create your first AmorIAI in a few seconds.",
     google: "Continue with Google",
     or: "or",
     emailLabel: "Email address",
@@ -88,8 +85,7 @@ const STRINGS: Record<Locale, Strings> = {
   es: {
     badge: "Crear tu cuenta AmorIAI",
     title: "Crear tu cuenta",
-    subtitle:
-      "Activa tu acceso gratuito y luego crea tu primer AmorIAI en segundos.",
+    subtitle: "Activa tu acceso gratuito y luego crea tu primer AmorIAI en segundos.",
     google: "Continuar con Google",
     or: "o",
     emailLabel: "Correo electrónico",
@@ -103,8 +99,7 @@ const STRINGS: Record<Locale, Strings> = {
     loginLink: "Iniciar sesión",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     errorGoogle: "Ocurrió un error con el inicio de sesión de Google.",
-    errorRecaptcha:
-      "La verificación de seguridad (reCAPTCHA) ha fallado. Inténtalo de nuevo.",
+    errorRecaptcha: "La verificación de seguridad (reCAPTCHA) ha fallado. Inténtalo de nuevo.",
     confirmTitle: "✅ Tu cuenta ha sido creada.",
     confirmBody:
       "📩 Revisa tu correo para confirmar tu inscripción.\nUna vez confirmada, podrás crear tu AmorIAI.",
@@ -126,6 +121,13 @@ function buildRedirectParams(locale: Locale) {
   return params;
 }
 
+function setTempCookie(name: string, value: string, maxAgeSeconds = 600) {
+  // Secure marche en HTTPS (prod). En local http, Secure empêche le cookie.
+  // Donc on conditionne Secure selon le protocole.
+  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
+}
+
 /* ===========================
    COMPONENT
 =========================== */
@@ -134,10 +136,7 @@ export default function SignupClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const locale = useMemo(
-    () => normalizeLocale(searchParams.get("lang")),
-    [searchParams]
-  );
+  const locale = useMemo(() => normalizeLocale(searchParams.get("lang")), [searchParams]);
   const t = STRINGS[locale];
 
   const [email, setEmail] = useState("");
@@ -229,7 +228,6 @@ export default function SignupClient() {
       });
 
       const verifyJson = await verifyRes.json().catch(() => ({}));
-
       if (!verifyRes.ok || !verifyJson?.success) {
         console.error("verify-recaptcha failed:", verifyJson);
         setErrorMsg(t.errorRecaptcha);
@@ -237,9 +235,10 @@ export default function SignupClient() {
       }
 
       // 3) Supabase signup
-      const origin =
-        typeof window !== "undefined" ? window.location.origin : "";
+      const origin = typeof window !== "undefined" ? window.location.origin : "";
       const params = buildRedirectParams(locale);
+
+      // ✅ Email confirmation redirect (server callback)
       const emailRedirectTo = `${origin}${AUTH_CALLBACK_PATH}?${params.toString()}`;
 
       const { data, error } = await supabase.auth.signUp({
@@ -271,7 +270,7 @@ export default function SignupClient() {
   };
 
   /* ===========================
-     Google OAuth
+     Google OAuth (FIXED)
   =========================== */
   const handleGoogle = async () => {
     if (loading) return;
@@ -281,18 +280,19 @@ export default function SignupClient() {
     setWaitingConfirmation(false);
 
     try {
-      const origin =
-        typeof window !== "undefined" ? window.location.origin : "";
+      const origin = window.location.origin;
 
-      // ✅ même base params (lang + plan=free)
+      // ✅ Construire la destination finale (create-amoria)
       const params = buildRedirectParams(locale);
+      const finalReturnTo = `${CREATE_AMORIA_PATH}?${params.toString()}`;
 
-      // ✅ on demande au callback d'aller DIRECT à create-amoria
-      const returnTo = `${CREATE_AMORIA_PATH}?${params.toString()}`;
-      params.set("returnTo", returnTo);
+      // ✅ Sauver dans cookies temporaires (au lieu de query string)
+      setTempCookie("amoria_lang", locale);
+      setTempCookie("amoria_plan", "free");
+      setTempCookie("amoria_returnTo", finalReturnTo);
 
-      // ✅ redirectTo = callback + (lang/plan/returnTo)
-      const redirectTo = `${origin}${AUTH_CALLBACK_PATH}?${params.toString()}`;
+      // ✅ IMPORTANT: redirectTo SANS query params
+      const redirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -314,7 +314,6 @@ export default function SignupClient() {
   /* ===========================
      RENDER
   =========================== */
-
   return (
     <main className="auth-root">
       <div className="auth-gradient-orbit" />
@@ -768,4 +767,4 @@ export default function SignupClient() {
       `}</style>
     </main>
   );
-            }
+}
