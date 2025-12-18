@@ -8,6 +8,7 @@ type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 const CREATE_AMORIA_PATH = "/create-amoria";
+const AUTH_CALLBACK_PATH = "/auth/callback";
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
 
 /* ===========================
@@ -170,6 +171,7 @@ export default function SignupClient() {
   =========================== */
   const runRecaptcha = async (): Promise<string | null> => {
     if (!RECAPTCHA_SITE_KEY) return null;
+    if (typeof window === "undefined") return null;
     if (!window.grecaptcha) return null;
 
     return new Promise((resolve) => {
@@ -238,7 +240,7 @@ export default function SignupClient() {
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
       const params = buildRedirectParams(locale);
-      const emailRedirectTo = `${origin}/auth/callback?${params.toString()}`;
+      const emailRedirectTo = `${origin}${AUTH_CALLBACK_PATH}?${params.toString()}`;
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -282,8 +284,15 @@ export default function SignupClient() {
       const origin =
         typeof window !== "undefined" ? window.location.origin : "";
 
+      // ✅ même base params (lang + plan=free)
       const params = buildRedirectParams(locale);
-      const redirectTo = `${origin}/auth/callback?${params.toString()}`;
+
+      // ✅ on demande au callback d'aller DIRECT à create-amoria
+      const returnTo = `${CREATE_AMORIA_PATH}?${params.toString()}`;
+      params.set("returnTo", returnTo);
+
+      // ✅ redirectTo = callback + (lang/plan/returnTo)
+      const redirectTo = `${origin}${AUTH_CALLBACK_PATH}?${params.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
@@ -759,4 +768,4 @@ export default function SignupClient() {
       `}</style>
     </main>
   );
-  }
+            }
