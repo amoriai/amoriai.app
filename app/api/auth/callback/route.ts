@@ -16,97 +16,97 @@ function normalizePlan(raw: string | null): PlanId {
 }
 
 /**
- * Autorise uniquement:
- * - chemins relatifs internes qui commencent par "/"
- * - sans protocole (http/https), sans "//", sans backslashes
+ * Autorise uniquement un chemin interne:
+ * - commence par "/"
+ * - refuse "//" (open redirect)
+ * - refuse "\" (bypass)
  */
 function safeReturnTo(raw: string | null): string | null {
   if (!raw) return null;
-
-  // Trim + refuse backslashes (Windows-style) pour éviter des bypass
   const v = raw.trim();
   if (!v.startsWith("/")) return null;
   if (v.startsWith("//")) return null;
   if (v.includes("\\")) return null;
-
-  // Empêche les URLs absolues déguisées dans des paramètres
-  // (ex: "/\\evil.com" déjà bloqué par backslash, ou "/%2F%2Fevil.com" côté decode)
-  // Ici on garde simple: chemins internes seulement.
   return v;
 }
 
-function buildUrl(origin: string, pathWithQuery: string) {
-  return new URL(pathWithQuery, origin);
+function getCookieDecoded(name: string): string | null {
+  const c = cookies().get(name)?.value;
+  if (!c) return null;
+  try {
+    return decodeURIComponent(c);
+  } catch {
+    return c; // au pire, non décodé
+  }
+}
+
+function clearTempCookies(res: NextResponse) {
+  res.cookies.set("amoria_lang", "", { path: "/", maxAge: 0 });
+  res.cookies.set("amoria_plan", "", { path: "/", maxAge: 0 });
+  res.cookies.set("amoria_returnTo", "", { path: "/", maxAge: 0 });
 }
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
 
-  // Logs utiles pour débug (vercel logs)
+  // Logs utiles (Vercel logs / local)
   console.log("[auth/callback] hit:", url.toString());
 
-  // Certaines erreurs OAuth arrivent via ces params
+  // Certains providers renvoient une erreur directement
   const oauthError = url.searchParams.get("error");
   const oauthErrorDesc = url.searchParams.get("error_description");
-
-  const code = url.searchParams.get("code");
-  const lang = normalizeLocale(url.searchParams.get("lang"));
-  const plan = normalizePlan(url.searchParams.get("plan"));
-  const returnTo = safeReturnTo(url.searchParams.get("returnTo"));
-
-  // Si provider renvoie une erreur directement
   if (oauthError) {
     console.error("[auth/callback] oauth error:", oauthError, oauthErrorDesc);
-    return NextResponse.redirect(
-      buildUrl(
-        url.origin,
-        `/login?lang=${lang}&error=${encodeURIComponent(oauthError)}`
-      )
-    );
+
+    const lang = normalizeLocale(getCookieDecoded("amoria_lang"));
+    const res = NextResponse.redirect(new URL(`/login?lang=${lang}&error=${encodeURIComponent(oauthError)}`, url.origin));
+    clearTempCookies(res);
+    return res;
   }
 
-  // Pas de code => retour login (avec langue)
+  const code = url.searchParams.get("code");
   if (!code) {
-    return NextResponse.redirect(
-      buildUrl(url.origin, `/login?lang=${lang}&error=missing_code`)
-    );
+    const lang = normalizeLocale(getCookieDecoded("amoria_lang"));
+    const res = NextResponse.redirect(new URL(`/login?lang=${lang}&error=missing_code`, url.origin));
+    clearTempCookies(res);
+    return res;
   }
 
   const supabase = createRouteHandlerClient({ cookies });
 
-  // Échange code -> session (cookies)
+  // Exchange code -> session
   const { error } = await supabase.auth.exchangeCodeForSession(code);
-
   if (error) {
     console.error("[auth/callback] exchangeCodeForSession error:", error);
-    return NextResponse.redirect(
-      buildUrl(url.origin, `/login?lang=${lang}&error=oauth_exchange`)
-    );
+
+    const lang = normalizeLocale(getCookieDecoded("amoria_lang"));
+    const res = NextResponse.redirect(new URL(`/login?lang=${lang}&error=oauth_exchange`, url.origin));
+    clearTempCookies(res);
+    return res;
   }
 
-  // Optionnel mais utile: confirmer la session après échange
+  // Confirmer la session (optionnel mais utile)
   const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
   if (sessionErr || !sessionData.session?.user) {
     console.error("[auth/callback] no session after exchange:", sessionErr);
-    return NextResponse.redirect(
-      buildUrl(url.origin, `/login?lang=${lang}&error=no_session`)
-    );
+
+    const lang = normalizeLocale(getCookieDecoded("amoria_lang"));
+    const res = NextResponse.redirect(new URL(`/login?lang=${lang}&error=no_session`, url.origin));
+    clearTempCookies(res);
+    return res;
   }
 
-  // 1) priorité returnTo (si safe)
-  if (returnTo) {
-    return NextResponse.redirect(buildUrl(url.origin, returnTo));
-  }
+  // ✅ Lire les infos depuis cookies (posés AVANT redirect Google)
+  const lang = normalizeLocale(getCookieDecoded("amoria_lang"));
+  const plan = normalizePlan(getCookieDecoded("amoria_plan"));
+  const returnTo = safeReturnTo(getCookieDecoded("amoria_returnTo"));
 
-  // 2) payant -> subscription
-  if (plan !== "free") {
-    return NextResponse.redirect(
-      buildUrl(url.origin, `/subscription?lang=${lang}&plan=${plan}`)
-    );
-  }
+  // ✅ Destination finale
+  let dest = `/create-amoria?lang=${lang}&plan=${plan}`;
+  if (returnTo) dest = returnTo;
+  else if (plan !== "free") dest = `/subscription?lang=${lang}&plan=${plan}`;
 
-  // 3) free -> create-amoria direct
-  return NextResponse.redirect(
-    buildUrl(url.origin, `/create-amoria?lang=${lang}&plan=${plan}`)
-  );
+  const res = NextResponse.redirect(new URL(dest, url.origin));
+  clearTempCookies(res);
+  return res;
 }
