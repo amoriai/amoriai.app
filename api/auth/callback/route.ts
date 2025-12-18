@@ -10,9 +10,7 @@ function normalizeLocale(raw: string | null): Locale {
 }
 
 function normalizePlan(raw: string | null): PlanId {
-  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
-    ? raw
-    : "free";
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
 }
 
 /**
@@ -36,7 +34,7 @@ function getCookieDecoded(name: string): string | null {
   try {
     return decodeURIComponent(c);
   } catch {
-    return c; // au pire, non décodé
+    return c;
   }
 }
 
@@ -48,25 +46,32 @@ function clearTempCookies(res: NextResponse) {
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  console.log("[api/auth/callback] hit:", url.toString());
 
-  // Logs utiles (Vercel logs / local)
-  console.log("[auth/callback] hit:", url.toString());
-
-  // Certains providers renvoient une erreur directement
+  // Provider error direct
   const oauthError = url.searchParams.get("error");
   const oauthErrorDesc = url.searchParams.get("error_description");
   if (oauthError) {
-    console.error("[auth/callback] oauth error:", oauthError, oauthErrorDesc);
+    console.error("[api/auth/callback] oauth error:", oauthError, oauthErrorDesc);
 
-    const lang = normalizeLocale(getCookieDecoded("amoria_lang"));
-    const res = NextResponse.redirect(new URL(`/login?lang=${lang}&error=${encodeURIComponent(oauthError)}`, url.origin));
+    const langQ = normalizeLocale(url.searchParams.get("lang"));
+    const langC = normalizeLocale(getCookieDecoded("amoria_lang"));
+    const lang = langQ || langC || "fr";
+
+    const res = NextResponse.redirect(
+      new URL(`/login?lang=${lang}&error=${encodeURIComponent(oauthError)}`, url.origin)
+    );
     clearTempCookies(res);
     return res;
   }
 
+  // Code obligatoire
   const code = url.searchParams.get("code");
   if (!code) {
-    const lang = normalizeLocale(getCookieDecoded("amoria_lang"));
+    const langQ = normalizeLocale(url.searchParams.get("lang"));
+    const langC = normalizeLocale(getCookieDecoded("amoria_lang"));
+    const lang = langQ || langC || "fr";
+
     const res = NextResponse.redirect(new URL(`/login?lang=${lang}&error=missing_code`, url.origin));
     clearTempCookies(res);
     return res;
@@ -77,36 +82,51 @@ export async function GET(request: Request) {
   // Exchange code -> session
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    console.error("[auth/callback] exchangeCodeForSession error:", error);
+    console.error("[api/auth/callback] exchangeCodeForSession error:", error);
 
-    const lang = normalizeLocale(getCookieDecoded("amoria_lang"));
+    const langQ = normalizeLocale(url.searchParams.get("lang"));
+    const langC = normalizeLocale(getCookieDecoded("amoria_lang"));
+    const lang = langQ || langC || "fr";
+
     const res = NextResponse.redirect(new URL(`/login?lang=${lang}&error=oauth_exchange`, url.origin));
     clearTempCookies(res);
     return res;
   }
 
-  // Confirmer la session (optionnel mais utile)
+  // Session check
   const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
   if (sessionErr || !sessionData.session?.user) {
-    console.error("[auth/callback] no session after exchange:", sessionErr);
+    console.error("[api/auth/callback] no session after exchange:", sessionErr);
 
-    const lang = normalizeLocale(getCookieDecoded("amoria_lang"));
+    const langQ = normalizeLocale(url.searchParams.get("lang"));
+    const langC = normalizeLocale(getCookieDecoded("amoria_lang"));
+    const lang = langQ || langC || "fr";
+
     const res = NextResponse.redirect(new URL(`/login?lang=${lang}&error=no_session`, url.origin));
     clearTempCookies(res);
     return res;
   }
 
-  // ✅ Lire les infos depuis cookies (posés AVANT redirect Google)
-  const lang = normalizeLocale(getCookieDecoded("amoria_lang"));
-  const plan = normalizePlan(getCookieDecoded("amoria_plan"));
-  const returnTo = safeReturnTo(getCookieDecoded("amoria_returnTo"));
+  /**
+   * ✅ Lecture des infos :
+   * - Google OAuth: cookies temporaires (amoria_*)
+   * - Email confirmation: query params (lang/plan/returnTo) car cookies peuvent manquer
+   */
+  const lang = normalizeLocale(url.searchParams.get("lang") ?? getCookieDecoded("amoria_lang"));
+  const plan = normalizePlan(url.searchParams.get("plan") ?? getCookieDecoded("amoria_plan"));
+  const returnTo = safeReturnTo(url.searchParams.get("returnTo") ?? getCookieDecoded("amoria_returnTo"));
 
   // ✅ Destination finale
   let dest = `/create-amoria?lang=${lang}&plan=${plan}`;
-  if (returnTo) dest = returnTo;
-  else if (plan !== "free") dest = `/subscription?lang=${lang}&plan=${plan}`;
+
+  if (returnTo) {
+    dest = returnTo;
+  } else if (plan !== "free") {
+    // adapte à TES routes existantes
+    dest = `/payment?lang=${lang}&plan=${plan}`;
+  }
 
   const res = NextResponse.redirect(new URL(dest, url.origin));
   clearTempCookies(res);
   return res;
-}
+                             }
