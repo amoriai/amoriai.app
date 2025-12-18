@@ -8,11 +8,8 @@ type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 const CREATE_AMORIA_PATH = "/create-amoria";
-
-// ✅ LE BON CALLBACK (API ROUTE)
 const AUTH_CALLBACK_PATH = "/api/auth/callback";
-
-const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || "";
+const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 
 /* ===========================
    TEXTES PAR LANGUE
@@ -23,6 +20,7 @@ type Strings = {
   title: string;
   subtitle: string;
   google: string;
+  googleLoading: string;
   or: string;
   emailLabel: string;
   emailPlaceholder: string;
@@ -48,6 +46,7 @@ const STRINGS: Record<Locale, Strings> = {
     title: "Créer ton compte",
     subtitle: "Active ton accès gratuit, puis crée ton premier AmorIAI en quelques secondes.",
     google: "Continuer avec Google",
+    googleLoading: "Redirection…",
     or: "ou",
     emailLabel: "Adresse courriel",
     emailPlaceholder: "ex. mon.adresse@email.com",
@@ -72,6 +71,7 @@ const STRINGS: Record<Locale, Strings> = {
     title: "Create your account",
     subtitle: "Activate your free access, then create your first AmorIAI in a few seconds.",
     google: "Continue with Google",
+    googleLoading: "Redirecting…",
     or: "or",
     emailLabel: "Email address",
     emailPlaceholder: "e.g. my.address@email.com",
@@ -96,6 +96,7 @@ const STRINGS: Record<Locale, Strings> = {
     title: "Crear tu cuenta",
     subtitle: "Activa tu acceso gratuito y luego crea tu primer AmorIAI en segundos.",
     google: "Continuar con Google",
+    googleLoading: "Redirigiendo…",
     or: "o",
     emailLabel: "Correo electrónico",
     emailPlaceholder: "ej. mi.direccion@email.com",
@@ -125,19 +126,29 @@ function normalizeLocale(raw: string | null): Locale {
   return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
 
-function buildRedirectParams(locale: Locale) {
+function normalizePlan(raw: string | null): PlanId {
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
+}
+
+function safeReturnTo(raw: string | null): string | null {
+  if (!raw) return null;
+  const v = raw.trim();
+  if (!v.startsWith("/")) return null;
+  if (v.startsWith("//")) return null;
+  if (v.includes("\\")) return null;
+  return v;
+}
+
+function buildRedirectParams(locale: Locale, plan: PlanId) {
   const params = new URLSearchParams();
   params.set("lang", locale);
-  params.set("plan", "free");
+  params.set("plan", plan);
   return params;
 }
 
 function setTempCookie(name: string, value: string, maxAgeSeconds = 600) {
-  const secure =
-    typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${name}=${encodeURIComponent(
-    value
-  )}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
+  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
 }
 
 declare global {
@@ -158,6 +169,8 @@ export default function SignupClient() {
   const searchParams = useSearchParams();
 
   const locale = useMemo(() => normalizeLocale(searchParams.get("lang")), [searchParams]);
+  const plan = useMemo(() => normalizePlan(searchParams.get("plan")), [searchParams]);
+  const returnTo = useMemo(() => safeReturnTo(searchParams.get("returnTo")), [searchParams]);
   const t = STRINGS[locale];
 
   const [email, setEmail] = useState("");
@@ -168,30 +181,20 @@ export default function SignupClient() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [waitingConfirmation, setWaitingConfirmation] = useState(false);
 
-  /* ===========================
-     Load reCAPTCHA v3 script
-  =========================== */
+  /* Load reCAPTCHA v3 script */
   useEffect(() => {
-    if (!RECAPTCHA_SITE_KEY) {
-      console.error("NEXT_PUBLIC_RECAPTCHA_SITE_KEY manquante");
-      return;
-    }
+    if (!RECAPTCHA_SITE_KEY) return;
     if (document.getElementById("recaptcha-script")) return;
 
     const script = document.createElement("script");
     script.id = "recaptcha-script";
-    script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(
-      RECAPTCHA_SITE_KEY
-    )}`;
+    script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`;
     script.async = true;
     script.defer = true;
     document.body.appendChild(script);
   }, []);
 
-  /* ===========================
-     Get token (fresh each time)
-  =========================== */
-  const runRecaptcha = async (): Promise<string | null> => {
+  const runRecaptcha = async (action: "signup"): Promise<string | null> => {
     if (!RECAPTCHA_SITE_KEY) return null;
     if (typeof window === "undefined") return null;
     if (!window.grecaptcha?.ready || !window.grecaptcha?.execute) return null;
@@ -200,7 +203,7 @@ export default function SignupClient() {
       try {
         window.grecaptcha!.ready(() => {
           window.grecaptcha!
-            .execute(RECAPTCHA_SITE_KEY, { action: "signup" })
+            .execute(RECAPTCHA_SITE_KEY, { action })
             .then((token) => resolve(token))
             .catch(() => resolve(null));
         });
@@ -210,18 +213,31 @@ export default function SignupClient() {
     });
   };
 
-  /* ===========================
-     Redirect helpers
-  =========================== */
-  const redirectAfterSignup = () => {
-    const params = buildRedirectParams(locale);
-    router.replace(`${CREATE_AMORIA_PATH}?${params.toString()}`);
+  const verifyRecaptcha = async (token: string, action: string) => {
+    const res = await fetch("/api/verify-recaptcha", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token, action }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    const ok = res.ok && (json as any)?.success === true;
+
+    return { ok, json };
   };
 
   const goToLogin = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
+    params.set("plan", plan);
+    if (returnTo) params.set("returnTo", returnTo);
     router.push(`/login?${params.toString()}`);
+  };
+
+  const redirectAfterSignup = () => {
+    const params = buildRedirectParams(locale, plan);
+    const dest = returnTo ? returnTo : `${CREATE_AMORIA_PATH}?${params.toString()}`;
+    router.replace(dest);
   };
 
   /* ===========================
@@ -236,32 +252,23 @@ export default function SignupClient() {
     setWaitingConfirmation(false);
 
     try {
-      // 1) reCAPTCHA
-      const token = await runRecaptcha();
+      const token = await runRecaptcha("signup");
       if (!token) {
         setErrorMsg(t.errorRecaptcha);
         return;
       }
 
-      // 2) Verify token server-side
-      const verifyRes = await fetch("/api/verify-recaptcha", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, action: "signup" }),
-      });
-
-      const verifyJson = await verifyRes.json().catch(() => ({}));
-      if (!verifyRes.ok || !verifyJson?.success) {
-        console.error("verify-recaptcha failed:", verifyJson);
+      const { ok, json } = await verifyRecaptcha(token, "signup");
+      if (!ok) {
+        console.error("verify-recaptcha failed:", json);
         setErrorMsg(t.errorRecaptcha);
         return;
       }
 
-      // 3) Supabase signup
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const params = buildRedirectParams(locale);
+      const origin = window.location.origin;
+      const params = buildRedirectParams(locale, plan);
 
-      // ✅ Email confirmation redirect (API callback)
+      // Email confirmation => on repasse par l’API callback (avec query params)
       const emailRedirectTo = `${origin}${AUTH_CALLBACK_PATH}?${params.toString()}`;
 
       const { data, error } = await supabase.auth.signUp({
@@ -282,7 +289,7 @@ export default function SignupClient() {
         return;
       }
 
-      // Session directe => on continue
+      // Session immédiate => go
       redirectAfterSignup();
     } catch (err) {
       console.error("signup error", err);
@@ -293,7 +300,7 @@ export default function SignupClient() {
   };
 
   /* ===========================
-     Google OAuth (FIXED)
+     Google OAuth
   =========================== */
   const handleGoogle = async () => {
     if (loading) return;
@@ -305,21 +312,24 @@ export default function SignupClient() {
     try {
       const origin = window.location.origin;
 
-      // ✅ Destination finale
-      const params = buildRedirectParams(locale);
-      const finalReturnTo = `${CREATE_AMORIA_PATH}?${params.toString()}`;
+      // Destination finale
+      const params = buildRedirectParams(locale, plan);
+      const finalReturnTo = returnTo ? returnTo : `${CREATE_AMORIA_PATH}?${params.toString()}`;
 
-      // ✅ Cookies temporaires (lus par /api/auth/callback)
+      // Cookies temporaires lus par /api/auth/callback
       setTempCookie("amoria_lang", locale);
-      setTempCookie("amoria_plan", "free");
+      setTempCookie("amoria_plan", plan);
       setTempCookie("amoria_returnTo", finalReturnTo);
 
-      // ✅ IMPORTANT: redirectTo vers l’API callback (sans query params)
+      // redirectTo => API callback sans query params
       const redirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo },
+        options: {
+          redirectTo,
+          queryParams: { prompt: "select_account" },
+        },
       });
 
       if (error) {
@@ -334,9 +344,6 @@ export default function SignupClient() {
     }
   };
 
-  /* ===========================
-     RENDER
-  =========================== */
   return (
     <main className="auth-root">
       <div className="auth-gradient-orbit" />
@@ -351,7 +358,7 @@ export default function SignupClient() {
         </header>
 
         {waitingConfirmation && (
-          <div className="auth-confirm-box">
+          <div className="auth-confirm-box" role="status" aria-live="polite">
             <div className="auth-confirm-title">{t.confirmTitle}</div>
             <div className="auth-confirm-body">{t.confirmBody}</div>
           </div>
@@ -360,13 +367,13 @@ export default function SignupClient() {
         {errorMsg && <p className="auth-error auth-error--block">{errorMsg}</p>}
 
         <button type="button" onClick={handleGoogle} disabled={loading} className="auth-google-btn">
-          <span className="auth-google-icon">
-            <img src="/google-g.png" alt="Google" className="auth-google-img" />
+          <span className="auth-google-icon" aria-hidden="true">
+            <img src="/google-g.png" alt="" className="auth-google-img" />
           </span>
-          <span>{t.google}</span>
+          <span>{loading ? t.googleLoading : t.google}</span>
         </button>
 
-        <div className="auth-divider">
+        <div className="auth-divider" aria-hidden="true">
           <span className="auth-divider-line" />
           <span className="auth-divider-label">{t.or}</span>
           <span className="auth-divider-line" />
@@ -436,7 +443,7 @@ export default function SignupClient() {
           justify-content: center;
           position: relative;
           overflow: hidden;
-          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 80%),
+          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 85%),
             radial-gradient(circle at bottom, #020617, #000);
           color: #e5e7eb;
           font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
@@ -448,11 +455,7 @@ export default function SignupClient() {
           width: 520px;
           height: 520px;
           border-radius: 999px;
-          background: radial-gradient(
-            circle at 20% 20%,
-            rgba(251, 113, 133, 0.55),
-            transparent 60%
-          );
+          background: radial-gradient(circle at 20% 20%, rgba(251, 113, 133, 0.55), transparent 60%);
           opacity: 0.6;
           filter: blur(4px);
           top: -120px;
@@ -465,11 +468,7 @@ export default function SignupClient() {
           bottom: -160px;
           left: auto;
           right: -140px;
-          background: radial-gradient(
-            circle at 80% 20%,
-            rgba(59, 130, 246, 0.55),
-            transparent 65%
-          );
+          background: radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.55), transparent 65%);
         }
 
         .auth-card {
@@ -478,19 +477,10 @@ export default function SignupClient() {
           max-width: 440px;
           border-radius: 1.9rem;
           padding: 2.3rem 2.5rem 2.1rem;
-          background: radial-gradient(
-              circle at top left,
-              rgba(248, 113, 113, 0.28),
-              transparent 55%
-            ),
-            radial-gradient(
-              circle at bottom right,
-              rgba(59, 130, 246, 0.28),
-              transparent 55%
-            ),
+          background: radial-gradient(circle at top left, rgba(248, 113, 113, 0.28), transparent 55%),
+            radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.28), transparent 55%),
             rgba(2, 6, 23, 0.98);
-          box-shadow: 0 32px 90px rgba(15, 23, 42, 0.95),
-            0 0 0 1px rgba(148, 163, 184, 0.35);
+          box-shadow: 0 32px 90px rgba(15, 23, 42, 0.95), 0 0 0 1px rgba(148, 163, 184, 0.35);
           border: 1px solid rgba(148, 163, 184, 0.55);
           backdrop-filter: blur(20px);
           z-index: 1;
@@ -526,6 +516,7 @@ export default function SignupClient() {
           margin: 0;
           font-size: 0.9rem;
           color: #9ca3af;
+          line-height: 1.4;
         }
 
         .auth-confirm-box {
@@ -540,35 +531,33 @@ export default function SignupClient() {
         }
 
         .auth-confirm-title {
-          font-weight: 600;
+          font-weight: 700;
           margin-bottom: 0.25rem;
         }
 
         .auth-confirm-body {
-          font-size: 0.8rem;
+          font-size: 0.82rem;
           white-space: pre-line;
+          line-height: 1.35;
         }
 
         .auth-google-btn {
           width: 100%;
           border-radius: 999px;
           border: 1px solid rgba(148, 163, 184, 0.9);
-          padding: 0.7rem 1rem;
-          background: radial-gradient(
-            circle at top left,
-            rgba(15, 23, 42, 0.9),
-            rgba(15, 23, 42, 1)
-          );
+          padding: 0.72rem 1rem;
+          background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 1));
           color: #e5e7eb;
-          font-size: 0.9rem;
-          font-weight: 500;
+          font-size: 0.92rem;
+          font-weight: 600;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 0.55rem;
           cursor: pointer;
           transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease,
-            border-color 0.15s ease;
+            border-color 0.15s ease, opacity 0.15s ease;
+          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.7);
         }
 
         .auth-google-btn:disabled {
@@ -578,21 +567,15 @@ export default function SignupClient() {
         }
 
         .auth-google-btn:not(:disabled):hover {
-          background: radial-gradient(
-            circle at top left,
-            rgba(15, 23, 42, 0.92),
-            rgba(15, 23, 42, 1)
-          );
           transform: translateY(-1px);
           border-color: rgba(248, 250, 252, 0.7);
-          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+          box-shadow: 0 20px 50px rgba(15, 23, 42, 0.85);
         }
 
         .auth-google-icon {
           width: 1.5rem;
           height: 1.5rem;
           border-radius: 999px;
-          background: transparent;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -609,18 +592,13 @@ export default function SignupClient() {
           display: flex;
           align-items: center;
           gap: 0.75rem;
-          margin: 1.4rem 0 1.2rem;
+          margin: 1.35rem 0 1.15rem;
         }
 
         .auth-divider-line {
           flex: 1;
           height: 1px;
-          background: linear-gradient(
-            to right,
-            transparent,
-            rgba(148, 163, 184, 0.7),
-            transparent
-          );
+          background: linear-gradient(to right, transparent, rgba(148, 163, 184, 0.7), transparent);
         }
 
         .auth-divider-label {
@@ -633,7 +611,7 @@ export default function SignupClient() {
         .auth-form {
           display: flex;
           flex-direction: column;
-          gap: 0.9rem;
+          gap: 0.95rem;
         }
 
         .auth-field {
@@ -651,13 +629,9 @@ export default function SignupClient() {
           width: 100%;
           border-radius: 999px;
           border: 1px solid rgba(55, 65, 81, 0.95);
-          background: radial-gradient(
-            circle at top left,
-            rgba(15, 23, 42, 0.9),
-            rgba(15, 23, 42, 1)
-          );
-          padding: 0.6rem 0.95rem;
-          font-size: 0.9rem;
+          background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 1));
+          padding: 0.62rem 0.95rem;
+          font-size: 0.92rem;
           color: #e5e7eb;
           outline: none;
           transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
@@ -677,7 +651,7 @@ export default function SignupClient() {
         }
 
         .auth-input-password {
-          padding-right: 2.7rem;
+          padding-right: 2.9rem;
         }
 
         .auth-password-toggle {
@@ -690,7 +664,7 @@ export default function SignupClient() {
           background: transparent;
           color: #9ca3af;
           font-size: 0.75rem;
-          padding: 0.2rem 0.5rem;
+          padding: 0.2rem 0.55rem;
           cursor: pointer;
           transition: color 0.15s ease, background 0.15s ease;
         }
@@ -703,31 +677,32 @@ export default function SignupClient() {
         .auth-password-hint {
           font-size: 0.75rem;
           color: #9ca3af;
-          margin-top: 0.2rem;
+          margin-top: 0.25rem;
+          line-height: 1.25;
         }
 
         .auth-error {
-          font-size: 0.8rem;
+          font-size: 0.82rem;
           color: #fecaca;
         }
 
         .auth-error--block {
-          margin-bottom: 0.8rem;
+          margin-bottom: 0.85rem;
         }
 
         .auth-submit-btn {
           width: 100%;
-          margin-top: 0.3rem;
+          margin-top: 0.25rem;
           border-radius: 999px;
           border: none;
-          padding: 0.78rem 1rem;
-          font-size: 0.95rem;
-          font-weight: 600;
+          padding: 0.8rem 1rem;
+          font-size: 0.96rem;
+          font-weight: 700;
           color: #f9fafb;
           cursor: pointer;
           background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
           box-shadow: 0 18px 48px rgba(248, 113, 113, 0.7);
-          transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.1s ease;
+          transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.1s ease, opacity 0.15s ease;
         }
 
         .auth-submit-btn:disabled {
@@ -744,7 +719,7 @@ export default function SignupClient() {
 
         .auth-footer {
           margin-top: 1.15rem;
-          font-size: 0.85rem;
+          font-size: 0.86rem;
           text-align: center;
           color: #9ca3af;
         }
@@ -756,9 +731,14 @@ export default function SignupClient() {
           margin: 0;
           color: #f9a8d4;
           cursor: pointer;
-          font-size: 0.85rem;
+          font-size: 0.86rem;
           text-decoration: underline;
           text-underline-offset: 2px;
+        }
+
+        .auth-link-btn:disabled {
+          opacity: 0.65;
+          cursor: default;
         }
 
         .auth-input,
@@ -785,4 +765,4 @@ export default function SignupClient() {
       `}</style>
     </main>
   );
-}
+         }
