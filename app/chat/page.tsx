@@ -37,9 +37,11 @@ type UiCopy = {
   subtitle: (name: string) => string;
   emptyState: (name: string) => string;
   inputPlaceholder: (name: string) => string;
+
   send: string;
   sending: string;
   loading: string;
+
   aiNotFoundTitle: string;
   genericError: string;
   notAuthenticated: string;
@@ -60,6 +62,15 @@ type UiCopy = {
 
   sttStart: string;
   sttStop: string;
+
+  notePrivate: string;
+
+  voiceLimitReached: string;
+  voiceServerError: string;
+  voiceNetworkError: string;
+
+  chatNetworkError: string;
+  chatServerErrorPrefix: string;
 };
 
 const STRINGS: Record<Locale, UiCopy> = {
@@ -69,9 +80,11 @@ const STRINGS: Record<Locale, UiCopy> = {
     subtitle: (name) => `${name} est là pour t’écouter et t’aider à mettre des mots sur ce que tu vis.`,
     emptyState: (name) => `Aucun message pour l’instant. Dis bonjour à ${name} pour commencer 💬`,
     inputPlaceholder: (name) => `Écris quelque chose à ${name}…`,
+
     send: "Envoyer",
     sending: "Envoi…",
     loading: "Chargement du chat…",
+
     aiNotFoundTitle: "AmorIA introuvable",
     genericError: "Impossible de charger cette conversation pour le moment. Vérifie le lien ou réessaie plus tard.",
     notAuthenticated: "Nous n’avons pas pu vérifier ta session. Actualise la page ou reconnecte-toi, puis réessaie.",
@@ -92,6 +105,15 @@ const STRINGS: Record<Locale, UiCopy> = {
 
     sttStart: "Dicter",
     sttStop: "Stop",
+
+    notePrivate: "Tes messages sont privés et ne sont jamais visibles par les autres utilisateurs.",
+
+    voiceLimitReached: "Tu as atteint la limite de messages vocaux pour ton forfait actuel.",
+    voiceServerError: "Erreur voice. Vérifie la configuration serveur.",
+    voiceNetworkError: "Erreur voice. Vérifie ta connexion et réessaie.",
+
+    chatNetworkError: "Erreur réseau. Vérifie ta connexion Internet et réessaie dans quelques secondes.",
+    chatServerErrorPrefix: "Erreur serveur : ",
   },
   en: {
     backHome: "← Back to home",
@@ -99,9 +121,11 @@ const STRINGS: Record<Locale, UiCopy> = {
     subtitle: (name) => `${name} is here to listen and help you put words on what you’re feeling.`,
     emptyState: (name) => `No messages yet. Say hi to ${name} to get started 💬`,
     inputPlaceholder: (name) => `Write something to ${name}…`,
+
     send: "Send",
     sending: "Sending…",
     loading: "Loading your chat…",
+
     aiNotFoundTitle: "Companion not found",
     genericError: "We couldn’t load this conversation. Please check the link or try again later.",
     notAuthenticated: "We couldn’t verify your session. Please refresh the page or log in again, then try once more.",
@@ -122,6 +146,15 @@ const STRINGS: Record<Locale, UiCopy> = {
 
     sttStart: "Dictate",
     sttStop: "Stop",
+
+    notePrivate: "Your messages are private and are never visible to other users.",
+
+    voiceLimitReached: "You’ve reached the voice message limit for your current plan.",
+    voiceServerError: "Voice error. Please check the server configuration.",
+    voiceNetworkError: "Voice error. Check your connection and try again.",
+
+    chatNetworkError: "Network error. Check your Internet connection and try again in a few seconds.",
+    chatServerErrorPrefix: "Server error: ",
   },
   es: {
     backHome: "← Volver al inicio",
@@ -129,9 +162,11 @@ const STRINGS: Record<Locale, UiCopy> = {
     subtitle: (name) => `${name} está aquí para escucharte y ayudarte a poner en palabras lo que sientes.`,
     emptyState: (name) => `Todavía no hay mensajes. Saluda a ${name} para empezar 💬`,
     inputPlaceholder: (name) => `Escribe algo a ${name}…`,
+
     send: "Enviar",
     sending: "Enviando…",
     loading: "Cargando tu chat…",
+
     aiNotFoundTitle: "Compañero no encontrado",
     genericError: "No pudimos cargar esta conversación. Verifica el enlace o inténtalo más tarde.",
     notAuthenticated: "No pudimos verificar tu sesión. Actualiza la página o vuelve a iniciar sesión y prueba de nuevo.",
@@ -152,6 +187,15 @@ const STRINGS: Record<Locale, UiCopy> = {
 
     sttStart: "Dictar",
     sttStop: "Stop",
+
+    notePrivate: "Tus mensajes son privados y nunca son visibles para otros usuarios.",
+
+    voiceLimitReached: "Has alcanzado el límite de mensajes de voz para tu plan actual.",
+    voiceServerError: "Error de voz. Verifica la configuración del servidor.",
+    voiceNetworkError: "Error de voz. Verifica tu conexión e inténtalo de nuevo.",
+
+    chatNetworkError: "Error de red. Verifica tu conexión e inténtalo de nuevo en unos segundos.",
+    chatServerErrorPrefix: "Error del servidor: ",
   },
 };
 
@@ -269,7 +313,6 @@ function ChatClient() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
-
   const voiceBusyRef = useRef(false);
 
   const windowRef = useRef<HTMLDivElement | null>(null);
@@ -370,7 +413,11 @@ function ChatClient() {
           return;
         }
 
-        const { data: sub, error } = await supabase
+        // ✅ On tente d’abord "current=true" (ton ancien modèle),
+        // puis fallback sur "status=active" si tu l’utilises.
+        let sub: any = null;
+
+        const q1 = await supabase
           .from("user_subscriptions")
           .select(
             `
@@ -385,7 +432,28 @@ function ChatClient() {
           .eq("current", true)
           .maybeSingle();
 
-        if (error || !sub) {
+        if (!q1.error && q1.data) sub = q1.data;
+
+        if (!sub) {
+          const q2 = await supabase
+            .from("user_subscriptions")
+            .select(
+              `
+                pricing_plans (
+                  code,
+                  has_voice,
+                  voice_limit
+                )
+              `
+            )
+            .eq("user_id", user.id)
+            .eq("status", "active")
+            .maybeSingle();
+
+          if (!q2.error && q2.data) sub = q2.data;
+        }
+
+        if (!sub) {
           setPlanCode(null);
           setCanUseVoice(false);
           setCanPulseAvatar(false);
@@ -501,6 +569,10 @@ function ChatClient() {
   // 3) Charger AI
   useEffect(() => {
     const loadAI = async () => {
+      setAiLoading(true);
+      setAiError(null);
+      setAi(null);
+
       if (!iaId) {
         setAiError(t.genericError);
         setAiLoading(false);
@@ -522,14 +594,20 @@ function ChatClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [iaId, locale]);
 
-  // 4) Historique (paid)
+  // 4) Historique (paid) - avec Authorization (sinon RLS peut bloquer)
   useEffect(() => {
     const loadHistory = async () => {
       if (!iaId) return;
       if (!isPaidPlan) return;
 
       try {
-        const res = await fetch(`/api/chat/history?iaId=${encodeURIComponent(iaId)}`);
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+        if (!accessToken) return;
+
+        const res = await fetch(`/api/chat/history?iaId=${encodeURIComponent(iaId)}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
         if (!res.ok) return;
         const data = (await res.json()) as ChatMessage[];
         setMessages(
@@ -605,12 +683,11 @@ function ChatClient() {
       if (!res.ok) {
         if (contentType.includes("application/json")) {
           const data = await res.json().catch(() => ({}));
-          if (data?.error === "audio_limit_reached")
-            setSendError("Tu as atteint la limite de messages vocaux pour ton forfait actuel.");
+          if (data?.error === "audio_limit_reached") setSendError(t.voiceLimitReached);
           else if (data?.error) setSendError(`Voice error: ${data.error}`);
-          else setSendError("Erreur voice. Vérifie la configuration serveur.");
+          else setSendError(t.voiceServerError);
         } else {
-          setSendError("Erreur voice. Vérifie la configuration serveur.");
+          setSendError(t.voiceServerError);
         }
         return;
       }
@@ -648,7 +725,7 @@ function ChatClient() {
       await audio.play();
     } catch (err) {
       console.error("Erreur /api/voice:", err);
-      setSendError("Erreur voice. Vérifie ta connexion et réessaie.");
+      setSendError(t.voiceNetworkError);
     } finally {
       voiceBusyRef.current = false;
     }
@@ -686,6 +763,7 @@ function ChatClient() {
         return;
       }
 
+      // ✅ IMPORTANT: on envoie toujours lang (= locale) ici
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
@@ -697,6 +775,7 @@ function ChatClient() {
         data = await res.json();
       } catch {}
 
+      // Paywall (free)
       if (
         !res.ok &&
         isFreePlan &&
@@ -712,7 +791,7 @@ function ChatClient() {
         if (data?.error === "not_authenticated") return setSendError(t.notAuthenticated);
         if (data?.error === "profile_not_found") return setSendError(t.profileNotFound);
         if (data?.message) return setSendError(data.message);
-        return setSendError("Erreur serveur : " + (data?.error ?? "Impossible d’envoyer le message."));
+        return setSendError(t.chatServerErrorPrefix + (data?.error ?? "Unable to send message."));
       }
 
       const assistantMessage: ChatMessage = {
@@ -724,16 +803,14 @@ function ChatClient() {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      if (assistantMessage.content && !isBlocked) {
-        triggerAvatarAnimation();
-      }
+      if (assistantMessage.content && !isBlocked) triggerAvatarAnimation();
 
       if (assistantMessage.content && canUseVoice && voiceEnabled && audioUnlocked && !isBlocked) {
         setTimeout(() => void playAssistantVoice(assistantMessage.content), 80);
       }
     } catch (err) {
       console.error("Erreur réseau /api/chat:", err);
-      setSendError("Erreur réseau. Vérifie ta connexion Internet et réessaie dans quelques secondes.");
+      setSendError(t.chatNetworkError);
     } finally {
       setSending(false);
     }
@@ -752,7 +829,6 @@ function ChatClient() {
       </header>
 
       <section className="card">
-        {/* HEADER COMPACT (reste visible, pas de scroll global) */}
         <div className="hero">
           {aiLoading ? (
             <>
@@ -807,7 +883,7 @@ function ChatClient() {
                       className="pillBtn pillBtn--ghost"
                       onClick={() => setVoiceEnabled((v) => !v)}
                       aria-label="Activer ou désactiver la voix"
-                      title={voiceEnabled ? "Désactiver la voix" : "Activer la voix"}
+                      title={voiceEnabled ? "OFF" : "ON"}
                     >
                       {voiceEnabled ? t.voiceOn : t.voiceOff}
                     </button>
@@ -818,7 +894,6 @@ function ChatClient() {
           )}
         </div>
 
-        {/* ✅ SEULE ZONE QUI SCROLL */}
         <div className="chatBox" ref={windowRef} onScroll={handleWindowScroll}>
           {messages.length === 0 ? (
             <div className="empty">{t.emptyState(displayName)}</div>
@@ -837,7 +912,6 @@ function ChatClient() {
 
         {sendError && <p className="error">{sendError}</p>}
 
-        {/* PROMO / PAYWALL - reste dans la card mais n’agrandit pas la page (card = 100% height) */}
         {!isBlocked && isFreePlan && (
           <div className="promo">
             <div className="badge">PLUS</div>
@@ -885,8 +959,8 @@ function ChatClient() {
                 className={isRecording ? "iconBtn iconBtn--active" : "iconBtn"}
                 onClick={handleToggleRecording}
                 disabled={!sttSupported || sending}
-                aria-label="Dicter mon message"
-                title={!sttSupported ? "Dictée non supportée sur ce navigateur" : isRecording ? t.sttStop : t.sttStart}
+                aria-label={t.sttStart}
+                title={!sttSupported ? "STT not supported" : isRecording ? t.sttStop : t.sttStart}
               >
                 <span className="iconBtn__icon">{isRecording ? "■" : "🎤"}</span>
               </button>
@@ -904,14 +978,13 @@ function ChatClient() {
           </div>
         </form>
 
-        <p className="note">Tes messages sont privés et ne sont jamais visibles par les autres utilisateurs.</p>
+        <p className="note">{t.notePrivate}</p>
       </section>
 
       <style jsx>{`
         :global(html) {
           color-scheme: dark;
         }
-        /* ✅ IMPORTANT: pas de scroll global */
         :global(body) {
           margin: 0;
           height: 100%;
@@ -934,7 +1007,6 @@ function ChatClient() {
           --shadow: 0 26px 90px rgba(0, 0, 0, 0.75);
           --shadow2: 0 18px 50px rgba(15, 23, 42, 0.75);
 
-          /* ✅ PAGE = 100vh */
           height: 100vh;
           overflow: hidden;
 
@@ -981,7 +1053,6 @@ function ChatClient() {
           color: rgba(226, 232, 240, 0.92);
         }
 
-        /* ✅ CARD prend le reste de la hauteur, et autorise les enfants à scroller */
         .card {
           width: 100%;
           max-width: 920px;
@@ -998,11 +1069,10 @@ function ChatClient() {
           backdrop-filter: blur(12px);
 
           flex: 1 1 auto;
-          min-height: 0; /* ✅ clé pour que .chatBox puisse scroller */
-          overflow: hidden; /* ✅ pas de scroll de card */
+          min-height: 0;
+          overflow: hidden;
         }
 
-        /* ✅ HERO compact */
         .hero {
           display: flex;
           flex-direction: column;
@@ -1042,7 +1112,6 @@ function ChatClient() {
           }
         }
 
-        /* ✅ Avatar plus petit pour tenir sur laptop */
         .avatarRing {
           width: 142px;
           height: 142px;
@@ -1101,23 +1170,13 @@ function ChatClient() {
           }
         }
         .avatarRing--skeleton {
-          background: linear-gradient(
-            90deg,
-            rgba(148, 163, 184, 0.16),
-            rgba(148, 163, 184, 0.32),
-            rgba(148, 163, 184, 0.16)
-          );
+          background: linear-gradient(90deg, rgba(148, 163, 184, 0.16), rgba(148, 163, 184, 0.32), rgba(148, 163, 184, 0.16));
           background-size: 200% 100%;
           animation: shimmer 1.3s infinite;
         }
         .skeletonLine {
           border-radius: 999px;
-          background: linear-gradient(
-            90deg,
-            rgba(148, 163, 184, 0.14),
-            rgba(148, 163, 184, 0.28),
-            rgba(148, 163, 184, 0.14)
-          );
+          background: linear-gradient(90deg, rgba(148, 163, 184, 0.14), rgba(148, 163, 184, 0.28), rgba(148, 163, 184, 0.14));
           background-size: 200% 100%;
           animation: shimmer 1.3s infinite;
         }
@@ -1176,7 +1235,6 @@ function ChatClient() {
           box-shadow: 0 16px 42px rgba(248, 113, 113, 0.45);
         }
 
-        /* ✅ LA CLÉ: chatBox est flex:1 et scrolle, pas de hauteur fixe */
         .chatBox {
           border-radius: 18px;
           border: 1px solid rgba(148, 163, 184, 0.22);
@@ -1185,7 +1243,7 @@ function ChatClient() {
           padding: 12px;
 
           flex: 1 1 auto;
-          min-height: 0; /* ✅ essentiel */
+          min-height: 0;
           overflow-y: auto;
 
           overscroll-behavior: contain;
@@ -1448,9 +1506,6 @@ function ChatClient() {
         }
 
         @media (max-width: 768px) {
-          :global(body) {
-            overflow: hidden;
-          }
           .card {
             padding: 14px 12px 12px;
             border-radius: 24px;
@@ -1481,4 +1536,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-      }
+          }
