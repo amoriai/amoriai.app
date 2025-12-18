@@ -14,19 +14,19 @@ const LOADING_TEXT: Record<Locale, string> = {
 };
 
 function normalizeLocale(raw: string | null): Locale {
-  if (raw === "fr" || raw === "en" || raw === "es") return raw;
-  return "fr";
+  return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
 
 function normalizePlan(raw: string | null): PlanId {
-  if (raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
-  return "free";
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
+    ? raw
+    : "free";
 }
 
 function safeReturnTo(raw: string | null): string | null {
   if (!raw) return null;
-  if (!raw.startsWith("/")) return null; // seulement interne
-  if (raw.startsWith("//")) return null; // évite protocole-like
+  if (!raw.startsWith("/")) return null;
+  if (raw.startsWith("//")) return null;
   return raw;
 }
 
@@ -34,7 +34,6 @@ export default function AuthCallbackClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ✅ anti double-run (important en dev / StrictMode)
   const didRunRef = useRef(false);
 
   const { lang, plan, code, returnTo } = useMemo(() => {
@@ -72,60 +71,6 @@ export default function AuthCallbackClient() {
       router.replace(`/subscription?${p.toString()}`);
     };
 
-    const goChat = (iaId: string) => {
-      const p = new URLSearchParams();
-      p.set("lang", lang);
-      p.set("iaId", iaId);
-      router.replace(`/chat?${p.toString()}`);
-    };
-
-    const ensureFreeSubscription = async (userId: string) => {
-      const { data: currentSub, error: subErr } = await supabase
-        .from("user_subscriptions")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("current", true)
-        .maybeSingle();
-
-      if (subErr) console.error("Erreur lecture user_subscriptions:", subErr);
-      if (currentSub?.id) return;
-
-      const { data: freePlan, error: planErr } = await supabase
-        .from("pricing_plans")
-        .select("id")
-        .eq("code", "free")
-        .maybeSingle();
-
-      if (planErr) console.error("Erreur lecture pricing_plans:", planErr);
-
-      if (freePlan?.id) {
-        const { error: insertErr } = await supabase.from("user_subscriptions").insert({
-          user_id: userId,
-          pricing_plan_id: freePlan.id,
-          current: true,
-          stripe_customer_id: null,
-          subscription_id: null,
-        });
-
-        if (insertErr) console.error("Erreur insert user_subscriptions:", insertErr);
-      }
-    };
-
-    const fetchLatestAmoriaId = async (userId: string): Promise<string | null> => {
-      const { data, error } = await supabase
-        .from("user_amoria")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("is_archived", false)
-        .order("updated_at", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) console.error("Erreur lecture user_amoria:", error);
-      return data?.id ?? null;
-    };
-
     const finalizeAuth = async () => {
       try {
         // 1) échange le code => session (si présent)
@@ -148,7 +93,7 @@ export default function AuthCallbackClient() {
           return;
         }
 
-        // 3) priorité returnTo (si tu l’utilises depuis login)
+        // 3) priorité returnTo
         if (returnTo) {
           if (!cancelled) router.replace(returnTo);
           return;
@@ -160,16 +105,8 @@ export default function AuthCallbackClient() {
           return;
         }
 
-        // 5) s’assurer qu’un sub free current existe
-        await ensureFreeSubscription(user.id);
-
-        // 6) direct chat si IA existe sinon create
-        const lastIaId = await fetchLatestAmoriaId(user.id);
-
-        if (!cancelled) {
-          if (lastIaId) goChat(lastIaId);
-          else goCreate();
-        }
+        // ✅ 5) plan free => DIRECT create-amoria (pas de requêtes DB ici)
+        if (!cancelled) goCreate();
       } catch (err) {
         console.error("Erreur finalizeAuth:", err);
         if (!cancelled) goLogin();
@@ -193,11 +130,7 @@ export default function AuthCallbackClient() {
         </div>
         <p className="cbText">{LOADING_TEXT[lang]}</p>
         <p className="cbSub">
-          {lang === "en"
-            ? "Please wait a moment."
-            : lang === "es"
-            ? "Espera un momento."
-            : "Une seconde…"}
+          {lang === "en" ? "Please wait a moment." : lang === "es" ? "Espera un momento." : "Une seconde…"}
         </p>
       </div>
 
@@ -212,8 +145,8 @@ export default function AuthCallbackClient() {
             radial-gradient(900px 700px at 90% 10%, rgba(56, 189, 248, 0.16), transparent 55%),
             radial-gradient(950px 700px at 10% 25%, rgba(249, 115, 22, 0.12), transparent 60%),
             linear-gradient(180deg, #020617, #000);
-          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
-            "Segoe UI Emoji";
+          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+            "Apple Color Emoji", "Segoe UI Emoji";
         }
 
         .cbCard {
@@ -283,4 +216,4 @@ export default function AuthCallbackClient() {
       `}</style>
     </main>
   );
-    }
+}
