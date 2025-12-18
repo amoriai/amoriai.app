@@ -144,21 +144,21 @@ const STRINGS: Record<Locale, Strings> = {
 };
 
 function normalizeLocale(raw: string | null): Locale {
-  if (raw === "fr" || raw === "en" || raw === "es") return raw;
-  return "fr";
+  return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
 
 function normalizePlan(raw: string | null): PlanId {
-  if (raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited") return raw;
-  return "free";
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
 }
 
-// ✅ sécurité: returnTo doit être interne (évite open redirect)
+// sécurité: returnTo interne seulement (évite open redirect / bypass)
 function safeReturnTo(raw: string | null): string | null {
   if (!raw) return null;
-  if (!raw.startsWith("/")) return null;
-  if (raw.startsWith("//")) return null;
-  return raw;
+  const v = raw.trim();
+  if (!v.startsWith("/")) return null;
+  if (v.startsWith("//")) return null;
+  if (v.includes("\\")) return null;
+  return v;
 }
 
 export default function LoginClient() {
@@ -181,7 +181,7 @@ export default function LoginClient() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [recaptchaReady, setRecaptchaReady] = useState(false);
 
-  // ✅ reCAPTCHA ready (utilisé pour email/password seulement)
+  // reCAPTCHA ready (utilisé pour email/password seulement)
   useEffect(() => {
     if (!RECAPTCHA_SITE_KEY) {
       setRecaptchaReady(false);
@@ -192,7 +192,6 @@ export default function LoginClient() {
 
     const tick = () => {
       if (cancelled) return;
-
       const g = (window as any)?.grecaptcha;
       if (g?.ready && g?.execute) {
         g.ready(() => {
@@ -200,12 +199,10 @@ export default function LoginClient() {
         });
         return;
       }
-
       setTimeout(tick, 150);
     };
 
     tick();
-
     return () => {
       cancelled = true;
     };
@@ -221,7 +218,6 @@ export default function LoginClient() {
 
   const getRecaptchaToken = async (action: "login") => {
     if (!RECAPTCHA_SITE_KEY) return null;
-
     const g = (window as any)?.grecaptcha;
     if (!g?.execute || !g?.ready) return null;
 
@@ -255,7 +251,6 @@ export default function LoginClient() {
     return { ok, json };
   };
 
-  // ✅ redirection après login EMAIL
   const redirectAfterEmailLogin = async () => {
     if (returnTo) {
       router.replace(returnTo);
@@ -343,7 +338,6 @@ export default function LoginClient() {
       }
 
       const { error } = await supabase.auth.signInWithPassword({ email, password });
-
       if (error) {
         console.error("supabase signIn error", error);
         const msg = (error.message || "").toLowerCase();
@@ -363,7 +357,7 @@ export default function LoginClient() {
     }
   };
 
-  // ✅ Google OAuth: redirectTo => /auth/callback (route handler)
+  // Google OAuth: redirectTo => /api/auth/callback (route handler)
   const handleGoogleLogin = async () => {
     if (loadingEmail || loadingGoogle) return;
 
@@ -371,17 +365,14 @@ export default function LoginClient() {
     setErrorMsg(null);
 
     try {
-      const origin =
-        typeof window !== "undefined"
-          ? window.location.origin
-          : process.env.NEXT_PUBLIC_SITE_URL || "";
+      const origin = window.location.origin;
 
       const cbParams = new URLSearchParams();
       cbParams.set("lang", locale);
       cbParams.set("plan", plan);
       if (returnTo) cbParams.set("returnTo", returnTo);
 
-      // ✅ IMPORTANT: /auth/callback (pas /callback, pas /api/auth/callback)
+      // IMPORTANT: URL publique = /api/auth/callback (PAS /app/api/...)
       const redirectTo = `${origin}/api/auth/callback?${cbParams.toString()}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
