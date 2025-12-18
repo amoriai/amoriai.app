@@ -4,13 +4,22 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
+type Locale = "fr" | "en" | "es";
+
+const STRINGS: Record<Locale, { logout: string; loggingOut: string }> = {
+  fr: { logout: "Se déconnecter", loggingOut: "Déconnexion…" },
+  en: { logout: "Log out", loggingOut: "Logging out…" },
+  es: { logout: "Cerrar sesión", loggingOut: "Cerrando sesión…" },
+};
+
 export function LogoutButton() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const rawLang = searchParams.get("lang");
-  const locale = rawLang === "fr" || rawLang === "en" || rawLang === "es" ? rawLang : "fr";
+  const locale: Locale = rawLang === "fr" || rawLang === "en" || rawLang === "es" ? rawLang : "fr";
+  const t = STRINGS[locale];
 
   const handleLogout = async () => {
     if (loading) return;
@@ -50,8 +59,10 @@ export function LogoutButton() {
         cursor: loading ? "default" : "pointer",
         opacity: loading ? 0.7 : 1,
       }}
+      aria-label={t.logout}
+      title={t.logout}
     >
-      {loading ? "Déconnexion…" : "Se déconnecter"}
+      {loading ? t.loggingOut : t.logout}
     </button>
   );
 }
