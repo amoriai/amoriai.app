@@ -232,12 +232,12 @@ export default function LoginClient() {
         return;
       }
 
-      // ✅ après login email
+      // ✅ après login email -> UN SEUL TREMPLIN: /auth/post-login
       if (returnTo) {
         router.replace(returnTo);
         return;
       }
-      router.replace(`/my-ai?lang=${locale}&plan=${plan}`);
+      router.replace(`/auth/post-login?lang=${locale}&plan=${plan}`);
     } catch (err) {
       console.error("login error", err);
       setErrorMsg(t.errorGeneric);
@@ -255,7 +255,7 @@ export default function LoginClient() {
     try {
       const origin = window.location.origin;
 
-      // ✅ on encode lang/plan/returnTo DIRECT dans redirectTo (pas de cookies)
+      // ✅ on encode lang/plan/returnTo dans redirectTo
       const callback = new URL(`${origin}/api/auth/callback`);
       callback.searchParams.set("lang", locale);
       callback.searchParams.set("plan", plan);
