@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import React, { FormEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { supabase } from "../../lib/supabaseClient";
+import { supabase } from "@/lib/supabase/client";
 import { LogoutButton } from "../components/LogoutButton";
 
 type Locale = "fr" | "en" | "es";
@@ -413,8 +413,6 @@ function ChatClient() {
           return;
         }
 
-        // ✅ On tente d’abord "current=true" (ton ancien modèle),
-        // puis fallback sur "status=active" si tu l’utilises.
         let sub: any = null;
 
         const q1 = await supabase
@@ -594,7 +592,7 @@ function ChatClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [iaId, locale]);
 
-  // 4) Historique (paid) - avec Authorization (sinon RLS peut bloquer)
+  // 4) Historique (paid)
   useEffect(() => {
     const loadHistory = async () => {
       if (!iaId) return;
@@ -653,7 +651,7 @@ function ChatClient() {
     };
   }, []);
 
-  // 5) Voice (TTS) — auto-lecture uniquement
+  // 5) Voice (TTS)
   const playAssistantVoice = async (text: string) => {
     if (!canUseVoice || isBlocked) return;
     if (!voiceEnabled) return;
@@ -763,7 +761,6 @@ function ChatClient() {
         return;
       }
 
-      // ✅ IMPORTANT: on envoie toujours lang (= locale) ici
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
@@ -775,7 +772,6 @@ function ChatClient() {
         data = await res.json();
       } catch {}
 
-      // Paywall (free)
       if (
         !res.ok &&
         isFreePlan &&
@@ -1170,13 +1166,23 @@ function ChatClient() {
           }
         }
         .avatarRing--skeleton {
-          background: linear-gradient(90deg, rgba(148, 163, 184, 0.16), rgba(148, 163, 184, 0.32), rgba(148, 163, 184, 0.16));
+          background: linear-gradient(
+            90deg,
+            rgba(148, 163, 184, 0.16),
+            rgba(148, 163, 184, 0.32),
+            rgba(148, 163, 184, 0.16)
+          );
           background-size: 200% 100%;
           animation: shimmer 1.3s infinite;
         }
         .skeletonLine {
           border-radius: 999px;
-          background: linear-gradient(90deg, rgba(148, 163, 184, 0.14), rgba(148, 163, 184, 0.28), rgba(148, 163, 184, 0.14));
+          background: linear-gradient(
+            90deg,
+            rgba(148, 163, 184, 0.14),
+            rgba(148, 163, 184, 0.28),
+            rgba(148, 163, 184, 0.14)
+          );
           background-size: 200% 100%;
           animation: shimmer 1.3s infinite;
         }
@@ -1536,4 +1542,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-          }
+}
