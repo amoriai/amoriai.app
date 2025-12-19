@@ -38,22 +38,37 @@ function clearTempCookies(res: NextResponse) {
   res.cookies.set("amoria_plan", "", { path: "/", maxAge: 0 });
 }
 
+/** Ajoute lang/plan si pas déjà présents dans l'URL */
+function ensureLangPlan(path: string, lang: Locale, plan: PlanId) {
+  const hasQuery = path.includes("?");
+  const url = new URL(path, "http://local"); // base dummy
+  if (!url.searchParams.get("lang")) url.searchParams.set("lang", lang);
+  if (!url.searchParams.get("plan")) url.searchParams.set("plan", plan);
+  return url.pathname + "?" + url.searchParams.toString();
+}
+
+/** Optionnel mais recommandé : whitelist des routes autorisées */
+function isAllowedReturnTo(path: string) {
+  // Autorise seulement ces écrans finaux (ajoute d'autres si besoin)
+  return (
+    path.startsWith("/create-amoria") ||
+    path.startsWith("/chat") ||
+    path.startsWith("/my-amoria")
+  );
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
 
-  // Params (URL)
   const returnToParam = safeReturnTo(url.searchParams.get("returnTo"));
 
-  // Cookies temporaires posés côté client avant OAuth (login/signup)
   const cookieReturnTo = safeReturnTo(readCookie("amoria_returnTo"));
   const cookieLang = readCookie("amoria_lang");
   const cookiePlan = readCookie("amoria_plan");
 
-  // Lang/plan: URL priorité, sinon cookies
   const finalLang = normalizeLocale(url.searchParams.get("lang") ?? cookieLang);
   const finalPlan = normalizePlan(url.searchParams.get("plan") ?? cookiePlan);
 
-  // 1) erreur provider
   const oauthError = url.searchParams.get("error");
   if (oauthError) {
     const p = new URLSearchParams();
@@ -66,7 +81,6 @@ export async function GET(request: Request) {
     return res;
   }
 
-  // 2) code obligatoire
   const code = url.searchParams.get("code");
   if (!code) {
     const p = new URLSearchParams();
@@ -79,7 +93,6 @@ export async function GET(request: Request) {
     return res;
   }
 
-  // 3) exchange code -> session (pose les cookies httpOnly)
   const supabase = createRouteHandlerClient({ cookies });
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
@@ -94,22 +107,18 @@ export async function GET(request: Request) {
     return res;
   }
 
-  // 4) Destination finale (priorité: param URL, puis cookie)
-  const finalReturnTo = returnToParam ?? cookieReturnTo;
+  // Destination finale (priorité param, puis cookie)
+  let finalReturnTo = returnToParam ?? cookieReturnTo;
 
-  if (finalReturnTo) {
-    const res = NextResponse.redirect(new URL(finalReturnTo, url.origin));
-    clearTempCookies(res);
-    res.headers.set("Cache-Control", "no-store");
-    return res;
+  // ✅ sécurité + anti-page-intermédiaire : si returnTo pointe ailleurs, on ignore
+  if (!finalReturnTo || !isAllowedReturnTo(finalReturnTo)) {
+    finalReturnTo = "/create-amoria";
   }
 
-  // Fallback
-  const p = new URLSearchParams();
-  p.set("lang", finalLang);
-  p.set("plan", finalPlan);
+  // ✅ injecte lang/plan si manquants
+  const finalWithParams = ensureLangPlan(finalReturnTo, finalLang, finalPlan);
 
-  const res = NextResponse.redirect(new URL(`/create-amoria?${p.toString()}`, url.origin));
+  const res = NextResponse.redirect(new URL(finalWithParams, url.origin));
   clearTempCookies(res);
   res.headers.set("Cache-Control", "no-store");
   return res;
