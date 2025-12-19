@@ -1,6 +1,7 @@
 "use client";
 
 import React, { FormEvent, useEffect, useMemo, useState } from "react";
+import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
@@ -40,6 +41,7 @@ type Strings = {
   confirmBody: string;
   show: string;
   hide: string;
+  missingKey: string;
 };
 
 const STRINGS: Record<Locale, Strings> = {
@@ -67,6 +69,7 @@ const STRINGS: Record<Locale, Strings> = {
       "📩 Vérifie ton courriel pour confirmer ton inscription.\nUne fois confirmé, tu pourras créer ton AmorIAI.",
     show: "Afficher",
     hide: "Cacher",
+    missingKey: "Clé reCAPTCHA manquante (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
   },
   en: {
     badge: "Create your AmorIAI account",
@@ -92,6 +95,7 @@ const STRINGS: Record<Locale, Strings> = {
       "📩 Check your email to confirm your registration.\nOnce confirmed, you’ll be able to create your AmorIAI.",
     show: "Show",
     hide: "Hide",
+    missingKey: "Missing reCAPTCHA key (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
   },
   es: {
     badge: "Crear tu cuenta AmorIAI",
@@ -117,6 +121,7 @@ const STRINGS: Record<Locale, Strings> = {
       "📩 Revisa tu correo para confirmar tu inscripción.\nUna vez confirmada, podrás crear tu AmorIAI.",
     show: "Mostrar",
     hide: "Ocultar",
+    missingKey: "Falta la clave reCAPTCHA (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
   },
 };
 
@@ -149,7 +154,8 @@ function buildRedirectParams(locale: Locale, plan: PlanId) {
 }
 
 function setTempCookie(name: string, value: string, maxAgeSeconds = 600) {
-  const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  const secure =
+    typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
   document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
 }
 
@@ -173,37 +179,49 @@ export default function SignupClient() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [waitingConfirmation, setWaitingConfirmation] = useState(false);
+  const [recaptchaReady, setRecaptchaReady] = useState(false);
 
-  /* Load reCAPTCHA v3 script */
+  // reCAPTCHA ready
   useEffect(() => {
-    if (!RECAPTCHA_SITE_KEY) return;
-    if (document.getElementById("recaptcha-script")) return;
+    if (!RECAPTCHA_SITE_KEY) {
+      setRecaptchaReady(false);
+      return;
+    }
 
-    const script = document.createElement("script");
-    script.id = "recaptcha-script";
-    script.src = `https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`;
-    script.async = true;
-    script.defer = true;
-    document.body.appendChild(script);
+    let cancelled = false;
+
+    const tick = () => {
+      if (cancelled) return;
+      const g = (window as any)?.grecaptcha;
+      if (g?.ready && g?.execute) {
+        g.ready(() => {
+          if (!cancelled) setRecaptchaReady(true);
+        });
+        return;
+      }
+      setTimeout(tick, 150);
+    };
+
+    tick();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const runRecaptcha = async (action: "signup"): Promise<string | null> => {
     if (!RECAPTCHA_SITE_KEY) return null;
-    if (typeof window === "undefined") return null;
-
     const g = (window as any)?.grecaptcha;
-    if (!g?.ready || !g?.execute) return null;
+    if (!g?.execute || !g?.ready) return null;
 
     return new Promise((resolve) => {
-      try {
-        g.ready(() => {
-          g.execute(RECAPTCHA_SITE_KEY, { action })
-            .then((token: string) => resolve(token))
-            .catch(() => resolve(null));
-        });
-      } catch {
-        resolve(null);
-      }
+      g.ready(async () => {
+        try {
+          const token = await g.execute(RECAPTCHA_SITE_KEY, { action });
+          resolve(token);
+        } catch {
+          resolve(null);
+        }
+      });
     });
   };
 
@@ -254,6 +272,11 @@ export default function SignupClient() {
     setWaitingConfirmation(false);
 
     try {
+      if (!RECAPTCHA_SITE_KEY) {
+        setErrorMsg(t.missingKey);
+        return;
+      }
+
       const token = await runRecaptcha("signup");
       if (!token) {
         setErrorMsg(t.errorRecaptcha);
@@ -270,7 +293,7 @@ export default function SignupClient() {
       const origin = window.location.origin;
       const params = buildRedirectParams(locale, plan);
 
-      // ✅ Email confirmation: OK d'avoir les query params ici
+      // Email confirmation: OK d'avoir les query params ici
       const emailRedirectTo = `${origin}${AUTH_CALLBACK_PATH}?${params.toString()}`;
 
       const { data, error } = await supabase.auth.signUp({
@@ -291,7 +314,7 @@ export default function SignupClient() {
         return;
       }
 
-      // Session immédiate => go
+      // Session immédiate (rare) => go
       redirectAfterSignup();
     } catch (err) {
       console.error("signup error", err);
@@ -323,7 +346,7 @@ export default function SignupClient() {
       setTempCookie("amoria_plan", plan);
       setTempCookie("amoria_returnTo", finalReturnTo);
 
-      // ✅ redirectTo => /api/auth/callback sans query params
+      // redirectTo => /api/auth/callback sans query params
       const redirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -337,7 +360,9 @@ export default function SignupClient() {
       if (error) {
         console.error("google oauth error", error);
         setErrorMsg(t.errorGoogle);
+        return;
       }
+      // ⚠️ pas de router.replace ici: Google va rediriger -> callback serveur
     } catch (err) {
       console.error("google oauth error", err);
       setErrorMsg(t.errorGoogle);
@@ -346,425 +371,473 @@ export default function SignupClient() {
     }
   };
 
+  const submitDisabled = loading || !recaptchaReady || waitingConfirmation;
+
   return (
-    <main className="auth-root">
-      <div className="auth-gradient-orbit" />
-      <div className="auth-gradient-orbit auth-gradient-orbit--right" />
+    <>
+      {RECAPTCHA_SITE_KEY ? (
+        <Script
+          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`}
+          strategy="afterInteractive"
+        />
+      ) : null}
 
-      <div className="auth-card">
-        <div className="auth-badge">{t.badge}</div>
+      <main className="auth-root">
+        <div className="auth-gradient-orbit" />
+        <div className="auth-gradient-orbit auth-gradient-orbit--right" />
 
-        <header className="auth-header">
-          <h1 className="auth-title">{t.title}</h1>
-          <p className="auth-subtitle">{t.subtitle}</p>
-        </header>
+        <div className="auth-card">
+          <div className="auth-badge">{t.badge}</div>
 
-        {waitingConfirmation && (
-          <div className="auth-confirm-box" role="status" aria-live="polite">
-            <div className="auth-confirm-title">{t.confirmTitle}</div>
-            <div className="auth-confirm-body">{t.confirmBody}</div>
-          </div>
-        )}
+          <header className="auth-header">
+            <h1 className="auth-title">{t.title}</h1>
+            <p className="auth-subtitle">{t.subtitle}</p>
+          </header>
 
-        {errorMsg && <p className="auth-error auth-error--block">{errorMsg}</p>}
-
-        <button type="button" onClick={handleGoogle} disabled={loading} className="auth-google-btn">
-          <span className="auth-google-icon" aria-hidden="true">
-            <img src="/google-g.png" alt="" className="auth-google-img" />
-          </span>
-          <span>{loading ? t.googleLoading : t.google}</span>
-        </button>
-
-        <div className="auth-divider" aria-hidden="true">
-          <span className="auth-divider-line" />
-          <span className="auth-divider-label">{t.or}</span>
-          <span className="auth-divider-line" />
-        </div>
-
-        <form onSubmit={handleSignup} noValidate className="auth-form">
-          <div className="auth-field">
-            <label className="auth-label">{t.emailLabel}</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t.emailPlaceholder}
-              className="auth-input"
-              autoComplete="email"
-              disabled={loading}
-            />
-          </div>
-
-          <div className="auth-field">
-            <label className="auth-label">{t.passwordLabel}</label>
-            <div className="auth-password-wrapper">
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={t.passwordPlaceholder}
-                className="auth-input auth-input-password"
-                autoComplete="new-password"
-                disabled={loading}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="auth-password-toggle"
-                disabled={loading}
-              >
-                {showPassword ? t.hide : t.show}
-              </button>
+          {waitingConfirmation && (
+            <div className="auth-confirm-box" role="status" aria-live="polite">
+              <div className="auth-confirm-title">{t.confirmTitle}</div>
+              <div className="auth-confirm-body">{t.confirmBody}</div>
             </div>
-            <p className="auth-password-hint">{t.passwordHint}</p>
+          )}
+
+          {errorMsg && <p className="auth-error auth-error--block">{errorMsg}</p>}
+
+          <button type="button" onClick={handleGoogle} disabled={loading} className="auth-google-btn">
+            <span className="auth-google-icon" aria-hidden="true">
+              <img src="/google-g.png" alt="" className="auth-google-img" />
+            </span>
+            <span>{loading ? t.googleLoading : t.google}</span>
+          </button>
+
+          <div className="auth-divider" aria-hidden="true">
+            <span className="auth-divider-line" />
+            <span className="auth-divider-label">{t.or}</span>
+            <span className="auth-divider-line" />
           </div>
 
-          <button type="submit" disabled={loading} className="auth-submit-btn">
-            {loading ? t.submitting : t.submit}
-          </button>
-        </form>
+          <form onSubmit={handleSignup} noValidate className="auth-form">
+            <div className="auth-field">
+              <label className="auth-label">{t.emailLabel}</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t.emailPlaceholder}
+                className="auth-input"
+                autoComplete="email"
+                disabled={loading || waitingConfirmation}
+              />
+            </div>
 
-        <div className="auth-footer">
-          {t.haveAccount}{" "}
-          <button type="button" onClick={goToLogin} className="auth-link-btn" disabled={loading}>
-            {t.loginLink}
-          </button>
+            <div className="auth-field">
+              <label className="auth-label">{t.passwordLabel}</label>
+              <div className="auth-password-wrapper">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t.passwordPlaceholder}
+                  className="auth-input auth-input-password"
+                  autoComplete="new-password"
+                  disabled={loading || waitingConfirmation}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="auth-password-toggle"
+                  disabled={loading || waitingConfirmation}
+                >
+                  {showPassword ? t.hide : t.show}
+                </button>
+              </div>
+              <p className="auth-password-hint">{t.passwordHint}</p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitDisabled}
+              className="auth-submit-btn"
+              title={!recaptchaReady ? "reCAPTCHA pas prêt" : undefined}
+            >
+              {loading ? t.submitting : t.submit}
+            </button>
+          </form>
+
+          <div className="auth-footer">
+            {t.haveAccount}{" "}
+            <button type="button" onClick={goToLogin} className="auth-link-btn" disabled={loading}>
+              {t.loginLink}
+            </button>
+          </div>
         </div>
-      </div>
 
-      <style jsx>{`
-        .auth-root {
-          min-height: 100vh;
-          margin: 0;
-          padding: 1.5rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          overflow: hidden;
-          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 85%),
-            radial-gradient(circle at bottom, #020617, #000);
-          color: #e5e7eb;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-            "Helvetica Neue", Arial, sans-serif;
-        }
-
-        .auth-gradient-orbit {
-          position: absolute;
-          width: 520px;
-          height: 520px;
-          border-radius: 999px;
-          background: radial-gradient(circle at 20% 20%, rgba(251, 113, 133, 0.55), transparent 60%);
-          opacity: 0.6;
-          filter: blur(4px);
-          top: -120px;
-          left: -120px;
-          pointer-events: none;
-        }
-
-        .auth-gradient-orbit--right {
-          top: auto;
-          bottom: -160px;
-          left: auto;
-          right: -140px;
-          background: radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.55), transparent 65%);
-        }
-
-        .auth-card {
-          position: relative;
-          width: 100%;
-          max-width: 440px;
-          border-radius: 1.9rem;
-          padding: 2.3rem 2.5rem 2.1rem;
-          background: radial-gradient(circle at top left, rgba(248, 113, 113, 0.28), transparent 55%),
-            radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.28), transparent 55%),
-            rgba(2, 6, 23, 0.98);
-          box-shadow: 0 32px 90px rgba(15, 23, 42, 0.95), 0 0 0 1px rgba(148, 163, 184, 0.35);
-          border: 1px solid rgba(148, 163, 184, 0.55);
-          backdrop-filter: blur(20px);
-          z-index: 1;
-        }
-
-        .auth-badge {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0.2rem 0.9rem;
-          border-radius: 999px;
-          font-size: 0.7rem;
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          background: rgba(15, 23, 42, 0.96);
-          border: 1px solid rgba(148, 163, 184, 0.7);
-          color: #9ca3af;
-          margin-bottom: 1rem;
-        }
-
-        .auth-header {
-          margin-bottom: 1.5rem;
-        }
-
-        .auth-title {
-          font-size: 1.7rem;
-          font-weight: 700;
-          margin: 0 0 0.35rem;
-          letter-spacing: 0.02em;
-        }
-
-        .auth-subtitle {
-          margin: 0;
-          font-size: 0.9rem;
-          color: #9ca3af;
-          line-height: 1.4;
-        }
-
-        .auth-confirm-box {
-          background: rgba(34, 197, 94, 0.12);
-          border: 1px solid rgba(34, 197, 94, 0.6);
-          padding: 0.9rem 1rem;
-          border-radius: 0.9rem;
-          font-size: 0.85rem;
-          color: #bbf7d0;
-          margin-bottom: 1rem;
-          text-align: center;
-        }
-
-        .auth-confirm-title {
-          font-weight: 700;
-          margin-bottom: 0.25rem;
-        }
-
-        .auth-confirm-body {
-          font-size: 0.82rem;
-          white-space: pre-line;
-          line-height: 1.35;
-        }
-
-        .auth-google-btn {
-          width: 100%;
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.9);
-          padding: 0.72rem 1rem;
-          background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 1));
-          color: #e5e7eb;
-          font-size: 0.92rem;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.55rem;
-          cursor: pointer;
-          transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease,
-            border-color 0.15s ease, opacity 0.15s ease;
-          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.7);
-        }
-
-        .auth-google-btn:disabled {
-          opacity: 0.7;
-          cursor: default;
-          box-shadow: none;
-        }
-
-        .auth-google-btn:not(:disabled):hover {
-          transform: translateY(-1px);
-          border-color: rgba(248, 250, 252, 0.7);
-          box-shadow: 0 20px 50px rgba(15, 23, 42, 0.85);
-        }
-
-        .auth-google-icon {
-          width: 1.5rem;
-          height: 1.5rem;
-          border-radius: 999px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-        }
-
-        .auth-google-img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-        }
-
-        .auth-divider {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          margin: 1.35rem 0 1.15rem;
-        }
-
-        .auth-divider-line {
-          flex: 1;
-          height: 1px;
-          background: linear-gradient(to right, transparent, rgba(148, 163, 184, 0.7), transparent);
-        }
-
-        .auth-divider-label {
-          font-size: 0.75rem;
-          text-transform: uppercase;
-          letter-spacing: 0.16em;
-          color: #6b7280;
-        }
-
-        .auth-form {
-          display: flex;
-          flex-direction: column;
-          gap: 0.95rem;
-        }
-
-        .auth-field {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-
-        .auth-label {
-          font-size: 0.8rem;
-          color: #e5e7eb;
-        }
-
-        .auth-input {
-          width: 100%;
-          border-radius: 999px;
-          border: 1px solid rgba(55, 65, 81, 0.95);
-          background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 1));
-          padding: 0.62rem 0.95rem;
-          font-size: 0.92rem;
-          color: #e5e7eb;
-          outline: none;
-          transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-        }
-
-        .auth-input::placeholder {
-          color: #6b7280;
-        }
-
-        .auth-input:focus {
-          border-color: #f97316;
-          box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.65), 0 14px 38px rgba(15, 23, 42, 0.9);
-        }
-
-        .auth-password-wrapper {
-          position: relative;
-        }
-
-        .auth-input-password {
-          padding-right: 2.9rem;
-        }
-
-        .auth-password-toggle {
-          position: absolute;
-          right: 0.7rem;
-          top: 50%;
-          transform: translateY(-50%);
-          border-radius: 999px;
-          border: none;
-          background: transparent;
-          color: #9ca3af;
-          font-size: 0.75rem;
-          padding: 0.2rem 0.55rem;
-          cursor: pointer;
-          transition: color 0.15s ease, background 0.15s ease;
-        }
-
-        .auth-password-toggle:hover {
-          color: #e5e7eb;
-          background: rgba(15, 23, 42, 0.9);
-        }
-
-        .auth-password-hint {
-          font-size: 0.75rem;
-          color: #9ca3af;
-          margin-top: 0.25rem;
-          line-height: 1.25;
-        }
-
-        .auth-error {
-          font-size: 0.82rem;
-          color: #fecaca;
-        }
-
-        .auth-error--block {
-          margin-bottom: 0.85rem;
-        }
-
-        .auth-submit-btn {
-          width: 100%;
-          margin-top: 0.25rem;
-          border-radius: 999px;
-          border: none;
-          padding: 0.8rem 1rem;
-          font-size: 0.96rem;
-          font-weight: 700;
-          color: #f9fafb;
-          cursor: pointer;
-          background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
-          box-shadow: 0 18px 48px rgba(248, 113, 113, 0.7);
-          transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.1s ease, opacity 0.15s ease;
-        }
-
-        .auth-submit-btn:disabled {
-          opacity: 0.75;
-          cursor: default;
-          box-shadow: none;
-          filter: grayscale(0.1);
-        }
-
-        .auth-submit-btn:not(:disabled):hover {
-          transform: translateY(-1px);
-          box-shadow: 0 24px 60px rgba(248, 113, 113, 0.9);
-        }
-
-        .auth-footer {
-          margin-top: 1.15rem;
-          font-size: 0.86rem;
-          text-align: center;
-          color: #9ca3af;
-        }
-
-        .auth-link-btn {
-          border: none;
-          background: none;
-          padding: 0;
-          margin: 0;
-          color: #f9a8d4;
-          cursor: pointer;
-          font-size: 0.86rem;
-          text-decoration: underline;
-          text-underline-offset: 2px;
-        }
-
-        .auth-link-btn:disabled {
-          opacity: 0.65;
-          cursor: default;
-        }
-
-        .auth-input,
-        .auth-input:focus,
-        .auth-input:active {
-          color: #e5e7eb;
-        }
-
-        .auth-input:-webkit-autofill,
-        .auth-input:-webkit-autofill:hover,
-        .auth-input:-webkit-autofill:focus {
-          -webkit-text-fill-color: #e5e7eb;
-          transition: background-color 9999s ease-out 0s;
-        }
-
-        @media (max-width: 480px) {
+        <style jsx>{`
           .auth-root {
-            padding-inline: 1.1rem;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 85%),
+              radial-gradient(circle at bottom, #020617, #000);
+            color: #e5e7eb;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+              "Helvetica Neue", Arial, sans-serif;
           }
+
+          .auth-gradient-orbit {
+            position: absolute;
+            width: 520px;
+            height: 520px;
+            border-radius: 999px;
+            background: radial-gradient(
+              circle at 20% 20%,
+              rgba(251, 113, 133, 0.55),
+              transparent 60%
+            );
+            opacity: 0.6;
+            filter: blur(4px);
+            top: -120px;
+            left: -120px;
+            pointer-events: none;
+          }
+
+          .auth-gradient-orbit--right {
+            top: auto;
+            bottom: -160px;
+            left: auto;
+            right: -140px;
+            background: radial-gradient(
+              circle at 80% 20%,
+              rgba(59, 130, 246, 0.55),
+              transparent 65%
+            );
+          }
+
           .auth-card {
-            padding-inline: 1.6rem;
+            position: relative;
+            width: 100%;
+            max-width: 440px;
+            border-radius: 1.9rem;
+            padding: 2.3rem 2.5rem 2.1rem;
+            background: radial-gradient(
+                circle at top left,
+                rgba(248, 113, 113, 0.28),
+                transparent 55%
+              ),
+              radial-gradient(
+                circle at bottom right,
+                rgba(59, 130, 246, 0.28),
+                transparent 55%
+              ),
+              rgba(2, 6, 23, 0.98);
+            box-shadow: 0 32px 90px rgba(15, 23, 42, 0.95),
+              0 0 0 1px rgba(148, 163, 184, 0.35);
+            border: 1px solid rgba(148, 163, 184, 0.55);
+            backdrop-filter: blur(20px);
+            z-index: 1;
           }
-        }
-      `}</style>
-    </main>
+
+          .auth-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.2rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            background: rgba(15, 23, 42, 0.96);
+            border: 1px solid rgba(148, 163, 184, 0.7);
+            color: #9ca3af;
+            margin-bottom: 1rem;
+          }
+
+          .auth-header {
+            margin-bottom: 1.5rem;
+          }
+
+          .auth-title {
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin: 0 0 0.35rem;
+            letter-spacing: 0.02em;
+          }
+
+          .auth-subtitle {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #9ca3af;
+            line-height: 1.4;
+          }
+
+          .auth-confirm-box {
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.6);
+            padding: 0.9rem 1rem;
+            border-radius: 0.9rem;
+            font-size: 0.85rem;
+            color: #bbf7d0;
+            margin-bottom: 1rem;
+            text-align: center;
+          }
+
+          .auth-confirm-title {
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+          }
+
+          .auth-confirm-body {
+            font-size: 0.82rem;
+            white-space: pre-line;
+            line-height: 1.35;
+          }
+
+          .auth-google-btn {
+            width: 100%;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.9);
+            padding: 0.72rem 1rem;
+            background: radial-gradient(
+              circle at top left,
+              rgba(15, 23, 42, 0.9),
+              rgba(15, 23, 42, 1)
+            );
+            color: #e5e7eb;
+            font-size: 0.92rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease,
+              border-color 0.15s ease, opacity 0.15s ease;
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.7);
+          }
+
+          .auth-google-btn:disabled {
+            opacity: 0.7;
+            cursor: default;
+            box-shadow: none;
+          }
+
+          .auth-google-btn:not(:disabled):hover {
+            transform: translateY(-1px);
+            border-color: rgba(248, 250, 252, 0.7);
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.85);
+          }
+
+          .auth-google-icon {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+          }
+
+          .auth-google-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+          }
+
+          .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1.35rem 0 1.15rem;
+          }
+
+          .auth-divider-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(
+              to right,
+              transparent,
+              rgba(148, 163, 184, 0.7),
+              transparent
+            );
+          }
+
+          .auth-divider-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            color: #6b7280;
+          }
+
+          .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.95rem;
+          }
+
+          .auth-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+          }
+
+          .auth-label {
+            font-size: 0.8rem;
+            color: #e5e7eb;
+          }
+
+          .auth-input {
+            width: 100%;
+            border-radius: 999px;
+            border: 1px solid rgba(55, 65, 81, 0.95);
+            background: radial-gradient(
+              circle at top left,
+              rgba(15, 23, 42, 0.9),
+              rgba(15, 23, 42, 1)
+            );
+            padding: 0.62rem 0.95rem;
+            font-size: 0.92rem;
+            color: #e5e7eb;
+            outline: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+          }
+
+          .auth-input::placeholder {
+            color: #6b7280;
+          }
+
+          .auth-input:focus {
+            border-color: #f97316;
+            box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.65),
+              0 14px 38px rgba(15, 23, 42, 0.9);
+          }
+
+          .auth-password-wrapper {
+            position: relative;
+          }
+
+          .auth-input-password {
+            padding-right: 2.9rem;
+          }
+
+          .auth-password-toggle {
+            position: absolute;
+            right: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 999px;
+            border: none;
+            background: transparent;
+            color: #9ca3af;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.55rem;
+            cursor: pointer;
+            transition: color 0.15s ease, background 0.15s ease;
+          }
+
+          .auth-password-toggle:hover {
+            color: #e5e7eb;
+            background: rgba(15, 23, 42, 0.9);
+          }
+
+          .auth-password-hint {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 0.25rem;
+            line-height: 1.25;
+          }
+
+          .auth-error {
+            font-size: 0.82rem;
+            color: #fecaca;
+          }
+
+          .auth-error--block {
+            margin-bottom: 0.85rem;
+          }
+
+          .auth-submit-btn {
+            width: 100%;
+            margin-top: 0.25rem;
+            border-radius: 999px;
+            border: none;
+            padding: 0.8rem 1rem;
+            font-size: 0.96rem;
+            font-weight: 700;
+            color: #f9fafb;
+            cursor: pointer;
+            background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
+            box-shadow: 0 18px 48px rgba(248, 113, 113, 0.7);
+            transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.1s ease,
+              opacity 0.15s ease;
+          }
+
+          .auth-submit-btn:disabled {
+            opacity: 0.75;
+            cursor: default;
+            box-shadow: none;
+            filter: grayscale(0.1);
+          }
+
+          .auth-submit-btn:not(:disabled):hover {
+            transform: translateY(-1px);
+            box-shadow: 0 24px 60px rgba(248, 113, 113, 0.9);
+          }
+
+          .auth-footer {
+            margin-top: 1.15rem;
+            font-size: 0.86rem;
+            text-align: center;
+            color: #9ca3af;
+          }
+
+          .auth-link-btn {
+            border: none;
+            background: none;
+            padding: 0;
+            margin: 0;
+            color: #f9a8d4;
+            cursor: pointer;
+            font-size: 0.86rem;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+          }
+
+          .auth-link-btn:disabled {
+            opacity: 0.65;
+            cursor: default;
+          }
+
+          .auth-input,
+          .auth-input:focus,
+          .auth-input:active {
+            color: #e5e7eb;
+          }
+
+          .auth-input:-webkit-autofill,
+          .auth-input:-webkit-autofill:hover,
+          .auth-input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #e5e7eb;
+            transition: background-color 9999s ease-out 0s;
+          }
+
+          @media (max-width: 480px) {
+            .auth-root {
+              padding-inline: 1.1rem;
+            }
+            .auth-card {
+              padding-inline: 1.6rem;
+            }
+          }
+        `}</style>
+      </main>
+    </>
   );
-      }
+}
