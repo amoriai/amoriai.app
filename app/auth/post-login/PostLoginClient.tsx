@@ -1,59 +1,78 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
+
+type Locale = "fr" | "en" | "es";
+type PlanId = "free" | "chat" | "plus" | "unlimited";
+
+function normalizeLocale(raw: string | null): Locale {
+  return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
+}
+function normalizePlan(raw: string | null): PlanId {
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
+    ? raw
+    : "free";
+}
 
 export default function PostLoginClient() {
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const sp = useSearchParams();
+
+  const locale = useMemo(() => normalizeLocale(sp.get("lang")), [sp]);
+  const plan = useMemo(() => normalizePlan(sp.get("plan")), [sp]);
 
   useEffect(() => {
     let cancelled = false;
 
-    const run = async () => {
-      // 1️⃣ Session
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (cancelled) return;
+    const go = (path: string) => {
+      if (!cancelled) router.replace(path);
+    };
 
-      const user = sessionData.session?.user;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
+
       if (!user) {
-        router.replace("/login");
+        const p = new URLSearchParams();
+        p.set("lang", locale);
+        p.set("plan", plan);
+        go(`/login?${p.toString()}`);
         return;
       }
 
-      // 2️⃣ Vérifier si une AmorAI existe
-      const { data: amoria, error } = await supabase
-        .from("amoria") // ✅ ta table
+      const { data: amoria } = await supabase
+        .from("user_amoria")
         .select("id")
         .eq("user_id", user.id)
         .eq("is_archived", false)
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
 
-      if (cancelled) return;
-
-      if (error) {
-        console.error("Erreur lookup amoria", error);
-        router.replace("/create-amoria");
-        return;
-      }
-
-      // 3️⃣ Décision finale
       if (amoria?.id) {
-        // ✅ IA existante → CHAT DIRECT
-        router.replace(`/chat?amoria=${amoria.id}`);
+        const p = new URLSearchParams();
+        p.set("iaId", amoria.id);
+        p.set("lang", locale);
+        p.set("plan", plan);
+        go(`/chat?${p.toString()}`);
       } else {
-        // ❌ Pas d’IA → CRÉATION
-        router.replace("/create-amoria");
+        const p = new URLSearchParams();
+        p.set("lang", locale);
+        p.set("plan", plan);
+        go(`/create-amoria?${p.toString()}`);
       }
-    };
-
-    run();
+    })();
 
     return () => {
       cancelled = true;
     };
-  }, [router, supabase]);
+  }, [router, locale, plan]);
 
-  return <p>Connexion en cours…</p>;
+  return (
+    <main style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
+      <p>Connexion…</p>
+    </main>
+  );
 }
