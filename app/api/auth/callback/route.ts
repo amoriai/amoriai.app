@@ -24,19 +24,48 @@ function safeReturnTo(raw: string | null): string | null {
   return v;
 }
 
+function readCookie(name: string): string | null {
+  try {
+    const v = cookies().get(name)?.value ?? null;
+    if (!v) return null;
+    return decodeURIComponent(v);
+  } catch {
+    return null;
+  }
+}
+
+function clearCookie(name: string) {
+  try {
+    cookies().set(name, "", { path: "/", maxAge: 0 });
+  } catch {
+    // ignore
+  }
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
 
   // Params (dans l'URL)
   const lang = normalizeLocale(url.searchParams.get("lang"));
   const plan = normalizePlan(url.searchParams.get("plan"));
-  const returnTo = safeReturnTo(url.searchParams.get("returnTo"));
+  const returnToParam = safeReturnTo(url.searchParams.get("returnTo"));
+
+  // Cookies temporaires (posés côté client avant OAuth)
+  const cookieReturnTo = safeReturnTo(readCookie("amoria_returnTo"));
+  const cookieLang = normalizeLocale(readCookie("amoria_lang"));
+  const cookiePlan = normalizePlan(readCookie("amoria_plan"));
+
+  // On choisit lang/plan en priorité:
+  // - URL si présent
+  // - sinon cookie
+  const finalLang = normalizeLocale(url.searchParams.get("lang") ?? cookieLang);
+  const finalPlan = normalizePlan(url.searchParams.get("plan") ?? cookiePlan);
 
   // 1) erreur provider
   const oauthError = url.searchParams.get("error");
   if (oauthError) {
     const p = new URLSearchParams();
-    p.set("lang", lang);
+    p.set("lang", finalLang);
     p.set("error", oauthError);
     return NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
   }
@@ -45,7 +74,7 @@ export async function GET(request: Request) {
   const code = url.searchParams.get("code");
   if (!code) {
     const p = new URLSearchParams();
-    p.set("lang", lang);
+    p.set("lang", finalLang);
     p.set("error", "missing_code");
     return NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
   }
@@ -56,21 +85,31 @@ export async function GET(request: Request) {
 
   if (error) {
     const p = new URLSearchParams();
-    p.set("lang", lang);
+    p.set("lang", finalLang);
     p.set("error", "oauth_exchange");
     return NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
   }
 
-  // 4) Destination finale UNIFIÉE
-  // - si returnTo est safe: on respecte
-  // - sinon: on passe par /auth/post-login (qui décidera chat vs create-amoria)
-  if (returnTo) {
-    return NextResponse.redirect(new URL(returnTo, url.origin));
+  // 4) DESTINATION FINALE: toujours create-amoria (ou returnTo safe si tu veux le garder)
+  // Priorité:
+  // - returnTo param (safe)
+  // - returnTo cookie (safe)
+  // - sinon create-amoria?lang&plan
+  const finalReturnTo = returnToParam ?? cookieReturnTo;
+
+  // Nettoyage des cookies temporaires (optionnel mais propre)
+  clearCookie("amoria_returnTo");
+  clearCookie("amoria_lang");
+  clearCookie("amoria_plan");
+  clearCookie("amoria_returnTo"); // double-safe
+
+  if (finalReturnTo) {
+    return NextResponse.redirect(new URL(finalReturnTo, url.origin));
   }
 
   const p = new URLSearchParams();
-  p.set("lang", lang);
-  p.set("plan", plan);
+  p.set("lang", finalLang);
+  p.set("plan", finalPlan);
 
-  return NextResponse.redirect(new URL(`/auth/post-login?${p.toString()}`, url.origin));
+  return NextResponse.redirect(new URL(`/create-amoria?${p.toString()}`, url.origin));
 }
