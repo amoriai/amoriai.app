@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabaseClient";
-
+import { supabase } from "@/lib/supabase/client";
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 type PersonaType = "woman" | "man" | "woman50" | "man50" | "androgynous";
