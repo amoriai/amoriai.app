@@ -5,154 +5,62 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-function normalizeLocaleNullable(raw: string | null): Locale | null {
-  if (!raw) return null;
+function normalizeLocale(raw: string | null): Locale {
   return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
 
-function normalizePlanNullable(raw: string | null): PlanId | null {
-  if (!raw) return null;
+function normalizePlan(raw: string | null): PlanId {
   return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
 }
 
-/**
- * Autorise uniquement un chemin interne:
- * - commence par "/"
- * - refuse "//" (open redirect)
- * - refuse "\" (bypass)
- * - refuse les routes sensibles (évite boucles)
- */
 function safeReturnTo(raw: string | null): string | null {
   if (!raw) return null;
   const v = raw.trim();
   if (!v.startsWith("/")) return null;
   if (v.startsWith("//")) return null;
   if (v.includes("\\")) return null;
-
-  // bloque les destinations qui causent des boucles / bypass
-  const lower = v.toLowerCase();
-  const blockedPrefixes = ["/api/", "/login", "/signup", "/auth", "/api/auth/callback"];
-  if (blockedPrefixes.some((p) => lower === p || lower.startsWith(p))) return null;
-
   return v;
-}
-
-function getCookieDecoded(name: string): string | null {
-  const c = cookies().get(name)?.value;
-  if (!c) return null;
-  try {
-    return decodeURIComponent(c);
-  } catch {
-    return c;
-  }
-}
-
-function clearTempCookies(res: NextResponse) {
-  res.cookies.set("amoria_lang", "", { path: "/", maxAge: 0 });
-  res.cookies.set("amoria_plan", "", { path: "/", maxAge: 0 });
-  res.cookies.set("amoria_returnTo", "", { path: "/", maxAge: 0 });
-}
-
-function withLangPlan(dest: string, lang: Locale, plan: PlanId) {
-  // Ajoute lang/plan si dest n’a pas déjà des query params (ou s’ils manquent)
-  const u = new URL(dest, "http://local");
-  if (!u.searchParams.get("lang")) u.searchParams.set("lang", lang);
-  if (!u.searchParams.get("plan")) u.searchParams.set("plan", plan);
-  return u.pathname + (u.search ? u.search : "");
 }
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  console.log("[api/auth/callback] hit:", url.pathname, "keys:", Array.from(url.searchParams.keys()));
 
-  // 1) Erreur provider
+  // 1) erreur provider
   const oauthError = url.searchParams.get("error");
-  const oauthErrorDesc = url.searchParams.get("error_description");
   if (oauthError) {
-    console.error("[api/auth/callback] oauth error:", oauthError, oauthErrorDesc);
-
-    const lang =
-      normalizeLocaleNullable(url.searchParams.get("lang")) ??
-      normalizeLocaleNullable(getCookieDecoded("amoria_lang")) ??
-      "fr";
-
-    const res = NextResponse.redirect(
-      new URL(`/login?lang=${lang}&error=${encodeURIComponent(oauthError)}`, url.origin)
-    );
-    clearTempCookies(res);
-    return res;
+    const lang = normalizeLocale(url.searchParams.get("lang"));
+    return NextResponse.redirect(new URL(`/login?lang=${lang}&error=${encodeURIComponent(oauthError)}`, url.origin));
   }
 
-  // 2) Code obligatoire
+  // 2) code obligatoire
   const code = url.searchParams.get("code");
   if (!code) {
-    const lang =
-      normalizeLocaleNullable(url.searchParams.get("lang")) ??
-      normalizeLocaleNullable(getCookieDecoded("amoria_lang")) ??
-      "fr";
-
-    const res = NextResponse.redirect(new URL(`/login?lang=${lang}&error=missing_code`, url.origin));
-    clearTempCookies(res);
-    return res;
+    const lang = normalizeLocale(url.searchParams.get("lang"));
+    return NextResponse.redirect(new URL(`/login?lang=${lang}&error=missing_code`, url.origin));
   }
 
-  // 3) Exchange code -> session (met les cookies Supabase)
+  // 3) exchange code -> session (cookies httpOnly gérés par auth-helpers)
   const supabase = createRouteHandlerClient({ cookies });
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    console.error("[api/auth/callback] exchangeCodeForSession error:", error);
-
-    const lang =
-      normalizeLocaleNullable(url.searchParams.get("lang")) ??
-      normalizeLocaleNullable(getCookieDecoded("amoria_lang")) ??
-      "fr";
-
-    const res = NextResponse.redirect(new URL(`/login?lang=${lang}&error=oauth_exchange`, url.origin));
-    clearTempCookies(res);
-    return res;
+    const lang = normalizeLocale(url.searchParams.get("lang"));
+    return NextResponse.redirect(new URL(`/login?lang=${lang}&error=oauth_exchange`, url.origin));
   }
 
-  // 4) Vérifie session
-  const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
-  if (sessionErr || !sessionData.session?.user) {
-    console.error("[api/auth/callback] no session after exchange:", sessionErr);
+  // 4) lire params (dans l'URL, pas de cookies)
+  const lang = normalizeLocale(url.searchParams.get("lang"));
+  const plan = normalizePlan(url.searchParams.get("plan"));
+  const returnTo = safeReturnTo(url.searchParams.get("returnTo"));
 
-    const lang =
-      normalizeLocaleNullable(url.searchParams.get("lang")) ??
-      normalizeLocaleNullable(getCookieDecoded("amoria_lang")) ??
-      "fr";
-
-    const res = NextResponse.redirect(new URL(`/login?lang=${lang}&error=no_session`, url.origin));
-    clearTempCookies(res);
-    return res;
-  }
-
-  // 5) Lire lang/plan/returnTo depuis query OU cookies
-  const lang =
-    normalizeLocaleNullable(url.searchParams.get("lang")) ??
-    normalizeLocaleNullable(getCookieDecoded("amoria_lang")) ??
-    "fr";
-
-  const plan =
-    normalizePlanNullable(url.searchParams.get("plan")) ??
-    normalizePlanNullable(getCookieDecoded("amoria_plan")) ??
-    "free";
-
-  const returnTo = safeReturnTo(url.searchParams.get("returnTo") ?? getCookieDecoded("amoria_returnTo"));
-
-  // 6) Destination finale
-  let dest: string;
-
+  // 5) destination finale
   if (returnTo) {
-    dest = withLangPlan(returnTo, lang, plan);
-  } else if (plan !== "free") {
-    dest = `/payment?lang=${lang}&plan=${plan}`;
-  } else {
-    dest = `/create-amoria?lang=${lang}&plan=${plan}`;
+    return NextResponse.redirect(new URL(returnTo, url.origin));
   }
 
-  const res = NextResponse.redirect(new URL(dest, url.origin));
-  clearTempCookies(res);
-  return res;
+  if (plan !== "free") {
+    return NextResponse.redirect(new URL(`/payment?lang=${lang}&plan=${plan}`, url.origin));
+  }
+
+  return NextResponse.redirect(new URL(`/create-amoria?lang=${lang}&plan=${plan}`, url.origin));
 }
