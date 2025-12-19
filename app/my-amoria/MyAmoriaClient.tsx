@@ -3,28 +3,33 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { maxAmoriaForPlan, planFromPricingName, type PlanId } from "@/lib/plans";
 
 type Locale = "fr" | "en" | "es";
-type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 type UiStrings = {
   title: string;
   loading: string;
   activePlanLabel: string;
+
   noAiTitle: string;
   noAiBody: string;
   createNow: string;
   backHome: string;
   planHint: string;
+
   retry: string;
   diagTitle: string;
   diagNoAccess: string;
   diagUnknown: string;
+
+  // NEW
+  limitReachedTitle: string;
+  limitReachedBody: (max: number) => string;
 };
 
 function normalizeLocale(raw: string | null): Locale {
-  if (raw === "fr" || raw === "en" || raw === "es") return raw;
-  return "fr";
+  return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
 
 const STRINGS: Record<Locale, UiStrings> = {
@@ -32,49 +37,64 @@ const STRINGS: Record<Locale, UiStrings> = {
     title: "Ton espace AmorIAI",
     loading: "Chargement de ton espace AmorIAI…",
     activePlanLabel: "Plan actif",
+
     noAiTitle: "Aucune IA détectée",
     noAiBody: "Tu es bien connectée, mais aucune AmorIAI n’a été trouvée pour ce compte.",
     createNow: "Créer mon AmorIAI maintenant",
     backHome: "Retour à la page d’accueil",
-    planHint: "Ton plan est automatiquement respecté (Free, Plus, Unlimited).",
+    planHint: "Ton plan est automatiquement respecté (Free, Chat, Plus, Unlimited).",
+
     retry: "Réessayer",
     diagTitle: "Diagnostic",
     diagNoAccess: "Accès refusé à la base (RLS / policies). Vérifie les policies Supabase.",
     diagUnknown: "Une erreur est survenue. Regarde la console (F12) pour voir le détail.",
+
+    limitReachedTitle: "Limite atteinte",
+    limitReachedBody: (max) => `Tu as atteint la limite de ton plan (${max} AmorIA max).`,
   },
   en: {
     title: "Your AmorIAI space",
     loading: "Loading your AmorIAI space…",
     activePlanLabel: "Active plan",
+
     noAiTitle: "No AI detected",
     noAiBody: "You are logged in, but we couldn’t find an AmorIAI for this account.",
     createNow: "Create my AmorIAI now",
     backHome: "Back to homepage",
-    planHint: "Your plan is automatically enforced (Free, Plus, Unlimited).",
+    planHint: "Your plan is automatically enforced (Free, Chat, Plus, Unlimited).",
+
     retry: "Retry",
     diagTitle: "Diagnostics",
     diagNoAccess: "Access denied (RLS / policies). Check Supabase policies.",
     diagUnknown: "Something went wrong. Check the browser console (F12).",
+
+    limitReachedTitle: "Limit reached",
+    limitReachedBody: (max) => `You reached your plan limit (${max} max AmorIA).`,
   },
   es: {
     title: "Tu espacio AmorIAI",
     loading: "Cargando tu espacio AmorIAI…",
     activePlanLabel: "Plan activo",
+
     noAiTitle: "Ninguna IA detectada",
     noAiBody: "Estás conectada, pero no encontramos un AmorIAI para esta cuenta.",
     createNow: "Crear mi AmorIAI ahora",
     backHome: "Volver a la página de inicio",
-    planHint: "Tu plan se respeta automáticamente (Free, Plus, Unlimited).",
+    planHint: "Tu plan se respeta automáticamente (Free, Chat, Plus, Unlimited).",
+
     retry: "Reintentar",
     diagTitle: "Diagnóstico",
     diagNoAccess: "Acceso denegado (RLS / policies).",
     diagUnknown: "Ocurrió un error. Revisa la consola (F12).",
+
+    limitReachedTitle: "Límite alcanzado",
+    limitReachedBody: (max) => `Alcanzaste el límite de tu plan (${max} AmorIA máx).`,
   },
 };
 
 type LoadState =
   | { status: "loading" }
-  | { status: "ready"; plan: PlanId }
+  | { status: "ready"; plan: PlanId; maxAllowed: number; aiCount: number }
   | { status: "error"; message: string; kind: "no_access" | "unknown" };
 
 function looksLikeRlsError(message: string) {
@@ -86,15 +106,6 @@ function looksLikeRlsError(message: string) {
     msg.includes("policy") ||
     msg.includes("violates row-level security")
   );
-}
-
-function planFromPricingName(name: string | null | undefined): PlanId {
-  const n = (name || "").toLowerCase();
-  if (n.includes("chat")) return "chat";
-  if (n.includes("plus")) return "plus";
-  if (n.includes("illimit")) return "unlimited";
-  if (n.includes("unlimit")) return "unlimited";
-  return "free";
 }
 
 export default function MyAmoriaClient() {
@@ -120,43 +131,10 @@ export default function MyAmoriaClient() {
     }
 
     const userId = user.id;
-    console.log("[MY-AMORIA] userId:", userId);
 
-    // 2) IA list (0 / 1 / many)
-    const { data: aiList, error: aiErr } = await supabase
-      .from("user_amoria")
-      .select("id, created_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: true });
+    // 2) Plan (subscription -> pricing -> name)
+    let plan: PlanId = "free";
 
-    if (aiErr) {
-      console.error("user_amoria SELECT error:", aiErr);
-      const rls = looksLikeRlsError(aiErr.message || "");
-      setState({
-        status: "error",
-        kind: rls ? "no_access" : "unknown",
-        message: rls ? t.diagNoAccess : t.diagUnknown,
-      });
-      return;
-    }
-
-    console.log("[MY-AMORIA] aiList:", aiList);
-
-    const count = aiList?.length ?? 0;
-
-    // ✅ 1 IA => chat direct
-    if (count === 1 && aiList?.[0]?.id) {
-      router.replace(`/chat?iaId=${aiList[0].id}&lang=${lang}`);
-      return;
-    }
-
-    // ✅ 2+ IA => page sélection
-    if (count >= 2) {
-      router.replace(`/my-amoria/select?lang=${lang}`);
-      return;
-    }
-
-    // 3) Subscription -> pricing_plan_id (seulement si 0 IA, pour afficher le bon plan + bouton)
     const { data: sub, error: subErr } = await supabase
       .from("user_subscriptions")
       .select("pricing_plan_id,current")
@@ -174,11 +152,6 @@ export default function MyAmoriaClient() {
       });
       return;
     }
-
-    console.log("[MY-AMORIA] sub:", sub);
-
-    // 4) pricing_plans -> name
-    let plan: PlanId = "free";
 
     if (sub?.pricing_plan_id) {
       const { data: pricing, error: pricingErr } = await supabase
@@ -198,11 +171,59 @@ export default function MyAmoriaClient() {
         return;
       }
 
-      console.log("[MY-AMORIA] pricing:", pricing);
       plan = planFromPricingName(pricing?.name);
     }
 
-    setState({ status: "ready", plan });
+    const maxAllowed = maxAmoriaForPlan(plan);
+
+    // 3) IA count (rapide) + redirect logique
+    // ⚠️ Note: Supabase count exact peut être un peu plus lent mais ok ici.
+    const { count, error: countErr } = await supabase
+      .from("user_amoria")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId);
+
+    if (countErr) {
+      console.error("user_amoria COUNT error:", countErr);
+      const rls = looksLikeRlsError(countErr.message || "");
+      setState({
+        status: "error",
+        kind: rls ? "no_access" : "unknown",
+        message: rls ? t.diagNoAccess : t.diagUnknown,
+      });
+      return;
+    }
+
+    const aiCount = typeof count === "number" ? count : 0;
+
+    // 0 IA -> écran create
+    if (aiCount === 0) {
+      setState({ status: "ready", plan, maxAllowed, aiCount });
+      return;
+    }
+
+    // 1 IA -> récupérer 1 id et aller chat direct
+    if (aiCount === 1) {
+      const { data: one, error: oneErr } = await supabase
+        .from("user_amoria")
+        .select("id")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (oneErr || !one?.id) {
+        console.error("user_amoria SELECT 1 error:", oneErr);
+        setState({ status: "ready", plan, maxAllowed, aiCount: 0 });
+        return;
+      }
+
+      router.replace(`/chat?iaId=${one.id}&lang=${lang}`);
+      return;
+    }
+
+    // 2+ IA -> page select
+    router.replace(`/my-amoria/select?lang=${lang}`);
   };
 
   useEffect(() => {
@@ -249,7 +270,10 @@ export default function MyAmoriaClient() {
     );
   }
 
-  const plan = state.plan;
+  // READY state (0 IA)
+  const { plan, maxAllowed, aiCount } = state;
+
+  const limitReached = aiCount >= maxAllowed;
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-black text-white p-6">
@@ -261,14 +285,21 @@ export default function MyAmoriaClient() {
         </div>
 
         <div className="bg-gray-800 p-4 rounded-xl">
-          <h2 className="font-semibold">{t.noAiTitle}</h2>
-          <p className="text-gray-300 mt-2">{t.noAiBody}</p>
+          <h2 className="font-semibold">{limitReached ? t.limitReachedTitle : t.noAiTitle}</h2>
+          <p className="text-gray-300 mt-2">
+            {limitReached ? t.limitReachedBody(maxAllowed) : t.noAiBody}
+          </p>
         </div>
 
         <div className="space-y-3">
           <button
             onClick={() => router.push(`/create-amoria?plan=${plan}&lang=${lang}`)}
-            className="w-full py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 font-semibold"
+            disabled={limitReached}
+            className={`w-full py-3 rounded-full font-semibold ${
+              limitReached
+                ? "bg-gray-700 text-gray-300 cursor-not-allowed"
+                : "bg-gradient-to-r from-pink-500 to-purple-600"
+            }`}
           >
             {t.createNow}
           </button>
