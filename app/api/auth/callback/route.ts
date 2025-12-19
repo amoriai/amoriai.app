@@ -8,13 +8,11 @@ type PlanId = "free" | "chat" | "plus" | "unlimited";
 function normalizeLocale(raw: string | null): Locale {
   return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
-
 function normalizePlan(raw: string | null): PlanId {
   return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
     ? raw
     : "free";
 }
-
 function safeReturnTo(raw: string | null): string | null {
   if (!raw) return null;
   const v = raw.trim();
@@ -27,8 +25,7 @@ function safeReturnTo(raw: string | null): string | null {
 function readCookie(name: string): string | null {
   try {
     const v = cookies().get(name)?.value ?? null;
-    if (!v) return null;
-    return decodeURIComponent(v);
+    return v ? decodeURIComponent(v) : null;
   } catch {
     return null;
   }
@@ -45,19 +42,15 @@ function clearCookie(name: string) {
 export async function GET(request: Request) {
   const url = new URL(request.url);
 
-  // Params (dans l'URL)
-  const lang = normalizeLocale(url.searchParams.get("lang"));
-  const plan = normalizePlan(url.searchParams.get("plan"));
+  // Params (URL)
   const returnToParam = safeReturnTo(url.searchParams.get("returnTo"));
 
-  // Cookies temporaires (posés côté client avant OAuth)
+  // Cookies temporaires (avant OAuth)
   const cookieReturnTo = safeReturnTo(readCookie("amoria_returnTo"));
-  const cookieLang = normalizeLocale(readCookie("amoria_lang"));
-  const cookiePlan = normalizePlan(readCookie("amoria_plan"));
+  const cookieLang = readCookie("amoria_lang");
+  const cookiePlan = readCookie("amoria_plan");
 
-  // On choisit lang/plan en priorité:
-  // - URL si présent
-  // - sinon cookie
+  // Lang/plan: URL priorité, sinon cookies
   const finalLang = normalizeLocale(url.searchParams.get("lang") ?? cookieLang);
   const finalPlan = normalizePlan(url.searchParams.get("plan") ?? cookiePlan);
 
@@ -79,7 +72,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
   }
 
-  // 3) exchange code -> session (cookies httpOnly)
+  // 3) exchange code -> session
   const supabase = createRouteHandlerClient({ cookies });
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
@@ -90,26 +83,23 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
   }
 
-  // 4) DESTINATION FINALE: toujours create-amoria (ou returnTo safe si tu veux le garder)
-  // Priorité:
-  // - returnTo param (safe)
-  // - returnTo cookie (safe)
-  // - sinon create-amoria?lang&plan
+  // 4) DESTINATION FINALE
+  // Priorité: returnTo param, puis returnTo cookie
   const finalReturnTo = returnToParam ?? cookieReturnTo;
 
-  // Nettoyage des cookies temporaires (optionnel mais propre)
+  // Nettoyage cookies temporaires
   clearCookie("amoria_returnTo");
   clearCookie("amoria_lang");
   clearCookie("amoria_plan");
-  clearCookie("amoria_returnTo"); // double-safe
 
   if (finalReturnTo) {
     return NextResponse.redirect(new URL(finalReturnTo, url.origin));
   }
 
+  // ✅ IMPORTANT: fallback vers post-login (pas create-amoria)
   const p = new URLSearchParams();
   p.set("lang", finalLang);
   p.set("plan", finalPlan);
 
-  return NextResponse.redirect(new URL(`/create-amoria?${p.toString()}`, url.origin));
+  return NextResponse.redirect(new URL(`/auth/post-login?${p.toString()}`, url.origin));
 }
