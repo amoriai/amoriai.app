@@ -8,7 +8,6 @@ import { supabase } from "../../lib/supabaseClient";
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
-const CREATE_AMORIA_PATH = "/create-amoria";
 const AUTH_CALLBACK_PATH = "/api/auth/callback";
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
@@ -16,6 +15,9 @@ const MIN_RECAPTCHA_SCORE = 0.5;
 
 // ✅ 24h pour que l’utilisateur puisse confirmer son email plus tard
 const SIGNUP_COOKIE_MAX_AGE = 86400;
+
+// ✅ Transition post-signup (pour éviter l'écran noir "Redirecting...")
+const POST_SIGNUP_PATH = "/auth/post-signup";
 
 /* ===========================
    TEXTES PAR LANGUE
@@ -69,7 +71,7 @@ const STRINGS: Record<Locale, Strings> = {
     errorRecaptcha: "La vérification de sécurité (reCAPTCHA) a échoué. Merci de réessayer.",
     confirmTitle: "✅ Ton compte a bien été créé.",
     confirmBody:
-      "📩 Vérifie ton courriel pour confirmer ton inscription.\nUne fois confirmé, tu seras redirigé automatiquement pour créer ton AmorIAI.",
+      "📩 Vérifie ton courriel pour confirmer ton inscription.\nUne fois confirmé, tu seras redirigé automatiquement.",
     show: "Afficher",
     hide: "Cacher",
     missingKey: "Clé reCAPTCHA manquante (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
@@ -95,7 +97,7 @@ const STRINGS: Record<Locale, Strings> = {
     errorRecaptcha: "Security check (reCAPTCHA) failed. Please try again.",
     confirmTitle: "✅ Your account has been created.",
     confirmBody:
-      "📩 Check your email to confirm your registration.\nOnce confirmed, you’ll be redirected automatically to create your AmorIAI.",
+      "📩 Check your email to confirm your registration.\nOnce confirmed, you’ll be redirected automatically.",
     show: "Show",
     hide: "Hide",
     missingKey: "Missing reCAPTCHA key (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
@@ -121,7 +123,7 @@ const STRINGS: Record<Locale, Strings> = {
     errorRecaptcha: "La verificación de seguridad (reCAPTCHA) ha fallado. Inténtalo de nuevo.",
     confirmTitle: "✅ Tu cuenta ha sido creada.",
     confirmBody:
-      "📩 Revisa tu correo para confirmar tu inscripción.\nUna vez confirmada, serás redirigido automáticamente para crear tu AmorIAI.",
+      "📩 Revisa tu correo para confirmar tu inscripción.\nUna vez confirmada, serás redirigido automáticamente.",
     show: "Mostrar",
     hide: "Ocultar",
     missingKey: "Falta la clave reCAPTCHA (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
@@ -243,10 +245,15 @@ export default function SignupClient() {
     router.push(`/login?${params.toString()}`);
   };
 
+  const buildPostSignupPath = () => {
+    const params = buildRedirectParams(locale, plan);
+    return `${POST_SIGNUP_PATH}?${params.toString()}`;
+  };
+
   /* ===========================
      Email Signup
-     Objectif: FINIR sur /create-amoria
-  =========================== */
+     Objectif: finir sur /auth/post-signup (UI), puis /create-amoria (fait par PostSignupClient)
+  ============================ */
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -275,12 +282,11 @@ export default function SignupClient() {
       }
 
       const origin = window.location.origin;
-      const params = buildRedirectParams(locale, plan);
 
-      // ✅ destination finale signup
-      const finalPath = `${CREATE_AMORIA_PATH}?${params.toString()}`;
+      // ✅ destination finale = post-signup (pas create-amoria)
+      const finalPath = buildPostSignupPath();
 
-      // ✅ cookies 24h (important pour la confirmation email)
+      // ✅ cookies 24h (important pour confirmation email)
       setTempCookie("amoria_lang", locale, SIGNUP_COOKIE_MAX_AGE);
       setTempCookie("amoria_plan", plan, SIGNUP_COOKIE_MAX_AGE);
       setTempCookie("amoria_returnTo", finalPath, SIGNUP_COOKIE_MAX_AGE);
@@ -306,7 +312,7 @@ export default function SignupClient() {
         return;
       }
 
-      // ✅ session immédiate (rare)
+      // ✅ session immédiate (rare): on passe par post-signup (pour UI)
       router.replace(finalPath);
     } catch (err) {
       console.error("signup error", err);
@@ -318,8 +324,8 @@ export default function SignupClient() {
 
   /* ===========================
      Google OAuth Signup
-     Objectif: FINIR sur /create-amoria
-  =========================== */
+     Objectif: finir sur /auth/post-signup (UI)
+  ============================ */
   const handleGoogle = async () => {
     if (loading) return;
 
@@ -329,15 +335,16 @@ export default function SignupClient() {
 
     try {
       const origin = window.location.origin;
-      const params = buildRedirectParams(locale, plan);
-      const finalPath = `${CREATE_AMORIA_PATH}?${params.toString()}`;
 
-      // ✅ cookies 24h (utile aussi)
+      // ✅ destination finale = post-signup (pas create-amoria)
+      const finalPath = buildPostSignupPath();
+
+      // ✅ cookies 24h
       setTempCookie("amoria_lang", locale, SIGNUP_COOKIE_MAX_AGE);
       setTempCookie("amoria_plan", plan, SIGNUP_COOKIE_MAX_AGE);
       setTempCookie("amoria_returnTo", finalPath, SIGNUP_COOKIE_MAX_AGE);
 
-      // ✅ redirectTo => callback SANS query
+      // ✅ redirectTo => callback SANS query (cookies font le boulot)
       const redirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -396,7 +403,12 @@ export default function SignupClient() {
 
           {errorMsg && <p className="auth-error auth-error--block">{errorMsg}</p>}
 
-          <button type="button" onClick={handleGoogle} disabled={loading} className="auth-google-btn">
+          <button
+            type="button"
+            onClick={handleGoogle}
+            disabled={loading || waitingConfirmation}
+            className="auth-google-btn"
+          >
             <span className="auth-google-icon" aria-hidden="true">
               <img src="/google-g.png" alt="" className="auth-google-img" />
             </span>
