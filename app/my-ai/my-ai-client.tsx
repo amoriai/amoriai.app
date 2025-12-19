@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "../../lib/supabaseClient";
+import { supabase } from "@/lib/supabase/client";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
@@ -10,8 +10,11 @@ type PlanId = "free" | "chat" | "plus" | "unlimited";
 function normalizeLocale(raw: string | null): Locale {
   return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
+
 function normalizePlan(raw: string | null): PlanId {
-  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
+    ? raw
+    : "free";
 }
 
 export default function MyAiClient() {
@@ -128,7 +131,6 @@ export default function MyAiClient() {
             <button
               className="btn"
               onClick={() => {
-                // ✅ IMPORTANT: il faut passer iaId au chat
                 const p = new URLSearchParams();
                 if (amoriaId) p.set("iaId", amoriaId);
                 p.set("lang", locale);
@@ -254,3 +256,4 @@ export default function MyAiClient() {
     </main>
   );
 }
+
