@@ -16,8 +16,8 @@ const MIN_RECAPTCHA_SCORE = 0.5;
 // ✅ 24h pour que l’utilisateur puisse confirmer son email plus tard
 const SIGNUP_COOKIE_MAX_AGE = 86400;
 
-// ✅ Transition post-signup (pour éviter l'écran noir "Redirecting...")
-const POST_SIGNUP_PATH = "/auth/post-signup";
+// ✅ Destination finale DIRECTE (plus de /auth/post-signup)
+const FINAL_PATH = "/create-amoria";
 
 /* ===========================
    TEXTES PAR LANGUE
@@ -245,14 +245,14 @@ export default function SignupClient() {
     router.push(`/login?${params.toString()}`);
   };
 
-  const buildPostSignupPath = () => {
+  const buildFinalPath = () => {
     const params = buildRedirectParams(locale, plan);
-    return `${POST_SIGNUP_PATH}?${params.toString()}`;
+    return `${FINAL_PATH}?${params.toString()}`;
   };
 
   /* ===========================
      Email Signup
-     Objectif: finir sur /auth/post-signup (UI), puis /create-amoria (fait par PostSignupClient)
+     Objectif: finir DIRECT sur /create-amoria (plus de /auth/post-signup)
   ============================ */
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
@@ -283,8 +283,8 @@ export default function SignupClient() {
 
       const origin = window.location.origin;
 
-      // ✅ destination finale = post-signup (pas create-amoria)
-      const finalPath = buildPostSignupPath();
+      // ✅ destination finale = create-amoria direct
+      const finalPath = buildFinalPath();
 
       // ✅ cookies 24h (important pour confirmation email)
       setTempCookie("amoria_lang", locale, SIGNUP_COOKIE_MAX_AGE);
@@ -312,7 +312,7 @@ export default function SignupClient() {
         return;
       }
 
-      // ✅ session immédiate (rare): on passe par post-signup (pour UI)
+      // ✅ session immédiate (rare): go create-amoria
       router.replace(finalPath);
     } catch (err) {
       console.error("signup error", err);
@@ -324,7 +324,7 @@ export default function SignupClient() {
 
   /* ===========================
      Google OAuth Signup
-     Objectif: finir sur /auth/post-signup (UI)
+     Objectif: finir DIRECT sur /create-amoria
   ============================ */
   const handleGoogle = async () => {
     if (loading) return;
@@ -336,8 +336,7 @@ export default function SignupClient() {
     try {
       const origin = window.location.origin;
 
-      // ✅ destination finale = post-signup (pas create-amoria)
-      const finalPath = buildPostSignupPath();
+      const finalPath = buildFinalPath();
 
       // ✅ cookies 24h
       setTempCookie("amoria_lang", locale, SIGNUP_COOKIE_MAX_AGE);
@@ -360,7 +359,7 @@ export default function SignupClient() {
         setErrorMsg(t.errorGoogle);
         return;
       }
-      // pas de router.replace ici
+      // pas de router.replace ici (OAuth fait la redirection navigateur)
     } catch (err) {
       console.error("google oauth error", err);
       setErrorMsg(t.errorGoogle);
