@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "../../lib/supabaseClient";
+import { supabase } from "@/lib/supabase/client";
 
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
@@ -57,8 +57,7 @@ const STRINGS: Record<Locale, UiStrings> = {
     planHint: "Your plan is automatically enforced (Free, Plus, Unlimited).",
     retry: "Retry",
     diagTitle: "Diagnostics",
-    diagNoAccess:
-      "Access denied (RLS / policies). Check Supabase policies.",
+    diagNoAccess: "Access denied (RLS / policies). Check Supabase policies.",
     diagUnknown: "Something went wrong. Check the browser console (F12).",
   },
   es: {
@@ -96,13 +95,9 @@ function looksLikeRlsError(message: string) {
 
 function planFromPricingName(name: string | null | undefined): PlanId {
   const n = (name || "").toLowerCase();
-
-  // Tes noms: "AmorIA Chat", "AmorIA Plus", "AmorIA illimité", "AmorIA Découverte", "free"
   if (n.includes("chat")) return "chat";
   if (n.includes("plus")) return "plus";
   if (n.includes("illimit")) return "unlimited";
-
-  // "Découverte" et "free" => on les traite comme free (selon ton PlanId actuel)
   return "free";
 }
 
@@ -131,7 +126,7 @@ export default function MyAmoriaClient() {
     const userId = user.id;
     console.log("[MY-AMORIA] userId:", userId);
 
-    // 2) IA existante (colonne vue dans tes captures: user_id)
+    // 2) IA existante
     const { data: aiList, error: aiErr } = await supabase
       .from("user_amoria")
       .select("id")
@@ -156,7 +151,7 @@ export default function MyAmoriaClient() {
       return;
     }
 
-    // 3) Subscription -> pricing_plan_id (pas "plan")
+    // 3) Subscription -> pricing_plan_id
     const { data: sub, error: subErr } = await supabase
       .from("user_subscriptions")
       .select("pricing_plan_id,current")
@@ -202,7 +197,6 @@ export default function MyAmoriaClient() {
       plan = planFromPricingName(pricing?.name);
     }
 
-    // Aucune IA trouvée -> afficher écran "Créer"
     setState({ status: "ready", plan });
   };
 
