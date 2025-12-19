@@ -33,25 +33,21 @@ const STRINGS: Record<Locale, UiStrings> = {
     loading: "Chargement de ton espace AmorIAI…",
     activePlanLabel: "Plan actif",
     noAiTitle: "Aucune IA détectée",
-    noAiBody:
-      "Tu es bien connectée, mais aucune AmorIAI n’a été trouvée pour ce compte.",
+    noAiBody: "Tu es bien connectée, mais aucune AmorIAI n’a été trouvée pour ce compte.",
     createNow: "Créer mon AmorIAI maintenant",
     backHome: "Retour à la page d’accueil",
     planHint: "Ton plan est automatiquement respecté (Free, Plus, Unlimited).",
     retry: "Réessayer",
     diagTitle: "Diagnostic",
-    diagNoAccess:
-      "Accès refusé à la base (RLS / policies). Vérifie les policies Supabase.",
-    diagUnknown:
-      "Une erreur est survenue. Regarde la console (F12) pour voir le détail.",
+    diagNoAccess: "Accès refusé à la base (RLS / policies). Vérifie les policies Supabase.",
+    diagUnknown: "Une erreur est survenue. Regarde la console (F12) pour voir le détail.",
   },
   en: {
     title: "Your AmorIAI space",
     loading: "Loading your AmorIAI space…",
     activePlanLabel: "Active plan",
     noAiTitle: "No AI detected",
-    noAiBody:
-      "You are logged in, but we couldn’t find an AmorIAI for this account.",
+    noAiBody: "You are logged in, but we couldn’t find an AmorIAI for this account.",
     createNow: "Create my AmorIAI now",
     backHome: "Back to homepage",
     planHint: "Your plan is automatically enforced (Free, Plus, Unlimited).",
@@ -65,8 +61,7 @@ const STRINGS: Record<Locale, UiStrings> = {
     loading: "Cargando tu espacio AmorIAI…",
     activePlanLabel: "Plan activo",
     noAiTitle: "Ninguna IA detectada",
-    noAiBody:
-      "Estás conectada, pero no encontramos un AmorIAI para esta cuenta.",
+    noAiBody: "Estás conectada, pero no encontramos un AmorIAI para esta cuenta.",
     createNow: "Crear mi AmorIAI ahora",
     backHome: "Volver a la página de inicio",
     planHint: "Tu plan se respeta automáticamente (Free, Plus, Unlimited).",
@@ -98,6 +93,7 @@ function planFromPricingName(name: string | null | undefined): PlanId {
   if (n.includes("chat")) return "chat";
   if (n.includes("plus")) return "plus";
   if (n.includes("illimit")) return "unlimited";
+  if (n.includes("unlimit")) return "unlimited";
   return "free";
 }
 
@@ -126,12 +122,12 @@ export default function MyAmoriaClient() {
     const userId = user.id;
     console.log("[MY-AMORIA] userId:", userId);
 
-    // 2) IA existante
+    // 2) IA list (0 / 1 / many)
     const { data: aiList, error: aiErr } = await supabase
       .from("user_amoria")
-      .select("id")
+      .select("id, created_at")
       .eq("user_id", userId)
-      .limit(1);
+      .order("created_at", { ascending: true });
 
     if (aiErr) {
       console.error("user_amoria SELECT error:", aiErr);
@@ -146,12 +142,21 @@ export default function MyAmoriaClient() {
 
     console.log("[MY-AMORIA] aiList:", aiList);
 
-    if (aiList && aiList.length > 0 && aiList[0]?.id) {
+    const count = aiList?.length ?? 0;
+
+    // ✅ 1 IA => chat direct
+    if (count === 1 && aiList?.[0]?.id) {
       router.replace(`/chat?iaId=${aiList[0].id}&lang=${lang}`);
       return;
     }
 
-    // 3) Subscription -> pricing_plan_id
+    // ✅ 2+ IA => page sélection
+    if (count >= 2) {
+      router.replace(`/my-amoria/select?lang=${lang}`);
+      return;
+    }
+
+    // 3) Subscription -> pricing_plan_id (seulement si 0 IA, pour afficher le bon plan + bouton)
     const { data: sub, error: subErr } = await supabase
       .from("user_subscriptions")
       .select("pricing_plan_id,current")
