@@ -10,7 +10,6 @@ type PlanId = "free" | "chat" | "plus" | "unlimited";
 function normalizeLocale(raw: string | null): Locale {
   return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
-
 function normalizePlan(raw: string | null): PlanId {
   return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
     ? raw
@@ -19,13 +18,13 @@ function normalizePlan(raw: string | null): PlanId {
 
 export default function MyAiClient() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const sp = useSearchParams();
 
-  const locale = useMemo(() => normalizeLocale(searchParams.get("lang")), [searchParams]);
-  const plan = useMemo(() => normalizePlan(searchParams.get("plan")), [searchParams]);
+  const locale = useMemo(() => normalizeLocale(sp.get("lang")), [sp]);
+  const plan = useMemo(() => normalizePlan(sp.get("plan")), [sp]);
 
-  // ✅ only redirect when /my-ai?auto=1
-  const auto = searchParams.get("auto") === "1";
+  // ✅ redirect ONLY when you explicitly come with auto=1
+  const auto = sp.get("auto") === "1";
 
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
@@ -34,33 +33,32 @@ export default function MyAiClient() {
   useEffect(() => {
     let cancelled = false;
 
-    const go = (path: string) => {
-      if (!cancelled) router.replace(path);
+    const replaceWithParams = (path: string, extra?: Record<string, string>) => {
+      const p = new URLSearchParams();
+      p.set("lang", locale);
+      p.set("plan", plan);
+      if (extra) Object.entries(extra).forEach(([k, v]) => p.set(k, v));
+      router.replace(`${path}?${p.toString()}`);
     };
 
     const boot = async () => {
       setLoading(true);
 
-      // 1) Session
-      const { data: sessionData, error: sessErr } = await supabase.auth.getSession();
-      const user = sessionData?.session?.user;
-
-      if (sessErr) console.error("[my-ai] getSession error:", sessErr);
-
-      if (!user) {
-        const p = new URLSearchParams();
-        p.set("lang", locale);
-        p.set("plan", plan);
-        go(`/login?${p.toString()}`);
-        return;
-      }
+      // 1) session
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
 
       if (cancelled) return;
 
+      if (!user) {
+        replaceWithParams("/login");
+        return;
+      }
+
       setEmail(user.email ?? null);
 
-      // 2) Dernier AmorIAI actif
-      const { data: amoria, error } = await supabase
+      // 2) last active AI
+      const { data: row, error } = await supabase
         .from("user_amoria")
         .select("id")
         .eq("user_id", user.id)
@@ -71,59 +69,39 @@ export default function MyAiClient() {
 
       if (cancelled) return;
 
-      // Pas d'IA -> create (seulement si auto=1)
-      if (error || !amoria?.id) {
-        if (error) console.error("[my-ai] user_amoria error:", error);
+      if (error || !row?.id) {
+        setAmoriaId(null);
 
+        // auto=1: on force create
         if (auto) {
-          const p = new URLSearchParams();
-          p.set("lang", locale);
-          p.set("plan", plan);
-          go(`/create-amoria?${p.toString()}`);
+          replaceWithParams("/create-amoria");
           return;
         }
 
-        // mode normal: on reste sur /my-ai et on affiche l'info
-        setAmoriaId(null);
+        // sinon on affiche la page
         setLoading(false);
         return;
       }
 
-      // IA trouvée
-      setAmoriaId(amoria.id);
+      setAmoriaId(row.id);
 
-      // ✅ Redirige vers chat uniquement si auto=1
+      // auto=1: on force chat
       if (auto) {
-        const p = new URLSearchParams();
-        p.set("iaId", amoria.id);
-        p.set("lang", locale);
-        p.set("plan", plan);
-        go(`/chat?${p.toString()}`);
+        replaceWithParams("/chat", { iaId: row.id });
         return;
       }
 
-      // mode normal: on affiche la page
+      // sinon on affiche la page
       setLoading(false);
     };
 
     boot();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session?.user) {
-        const p = new URLSearchParams();
-        p.set("lang", locale);
-        p.set("plan", plan);
-        router.replace(`/login?${p.toString()}`);
-      }
-    });
-
     return () => {
       cancelled = true;
-      sub?.subscription?.unsubscribe();
     };
   }, [router, locale, plan, auto]);
 
-  // ✅ UI simple
   return (
     <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 24 }}>
       {loading ? (
@@ -141,17 +119,16 @@ export default function MyAiClient() {
           <button
             style={{ marginTop: 16, width: "100%", padding: 12, borderRadius: 999 }}
             onClick={() => {
+              const p = new URLSearchParams();
+              p.set("lang", locale);
+              p.set("plan", plan);
+
               if (!amoriaId) {
-                const p = new URLSearchParams();
-                p.set("lang", locale);
-                p.set("plan", plan);
                 router.push(`/create-amoria?${p.toString()}`);
                 return;
               }
-              const p = new URLSearchParams();
+
               p.set("iaId", amoriaId);
-              p.set("lang", locale);
-              p.set("plan", plan);
               router.push(`/chat?${p.toString()}`);
             }}
           >
