@@ -12,40 +12,40 @@ export default function PostLoginClient() {
     let cancelled = false;
 
     const run = async () => {
-      const { data, error } = await supabase.auth.getSession();
+      // 1️⃣ Session
+      const { data: sessionData } = await supabase.auth.getSession();
       if (cancelled) return;
 
-      if (error || !data.session?.user) {
-        router.replace("/login?error=no_session");
+      const user = sessionData.session?.user;
+      if (!user) {
+        router.replace("/login");
         return;
       }
 
-      const userId = data.session.user.id;
-
-      // 🔎 Vérifie si l'utilisateur a déjà une AmorAI
-      const { data: amoria, error: amoriaErr } = await supabase
-        .from("amoria")          // <-- adapte si ton nom de table est différent
+      // 2️⃣ Vérifier si une AmorAI existe
+      const { data: amoria, error } = await supabase
+        .from("amoria") // ✅ ta table
         .select("id")
-        .eq("user_id", userId)
+        .eq("user_id", user.id)
         .eq("is_archived", false)
         .maybeSingle();
 
       if (cancelled) return;
 
-      if (amoriaErr) {
-        // En prod tu peux logger, mais on redirige vers une page safe
-        router.replace("/my-amoria?error=amoria_lookup");
+      if (error) {
+        console.error("Erreur lookup amoria", error);
+        router.replace("/create-amoria");
         return;
       }
 
-      // ✅ Déjà une AI -> chat
+      // 3️⃣ Décision finale
       if (amoria?.id) {
-        router.replace(`/chat?amoria=${amoria.id}`); // ou ta route réelle de chat
-        return;
+        // ✅ IA existante → CHAT DIRECT
+        router.replace(`/chat?amoria=${amoria.id}`);
+      } else {
+        // ❌ Pas d’IA → CRÉATION
+        router.replace("/create-amoria");
       }
-
-      // ✅ Sinon -> créer
-      router.replace("/create-amoria");
     };
 
     run();
