@@ -66,7 +66,7 @@ const STRINGS: Record<Locale, Strings> = {
     errorRecaptcha: "La vérification de sécurité (reCAPTCHA) a échoué. Merci de réessayer.",
     confirmTitle: "✅ Ton compte a bien été créé.",
     confirmBody:
-      "📩 Vérifie ton courriel pour confirmer ton inscription.\nUne fois confirmé, tu pourras créer ton AmorIAI.",
+      "📩 Vérifie ton courriel pour confirmer ton inscription.\nUne fois confirmé, tu seras redirigé automatiquement pour créer ton AmorIAI.",
     show: "Afficher",
     hide: "Cacher",
     missingKey: "Clé reCAPTCHA manquante (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
@@ -92,7 +92,7 @@ const STRINGS: Record<Locale, Strings> = {
     errorRecaptcha: "Security check (reCAPTCHA) failed. Please try again.",
     confirmTitle: "✅ Your account has been created.",
     confirmBody:
-      "📩 Check your email to confirm your registration.\nOnce confirmed, you’ll be able to create your AmorIAI.",
+      "📩 Check your email to confirm your registration.\nOnce confirmed, you’ll be redirected automatically to create your AmorIAI.",
     show: "Show",
     hide: "Hide",
     missingKey: "Missing reCAPTCHA key (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
@@ -118,7 +118,7 @@ const STRINGS: Record<Locale, Strings> = {
     errorRecaptcha: "La verificación de seguridad (reCAPTCHA) ha fallado. Inténtalo de nuevo.",
     confirmTitle: "✅ Tu cuenta ha sido creada.",
     confirmBody:
-      "📩 Revisa tu correo para confirmar tu inscripción.\nUna vez confirmada, podrás crear tu AmorIAI.",
+      "📩 Revisa tu correo para confirmar tu inscripción.\nUna vez confirmada, serás redirigido automáticamente para crear tu AmorIAI.",
     show: "Mostrar",
     hide: "Ocultar",
     missingKey: "Falta la clave reCAPTCHA (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
@@ -135,15 +135,6 @@ function normalizeLocale(raw: string | null): Locale {
 
 function normalizePlan(raw: string | null): PlanId {
   return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
-}
-
-function safeReturnTo(raw: string | null): string | null {
-  if (!raw) return null;
-  const v = raw.trim();
-  if (!v.startsWith("/")) return null;
-  if (v.startsWith("//")) return null;
-  if (v.includes("\\")) return null;
-  return v;
 }
 
 function buildRedirectParams(locale: Locale, plan: PlanId) {
@@ -169,7 +160,6 @@ export default function SignupClient() {
 
   const locale = useMemo(() => normalizeLocale(searchParams.get("lang")), [searchParams]);
   const plan = useMemo(() => normalizePlan(searchParams.get("plan")), [searchParams]);
-  const returnTo = useMemo(() => safeReturnTo(searchParams.get("returnTo")), [searchParams]);
   const t = STRINGS[locale];
 
   const [email, setEmail] = useState("");
@@ -247,21 +237,12 @@ export default function SignupClient() {
     const params = new URLSearchParams();
     params.set("lang", locale);
     params.set("plan", plan);
-    if (returnTo) params.set("returnTo", returnTo);
     router.push(`/login?${params.toString()}`);
-  };
-
-  const redirectAfterSignup = () => {
-    if (returnTo) {
-      router.replace(returnTo);
-      return;
-    }
-    const params = buildRedirectParams(locale, plan);
-    router.replace(`${CREATE_AMORIA_PATH}?${params.toString()}`);
   };
 
   /* ===========================
      Email Signup
+     Objectif: FINIR sur /create-amoria (pas de détour /chat)
   =========================== */
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
@@ -293,8 +274,18 @@ export default function SignupClient() {
       const origin = window.location.origin;
       const params = buildRedirectParams(locale, plan);
 
-      // Email confirmation: OK d'avoir les query params ici
-      const emailRedirectTo = `${origin}${AUTH_CALLBACK_PATH}?${params.toString()}`;
+      // ✅ Après confirmation email, Supabase reviendra sur /api/auth/callback,
+      // et TON callback doit rediriger vers /create-amoria (pas /chat).
+      // Ici, on fixe la destination finale dès maintenant.
+      const finalPath = `${CREATE_AMORIA_PATH}?${params.toString()}`;
+
+      // Si ton /api/auth/callback lit amoria_lang/plan, on peut aussi les poser ici (utile).
+      setTempCookie("amoria_lang", locale);
+      setTempCookie("amoria_plan", plan);
+      setTempCookie("amoria_returnTo", finalPath);
+
+      // Email confirmation: on envoie vers callback (1 seul redirect côté Supabase)
+      const emailRedirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -308,14 +299,14 @@ export default function SignupClient() {
         return;
       }
 
-      // Pas de session => confirmation email obligatoire
+      // ✅ Si confirmation requise: on affiche le message, PAS de redirect client ici.
       if (!data?.session) {
         setWaitingConfirmation(true);
         return;
       }
 
-      // Session immédiate (rare) => go
-      redirectAfterSignup();
+      // ✅ Si session immédiate (rare): on va DIRECT à create-amoria
+      router.replace(finalPath);
     } catch (err) {
       console.error("signup error", err);
       setErrorMsg(t.errorGeneric);
@@ -325,7 +316,8 @@ export default function SignupClient() {
   };
 
   /* ===========================
-     Google OAuth (sans query params)
+     Google OAuth
+     Objectif: FINIR sur /create-amoria (pas /chat)
   =========================== */
   const handleGoogle = async () => {
     if (loading) return;
@@ -336,17 +328,15 @@ export default function SignupClient() {
 
     try {
       const origin = window.location.origin;
-
-      // Destination finale
       const params = buildRedirectParams(locale, plan);
-      const finalReturnTo = returnTo ? returnTo : `${CREATE_AMORIA_PATH}?${params.toString()}`;
+      const finalPath = `${CREATE_AMORIA_PATH}?${params.toString()}`;
 
       // Cookies temporaires lus par /api/auth/callback
       setTempCookie("amoria_lang", locale);
       setTempCookie("amoria_plan", plan);
-      setTempCookie("amoria_returnTo", finalReturnTo);
+      setTempCookie("amoria_returnTo", finalPath);
 
-      // redirectTo => /api/auth/callback sans query params
+      // redirectTo => /api/auth/callback
       const redirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -362,7 +352,7 @@ export default function SignupClient() {
         setErrorMsg(t.errorGoogle);
         return;
       }
-      // ⚠️ pas de router.replace ici: Google va rediriger -> callback serveur
+      // pas de router.replace ici
     } catch (err) {
       console.error("google oauth error", err);
       setErrorMsg(t.errorGoogle);
