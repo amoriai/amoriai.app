@@ -32,12 +32,10 @@ function readCookie(name: string): string | null {
   }
 }
 
-function clearCookie(name: string) {
-  try {
-    cookies().set(name, "", { path: "/", maxAge: 0 });
-  } catch {
-    // ignore
-  }
+function clearTempCookies(res: NextResponse) {
+  res.cookies.set("amoria_returnTo", "", { path: "/", maxAge: 0 });
+  res.cookies.set("amoria_lang", "", { path: "/", maxAge: 0 });
+  res.cookies.set("amoria_plan", "", { path: "/", maxAge: 0 });
 }
 
 export async function GET(request: Request) {
@@ -61,7 +59,11 @@ export async function GET(request: Request) {
     const p = new URLSearchParams();
     p.set("lang", finalLang);
     p.set("error", oauthError);
-    return NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
+
+    const res = NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
+    clearTempCookies(res);
+    res.headers.set("Cache-Control", "no-store");
+    return res;
   }
 
   // 2) code obligatoire
@@ -70,7 +72,11 @@ export async function GET(request: Request) {
     const p = new URLSearchParams();
     p.set("lang", finalLang);
     p.set("error", "missing_code");
-    return NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
+
+    const res = NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
+    clearTempCookies(res);
+    res.headers.set("Cache-Control", "no-store");
+    return res;
   }
 
   // 3) exchange code -> session (pose les cookies httpOnly)
@@ -81,28 +87,30 @@ export async function GET(request: Request) {
     const p = new URLSearchParams();
     p.set("lang", finalLang);
     p.set("error", "oauth_exchange");
-    return NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
+
+    const res = NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
+    clearTempCookies(res);
+    res.headers.set("Cache-Control", "no-store");
+    return res;
   }
 
   // 4) Destination finale (priorité: param URL, puis cookie)
   const finalReturnTo = returnToParam ?? cookieReturnTo;
 
-  // Nettoyage cookies temporaires
-  clearCookie("amoria_returnTo");
-  clearCookie("amoria_lang");
-  clearCookie("amoria_plan");
-
-  // ✅ Si on a une destination explicite, on la respecte
   if (finalReturnTo) {
-    return NextResponse.redirect(new URL(finalReturnTo, url.origin));
+    const res = NextResponse.redirect(new URL(finalReturnTo, url.origin));
+    clearTempCookies(res);
+    res.headers.set("Cache-Control", "no-store");
+    return res;
   }
 
-  // ✅ Fallback SAFE:
-  // - si login a été bien câblé, il passera TOUJOURS returnTo=/auth/post-login...
-  // - si signup n’a pas mis de returnTo (ou cookies bloqués), on envoie quand même sur create-amoria
+  // Fallback
   const p = new URLSearchParams();
   p.set("lang", finalLang);
   p.set("plan", finalPlan);
 
-  return NextResponse.redirect(new URL(`/create-amoria?${p.toString()}`, url.origin));
+  const res = NextResponse.redirect(new URL(`/create-amoria?${p.toString()}`, url.origin));
+  clearTempCookies(res);
+  res.headers.set("Cache-Control", "no-store");
+  return res;
 }
