@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FormEvent, useEffect, useMemo, useState } from "react";
+import React, { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
@@ -10,14 +10,15 @@ type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 const AUTH_CALLBACK_PATH = "/api/auth/callback";
 
+// ✅ Destination finale DIRECTE (plus de /auth/post-signup)
+const FINAL_PATH = "/create-amoria";
+
+// ✅ reCAPTCHA
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 const MIN_RECAPTCHA_SCORE = 0.5;
 
 // ✅ 24h pour que l’utilisateur puisse confirmer son email plus tard
 const SIGNUP_COOKIE_MAX_AGE = 86400;
-
-// ✅ Destination finale DIRECTE (plus de /auth/post-signup)
-const FINAL_PATH = "/create-amoria";
 
 /* ===========================
    TEXTES PAR LANGUE
@@ -27,26 +28,37 @@ type Strings = {
   badge: string;
   title: string;
   subtitle: string;
+
   google: string;
   googleLoading: string;
+
   or: string;
+
   emailLabel: string;
   emailPlaceholder: string;
+
   passwordLabel: string;
   passwordPlaceholder: string;
   passwordHint: string;
+
   submit: string;
   submitting: string;
+
   haveAccount: string;
   loginLink: string;
+
   errorGeneric: string;
   errorGoogle: string;
   errorRecaptcha: string;
+
   confirmTitle: string;
   confirmBody: string;
+
   show: string;
   hide: string;
+
   missingKey: string;
+  recaptchaNotReady: string;
 };
 
 const STRINGS: Record<Locale, Strings> = {
@@ -54,79 +66,112 @@ const STRINGS: Record<Locale, Strings> = {
     badge: "Création de compte AmorIAI",
     title: "Créer ton compte",
     subtitle: "Active ton accès gratuit, puis crée ton premier AmorIAI en quelques secondes.",
+
     google: "Continuer avec Google",
     googleLoading: "Redirection…",
+
     or: "ou",
+
     emailLabel: "Adresse courriel",
     emailPlaceholder: "ex. mon.adresse@email.com",
+
     passwordLabel: "Mot de passe",
     passwordPlaceholder: "Choisis un mot de passe sécurisé",
     passwordHint: "Minimum 6 caractères. Ne partage jamais ton mot de passe.",
+
     submit: "Créer mon accès gratuit",
     submitting: "Création de ton accès…",
+
     haveAccount: "Tu as déjà un compte ?",
     loginLink: "Me connecter",
+
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
     errorGoogle: "Une erreur est survenue avec la connexion Google.",
     errorRecaptcha: "La vérification de sécurité (reCAPTCHA) a échoué. Merci de réessayer.",
+
     confirmTitle: "✅ Ton compte a bien été créé.",
     confirmBody:
       "📩 Vérifie ton courriel pour confirmer ton inscription.\nUne fois confirmé, tu seras redirigé automatiquement.",
+
     show: "Afficher",
     hide: "Cacher",
+
     missingKey: "Clé reCAPTCHA manquante (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
+    recaptchaNotReady: "reCAPTCHA pas prêt",
   },
   en: {
     badge: "Create your AmorIAI account",
     title: "Create your account",
     subtitle: "Activate your free access, then create your first AmorIAI in a few seconds.",
+
     google: "Continue with Google",
     googleLoading: "Redirecting…",
+
     or: "or",
+
     emailLabel: "Email address",
     emailPlaceholder: "e.g. my.address@email.com",
+
     passwordLabel: "Password",
     passwordPlaceholder: "Choose a secure password",
     passwordHint: "Minimum 6 characters. Never share your password.",
+
     submit: "Create my free access",
     submitting: "Creating your access…",
+
     haveAccount: "Already have an account?",
     loginLink: "Log in",
+
     errorGeneric: "Something went wrong. Please try again.",
     errorGoogle: "Something went wrong with Google sign-in.",
     errorRecaptcha: "Security check (reCAPTCHA) failed. Please try again.",
+
     confirmTitle: "✅ Your account has been created.",
     confirmBody:
       "📩 Check your email to confirm your registration.\nOnce confirmed, you’ll be redirected automatically.",
+
     show: "Show",
     hide: "Hide",
+
     missingKey: "Missing reCAPTCHA key (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
+    recaptchaNotReady: "reCAPTCHA not ready",
   },
   es: {
     badge: "Crear tu cuenta AmorIAI",
     title: "Crear tu cuenta",
     subtitle: "Activa tu acceso gratuito y luego crea tu primer AmorIAI en segundos.",
+
     google: "Continuar con Google",
     googleLoading: "Redirigiendo…",
+
     or: "o",
+
     emailLabel: "Correo electrónico",
     emailPlaceholder: "ej. mi.direccion@email.com",
+
     passwordLabel: "Contraseña",
     passwordPlaceholder: "Elige una contraseña segura",
     passwordHint: "Mínimo 6 caracteres. Nunca compartas tu contraseña.",
+
     submit: "Crear mi acceso gratuito",
     submitting: "Creando tu acceso…",
+
     haveAccount: "¿Ya tienes cuenta?",
     loginLink: "Iniciar sesión",
+
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     errorGoogle: "Ocurrió un error con el inicio de sesión de Google.",
     errorRecaptcha: "La verificación de seguridad (reCAPTCHA) ha fallado. Inténtalo de nuevo.",
+
     confirmTitle: "✅ Tu cuenta ha sido creada.",
     confirmBody:
       "📩 Revisa tu correo para confirmar tu inscripción.\nUna vez confirmada, serás redirigido automáticamente.",
+
     show: "Mostrar",
     hide: "Ocultar",
+
     missingKey: "Falta la clave reCAPTCHA (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
+    recaptchaNotReady: "reCAPTCHA no está listo",
   },
 };
 
@@ -156,10 +201,11 @@ function setTempCookie(name: string, value: string, maxAgeSeconds = 600) {
 }
 
 /* ===========================
-   COMPONENT
+   COMPONENT (inner)
+   ✅ useSearchParams est ici, donc on WRAP dans <Suspense />
 =========================== */
 
-export default function SignupClient() {
+function SignupClientInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -174,6 +220,7 @@ export default function SignupClient() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [waitingConfirmation, setWaitingConfirmation] = useState(false);
+
   const [recaptchaReady, setRecaptchaReady] = useState(false);
 
   // reCAPTCHA ready
@@ -187,6 +234,7 @@ export default function SignupClient() {
 
     const tick = () => {
       if (cancelled) return;
+
       const g = (window as any)?.grecaptcha;
       if (g?.ready && g?.execute) {
         g.ready(() => {
@@ -194,6 +242,7 @@ export default function SignupClient() {
         });
         return;
       }
+
       setTimeout(tick, 150);
     };
 
@@ -205,6 +254,7 @@ export default function SignupClient() {
 
   const runRecaptcha = async (action: "signup"): Promise<string | null> => {
     if (!RECAPTCHA_SITE_KEY) return null;
+
     const g = (window as any)?.grecaptcha;
     if (!g?.execute || !g?.ready) return null;
 
@@ -252,11 +302,11 @@ export default function SignupClient() {
 
   /* ===========================
      Email Signup
-     Objectif: finir DIRECT sur /create-amoria (plus de /auth/post-signup)
+     ✅ Objectif: finir DIRECT sur /create-amoria
   ============================ */
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
-    if (loading) return;
+    if يرىloading) return;
 
     setLoading(true);
     setErrorMsg(null);
@@ -265,6 +315,11 @@ export default function SignupClient() {
     try {
       if (!RECAPTCHA_SITE_KEY) {
         setErrorMsg(t.missingKey);
+        return;
+      }
+
+      if (!recaptchaReady) {
+        setErrorMsg(t.errorRecaptcha);
         return;
       }
 
@@ -283,7 +338,7 @@ export default function SignupClient() {
 
       const origin = window.location.origin;
 
-      // ✅ destination finale = create-amoria direct
+      // ✅ destination finale
       const finalPath = buildFinalPath();
 
       // ✅ cookies 24h (important pour confirmation email)
@@ -312,7 +367,7 @@ export default function SignupClient() {
         return;
       }
 
-      // ✅ session immédiate (rare): go create-amoria
+      // ✅ session immédiate (rare)
       router.replace(finalPath);
     } catch (err) {
       console.error("signup error", err);
@@ -324,7 +379,7 @@ export default function SignupClient() {
 
   /* ===========================
      Google OAuth Signup
-     Objectif: finir DIRECT sur /create-amoria
+     ✅ Objectif: finir DIRECT sur /create-amoria
   ============================ */
   const handleGoogle = async () => {
     if (loading) return;
@@ -343,7 +398,7 @@ export default function SignupClient() {
       setTempCookie("amoria_plan", plan, SIGNUP_COOKIE_MAX_AGE);
       setTempCookie("amoria_returnTo", finalPath, SIGNUP_COOKIE_MAX_AGE);
 
-      // ✅ redirectTo => callback SANS query (cookies font le boulot)
+      // ✅ callback SANS query (cookies font le boulot)
       const redirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -355,20 +410,21 @@ export default function SignupClient() {
       });
 
       if (error) {
-        console.error("google oauth error", error);
+        console.error("google oauth error:", error);
         setErrorMsg(t.errorGoogle);
         return;
       }
-      // pas de router.replace ici (OAuth fait la redirection navigateur)
+      // OAuth fait la redirection navigateur
     } catch (err) {
-      console.error("google oauth error", err);
+      console.error("google oauth error:", err);
       setErrorMsg(t.errorGoogle);
     } finally {
       setLoading(false);
     }
   };
 
-  const submitDisabled = loading || !recaptchaReady || waitingConfirmation;
+  const submitDisabled =
+    loading || waitingConfirmation || (RECAPTCHA_SITE_KEY ? !recaptchaReady : false);
 
   return (
     <>
@@ -465,7 +521,7 @@ export default function SignupClient() {
               type="submit"
               disabled={submitDisabled}
               className="auth-submit-btn"
-              title={!recaptchaReady ? "reCAPTCHA pas prêt" : undefined}
+              title={RECAPTCHA_SITE_KEY && !recaptchaReady ? t.recaptchaNotReady : undefined}
             >
               {loading ? t.submitting : t.submit}
             </button>
@@ -479,6 +535,7 @@ export default function SignupClient() {
           </div>
         </div>
 
+        {/* styles identiques à ton code (inchangés) */}
         <style jsx>{`
           .auth-root {
             min-height: 100vh;
@@ -843,5 +900,18 @@ export default function SignupClient() {
         `}</style>
       </main>
     </>
+  );
+}
+
+/* ===========================
+   EXPORT (wrap Suspense)
+   ✅ corrige le warning/erreur Next: useSearchParams() needs Suspense boundary
+=========================== */
+
+export default function SignupClient() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-black text-white flex items-center justify-center">Chargement…</main>}>
+      <SignupClientInner />
+    </Suspense>
   );
 }
