@@ -25,16 +25,16 @@ export default function PostLoginClient() {
 
   useEffect(() => {
     let cancelled = false;
-
     const go = (path: string) => {
       if (!cancelled) router.replace(path);
     };
 
     (async () => {
-      const { data } = await supabase.auth.getSession();
+      // 1) session
+      const { data, error } = await supabase.auth.getSession();
       const user = data.session?.user;
 
-      if (!user) {
+      if (!user || error) {
         const p = new URLSearchParams();
         p.set("lang", locale);
         p.set("plan", plan);
@@ -42,27 +42,50 @@ export default function PostLoginClient() {
         return;
       }
 
-      const { data: amoria } = await supabase
+      // 2) on charge max 2 lignes pour distinguer 0 / 1 / 2+
+      const { data: list, error: qErr } = await supabase
         .from("user_amoria")
         .select("id")
         .eq("user_id", user.id)
         .eq("is_archived", false)
         .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(2);
 
-      if (amoria?.id) {
+      if (qErr) {
         const p = new URLSearchParams();
-        p.set("iaId", amoria.id);
         p.set("lang", locale);
         p.set("plan", plan);
-        go(`/chat?${p.toString()}`);
-      } else {
+        go(`/my-amoria?${p.toString()}`);
+        return;
+      }
+
+      const count = list?.length ?? 0;
+
+      // 0 -> create
+      if (count === 0) {
         const p = new URLSearchParams();
         p.set("lang", locale);
         p.set("plan", plan);
         go(`/create-amoria?${p.toString()}`);
+        return;
       }
+
+      // 2+ -> my-amoria (choix)
+      if (count >= 2) {
+        const p = new URLSearchParams();
+        p.set("lang", locale);
+        p.set("plan", plan);
+        go(`/my-amoria?${p.toString()}`);
+        return;
+      }
+
+      // 1 -> chat direct
+      const iaId = list![0].id;
+      const p = new URLSearchParams();
+      p.set("iaId", iaId);
+      p.set("lang", locale);
+      p.set("plan", plan);
+      go(`/chat?${p.toString()}`);
     })();
 
     return () => {
