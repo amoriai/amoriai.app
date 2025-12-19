@@ -17,6 +17,7 @@ function normalizePlan(raw: string | null): PlanId {
 export default function MyAiClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const locale = useMemo(() => normalizeLocale(searchParams.get("lang")), [searchParams]);
   const plan = useMemo(() => normalizePlan(searchParams.get("plan")), [searchParams]);
 
@@ -30,12 +31,13 @@ export default function MyAiClient() {
     async function boot() {
       setLoading(true);
 
-      // 1) Vérifier session côté client (localStorage)
-      const { data: sessionData } = await supabase.auth.getSession();
+      // 1) Session côté client
+      const { data: sessionData, error: sessErr } = await supabase.auth.getSession();
       const session = sessionData?.session;
 
+      if (sessErr) console.error("[my-ai] getSession error:", sessErr);
+
       if (!session?.user) {
-        // Pas connecté -> login
         const p = new URLSearchParams();
         p.set("lang", locale);
         p.set("plan", plan);
@@ -44,9 +46,10 @@ export default function MyAiClient() {
       }
 
       if (cancelled) return;
+
       setEmail(session.user.email ?? null);
 
-      // 2) Charger le dernier AI actif
+      // 2) Dernier AmorIAI actif
       const { data: amoria, error } = await supabase
         .from("user_amoria")
         .select("id")
@@ -59,9 +62,8 @@ export default function MyAiClient() {
       if (cancelled) return;
 
       if (error) {
-        // si RLS bloque, tu verras l’erreur dans la console
         console.error("[my-ai] user_amoria error:", error);
-        // fallback: envoyer vers create-amoria
+
         const p = new URLSearchParams();
         p.set("lang", locale);
         p.set("plan", plan);
@@ -83,7 +85,7 @@ export default function MyAiClient() {
 
     boot();
 
-    // bonus: si la session change (logout, refresh token), on réagit
+    // réagit si logout
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session?.user) {
         const p = new URLSearchParams();
@@ -126,7 +128,9 @@ export default function MyAiClient() {
             <button
               className="btn"
               onClick={() => {
+                // ✅ IMPORTANT: il faut passer iaId au chat
                 const p = new URLSearchParams();
+                if (amoriaId) p.set("iaId", amoriaId);
                 p.set("lang", locale);
                 p.set("plan", plan);
                 router.push(`/chat?${p.toString()}`);
@@ -240,6 +244,11 @@ export default function MyAiClient() {
           cursor: pointer;
           background-image: linear-gradient(120deg, #fb7185, #f97316, #fb7185);
           box-shadow: 0 18px 48px rgba(248, 113, 113, 0.55);
+          transition: transform 0.12s ease, box-shadow 0.18s ease;
+        }
+        .btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 24px 60px rgba(248, 113, 113, 0.8);
         }
       `}</style>
     </main>
