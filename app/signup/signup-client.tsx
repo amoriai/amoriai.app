@@ -197,12 +197,14 @@ function buildRedirectParams(locale: Locale, plan: PlanId) {
 function setTempCookie(name: string, value: string, maxAgeSeconds = 600) {
   const secure =
     typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
+  document.cookie = `${name}=${encodeURIComponent(
+    value
+  )}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
 }
 
 /* ===========================
    COMPONENT (inner)
-   ✅ useSearchParams est ici, donc on WRAP dans <Suspense />
+   ✅ useSearchParams est ici, donc WRAP dans <Suspense />
 =========================== */
 
 function SignupClientInner() {
@@ -306,7 +308,7 @@ function SignupClientInner() {
   ============================ */
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
-    if يرىloading) return;
+    if (loading) return;
 
     setLoading(true);
     setErrorMsg(null);
@@ -535,7 +537,6 @@ function SignupClientInner() {
           </div>
         </div>
 
-        {/* styles identiques à ton code (inchangés) */}
         <style jsx>{`
           .auth-root {
             min-height: 100vh;
@@ -905,12 +906,18 @@ function SignupClientInner() {
 
 /* ===========================
    EXPORT (wrap Suspense)
-   ✅ corrige le warning/erreur Next: useSearchParams() needs Suspense boundary
+   ✅ corrige Next: useSearchParams() needs Suspense boundary
 =========================== */
 
 export default function SignupClient() {
   return (
-    <Suspense fallback={<main className="min-h-screen bg-black text-white flex items-center justify-center">Chargement…</main>}>
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-black text-white flex items-center justify-center">
+          Chargement…
+        </main>
+      }
+    >
       <SignupClientInner />
     </Suspense>
   );
