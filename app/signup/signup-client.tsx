@@ -14,6 +14,9 @@ const AUTH_CALLBACK_PATH = "/api/auth/callback";
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 const MIN_RECAPTCHA_SCORE = 0.5;
 
+// ✅ 24h pour que l’utilisateur puisse confirmer son email plus tard
+const SIGNUP_COOKIE_MAX_AGE = 86400;
+
 /* ===========================
    TEXTES PAR LANGUE
 =========================== */
@@ -242,7 +245,7 @@ export default function SignupClient() {
 
   /* ===========================
      Email Signup
-     Objectif: FINIR sur /create-amoria (pas de détour /chat)
+     Objectif: FINIR sur /create-amoria
   =========================== */
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
@@ -274,17 +277,15 @@ export default function SignupClient() {
       const origin = window.location.origin;
       const params = buildRedirectParams(locale, plan);
 
-      // ✅ Après confirmation email, Supabase reviendra sur /api/auth/callback,
-      // et TON callback doit rediriger vers /create-amoria (pas /chat).
-      // Ici, on fixe la destination finale dès maintenant.
+      // ✅ destination finale signup
       const finalPath = `${CREATE_AMORIA_PATH}?${params.toString()}`;
 
-      // Si ton /api/auth/callback lit amoria_lang/plan, on peut aussi les poser ici (utile).
-      setTempCookie("amoria_lang", locale);
-      setTempCookie("amoria_plan", plan);
-      setTempCookie("amoria_returnTo", finalPath);
+      // ✅ cookies 24h (important pour la confirmation email)
+      setTempCookie("amoria_lang", locale, SIGNUP_COOKIE_MAX_AGE);
+      setTempCookie("amoria_plan", plan, SIGNUP_COOKIE_MAX_AGE);
+      setTempCookie("amoria_returnTo", finalPath, SIGNUP_COOKIE_MAX_AGE);
 
-      // Email confirmation: on envoie vers callback (1 seul redirect côté Supabase)
+      // ✅ Supabase reviendra sur /api/auth/callback (sans query)
       const emailRedirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
 
       const { data, error } = await supabase.auth.signUp({
@@ -299,13 +300,13 @@ export default function SignupClient() {
         return;
       }
 
-      // ✅ Si confirmation requise: on affiche le message, PAS de redirect client ici.
+      // ✅ confirmation email requise (cas normal)
       if (!data?.session) {
         setWaitingConfirmation(true);
         return;
       }
 
-      // ✅ Si session immédiate (rare): on va DIRECT à create-amoria
+      // ✅ session immédiate (rare)
       router.replace(finalPath);
     } catch (err) {
       console.error("signup error", err);
@@ -316,8 +317,8 @@ export default function SignupClient() {
   };
 
   /* ===========================
-     Google OAuth
-     Objectif: FINIR sur /create-amoria (pas /chat)
+     Google OAuth Signup
+     Objectif: FINIR sur /create-amoria
   =========================== */
   const handleGoogle = async () => {
     if (loading) return;
@@ -331,12 +332,12 @@ export default function SignupClient() {
       const params = buildRedirectParams(locale, plan);
       const finalPath = `${CREATE_AMORIA_PATH}?${params.toString()}`;
 
-      // Cookies temporaires lus par /api/auth/callback
-      setTempCookie("amoria_lang", locale);
-      setTempCookie("amoria_plan", plan);
-      setTempCookie("amoria_returnTo", finalPath);
+      // ✅ cookies 24h (utile aussi)
+      setTempCookie("amoria_lang", locale, SIGNUP_COOKIE_MAX_AGE);
+      setTempCookie("amoria_plan", plan, SIGNUP_COOKIE_MAX_AGE);
+      setTempCookie("amoria_returnTo", finalPath, SIGNUP_COOKIE_MAX_AGE);
 
-      // redirectTo => /api/auth/callback
+      // ✅ redirectTo => callback SANS query
       const redirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -367,7 +368,9 @@ export default function SignupClient() {
     <>
       {RECAPTCHA_SITE_KEY ? (
         <Script
-          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`}
+          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(
+            RECAPTCHA_SITE_KEY
+          )}`}
           strategy="afterInteractive"
         />
       ) : null}
