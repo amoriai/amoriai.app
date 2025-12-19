@@ -108,9 +108,12 @@ const STRINGS: Record<Locale, Strings> = {
 function normalizeLocale(raw: string | null): Locale {
   return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
+
 function normalizePlan(raw: string | null): PlanId {
   return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
 }
+
+/** Open-redirect safe path only */
 function safeReturnTo(raw: string | null): string | null {
   if (!raw) return null;
   const v = raw.trim();
@@ -118,6 +121,12 @@ function safeReturnTo(raw: string | null): string | null {
   if (v.startsWith("//")) return null;
   if (v.includes("\\")) return null;
   return v;
+}
+
+function setTempCookie(name: string, value: string, maxAgeSeconds = 600) {
+  const secure =
+    typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
 }
 
 export default function LoginClient() {
@@ -143,16 +152,21 @@ export default function LoginClient() {
       setRecaptchaReady(false);
       return;
     }
+
     let cancelled = false;
+
     const tick = () => {
       if (cancelled) return;
       const g = (window as any)?.grecaptcha;
       if (g?.ready && g?.execute) {
-        g.ready(() => !cancelled && setRecaptchaReady(true));
+        g.ready(() => {
+          if (!cancelled) setRecaptchaReady(true);
+        });
         return;
       }
       setTimeout(tick, 150);
     };
+
     tick();
     return () => {
       cancelled = true;
@@ -189,12 +203,15 @@ export default function LoginClient() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token, action }),
     });
+
     const json = await res.json().catch(() => ({}));
+
     const ok =
       res.ok &&
       (json as any)?.success === true &&
       typeof (json as any)?.score === "number" &&
       (json as any).score >= MIN_RECAPTCHA_SCORE;
+
     return { ok, json };
   };
 
@@ -227,17 +244,22 @@ export default function LoginClient() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         const msg = (error.message || "").toLowerCase();
-        const looksAuthError = msg.includes("invalid") || msg.includes("credentials") || msg.includes("user not found");
+        const looksAuthError =
+          msg.includes("invalid") || msg.includes("credentials") || msg.includes("user not found");
         setErrorMsg(looksAuthError ? t.errorInvalid : t.errorGeneric);
         return;
       }
 
-      // ✅ après login email -> UN SEUL TREMPLIN: /auth/post-login
+      // ✅ Une seule destination app: returnTo (si fourni) sinon /auth/post-login
       if (returnTo) {
         router.replace(returnTo);
         return;
       }
-      router.replace(`/auth/post-login?lang=${locale}&plan=${plan}`);
+
+      const p = new URLSearchParams();
+      p.set("lang", locale);
+      p.set("plan", plan);
+      router.replace(`/auth/post-login?${p.toString()}`);
     } catch (err) {
       console.error("login error", err);
       setErrorMsg(t.errorGeneric);
@@ -255,16 +277,25 @@ export default function LoginClient() {
     try {
       const origin = window.location.origin;
 
-      // ✅ on encode lang/plan/returnTo dans redirectTo
-      const callback = new URL(`${origin}/api/auth/callback`);
-      callback.searchParams.set("lang", locale);
-      callback.searchParams.set("plan", plan);
-      if (returnTo) callback.searchParams.set("returnTo", returnTo);
+      // ✅ Destination finale (après callback): returnTo ou /auth/post-login
+      const p = new URLSearchParams();
+      p.set("lang", locale);
+      p.set("plan", plan);
+
+      const finalReturnTo = returnTo ? returnTo : `/auth/post-login?${p.toString()}`;
+
+      // ✅ Cookies temporaires lus par /api/auth/callback (évite query params dans redirectTo)
+      setTempCookie("amoria_lang", locale);
+      setTempCookie("amoria_plan", plan);
+      setTempCookie("amoria_returnTo", finalReturnTo);
+
+      // ✅ redirectTo = callback SANS query params
+      const redirectTo = `${origin}/api/auth/callback`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: callback.toString(),
+          redirectTo,
           queryParams: { prompt: "select_account" },
         },
       });
@@ -273,6 +304,8 @@ export default function LoginClient() {
         console.error("google oauth error", error);
         setErrorMsg(t.errorGeneric);
       }
+
+      // ⚠️ pas de router.replace ici: Google redirige tout seul
     } catch (err) {
       console.error("google login error", err);
       setErrorMsg(t.errorGeneric);
@@ -287,7 +320,9 @@ export default function LoginClient() {
     <>
       {RECAPTCHA_SITE_KEY ? (
         <Script
-          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`}
+          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(
+            RECAPTCHA_SITE_KEY
+          )}`}
           strategy="afterInteractive"
         />
       ) : null}
@@ -304,14 +339,19 @@ export default function LoginClient() {
             <p className={styles.subtitle}>{t.subtitle}</p>
           </header>
 
-          <button type="button" onClick={handleGoogleLogin} disabled={isBusy} className={styles.googleBtn}>
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={isBusy}
+            className={styles.googleBtn}
+          >
             <span className={styles.googleIcon}>
-              <Image src="/google-g.png" alt="Google" width={18} height={18} />
+              <Image src="/google-g.png" alt="" width={18} height={18} />
             </span>
             <span>{loadingGoogle ? t.googleLoading : t.google}</span>
           </button>
 
-          <div className={styles.divider}>
+          <div className={styles.divider} aria-hidden="true">
             <span className={styles.divLine} />
             <span className={styles.divLabel}>{t.or}</span>
             <span className={styles.divLine} />
@@ -365,7 +405,12 @@ export default function LoginClient() {
 
           <div className={styles.footer}>
             {t.noAccount}{" "}
-            <button type="button" onClick={goToSignup} className={styles.linkBtn} disabled={isBusy}>
+            <button
+              type="button"
+              onClick={goToSignup}
+              className={styles.linkBtn}
+              disabled={isBusy}
+            >
               {t.signupLink}
             </button>
           </div>
