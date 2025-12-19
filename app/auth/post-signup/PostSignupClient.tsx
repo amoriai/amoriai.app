@@ -16,14 +16,13 @@ export default function PostSignupClient() {
   const lang = useMemo(() => normalizeLocale(sp.get("lang")), [sp]);
 
   useEffect(() => {
-    const params = new URLSearchParams();
-    params.set("lang", lang);
-    params.set("plan", "free");
-
-    // Signup = toujours créer le 1er AmorIAI
-    router.replace(`/create-amoria?${params.toString()}`);
+    const p = new URLSearchParams();
+    p.set("lang", lang);
+    p.set("plan", "free");
+    router.replace(`/create-amoria?${p.toString()}`);
   }, [router, lang]);
 
+  // IMPORTANT: on rend la même UI que le fallback, pour éviter le flash
   return (
     <main className="auth-root">
       <div className="auth-card">
@@ -39,51 +38,65 @@ export default function PostSignupClient() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #020617;
-          color: white;
-          font-family: system-ui;
-          padding: 24px;
+          position: relative;
+          overflow: hidden;
+          padding: 1.5rem;
+          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 85%),
+            radial-gradient(circle at bottom, #020617, #000);
+          color: #e5e7eb;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
+            Arial, sans-serif;
         }
 
         .auth-card {
           width: 100%;
           max-width: 440px;
+          border-radius: 1.9rem;
+          padding: 2.3rem 2.5rem 2.1rem;
           background: rgba(2, 6, 23, 0.98);
-          border-radius: 24px;
-          padding: 2.5rem;
+          box-shadow: 0 32px 90px rgba(15, 23, 42, 0.95),
+            0 0 0 1px rgba(148, 163, 184, 0.35);
+          border: 1px solid rgba(148, 163, 184, 0.55);
           text-align: center;
-          box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9);
-          border: 1px solid rgba(148, 163, 184, 0.35);
         }
 
         .auth-badge {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.2rem 0.9rem;
+          border-radius: 999px;
           font-size: 0.7rem;
-          letter-spacing: 0.15em;
+          letter-spacing: 0.16em;
           text-transform: uppercase;
-          opacity: 0.75;
+          background: rgba(15, 23, 42, 0.96);
+          border: 1px solid rgba(148, 163, 184, 0.7);
+          color: #9ca3af;
           margin-bottom: 1rem;
         }
 
         .auth-title {
-          font-size: 1.6rem;
-          font-weight: 800;
-          margin: 0 0 0.4rem;
+          font-size: 1.7rem;
+          font-weight: 700;
+          margin: 0 0 0.35rem;
+          letter-spacing: 0.02em;
         }
 
         .auth-subtitle {
+          margin: 0 0 1.3rem;
           font-size: 0.9rem;
-          opacity: 0.75;
-          margin: 0 0 1.2rem;
+          color: #9ca3af;
+          line-height: 1.4;
         }
 
         .loader {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          border: 3px solid rgba(255, 255, 255, 0.2);
+          width: 34px;
+          height: 34px;
+          border-radius: 999px;
+          border: 3px solid rgba(255, 255, 255, 0.18);
           border-top-color: #fb7185;
           animation: spin 0.8s linear infinite;
-          margin: auto;
+          margin: 0 auto;
         }
 
         @keyframes spin {
