@@ -8,11 +8,12 @@ type PlanId = "free" | "chat" | "plus" | "unlimited";
 function normalizeLocale(raw: string | null): Locale {
   return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
+
 function normalizePlan(raw: string | null): PlanId {
-  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
-    ? raw
-    : "free";
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
 }
+
+/** Autorise uniquement un chemin interne (anti open-redirect) */
 function safeReturnTo(raw: string | null): string | null {
   if (!raw) return null;
   const v = raw.trim();
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
   // Params (URL)
   const returnToParam = safeReturnTo(url.searchParams.get("returnTo"));
 
-  // Cookies temporaires (avant OAuth)
+  // Cookies temporaires posés côté client avant OAuth (login/signup)
   const cookieReturnTo = safeReturnTo(readCookie("amoria_returnTo"));
   const cookieLang = readCookie("amoria_lang");
   const cookiePlan = readCookie("amoria_plan");
@@ -72,7 +73,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
   }
 
-  // 3) exchange code -> session
+  // 3) exchange code -> session (pose les cookies httpOnly)
   const supabase = createRouteHandlerClient({ cookies });
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
@@ -83,8 +84,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
   }
 
-  // 4) DESTINATION FINALE
-  // Priorité: returnTo param, puis returnTo cookie
+  // 4) Destination finale (priorité: param URL, puis cookie)
   const finalReturnTo = returnToParam ?? cookieReturnTo;
 
   // Nettoyage cookies temporaires
@@ -92,14 +92,17 @@ export async function GET(request: Request) {
   clearCookie("amoria_lang");
   clearCookie("amoria_plan");
 
+  // ✅ Si on a une destination explicite, on la respecte
   if (finalReturnTo) {
     return NextResponse.redirect(new URL(finalReturnTo, url.origin));
   }
 
-  // ✅ IMPORTANT: fallback vers post-login (pas create-amoria)
+  // ✅ Fallback SAFE:
+  // - si login a été bien câblé, il passera TOUJOURS returnTo=/auth/post-login...
+  // - si signup n’a pas mis de returnTo (ou cookies bloqués), on envoie quand même sur create-amoria
   const p = new URLSearchParams();
   p.set("lang", finalLang);
   p.set("plan", finalPlan);
 
-  return NextResponse.redirect(new URL(`/auth/post-login?${p.toString()}`, url.origin));
+  return NextResponse.redirect(new URL(`/create-amoria?${p.toString()}`, url.origin));
 }
