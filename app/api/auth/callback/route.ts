@@ -10,7 +10,9 @@ function normalizeLocale(raw: string | null): Locale {
 }
 
 function normalizePlan(raw: string | null): PlanId {
-  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
+    ? raw
+    : "free";
 }
 
 function safeReturnTo(raw: string | null): string | null {
@@ -25,42 +27,50 @@ function safeReturnTo(raw: string | null): string | null {
 export async function GET(request: Request) {
   const url = new URL(request.url);
 
+  // Params (dans l'URL)
+  const lang = normalizeLocale(url.searchParams.get("lang"));
+  const plan = normalizePlan(url.searchParams.get("plan"));
+  const returnTo = safeReturnTo(url.searchParams.get("returnTo"));
+
   // 1) erreur provider
   const oauthError = url.searchParams.get("error");
   if (oauthError) {
-    const lang = normalizeLocale(url.searchParams.get("lang"));
-    return NextResponse.redirect(new URL(`/login?lang=${lang}&error=${encodeURIComponent(oauthError)}`, url.origin));
+    const p = new URLSearchParams();
+    p.set("lang", lang);
+    p.set("error", oauthError);
+    return NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
   }
 
   // 2) code obligatoire
   const code = url.searchParams.get("code");
   if (!code) {
-    const lang = normalizeLocale(url.searchParams.get("lang"));
-    return NextResponse.redirect(new URL(`/login?lang=${lang}&error=missing_code`, url.origin));
+    const p = new URLSearchParams();
+    p.set("lang", lang);
+    p.set("error", "missing_code");
+    return NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
   }
 
-  // 3) exchange code -> session (cookies httpOnly gérés par auth-helpers)
+  // 3) exchange code -> session (cookies httpOnly)
   const supabase = createRouteHandlerClient({ cookies });
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    const lang = normalizeLocale(url.searchParams.get("lang"));
-    return NextResponse.redirect(new URL(`/login?lang=${lang}&error=oauth_exchange`, url.origin));
+    const p = new URLSearchParams();
+    p.set("lang", lang);
+    p.set("error", "oauth_exchange");
+    return NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
   }
 
-  // 4) lire params (dans l'URL, pas de cookies)
-  const lang = normalizeLocale(url.searchParams.get("lang"));
-  const plan = normalizePlan(url.searchParams.get("plan"));
-  const returnTo = safeReturnTo(url.searchParams.get("returnTo"));
-
-  // 5) destination finale
+  // 4) Destination finale UNIFIÉE
+  // - si returnTo est safe: on respecte
+  // - sinon: on passe par /auth/post-login (qui décidera chat vs create-amoria)
   if (returnTo) {
     return NextResponse.redirect(new URL(returnTo, url.origin));
   }
 
-  if (plan !== "free") {
-    return NextResponse.redirect(new URL(`/payment?lang=${lang}&plan=${plan}`, url.origin));
-  }
+  const p = new URLSearchParams();
+  p.set("lang", lang);
+  p.set("plan", plan);
 
-  return NextResponse.redirect(new URL(`/create-amoria?lang=${lang}&plan=${plan}`, url.origin));
+  return NextResponse.redirect(new URL(`/auth/post-login?${p.toString()}`, url.origin));
 }
