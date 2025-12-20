@@ -2,8 +2,8 @@
 import type { ReactNode } from "react";
 import "./globals.css";
 
-import CookieBanner from "@/components/CookieBanner";
-import RegisterSW from "@/components/RegisterSW";
+import CookieBanner from "./components/CookieBanner";
+import RegisterSW from "./components/RegisterSW";
 
 export const metadata = {
   title: "AmorIAI.app",
