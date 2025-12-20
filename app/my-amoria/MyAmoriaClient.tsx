@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
@@ -136,7 +138,7 @@ export default function MyAmoriaClient() {
 
     const userId = user.id;
 
-    // 2) Plan (current = true seulement) + join vers pricing_plans(code)
+    // 2) Plan (current=true) + join pricing_plans(code)
     let plan: PlanId = "free";
 
     const { data: sub, error: subErr } = await supabase
@@ -209,7 +211,6 @@ export default function MyAmoriaClient() {
 
       if (oneErr || !one?.id) {
         console.error("user_amoria SELECT 1 error:", oneErr);
-        // si incohérent, on reste sur page ready (0 IA)
         setState({ status: "ready", plan, maxAllowed, aiCount: 0 });
         return;
       }
@@ -227,41 +228,48 @@ export default function MyAmoriaClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
 
+  // ---------- UI (no Tailwind) ----------
   if (state.status === "loading") {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-black text-white">
-        <p>{t.loading}</p>
+      <main className="page">
+        <div className="loader">
+          <span className="dot" />
+          <span className="dot" />
+          <span className="dot" />
+        </div>
+        <p className="hint">{t.loading}</p>
+
+        <style jsx>{styles}</style>
       </main>
     );
   }
 
   if (state.status === "error") {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-black text-white p-6">
-        <section className="max-w-xl w-full bg-gray-900 p-8 rounded-2xl shadow-2xl text-center space-y-6">
-          <h1 className="text-2xl font-bold">{t.title}</h1>
+      <main className="page">
+        <section className="card">
+          <header className="head">
+            <div className="badge">AMORIAI</div>
+            <h1 className="title">{t.title}</h1>
+          </header>
 
-          <div className="bg-gray-800 p-4 rounded-xl text-left">
-            <h2 className="font-semibold mb-2">{t.diagTitle}</h2>
-            <p className="text-gray-300 text-sm">{state.message}</p>
+          <div className="panel">
+            <h2 className="panelTitle">{t.diagTitle}</h2>
+            <p className="panelText">{state.message}</p>
           </div>
 
-          <div className="space-y-3">
-            <button
-              onClick={() => void load()}
-              className="w-full py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 font-semibold"
-            >
+          <div className="actions">
+            <button className="btn btnPrimary" onClick={() => void load()}>
               {t.retry}
             </button>
 
-            <button
-              onClick={() => router.push("/")}
-              className="w-full py-2 rounded-full border border-gray-500 text-sm"
-            >
+            <button className="btn btnGhost" onClick={() => router.push("/")}>
               {t.backHome}
             </button>
           </div>
         </section>
+
+        <style jsx>{styles}</style>
       </main>
     );
   }
@@ -271,46 +279,253 @@ export default function MyAmoriaClient() {
   const limitReached = aiCount >= maxAllowed;
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-black text-white p-6">
-      <section className="max-w-xl w-full bg-gray-900 p-8 rounded-2xl shadow-2xl text-center space-y-6">
-        <h1 className="text-2xl font-bold">{t.title}</h1>
+    <main className="page">
+      <section className="card">
+        <header className="head">
+          <div className="badge">AMORIAI</div>
+          <h1 className="title">{t.title}</h1>
+          <div className="plan">
+            <span className="planLabel">{t.activePlanLabel}</span>
+            <span className="planPill">{plan.toUpperCase()}</span>
+          </div>
+        </header>
 
-        <div className="text-sm uppercase tracking-widest text-green-400">
-          {t.activePlanLabel} : {plan.toUpperCase()}
+        <div className="panel">
+          <h2 className="panelTitle">{limitReached ? t.limitReachedTitle : t.noAiTitle}</h2>
+          <p className="panelText">{limitReached ? t.limitReachedBody(maxAllowed) : t.noAiBody}</p>
         </div>
 
-        <div className="bg-gray-800 p-4 rounded-xl">
-          <h2 className="font-semibold">{limitReached ? t.limitReachedTitle : t.noAiTitle}</h2>
-          <p className="text-gray-300 mt-2">
-            {limitReached ? t.limitReachedBody(maxAllowed) : t.noAiBody}
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          {/* IMPORTANT:
-              On NE PASSE PAS plan dans l'URL. Create-amoria doit lire le plan depuis la DB. */}
+        <div className="actions">
+          {/* IMPORTANT: on ne met pas plan dans l’URL */}
           <button
+            className={limitReached ? "btn btnDisabled" : "btn btnPrimary"}
             onClick={() => router.push(`/create-amoria?lang=${lang}`)}
             disabled={limitReached}
-            className={`w-full py-3 rounded-full font-semibold ${
-              limitReached
-                ? "bg-gray-700 text-gray-300 cursor-not-allowed"
-                : "bg-gradient-to-r from-pink-500 to-purple-600"
-            }`}
           >
             {t.createNow}
           </button>
 
-          <button
-            onClick={() => router.push("/")}
-            className="w-full py-2 rounded-full border border-gray-500 text-sm"
-          >
+          <button className="btn btnGhost" onClick={() => router.push("/")}>
             {t.backHome}
           </button>
         </div>
 
-        <p className="text-xs text-gray-400">{t.planHint}</p>
+        <p className="footnote">{t.planHint}</p>
       </section>
+
+      <style jsx>{styles}</style>
     </main>
   );
 }
+
+const styles = `
+  :global(html){ color-scheme: dark; }
+  :global(body){
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  }
+
+  .page{
+    --bg0: #000;
+    --bg1: #020617;
+    --glass: rgba(2,6,23,.55);
+    --line: rgba(148,163,184,.22);
+    --text: rgba(226,232,240,.92);
+
+    --g1: #fb37ff;
+    --g2: #ff6b9c;
+    --g3: #38bdf8;
+    --g4: #f97316;
+
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 22px 14px;
+    color: var(--text);
+
+    background:
+      radial-gradient(1100px 700px at 50% -10%, rgba(251,55,255,.24), transparent 60%),
+      radial-gradient(900px 700px at 90% 10%, rgba(56,189,248,.18), transparent 55%),
+      radial-gradient(950px 700px at 10% 25%, rgba(249,115,22,.12), transparent 60%),
+      linear-gradient(180deg, var(--bg1), var(--bg0));
+  }
+
+  .card{
+    width: min(720px, 100%);
+    border-radius: 26px;
+    border: 1px solid rgba(148,163,184,.26);
+    background:
+      radial-gradient(900px 600px at 50% 0%, rgba(251,55,255,.14), transparent 60%),
+      radial-gradient(800px 520px at 80% 0%, rgba(56,189,248,.10), transparent 55%),
+      linear-gradient(180deg, rgba(15,23,42,.86), rgba(2,6,23,.78));
+    box-shadow: 0 26px 90px rgba(0,0,0,.75);
+    padding: 18px 18px 14px;
+    backdrop-filter: blur(12px);
+  }
+
+  .head{
+    display: grid;
+    gap: 10px;
+    justify-items: center;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+
+  .badge{
+    font-size: .7rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    padding: 7px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(248,250,252,.18);
+    background: rgba(2,6,23,.55);
+    width: fit-content;
+  }
+
+  .title{
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 780;
+  }
+
+  .plan{
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 2px;
+    color: rgba(148,163,184,.95);
+    font-size: .86rem;
+  }
+  .planLabel{
+    opacity: .95;
+  }
+  .planPill{
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(148,163,184,.22);
+    background: rgba(2,6,23,.45);
+    color: rgba(226,232,240,.92);
+    font-weight: 700;
+    letter-spacing: .06em;
+  }
+
+  .panel{
+    border-radius: 18px;
+    border: 1px solid rgba(148,163,184,.22);
+    background:
+      radial-gradient(800px 420px at 50% 0%, rgba(56,189,248,.06), transparent 55%),
+      linear-gradient(180deg, rgba(2,6,23,.50), rgba(2,6,23,.66));
+    padding: 14px 14px;
+    box-shadow: inset 0 0 0 1px rgba(2,6,23,.25);
+  }
+
+  .panelTitle{
+    margin: 0;
+    font-size: 1.02rem;
+    font-weight: 760;
+  }
+
+  .panelText{
+    margin: 8px 0 0;
+    color: rgba(148,163,184,.92);
+    line-height: 1.4;
+    font-size: .92rem;
+  }
+
+  .actions{
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .btn{
+    width: 100%;
+    border-radius: 999px;
+    padding: 12px 14px;
+    font-weight: 720;
+    font-size: .95rem;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 120ms ease, filter 120ms ease, opacity 120ms ease, border-color 120ms ease;
+  }
+  .btn:hover{
+    transform: translateY(-1px);
+    filter: brightness(1.02);
+  }
+
+  .btnPrimary{
+    border: none;
+    color: rgba(248,250,252,.98);
+    background: linear-gradient(135deg, var(--g1), var(--g2), var(--g4));
+    box-shadow: 0 16px 46px rgba(248,113,113,.38);
+  }
+
+  .btnGhost{
+    border: 1px solid rgba(148,163,184,.28);
+    background: rgba(2,6,23,.45);
+    color: rgba(226,232,240,.92);
+  }
+
+  .btnDisabled{
+    border: 1px solid rgba(148,163,184,.18);
+    background: rgba(148,163,184,.12);
+    color: rgba(148,163,184,.75);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .btnDisabled:hover{
+    transform: none;
+    filter: none;
+  }
+
+  .footnote{
+    margin: 12px 0 0;
+    text-align: center;
+    font-size: .78rem;
+    color: rgba(148,163,184,.75);
+    line-height: 1.35;
+  }
+
+  .loader{
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(148,163,184,.22);
+    background: rgba(2,6,23,.55);
+    box-shadow: 0 16px 60px rgba(15,23,42,.9);
+    backdrop-filter: blur(10px);
+  }
+  .dot{
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(226,232,240,.85);
+    animation: dot 900ms ease-in-out infinite;
+  }
+  .dot:nth-child(2){ animation-delay: 120ms; }
+  .dot:nth-child(3){ animation-delay: 240ms; }
+
+  .hint{
+    margin: 14px 0 0;
+    font-size: .9rem;
+    color: rgba(148,163,184,.9);
+    text-align: center;
+  }
+
+  @keyframes dot{
+    0%,100%{ transform: translateY(0); opacity: .45; }
+    50%{ transform: translateY(-6px); opacity: 1; }
+  }
+
+  @media (max-width: 520px){
+    .card{ padding: 16px 14px 12px; border-radius: 24px; }
+    .title{ font-size: 1.25rem; }
+    .btn{ padding: 12px 14px; }
+  }
+`;
