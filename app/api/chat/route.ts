@@ -2,21 +2,23 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 /* ===========================
-   QUOTAS (PAR JOUR)
+   QUOTAS (PAR MOIS)
 =========================== */
 
 type PlanCode = "free" | "chat" | "plus" | "unlimited";
 
 function quotaFor(plan: PlanCode) {
+  // ⚠️ Mets ici les LIMITES MENSUELLES que tu veux
+  // (ex: free 200/mois, chat 400/mois, plus 1000/mois, unlimited 10000/mois)
   switch (plan) {
     case "chat":
-      return 90;
+      return 400;
     case "plus":
-      return 100;
+      return 1000;
     case "unlimited":
-      return 100000; // pratiquement illimité
+      return 10000; // ou 100000 si tu veux quasi illimité
     default:
-      return 30; // free
+      return 200; // free
   }
 }
 
@@ -36,9 +38,9 @@ function normalizeLang(raw: unknown): Lang {
 
 const I18N = {
   quotaExceeded: {
-    fr: "Tu as atteint la limite de messages pour aujourd’hui. Réessaie demain ou upgrade ton forfait.",
-    en: "You’ve reached today’s message limit. Try again tomorrow or upgrade your plan.",
-    es: "Has alcanzado el límite de mensajes de hoy. Inténtalo mañana o mejora tu plan.",
+    fr: "Tu as atteint la limite de messages pour ce mois-ci. Réessaie le mois prochain ou upgrade ton forfait.",
+    en: "You’ve reached your monthly message limit. Try again next month or upgrade your plan.",
+    es: "Has alcanzado tu límite mensual de mensajes. Inténtalo el próximo mes o mejora tu plan.",
   },
   fallbackReply: {
     fr: "Je ne sais pas.",
@@ -70,8 +72,9 @@ export async function POST(req: Request) {
     const safeLang = normalizeLang(lang);
 
     if (!iaId) return NextResponse.json({ error: I18N.missingIaId[safeLang] }, { status: 400 });
-    if (!message || !message.trim())
+    if (!message || !message.trim()) {
       return NextResponse.json({ error: I18N.missingMessage[safeLang] }, { status: 400 });
+    }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -113,7 +116,6 @@ export async function POST(req: Request) {
     =========================== */
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
-    // L’IA doit appartenir à cet utilisateur
     const { data: iaRow, error: iaError } = await supabaseAdmin
       .from("user_amoria")
       .select("id, user_id, name, system_prompt, voice_id, is_archived")
@@ -165,27 +167,25 @@ export async function POST(req: Request) {
         planCode = "free";
         planName = "Free";
       }
-    } else {
-      planCode = "free";
-      planName = "Free";
     }
 
     // ✅ Historique PAYANT seulement
     const canStoreHistory = planCode !== "free";
 
     /* ===========================
-       4) Appliquer quota JOURNALIER (RPC)
-       - IMPORTANT: RPC via supabaseAuth (JWT), pas admin
+       4) Appliquer quota MENSUEL (RPC)
+       - RPC via supabaseAuth (JWT), pas admin
+       - Le RPC doit s'appeler: consume_monthly_message(quota int)
     =========================== */
     const quota = quotaFor(planCode);
 
     const { data: usage, error: usageErr } = await supabaseAuth.rpc(
-      "consume_daily_message",
+      "consume_monthly_message",
       { quota }
     );
 
     if (usageErr) {
-      console.error("consume_daily_message error:", usageErr);
+      console.error("consume_monthly_message error:", usageErr);
       return NextResponse.json({ error: "quota_check_failed" }, { status: 500 });
     }
 
@@ -203,8 +203,10 @@ export async function POST(req: Request) {
     }
 
     /* ===========================
-       5) System prompt + verrou de langue (PRO)
-=========================== */
+       5) System prompt + verrou de langue
+       - IMPORTANT: ton normalizeLang() choisit la langue.
+       - Si le front envoie toujours "fr", tu verras toujours français.
+    =========================== */
 
     const defaultSystemPromptFr =
       "Tu es une IA de compagnie bienveillante et chaleureuse. Tu réponds avec un ton naturel, doux et empathique.";
@@ -217,10 +219,8 @@ export async function POST(req: Request) {
     if (safeLang === "en") defaultSystemPrompt = defaultSystemPromptEn;
     if (safeLang === "es") defaultSystemPrompt = defaultSystemPromptEs;
 
-    // Persona de la DB (si présent) sinon default
     const personaPrompt = (iaRow.system_prompt?.trim() || defaultSystemPrompt).trim();
 
-    // 🔒 Verrou de langue (toujours en dernier)
     const languageLock =
       safeLang === "fr"
         ? "RÈGLE ABSOLUE : réponds UNIQUEMENT en français. Ne change jamais de langue, même si l’utilisateur écrit en anglais ou en espagnol."
@@ -336,10 +336,10 @@ export async function POST(req: Request) {
       planCode,
       iaId: iaRow.id,
       iaName: iaRow.name,
-      quota_per_day: quota,
-      remaining_today: usage?.remaining ?? null,
+      quota_per_month: quota,
+      remaining_this_month: usage?.remaining ?? null,
       history_enabled: canStoreHistory,
-      lang: safeLang, // utile pour debug
+      lang: safeLang,
     });
   } catch (e) {
     console.error("Server error in /api/chat:", e);
