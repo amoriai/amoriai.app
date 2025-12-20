@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { maxAmoriaForPlan, planFromPricingName, type PlanId } from "@/lib/plan";
+import { maxAmoriaForPlan, type PlanId } from "@/lib/plan";
 
 type Locale = "fr" | "en" | "es";
 
@@ -23,7 +23,6 @@ type UiStrings = {
   diagNoAccess: string;
   diagUnknown: string;
 
-  // NEW
   limitReachedTitle: string;
   limitReachedBody: (max: number) => string;
 };
@@ -42,7 +41,7 @@ const STRINGS: Record<Locale, UiStrings> = {
     noAiBody: "Tu es bien connectée, mais aucune AmorIAI n’a été trouvée pour ce compte.",
     createNow: "Créer mon AmorIAI maintenant",
     backHome: "Retour à la page d’accueil",
-    planHint: "Ton plan est automatiquement respecté (Free, Chat, Plus, Unlimited).",
+    planHint: "Ton plan est appliqué automatiquement (Free, Chat, Plus, Unlimited).",
 
     retry: "Réessayer",
     diagTitle: "Diagnostic",
@@ -108,6 +107,11 @@ function looksLikeRlsError(message: string) {
   );
 }
 
+function normalizePlanCode(raw: any): PlanId {
+  const v = String(raw ?? "").toLowerCase().trim();
+  return v === "free" || v === "chat" || v === "plus" || v === "unlimited" ? (v as PlanId) : "free";
+}
+
 export default function MyAmoriaClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -132,12 +136,22 @@ export default function MyAmoriaClient() {
 
     const userId = user.id;
 
-    // 2) Plan (subscription -> pricing -> name)
+    // 2) Plan via join pricing_plans(code)
+    //    (plus robuste que pricing_plans.name)
     let plan: PlanId = "free";
 
     const { data: sub, error: subErr } = await supabase
       .from("user_subscriptions")
-      .select("pricing_plan_id,current")
+      .select(
+        `
+          pricing_plan_id,
+          current,
+          status,
+          pricing_plans:pricing_plan_id (
+            code
+          )
+        `
+      )
       .eq("user_id", userId)
       .eq("current", true)
       .maybeSingle();
@@ -153,16 +167,29 @@ export default function MyAmoriaClient() {
       return;
     }
 
-    if (sub?.pricing_plan_id) {
-      const { data: pricing, error: pricingErr } = await supabase
-        .from("pricing_plans")
-        .select("name")
-        .eq("id", sub.pricing_plan_id)
+    // Fallback: si current=true absent, on tente status=active
+    let planCode: any = (sub as any)?.pricing_plans?.code;
+
+    if (!planCode) {
+      const { data: sub2, error: sub2Err } = await supabase
+        .from("user_subscriptions")
+        .select(
+          `
+            pricing_plan_id,
+            current,
+            status,
+            pricing_plans:pricing_plan_id (
+              code
+            )
+          `
+        )
+        .eq("user_id", userId)
+        .eq("status", "active")
         .maybeSingle();
 
-      if (pricingErr) {
-        console.error("pricing_plans SELECT error:", pricingErr);
-        const rls = looksLikeRlsError(pricingErr.message || "");
+      if (sub2Err) {
+        console.error("user_subscriptions(active) SELECT error:", sub2Err);
+        const rls = looksLikeRlsError(sub2Err.message || "");
         setState({
           status: "error",
           kind: rls ? "no_access" : "unknown",
@@ -171,17 +198,18 @@ export default function MyAmoriaClient() {
         return;
       }
 
-      plan = planFromPricingName(pricing?.name);
+      planCode = (sub2 as any)?.pricing_plans?.code;
     }
 
+    plan = normalizePlanCode(planCode);
     const maxAllowed = maxAmoriaForPlan(plan);
 
-    // 3) IA count (rapide) + redirect logique
-    // ⚠️ Note: Supabase count exact peut être un peu plus lent mais ok ici.
+    // 3) IA count
     const { count, error: countErr } = await supabase
       .from("user_amoria")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .eq("is_archived", false);
 
     if (countErr) {
       console.error("user_amoria COUNT error:", countErr);
@@ -208,12 +236,14 @@ export default function MyAmoriaClient() {
         .from("user_amoria")
         .select("id")
         .eq("user_id", userId)
+        .eq("is_archived", false)
         .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle();
 
       if (oneErr || !one?.id) {
         console.error("user_amoria SELECT 1 error:", oneErr);
+        // si incohérent, on reste sur page ready (0 IA)
         setState({ status: "ready", plan, maxAllowed, aiCount: 0 });
         return;
       }
@@ -272,7 +302,6 @@ export default function MyAmoriaClient() {
 
   // READY state (0 IA)
   const { plan, maxAllowed, aiCount } = state;
-
   const limitReached = aiCount >= maxAllowed;
 
   return (
@@ -292,8 +321,10 @@ export default function MyAmoriaClient() {
         </div>
 
         <div className="space-y-3">
+          {/* IMPORTANT:
+              On NE PASSE PAS plan dans l'URL. Create-amoria doit lire le plan depuis la DB. */}
           <button
-            onClick={() => router.push(`/create-amoria?plan=${plan}&lang=${lang}`)}
+            onClick={() => router.push(`/create-amoria?lang=${lang}`)}
             disabled={limitReached}
             className={`w-full py-3 rounded-full font-semibold ${
               limitReached
