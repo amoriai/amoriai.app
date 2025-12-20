@@ -4,14 +4,13 @@ import React, { FormEvent, Suspense, useEffect, useMemo, useState } from "react"
 import Image from "next/image";
 import Script from "next/script";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "../../lib/supabase/client";
+import { supabase } from "@/lib/supabase/client";
 import styles from "./LoginClient.module.css";
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 const MIN_RECAPTCHA_SCORE = 0.5;
 
 type Locale = "fr" | "en" | "es";
-type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 type Strings = {
   title: string;
@@ -30,6 +29,7 @@ type Strings = {
   submitting: string;
   noAccount: string;
   signupLink: string;
+
   errorGeneric: string;
   errorInvalid: string;
   errorRecaptcha: string;
@@ -56,8 +56,7 @@ const STRINGS: Record<Locale, Strings> = {
     signupLink: "Créer mon compte",
     errorGeneric: "Une erreur est survenue. Réessaie dans un instant.",
     errorInvalid: "Courriel ou mot de passe invalide.",
-    errorRecaptcha:
-      "Connexion refusée (vérification de sécurité). Recharge la page et réessaie.",
+    errorRecaptcha: "Connexion refusée (vérification de sécurité). Recharge la page et réessaie.",
     missingKey: "Clé reCAPTCHA manquante (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
   },
   en: {
@@ -79,8 +78,7 @@ const STRINGS: Record<Locale, Strings> = {
     signupLink: "Create my account",
     errorGeneric: "Something went wrong. Please try again.",
     errorInvalid: "Invalid email or password.",
-    errorRecaptcha:
-      "Login blocked (security check). Refresh the page and try again.",
+    errorRecaptcha: "Login blocked (security check). Refresh the page and try again.",
     missingKey: "Missing reCAPTCHA key (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
   },
   es: {
@@ -102,20 +100,13 @@ const STRINGS: Record<Locale, Strings> = {
     signupLink: "Crear mi cuenta",
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     errorInvalid: "Correo o contraseña inválidos.",
-    errorRecaptcha:
-      "Inicio bloqueado (verificación de seguridad). Recarga la página e inténtalo de nuevo.",
+    errorRecaptcha: "Inicio bloqueado (verificación de seguridad). Recarga la página e inténtalo de nuevo.",
     missingKey: "Falta la clave reCAPTCHA (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
   },
 };
 
 function normalizeLocale(raw: string | null): Locale {
   return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
-}
-
-function normalizePlan(raw: string | null): PlanId {
-  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
-    ? raw
-    : "free";
 }
 
 /** Open-redirect safe path only */
@@ -131,9 +122,7 @@ function safeReturnTo(raw: string | null): string | null {
 function setTempCookie(name: string, value: string, maxAgeSeconds = 600) {
   const secure =
     typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${name}=${encodeURIComponent(
-    value
-  )}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
+  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
 }
 
 /* ===========================
@@ -145,19 +134,17 @@ function LoginClientInner() {
   const router = useRouter();
 
   const locale = useMemo(() => normalizeLocale(sp.get("lang")), [sp]);
-  const plan = useMemo(() => normalizePlan(sp.get("plan")), [sp]);
   const returnToParam = useMemo(() => safeReturnTo(sp.get("returnTo")), [sp]);
   const t = STRINGS[locale];
 
-  // ✅ LOGIN should always land on /my-amoria (which decides chat vs create-amoria)
+  // ✅ Après login, on va TOUJOURS à /my-amoria (hub),
+  // sauf si un returnTo explicite est fourni (safeReturnTo).
   const myAmoriaPath = useMemo(() => {
     const qs = new URLSearchParams();
     qs.set("lang", locale);
-    qs.set("plan", plan);
     return `/my-amoria?${qs.toString()}`;
-  }, [locale, plan]);
+  }, [locale]);
 
-  // If caller passed returnTo, we honor it; otherwise default to /my-amoria
   const finalReturnTo = returnToParam ?? myAmoriaPath;
 
   const [email, setEmail] = useState("");
@@ -167,8 +154,10 @@ function LoginClientInner() {
   const [loadingEmail, setLoadingEmail] = useState(false);
   const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
   const [recaptchaReady, setRecaptchaReady] = useState(false);
 
+  // reCAPTCHA readiness
   useEffect(() => {
     if (!RECAPTCHA_SITE_KEY) {
       setRecaptchaReady(false);
@@ -198,9 +187,7 @@ function LoginClientInner() {
   const goToSignup = () => {
     const params = new URLSearchParams();
     params.set("lang", locale);
-    params.set("plan", plan);
-    // ✅ keep returnTo if it exists, else use /my-amoria
-    params.set("returnTo", finalReturnTo);
+    params.set("returnTo", finalReturnTo); // garde le retour
     router.push(`/signup?${params.toString()}`);
   };
 
@@ -273,7 +260,6 @@ function LoginClientInner() {
         return;
       }
 
-      // ✅ DIRECT: /my-amoria (or explicit returnTo)
       router.replace(finalReturnTo);
     } catch (err) {
       console.error("login error", err);
@@ -292,13 +278,11 @@ function LoginClientInner() {
     try {
       const origin = window.location.origin;
 
-      // ✅ Cookies read by /api/auth/callback
-      // ✅ IMPORTANT: default to /my-amoria to avoid extra intermediate pages
+      // ✅ Lu par /api/auth/callback (cookies temporaires)
       setTempCookie("amoria_lang", locale);
-      setTempCookie("amoria_plan", plan);
       setTempCookie("amoria_returnTo", finalReturnTo);
 
-      // ✅ redirectTo = callback without query params
+      // ✅ redirectTo = callback sans query (évite les doubles redirects)
       const redirectTo = `${origin}/api/auth/callback`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -313,7 +297,6 @@ function LoginClientInner() {
         console.error("google oauth error", error);
         setErrorMsg(t.errorGeneric);
       }
-      // No router.replace here (OAuth handles redirect)
     } catch (err) {
       console.error("google login error", err);
       setErrorMsg(t.errorGeneric);
@@ -328,9 +311,7 @@ function LoginClientInner() {
     <>
       {RECAPTCHA_SITE_KEY ? (
         <Script
-          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(
-            RECAPTCHA_SITE_KEY
-          )}`}
+          src={`https://www.google.com/recaptcha/api.js?render=${encodeURIComponent(RECAPTCHA_SITE_KEY)}`}
           strategy="afterInteractive"
         />
       ) : null}
@@ -406,19 +387,19 @@ function LoginClientInner() {
 
             {errorMsg && <p className={styles.error}>{errorMsg}</p>}
 
-            <button type="submit" disabled={isBusy || !recaptchaReady} className={styles.submit}>
+            <button
+              type="submit"
+              disabled={isBusy || !recaptchaReady}
+              className={styles.submit}
+              title={!RECAPTCHA_SITE_KEY ? t.missingKey : !recaptchaReady ? "reCAPTCHA…" : undefined}
+            >
               {loadingEmail ? t.submitting : t.submit}
             </button>
           </form>
 
           <div className={styles.footer}>
             {t.noAccount}{" "}
-            <button
-              type="button"
-              onClick={goToSignup}
-              className={styles.linkBtn}
-              disabled={isBusy}
-            >
+            <button type="button" onClick={goToSignup} className={styles.linkBtn} disabled={isBusy}>
               {t.signupLink}
             </button>
           </div>
@@ -430,7 +411,6 @@ function LoginClientInner() {
 
 /* ===========================
    Export with Suspense
-   ✅ avoids Next warning: useSearchParams needs Suspense boundary
 =========================== */
 
 export default function LoginClient() {
