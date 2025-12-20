@@ -1,18 +1,18 @@
 export const dynamic = "force-dynamic";
 
 import { Suspense } from "react";
-import MyAmoriaClient from "./MyAmoriaClient";
+import MyAmoriaSelectClient from "./MyAmoriaSelectClient";
 
-export default function MyAmoriaPage() {
+export default function MyAmoriaSelectPage() {
   return (
     <Suspense
       fallback={
         <main className="min-h-screen flex items-center justify-center bg-black text-white">
-          Chargement de ton espace AmorIA…
+          Chargement…
         </main>
       }
     >
-      <MyAmoriaClient />
+      <MyAmoriaSelectClient />
     </Suspense>
   );
 }
