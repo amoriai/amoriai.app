@@ -136,8 +136,7 @@ export default function MyAmoriaClient() {
 
     const userId = user.id;
 
-    // 2) Plan via join pricing_plans(code)
-    //    (plus robuste que pricing_plans.name)
+    // 2) Plan (current = true seulement) + join vers pricing_plans(code)
     let plan: PlanId = "free";
 
     const { data: sub, error: subErr } = await supabase
@@ -146,7 +145,6 @@ export default function MyAmoriaClient() {
         `
           pricing_plan_id,
           current,
-          status,
           pricing_plans:pricing_plan_id (
             code
           )
@@ -167,41 +165,9 @@ export default function MyAmoriaClient() {
       return;
     }
 
-    // Fallback: si current=true absent, on tente status=active
-    let planCode: any = (sub as any)?.pricing_plans?.code;
-
-    if (!planCode) {
-      const { data: sub2, error: sub2Err } = await supabase
-        .from("user_subscriptions")
-        .select(
-          `
-            pricing_plan_id,
-            current,
-            status,
-            pricing_plans:pricing_plan_id (
-              code
-            )
-          `
-        )
-        .eq("user_id", userId)
-        .eq("status", "active")
-        .maybeSingle();
-
-      if (sub2Err) {
-        console.error("user_subscriptions(active) SELECT error:", sub2Err);
-        const rls = looksLikeRlsError(sub2Err.message || "");
-        setState({
-          status: "error",
-          kind: rls ? "no_access" : "unknown",
-          message: rls ? t.diagNoAccess : t.diagUnknown,
-        });
-        return;
-      }
-
-      planCode = (sub2 as any)?.pricing_plans?.code;
-    }
-
+    const planCode: any = (sub as any)?.pricing_plans?.code;
     plan = normalizePlanCode(planCode);
+
     const maxAllowed = maxAmoriaForPlan(plan);
 
     // 3) IA count
