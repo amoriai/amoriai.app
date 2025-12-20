@@ -3,11 +3,11 @@
 export const dynamic = "force-dynamic";
 
 import React, { FormEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { LogoutButton } from "../components/LogoutButton";
-import { canCreateAmoria, maxAmoriaForPlan, normalizePlan, type PlanId } from "@/lib/plan";
+import { maxAmoriaForPlan, type PlanId } from "@/lib/plan";
 
 type Locale = "fr" | "en" | "es";
 
@@ -35,9 +35,6 @@ type ChatMessage = {
 
 type UiCopy = {
   backHome: string;
-  myAmoria: string;
-  createAmoria: string;
-
   title: (name: string) => string;
   subtitle: (name: string) => string;
   emptyState: (name: string) => string;
@@ -76,14 +73,14 @@ type UiCopy = {
 
   chatNetworkError: string;
   chatServerErrorPrefix: string;
+
+  myAmoria: string;
+  createAmoria: string;
 };
 
 const STRINGS: Record<Locale, UiCopy> = {
   fr: {
     backHome: "← Retour à l’accueil",
-    myAmoria: "Mes AmorIAI",
-    createAmoria: "Créer une AmorIAI",
-
     title: (name) => `Chat avec ${name}`,
     subtitle: (name) => `${name} est là pour t’écouter et t’aider à mettre des mots sur ce que tu vis.`,
     emptyState: (name) => `Aucun message pour l’instant. Dis bonjour à ${name} pour commencer 💬`,
@@ -122,12 +119,12 @@ const STRINGS: Record<Locale, UiCopy> = {
 
     chatNetworkError: "Erreur réseau. Vérifie ta connexion Internet et réessaie dans quelques secondes.",
     chatServerErrorPrefix: "Erreur serveur : ",
+
+    myAmoria: "Mes AmorIAI",
+    createAmoria: "Créer une AmorIAI",
   },
   en: {
     backHome: "← Back to home",
-    myAmoria: "My AmorIAI",
-    createAmoria: "Create an AmorIAI",
-
     title: (name) => `Chat with ${name}`,
     subtitle: (name) => `${name} is here to listen and help you put words on what you’re feeling.`,
     emptyState: (name) => `No messages yet. Say hi to ${name} to get started 💬`,
@@ -166,12 +163,12 @@ const STRINGS: Record<Locale, UiCopy> = {
 
     chatNetworkError: "Network error. Check your Internet connection and try again in a few seconds.",
     chatServerErrorPrefix: "Server error: ",
+
+    myAmoria: "My AmorIAI",
+    createAmoria: "Create an AmorIAI",
   },
   es: {
     backHome: "← Volver al inicio",
-    myAmoria: "Mis AmorIAI",
-    createAmoria: "Crear un AmorIAI",
-
     title: (name) => `Chat con ${name}`,
     subtitle: (name) => `${name} está aquí para escucharte y ayudarte a poner en palabras lo que sientes.`,
     emptyState: (name) => `Todavía no hay mensajes. Saluda a ${name} para empezar 💬`,
@@ -210,12 +207,17 @@ const STRINGS: Record<Locale, UiCopy> = {
 
     chatNetworkError: "Error de red. Verifica tu conexión e inténtalo de nuevo en unos segundos.",
     chatServerErrorPrefix: "Error del servidor: ",
+
+    myAmoria: "Mis AmorIAI",
+    createAmoria: "Crear un AmorIAI",
   },
 };
 
 function normalizeLocale(raw: string | null): Locale {
-  if (raw === "en" || raw === "es" || raw === "fr") return raw;
-  return "fr";
+  return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
+}
+function normalizePlan(raw: string | null): PlanId {
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
 }
 
 export default function ChatPage() {
@@ -310,15 +312,11 @@ function ChatClient() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
+  // plan + quota
   const [planCode, setPlanCode] = useState<string | null>(null);
-  const [planId, setPlanId] = useState<PlanId>("free");
-
-  const [activeAmoriaCount, setActiveAmoriaCount] = useState(0);
-  const [quota, setQuota] = useState(1);
-  const [canCreate, setCanCreate] = useState(false);
+  const [activeAmoriaCount, setActiveAmoriaCount] = useState<number>(0);
 
   const [canUseVoice, setCanUseVoice] = useState(false);
-
   const [canPulseAvatar, setCanPulseAvatar] = useState(false);
   const [canPlayAvatarVideo, setCanPlayAvatarVideo] = useState(false);
 
@@ -341,12 +339,20 @@ function ChatClient() {
   const [avatarPlaying, setAvatarPlaying] = useState(false);
   const avatarTimerRef = useRef<number | null>(null);
 
-  const isFreePlan = !planCode || planCode === "free";
+  const planId: PlanId = useMemo(() => normalizePlan(planCode), [planCode]);
+  const maxAllowed = useMemo(() => maxAmoriaForPlan(planId), [planId]);
+
+  const isFreePlan = planId === "free";
   const isPaidPlan = !isFreePlan;
+
+  // ✅ bouton Créer : jamais en free + seulement si quota dispo
+  const canCreate = useMemo(() => {
+    if (planId === "free") return false;
+    return activeAmoriaCount < maxAllowed;
+  }, [planId, activeAmoriaCount, maxAllowed]);
 
   const displayName = useMemo(() => (ai?.name?.trim() || "AmorIAI").trim(), [ai?.name]);
   const displayNameUpper = useMemo(() => displayName.toUpperCase(), [displayName]);
-
   const avatarImageUrl = ai?.avatar_image_url ?? null;
 
   const avatarVideoUrl = useMemo(() => {
@@ -361,12 +367,6 @@ function ChatClient() {
     return `/?${params.toString()}`;
   }, [locale]);
 
-  const pricingUrl = useMemo(() => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/pricing?${params.toString()}`;
-  }, [locale]);
-
   const myAmoriaUrl = useMemo(() => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -377,6 +377,12 @@ function ChatClient() {
     const params = new URLSearchParams();
     params.set("lang", locale);
     return `/create-amoria?${params.toString()}`;
+  }, [locale]);
+
+  const pricingUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/pricing?${params.toString()}`;
   }, [locale]);
 
   const handleUpgradeClick = () => {
@@ -429,20 +435,16 @@ function ChatClient() {
     }, 10_000);
   };
 
-  // 1) Subscription / droits + quota AmorIAI
+  // 1) plan + quota IA
   useEffect(() => {
-    const loadSubscription = async () => {
+    const loadSubscriptionAndQuota = async () => {
       try {
         const { data: userData } = await supabase.auth.getUser();
         const user = userData?.user;
 
         if (!user) {
           setPlanCode(null);
-          setPlanId("free");
-          setQuota(1);
           setActiveAmoriaCount(0);
-          setCanCreate(false);
-
           setCanUseVoice(false);
           setCanPulseAvatar(false);
           setCanPlayAvatarVideo(false);
@@ -450,18 +452,19 @@ function ChatClient() {
           return;
         }
 
+        // plan depuis user_subscriptions -> pricing_plans.code
         let sub: any = null;
 
         const q1 = await supabase
           .from("user_subscriptions")
           .select(
             `
-              pricing_plans (
-                code,
-                has_voice,
-                voice_limit
-              )
-            `
+            pricing_plans (
+              code,
+              has_voice,
+              voice_limit
+            )
+          `
           )
           .eq("user_id", user.id)
           .eq("current", true)
@@ -474,12 +477,12 @@ function ChatClient() {
             .from("user_subscriptions")
             .select(
               `
-                pricing_plans (
-                  code,
-                  has_voice,
-                  voice_limit
-                )
-              `
+              pricing_plans (
+                code,
+                has_voice,
+                voice_limit
+              )
+            `
             )
             .eq("user_id", user.id)
             .eq("status", "active")
@@ -488,7 +491,7 @@ function ChatClient() {
           if (!q2.error && q2.data) sub = q2.data;
         }
 
-        const rawPlans: any = sub ? (sub as any).pricing_plans : null;
+        const rawPlans: any = sub?.pricing_plans;
 
         let code: string | null = null;
         let hasVoice = false;
@@ -505,9 +508,6 @@ function ChatClient() {
 
         setPlanCode(code);
 
-        const resolvedPlanId = normalizePlan(code ?? "free");
-        setPlanId(resolvedPlanId);
-
         const paid = !!code && code !== "free";
         setCanPulseAvatar(paid);
         setCanPlayAvatarVideo(code === "unlimited");
@@ -518,29 +518,18 @@ function ChatClient() {
 
         if (code !== "unlimited") setAvatarPlaying(false);
 
-        // ✅ Count AmorIAI actives + quota
-        const { count } = await supabase
+        // quota IA : compter les IA actives
+        const countRes = await supabase
           .from("user_amoria")
-          .select("id", { head: true, count: "exact" })
+          .select("id", { count: "exact", head: true })
           .eq("user_id", user.id)
           .eq("is_archived", false);
 
-        const c = Number(count ?? 0);
-        setActiveAmoriaCount(c);
-
-        const q = maxAmoriaForPlan(resolvedPlanId);
-        setQuota(q);
-
-        setCanCreate(canCreateAmoria(resolvedPlanId, c));
+        setActiveAmoriaCount(countRes.count ?? 0);
       } catch (err) {
         console.error("Erreur loadSubscription:", err);
-
         setPlanCode(null);
-        setPlanId("free");
-        setQuota(1);
         setActiveAmoriaCount(0);
-        setCanCreate(false);
-
         setCanUseVoice(false);
         setCanPulseAvatar(false);
         setCanPlayAvatarVideo(false);
@@ -548,10 +537,10 @@ function ChatClient() {
       }
     };
 
-    loadSubscription();
+    loadSubscriptionAndQuota();
   }, []);
 
-  // 2) STT support (micro)
+  // 2) STT support
   useEffect(() => {
     if (!canUseVoice) {
       setSttSupported(false);
@@ -803,10 +792,9 @@ function ChatClient() {
     setSending(true);
 
     try {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) console.error("getSession error:", sessionError);
-
+      const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
+
       if (!accessToken) {
         setSendError(t.notAuthenticated);
         return;
@@ -834,7 +822,6 @@ function ChatClient() {
       }
 
       if (!res.ok) {
-        console.error("ERREUR API /api/chat:", res.status, data);
         if (data?.error === "not_authenticated") return setSendError(t.notAuthenticated);
         if (data?.error === "profile_not_found") return setSendError(t.profileNotFound);
         if (data?.message) return setSendError(data.message);
@@ -873,25 +860,21 @@ function ChatClient() {
           {t.backHome}
         </a>
 
-        <nav className="topbar__actions" aria-label="Actions">
+        <div className="topbar__right">
+          {/* Toujours présent pour changer d’AmorIAI */}
           <Link href={myAmoriaUrl} className="topbar__pill">
             {t.myAmoria}
           </Link>
 
-          {/* Visible seulement si quota le permet */}
+          {/* ✅ Caché sur Free + seulement si quota dispo */}
           {canCreate && (
             <Link href={createAmoriaUrl} className="topbar__pill topbar__pill--primary">
               {t.createAmoria}
             </Link>
           )}
 
-          {/* Indicateur discret (optionnel). Enlève si tu veux zéro texte. */}
-          <span className="topbar__meta" title={`Plan: ${planId} — ${activeAmoriaCount}/${quota}`}>
-            {activeAmoriaCount}/{quota}
-          </span>
-        </nav>
-
-        <LogoutButton />
+          <LogoutButton />
+        </div>
       </header>
 
       <section className="card">
@@ -1112,7 +1095,6 @@ function ChatClient() {
           background: rgba(2, 6, 23, 0.35);
           backdrop-filter: blur(10px);
           transition: transform 120ms ease, border-color 120ms ease, color 120ms ease;
-          white-space: nowrap;
         }
         .topbar__back:hover {
           transform: translateY(-1px);
@@ -1120,13 +1102,10 @@ function ChatClient() {
           color: rgba(226, 232, 240, 0.92);
         }
 
-        .topbar__actions {
+        .topbar__right {
           display: inline-flex;
-          gap: 8px;
           align-items: center;
-          justify-content: center;
-          flex: 1;
-          min-width: 0;
+          gap: 10px;
         }
 
         .topbar__pill {
@@ -1139,7 +1118,10 @@ function ChatClient() {
           background: rgba(2, 6, 23, 0.35);
           backdrop-filter: blur(10px);
           transition: transform 120ms ease, border-color 120ms ease, filter 120ms ease;
-          white-space: nowrap;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          user-select: none;
         }
         .topbar__pill:hover {
           transform: translateY(-1px);
@@ -1151,16 +1133,6 @@ function ChatClient() {
           background: linear-gradient(135deg, var(--g1), var(--g2), var(--g4));
           color: rgba(248, 250, 252, 0.98);
           box-shadow: 0 14px 40px rgba(248, 113, 113, 0.35);
-        }
-
-        .topbar__meta {
-          font-size: 0.78rem;
-          color: rgba(148, 163, 184, 0.8);
-          padding: 6px 10px;
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.14);
-          background: rgba(2, 6, 23, 0.25);
-          white-space: nowrap;
         }
 
         .card {
@@ -1182,8 +1154,6 @@ function ChatClient() {
           min-height: 0;
           overflow: hidden;
         }
-
-        /* --- le reste du CSS inchangé (j’ai laissé tel quel) --- */
 
         .hero {
           display: flex;
@@ -1249,7 +1219,6 @@ function ChatClient() {
           display: block;
           background: rgba(2, 6, 23, 0.9);
         }
-
         .avatarFallback {
           width: 136px;
           height: 136px;
@@ -1262,7 +1231,6 @@ function ChatClient() {
           font-size: 2.6rem;
           letter-spacing: 0.02em;
         }
-
         .avatarRing--error {
           background: radial-gradient(circle at center, rgba(185, 28, 28, 1), rgba(127, 29, 29, 1));
           border: 1px solid rgba(248, 113, 113, 0.45);
@@ -1282,23 +1250,13 @@ function ChatClient() {
           }
         }
         .avatarRing--skeleton {
-          background: linear-gradient(
-            90deg,
-            rgba(148, 163, 184, 0.16),
-            rgba(148, 163, 184, 0.32),
-            rgba(148, 163, 184, 0.16)
-          );
+          background: linear-gradient(90deg, rgba(148, 163, 184, 0.16), rgba(148, 163, 184, 0.32), rgba(148, 163, 184, 0.16));
           background-size: 200% 100%;
           animation: shimmer 1.3s infinite;
         }
         .skeletonLine {
           border-radius: 999px;
-          background: linear-gradient(
-            90deg,
-            rgba(148, 163, 184, 0.14),
-            rgba(148, 163, 184, 0.28),
-            rgba(148, 163, 184, 0.14)
-          );
+          background: linear-gradient(90deg, rgba(148, 163, 184, 0.14), rgba(148, 163, 184, 0.28), rgba(148, 163, 184, 0.14));
           background-size: 200% 100%;
           animation: shimmer 1.3s infinite;
         }
@@ -1363,11 +1321,9 @@ function ChatClient() {
           background: radial-gradient(800px 420px at 50% 0%, rgba(56, 189, 248, 0.06), transparent 55%),
             linear-gradient(180deg, rgba(2, 6, 23, 0.55), rgba(2, 6, 23, 0.68));
           padding: 12px;
-
           flex: 1 1 auto;
           min-height: 0;
           overflow-y: auto;
-
           overscroll-behavior: contain;
           box-shadow: inset 0 0 0 1px rgba(2, 6, 23, 0.25);
         }
@@ -1387,6 +1343,7 @@ function ChatClient() {
           flex-direction: column;
           gap: 10px;
         }
+
         .row {
           display: flex;
         }
@@ -1524,7 +1481,6 @@ function ChatClient() {
           margin-top: 2px;
           flex: 0 0 auto;
         }
-
         .composer__field {
           border-radius: 999px;
           padding: 4px 14px;
@@ -1533,7 +1489,6 @@ function ChatClient() {
           backdrop-filter: blur(10px);
           box-shadow: inset 0 0 0 1px rgba(2, 6, 23, 0.25);
         }
-
         .composer__input {
           width: 100%;
           border: none;
@@ -1552,13 +1507,11 @@ function ChatClient() {
           opacity: 0.6;
           cursor: not-allowed;
         }
-
         .composer__actions {
           display: inline-flex;
           gap: 8px;
           align-items: center;
         }
-
         .iconBtn {
           width: 44px;
           height: 44px;
@@ -1589,7 +1542,6 @@ function ChatClient() {
           font-size: 1.05rem;
           transform: translateY(1px);
         }
-
         .sendBtn {
           width: 46px;
           height: 46px;
@@ -1642,9 +1594,6 @@ function ChatClient() {
             width: 144px;
             height: 144px;
           }
-          .topbar__meta {
-            display: none;
-          }
         }
 
         @media (max-width: 480px) {
@@ -1656,12 +1605,6 @@ function ChatClient() {
           }
           .bubble {
             max-width: 90%;
-          }
-          .topbar__actions {
-            gap: 6px;
-          }
-          .topbar__pill {
-            padding: 9px 10px;
           }
         }
       `}</style>
