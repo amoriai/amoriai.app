@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Locale = "fr" | "en" | "es";
 
@@ -55,274 +55,238 @@ const TEXT: Record<Locale, Copy> = {
   },
 };
 
-function getLocaleFromUrl(): Locale {
-  if (typeof window === "undefined") return "fr";
+// ✅ versionne la clé (si tu modifies le bandeau, ça peut re-s’afficher proprement)
+const CONSENT_KEY = "amoriai_cookie_consent_v1"; // values: "all" | "necessary"
 
+function readLocaleFromUrl(): Locale {
+  if (typeof window === "undefined") return "fr";
   const params = new URLSearchParams(window.location.search);
   const lang = params.get("lang");
+  return lang === "en" || lang === "es" || lang === "fr" ? lang : "fr";
+}
 
-  if (lang === "en" || lang === "es" || lang === "fr") {
-    return lang;
+function readConsent(): "all" | "necessary" | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = localStorage.getItem(CONSENT_KEY);
+    if (v === "all" || v === "necessary") return v;
+    return null;
+  } catch {
+    return null;
   }
-  return "fr";
+}
+
+function writeConsent(v: "all" | "necessary") {
+  try {
+    localStorage.setItem(CONSENT_KEY, v);
+  } catch {
+    // ignore
+  }
 }
 
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
-  const [locale, setLocale] = useState<Locale>("fr");
-
-  // panneau "Paramétrer"
   const [showSettings, setShowSettings] = useState(false);
   const [analyticsAllowed, setAnalyticsAllowed] = useState(true);
+  const [locale, setLocale] = useState<Locale>("fr");
 
-  // Afficher le bandeau uniquement si aucun choix n’a été fait
+  // ✅ au montage : locale + consent
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const consent = localStorage.getItem("cookieConsent");
+    setLocale(readLocaleFromUrl());
+
+    const consent = readConsent();
     if (!consent) {
       setVisible(true);
+      setAnalyticsAllowed(true); // par défaut
     } else {
-      // si déjà accepté -> analyticsAllowed = true, sinon false
+      setVisible(false);
       setAnalyticsAllowed(consent === "all");
     }
   }, []);
 
-  // Suivre la langue via ?lang=fr|en|es (sans useSearchParams)
+  // ✅ met à jour la langue si l’URL change (?lang=)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const updateLocale = () => {
-      setLocale(getLocaleFromUrl());
+    const update = () => setLocale(readLocaleFromUrl());
+
+    window.addEventListener("popstate", update);
+
+    const push = history.pushState;
+    const replace = history.replaceState;
+
+    history.pushState = function (...args) {
+      push.apply(this, args as any);
+      update();
     };
-
-    updateLocale();
-
-    window.addEventListener("popstate", updateLocale);
-
-    const originalPushState = window.history.pushState;
-    const originalReplaceState = window.history.replaceState;
-
-    window.history.pushState = function (...args) {
-      originalPushState.apply(this, args as any);
-      updateLocale();
-    };
-
-    window.history.replaceState = function (...args) {
-      originalReplaceState.apply(this, args as any);
-      updateLocale();
+    history.replaceState = function (...args) {
+      replace.apply(this, args as any);
+      update();
     };
 
     return () => {
-      window.removeEventListener("popstate", updateLocale);
-      window.history.pushState = originalPushState;
-      window.history.replaceState = originalReplaceState;
+      window.removeEventListener("popstate", update);
+      history.pushState = push;
+      history.replaceState = replace;
     };
   }, []);
 
-  const acceptCookies = () => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("cookieConsent", "all");
-    }
+  const t = useMemo(() => TEXT[locale], [locale]);
+
+  const acceptAll = () => {
+    writeConsent("all");
     setAnalyticsAllowed(true);
+    setShowSettings(false);
     setVisible(false);
   };
 
-  const declineCookies = () => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("cookieConsent", "necessary");
-    }
+  const decline = () => {
+    writeConsent("necessary");
     setAnalyticsAllowed(false);
+    setShowSettings(false);
     setVisible(false);
   };
 
-  const saveSettings = () => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("cookieConsent", analyticsAllowed ? "all" : "necessary");
-    }
+  const save = () => {
+    writeConsent(analyticsAllowed ? "all" : "necessary");
+    setShowSettings(false);
     setVisible(false);
   };
 
   if (!visible) return null;
 
-  const t = TEXT[locale];
-
   return (
-    <div style={styles.container}>
-      <p style={styles.text}>{t.text}</p>
+    <div
+      style={{
+        position: "fixed",
+        inset: "auto 0 0 0",
+        zIndex: 2147483647, // ✅ maximum (pour être au-dessus de tout)
+        padding: "14px 16px 18px",
+        background: "rgba(2,6,23,0.98)",
+        borderTop: "1px solid rgba(148,163,184,0.4)",
+        color: "#e5e7eb",
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 980,
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+          alignItems: "center",
+        }}
+      >
+        <p style={{ fontSize: 13, textAlign: "center", lineHeight: 1.4, margin: 0 }}>
+          {t.text}
+        </p>
 
-      {/* Panneau de réglages si "Paramétrer" est cliqué */}
-      {showSettings && (
-        <div style={styles.settingsBox}>
-          <h3 style={styles.settingsTitle}>{t.settingsTitle}</h3>
-          <p style={styles.settingsDesc}>{t.settingsDesc}</p>
+        {showSettings && (
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 980,
+              background: "rgba(15,23,42,0.98)",
+              border: "1px solid rgba(148,163,184,0.6)",
+              borderRadius: 12,
+              padding: "10px 12px",
+            }}
+          >
+            <h3 style={{ margin: 0, marginBottom: 4, fontSize: 13, fontWeight: 700 }}>
+              {t.settingsTitle}
+            </h3>
+            <p style={{ margin: 0, marginBottom: 10, fontSize: 12, opacity: 0.9 }}>
+              {t.settingsDesc}
+            </p>
 
-          <div style={styles.settingsRow}>
-            <input
-              type="checkbox"
-              checked={true}
-              readOnly
-              style={styles.checkbox}
-            />
-            <span style={styles.settingsLabel}>{t.essentialLabel}</span>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <input type="checkbox" checked readOnly />
+              <span style={{ fontSize: 12 }}>{t.essentialLabel}</span>
+            </label>
+
+            <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <input
+                type="checkbox"
+                checked={analyticsAllowed}
+                onChange={(e) => setAnalyticsAllowed(e.target.checked)}
+              />
+              <span style={{ fontSize: 12 }}>{t.analyticsLabel}</span>
+            </label>
+
+            <button
+              onClick={save}
+              style={{
+                marginTop: 6,
+                background: "rgba(59,130,246,0.95)",
+                border: "none",
+                borderRadius: 999,
+                padding: "7px 16px",
+                fontSize: 12,
+                fontWeight: 700,
+                color: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              {t.save}
+            </button>
           </div>
+        )}
 
-          <div style={styles.settingsRow}>
-            <input
-              type="checkbox"
-              checked={analyticsAllowed}
-              onChange={(e) => setAnalyticsAllowed(e.target.checked)}
-              style={styles.checkbox}
-            />
-            <span style={styles.settingsLabel}>{t.analyticsLabel}</span>
-          </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+          <button
+            onClick={() => setShowSettings((v) => !v)}
+            style={{
+              background: "rgba(15,23,42,0.9)",
+              borderRadius: 999,
+              padding: "7px 16px",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#e5e7eb",
+              cursor: "pointer",
+              border: "1px solid rgba(148,163,184,0.7)",
+              minWidth: 130,
+            }}
+          >
+            {t.settings}
+          </button>
 
-          <button onClick={saveSettings} style={styles.saveButton}>
-            {t.save}
+          <button
+            onClick={decline}
+            style={{
+              background: "transparent",
+              borderRadius: 999,
+              padding: "7px 16px",
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#e5e7eb",
+              cursor: "pointer",
+              border: "1px solid rgba(148,163,184,0.7)",
+              minWidth: 130,
+            }}
+          >
+            {t.decline}
+          </button>
+
+          <button
+            onClick={acceptAll}
+            style={{
+              background: "linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316)",
+              border: "none",
+              borderRadius: 999,
+              padding: "7px 16px",
+              fontSize: 13,
+              fontWeight: 800,
+              color: "#fff",
+              cursor: "pointer",
+              minWidth: 130,
+            }}
+          >
+            {t.accept}
           </button>
         </div>
-      )}
-
-      <div style={styles.buttonsRow}>
-        <button
-          onClick={() => setShowSettings((v) => !v)}
-          style={styles.settingsButton}
-        >
-          {t.settings}
-        </button>
-
-        <button onClick={declineCookies} style={styles.secondaryButton}>
-          {t.decline}
-        </button>
-
-        <button onClick={acceptCookies} style={styles.primaryButton}>
-          {t.accept}
-        </button>
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    position: "fixed" as const,
-    bottom: 0,
-    left: 0,
-    width: "100%",
-    background: "rgba(2,6,23,0.98)",
-    color: "#e5e7eb",
-    padding: "14px 16px 18px",
-    display: "flex",
-    flexDirection: "column" as const,
-    gap: "10px",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 9999,
-    borderTop: "1px solid rgba(148,163,184,0.4)",
-  },
-
-  text: {
-    fontSize: "13px",
-    textAlign: "center" as const,
-    maxWidth: "900px",
-    lineHeight: 1.4,
-  },
-
-  buttonsRow: {
-    display: "flex",
-    flexDirection: "row" as const,
-    gap: "10px",
-    justifyContent: "center" as const,
-    flexWrap: "wrap" as const,
-  },
-
-  primaryButton: {
-    background: "linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316)",
-    border: "none",
-    borderRadius: "999px",
-    padding: "6px 18px",
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#fff",
-    cursor: "pointer",
-    minWidth: "120px",
-  },
-
-  secondaryButton: {
-    background: "transparent",
-    borderRadius: "999px",
-    padding: "6px 18px",
-    fontSize: "13px",
-    fontWeight: 500,
-    color: "#e5e7eb",
-    cursor: "pointer",
-    border: "1px solid rgba(148,163,184,0.7)",
-    minWidth: "120px",
-  },
-
-  settingsButton: {
-    background: "rgba(15,23,42,0.9)",
-    borderRadius: "999px",
-    padding: "6px 18px",
-    fontSize: "13px",
-    fontWeight: 500,
-    color: "#e5e7eb",
-    cursor: "pointer",
-    border: "1px solid rgba(148,163,184,0.7)",
-    minWidth: "120px",
-  },
-
-  settingsBox: {
-    marginTop: "6px",
-    marginBottom: "4px",
-    maxWidth: "900px",
-    width: "100%",
-    background: "rgba(15,23,42,0.98)",
-    borderRadius: "10px",
-    border: "1px solid rgba(148,163,184,0.6)",
-    padding: "10px 12px",
-    fontSize: "13px",
-  },
-
-  settingsTitle: {
-    margin: 0,
-    marginBottom: "4px",
-    fontSize: "13px",
-    fontWeight: 600,
-  },
-
-  settingsDesc: {
-    margin: 0,
-    marginBottom: "8px",
-    fontSize: "12px",
-    opacity: 0.9,
-  },
-
-  settingsRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    marginBottom: "6px",
-  },
-
-  checkbox: {
-    width: "14px",
-    height: "14px",
-  },
-
-  settingsLabel: {
-    fontSize: "12px",
-  },
-
-  saveButton: {
-    marginTop: "6px",
-    background: "rgba(59,130,246,0.9)",
-    border: "none",
-    borderRadius: "999px",
-    padding: "6px 16px",
-    fontSize: "12px",
-    fontWeight: 600,
-    color: "#fff",
-    cursor: "pointer",
-  },
-};
