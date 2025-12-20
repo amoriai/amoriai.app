@@ -4,8 +4,10 @@ export const dynamic = "force-dynamic";
 
 import React, { FormEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { LogoutButton } from "../components/LogoutButton";
+import { canCreateAmoria, maxAmoriaForPlan, normalizePlan, type PlanId } from "@/lib/plan";
 
 type Locale = "fr" | "en" | "es";
 
@@ -33,6 +35,9 @@ type ChatMessage = {
 
 type UiCopy = {
   backHome: string;
+  myAmoria: string;
+  createAmoria: string;
+
   title: (name: string) => string;
   subtitle: (name: string) => string;
   emptyState: (name: string) => string;
@@ -76,6 +81,9 @@ type UiCopy = {
 const STRINGS: Record<Locale, UiCopy> = {
   fr: {
     backHome: "← Retour à l’accueil",
+    myAmoria: "Mes AmorIAI",
+    createAmoria: "Créer une AmorIAI",
+
     title: (name) => `Chat avec ${name}`,
     subtitle: (name) => `${name} est là pour t’écouter et t’aider à mettre des mots sur ce que tu vis.`,
     emptyState: (name) => `Aucun message pour l’instant. Dis bonjour à ${name} pour commencer 💬`,
@@ -117,6 +125,9 @@ const STRINGS: Record<Locale, UiCopy> = {
   },
   en: {
     backHome: "← Back to home",
+    myAmoria: "My AmorIAI",
+    createAmoria: "Create an AmorIAI",
+
     title: (name) => `Chat with ${name}`,
     subtitle: (name) => `${name} is here to listen and help you put words on what you’re feeling.`,
     emptyState: (name) => `No messages yet. Say hi to ${name} to get started 💬`,
@@ -158,6 +169,9 @@ const STRINGS: Record<Locale, UiCopy> = {
   },
   es: {
     backHome: "← Volver al inicio",
+    myAmoria: "Mis AmorIAI",
+    createAmoria: "Crear un AmorIAI",
+
     title: (name) => `Chat con ${name}`,
     subtitle: (name) => `${name} está aquí para escucharte y ayudarte a poner en palabras lo que sientes.`,
     emptyState: (name) => `Todavía no hay mensajes. Saluda a ${name} para empezar 💬`,
@@ -297,6 +311,12 @@ function ChatClient() {
   const [sendError, setSendError] = useState<string | null>(null);
 
   const [planCode, setPlanCode] = useState<string | null>(null);
+  const [planId, setPlanId] = useState<PlanId>("free");
+
+  const [activeAmoriaCount, setActiveAmoriaCount] = useState(0);
+  const [quota, setQuota] = useState(1);
+  const [canCreate, setCanCreate] = useState(false);
+
   const [canUseVoice, setCanUseVoice] = useState(false);
 
   const [canPulseAvatar, setCanPulseAvatar] = useState(false);
@@ -345,6 +365,18 @@ function ChatClient() {
     const params = new URLSearchParams();
     params.set("lang", locale);
     return `/pricing?${params.toString()}`;
+  }, [locale]);
+
+  const myAmoriaUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/my-amoria?${params.toString()}`;
+  }, [locale]);
+
+  const createAmoriaUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    return `/create-amoria?${params.toString()}`;
   }, [locale]);
 
   const handleUpgradeClick = () => {
@@ -397,7 +429,7 @@ function ChatClient() {
     }, 10_000);
   };
 
-  // 1) Subscription / droits
+  // 1) Subscription / droits + quota AmorIAI
   useEffect(() => {
     const loadSubscription = async () => {
       try {
@@ -406,6 +438,11 @@ function ChatClient() {
 
         if (!user) {
           setPlanCode(null);
+          setPlanId("free");
+          setQuota(1);
+          setActiveAmoriaCount(0);
+          setCanCreate(false);
+
           setCanUseVoice(false);
           setCanPulseAvatar(false);
           setCanPlayAvatarVideo(false);
@@ -451,16 +488,7 @@ function ChatClient() {
           if (!q2.error && q2.data) sub = q2.data;
         }
 
-        if (!sub) {
-          setPlanCode(null);
-          setCanUseVoice(false);
-          setCanPulseAvatar(false);
-          setCanPlayAvatarVideo(false);
-          setSttSupported(false);
-          return;
-        }
-
-        const rawPlans: any = (sub as any).pricing_plans;
+        const rawPlans: any = sub ? (sub as any).pricing_plans : null;
 
         let code: string | null = null;
         let hasVoice = false;
@@ -477,9 +505,11 @@ function ChatClient() {
 
         setPlanCode(code);
 
+        const resolvedPlanId = normalizePlan(code ?? "free");
+        setPlanId(resolvedPlanId);
+
         const paid = !!code && code !== "free";
         setCanPulseAvatar(paid);
-
         setCanPlayAvatarVideo(code === "unlimited");
 
         const voiceOk = hasVoice && voiceLimit > 0;
@@ -487,9 +517,30 @@ function ChatClient() {
         if (!voiceOk) setSttSupported(false);
 
         if (code !== "unlimited") setAvatarPlaying(false);
+
+        // ✅ Count AmorIAI actives + quota
+        const { count } = await supabase
+          .from("user_amoria")
+          .select("id", { head: true, count: "exact" })
+          .eq("user_id", user.id)
+          .eq("is_archived", false);
+
+        const c = Number(count ?? 0);
+        setActiveAmoriaCount(c);
+
+        const q = maxAmoriaForPlan(resolvedPlanId);
+        setQuota(q);
+
+        setCanCreate(canCreateAmoria(resolvedPlanId, c));
       } catch (err) {
         console.error("Erreur loadSubscription:", err);
+
         setPlanCode(null);
+        setPlanId("free");
+        setQuota(1);
+        setActiveAmoriaCount(0);
+        setCanCreate(false);
+
         setCanUseVoice(false);
         setCanPulseAvatar(false);
         setCanPlayAvatarVideo(false);
@@ -821,6 +872,25 @@ function ChatClient() {
         <a href={homeUrl} className="topbar__back">
           {t.backHome}
         </a>
+
+        <nav className="topbar__actions" aria-label="Actions">
+          <Link href={myAmoriaUrl} className="topbar__pill">
+            {t.myAmoria}
+          </Link>
+
+          {/* Visible seulement si quota le permet */}
+          {canCreate && (
+            <Link href={createAmoriaUrl} className="topbar__pill topbar__pill--primary">
+              {t.createAmoria}
+            </Link>
+          )}
+
+          {/* Indicateur discret (optionnel). Enlève si tu veux zéro texte. */}
+          <span className="topbar__meta" title={`Plan: ${planId} — ${activeAmoriaCount}/${quota}`}>
+            {activeAmoriaCount}/{quota}
+          </span>
+        </nav>
+
         <LogoutButton />
       </header>
 
@@ -1042,11 +1112,55 @@ function ChatClient() {
           background: rgba(2, 6, 23, 0.35);
           backdrop-filter: blur(10px);
           transition: transform 120ms ease, border-color 120ms ease, color 120ms ease;
+          white-space: nowrap;
         }
         .topbar__back:hover {
           transform: translateY(-1px);
           border-color: rgba(148, 163, 184, 0.3);
           color: rgba(226, 232, 240, 0.92);
+        }
+
+        .topbar__actions {
+          display: inline-flex;
+          gap: 8px;
+          align-items: center;
+          justify-content: center;
+          flex: 1;
+          min-width: 0;
+        }
+
+        .topbar__pill {
+          font-size: 0.82rem;
+          color: rgba(226, 232, 240, 0.92);
+          text-decoration: none;
+          padding: 10px 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.18);
+          background: rgba(2, 6, 23, 0.35);
+          backdrop-filter: blur(10px);
+          transition: transform 120ms ease, border-color 120ms ease, filter 120ms ease;
+          white-space: nowrap;
+        }
+        .topbar__pill:hover {
+          transform: translateY(-1px);
+          border-color: rgba(148, 163, 184, 0.32);
+          filter: brightness(1.02);
+        }
+        .topbar__pill--primary {
+          border: none;
+          background: linear-gradient(135deg, var(--g1), var(--g2), var(--g4));
+          color: rgba(248, 250, 252, 0.98);
+          box-shadow: 0 14px 40px rgba(248, 113, 113, 0.35);
+        }
+
+        .topbar__meta {
+          font-size: 0.78rem;
+          color: rgba(148, 163, 184, 0.8);
+          padding: 6px 10px;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.14);
+          background: rgba(2, 6, 23, 0.25);
+          white-space: nowrap;
         }
 
         .card {
@@ -1068,6 +1182,8 @@ function ChatClient() {
           min-height: 0;
           overflow: hidden;
         }
+
+        /* --- le reste du CSS inchangé (j’ai laissé tel quel) --- */
 
         .hero {
           display: flex;
@@ -1526,6 +1642,9 @@ function ChatClient() {
             width: 144px;
             height: 144px;
           }
+          .topbar__meta {
+            display: none;
+          }
         }
 
         @media (max-width: 480px) {
@@ -1537,6 +1656,12 @@ function ChatClient() {
           }
           .bubble {
             max-width: 90%;
+          }
+          .topbar__actions {
+            gap: 6px;
+          }
+          .topbar__pill {
+            padding: 9px 10px;
           }
         }
       `}</style>
