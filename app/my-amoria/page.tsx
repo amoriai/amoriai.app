@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { Suspense } from "react";
-import MyAmoriaSelectClient from "./MyAmoriaSelectClient";
+import MyAmoriaClient from "./MyAmoriaClient";
 
 export default function Page() {
   return (
@@ -12,7 +12,7 @@ export default function Page() {
         </main>
       }
     >
-      <MyAmoriaSelectClient />
+      <MyAmoriaClient />
     </Suspense>
   );
 }
