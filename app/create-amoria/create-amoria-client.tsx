@@ -3,19 +3,53 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { maxAmoriaForPlan, type PlanId } from "@/lib/plan";
 
 type Locale = "fr" | "en" | "es";
-type PlanId = "free" | "chat" | "plus" | "unlimited";
 type PersonaType = "woman" | "man" | "woman50" | "man50" | "androgynous";
 
 /* ============ AVATARS ============ */
 
 const AVATARS: Record<PersonaType, string[]> = {
-  woman: ["/amoria-blonde.png", "/amoria-rousse.png", "/amoria-artiste.png", "/amoria-passionnee.png", "/amoria-mystique.png"],
-  man: ["/amoria-m-ami.png", "/amoria-m-intellectuel.png", "/amoria-m-passionne.png", "/amoria-m-protecteur.png", "/amoria-m-rebelle.png", "/amoria-m-romantique.png"],
-  woman50: ["/amoria_50plus_woman_charisma.png", "/amoria_50plus_woman_elegant.png", "/amoria_50plus_woman_pro.png", "/amoria_50plus_woman_sage.png", "/amoria_50plus_woman_spiritual.png", "/amoria_50plus_woman_whitehair.png"],
-  man50: ["/amoria_50plus_man_charm.png", "/amoria_50plus_man_elegant.png", "/amoria_50plus_man_empathic.png", "/amoria_50plus_man_mysterious.png", "/amoria_50plus_man_thoughtful.png", "/amoria_50plus_man_warm.png"],
-  androgynous: ["/amor-romantic-androgynous.png", "/echo-custom-androgynous.png", "/eko-friend-androgynous.png", "/lumen-sensual-androgynous.png", "/nova-mysterious-androgynous.png", "/sora-mentalcoach-androgynous.png"],
+  woman: [
+    "/amoria-blonde.png",
+    "/amoria-rousse.png",
+    "/amoria-artiste.png",
+    "/amoria-passionnee.png",
+    "/amoria-mystique.png",
+  ],
+  man: [
+    "/amoria-m-ami.png",
+    "/amoria-m-intellectuel.png",
+    "/amoria-m-passionne.png",
+    "/amoria-m-protecteur.png",
+    "/amoria-m-rebelle.png",
+    "/amoria-m-romantique.png",
+  ],
+  woman50: [
+    "/amoria_50plus_woman_charisma.png",
+    "/amoria_50plus_woman_elegant.png",
+    "/amoria_50plus_woman_pro.png",
+    "/amoria_50plus_woman_sage.png",
+    "/amoria_50plus_woman_spiritual.png",
+    "/amoria_50plus_woman_whitehair.png",
+  ],
+  man50: [
+    "/amoria_50plus_man_charm.png",
+    "/amoria_50plus_man_elegant.png",
+    "/amoria_50plus_man_empathic.png",
+    "/amoria_50plus_man_mysterious.png",
+    "/amoria_50plus_man_thoughtful.png",
+    "/amoria_50plus_man_warm.png",
+  ],
+  androgynous: [
+    "/amor-romantic-androgynous.png",
+    "/echo-custom-androgynous.png",
+    "/eko-friend-androgynous.png",
+    "/lumen-sensual-androgynous.png",
+    "/nova-mysterious-androgynous.png",
+    "/sora-mentalcoach-androgynous.png",
+  ],
 };
 
 function randomAvatar(type: PersonaType): string {
@@ -48,45 +82,70 @@ type Copy = {
   previewTitle: string;
   previewText: string;
   loadingText: string;
+
+  // new
+  limitReachedTitle: string;
+  limitReachedBody: (max: number) => string;
+  goUpgrade: string;
+  goMyAmoria: string;
 };
 
 const STRINGS: Record<Locale, Copy> = {
   fr: {
     stepBadge: "Étape 2 · Crée ton AmorIAI",
     pageTitle: "Personnalise ton partenaire IA",
-    pageSubtitle: "Décris en quelques mots sa personnalité et son rôle à tes côtés. Tu pourras toujours ajuster les réglages plus tard.",
+    pageSubtitle:
+      "Décris en quelques mots sa personnalité et son rôle à tes côtés. Tu pourras toujours ajuster les réglages plus tard.",
     currentPlanLabel: "Forfait actuel :",
-    planName: (p) => (p === "free" ? "Forfait Découverte (gratuit)" : p === "chat" ? "AmorIAI Chat" : p === "plus" ? "AmorIAI Plus" : "AmorIAI Illimité"),
+    planName: (p) =>
+      p === "free"
+        ? "Forfait Découverte (gratuit)"
+        : p === "chat"
+        ? "AmorIAI Chat"
+        : p === "plus"
+        ? "AmorIAI Plus"
+        : "AmorIAI Illimité",
     nameLabel: "Nom de ton AmorIAI",
     relationLabel: "Type de relation",
     toneLabel: "Ton préféré",
     categoryLabel: "Catégorie d’AmorIAI",
     categoryPlaceholder: "Choisir la catégorie…",
     expectationLabel: "Ce que tu attends le plus de ton AmorIAI",
-    expectationPlaceholder: 'Ex. : « M’aider à me sentir moins seule le soir », « Me motiver pour mes projets », « Me coacher émotionnellement »…',
-    helperText: "Tu pourras ajuster la personnalité, le style et la voix de ton AmorIAI plus tard depuis ton espace.",
+    expectationPlaceholder:
+      'Ex. : « M’aider à me sentir moins seule le soir », « Me motiver pour mes projets », « Me coacher émotionnellement »…',
+    helperText:
+      "Tu pourras ajuster la personnalité, le style et la voix de ton AmorIAI plus tard depuis ton espace.",
     createButton: "Créer mon AmorIAI",
     backHome: "Retour à l’accueil",
     saving: "Création en cours…",
     genericError: "Une erreur est survenue pendant la création de ton AmorIAI. Merci de réessayer.",
     formError: "Merci de remplir tous les champs avant de créer ton AmorIAI.",
     previewTitle: "Ta configuration d’abord, la magie ensuite ✨",
-    previewText: 'Ici, tu définis simplement la personnalité et le rôle de ton AmorIAI. Il sera réellement créé quand tu cliqueras sur « Créer mon AmorIAI ».',
+    previewText:
+      'Ici, tu définis simplement la personnalité et le rôle de ton AmorIAI. Il sera réellement créé quand tu cliqueras sur « Créer mon AmorIAI ».',
     loadingText: "Chargement de ton espace…",
+
+    limitReachedTitle: "Limite atteinte",
+    limitReachedBody: (max) => `Tu as atteint la limite de ton plan (${max} AmorIA max).`,
+    goUpgrade: "Voir les forfaits",
+    goMyAmoria: "Retour à mon espace",
   },
   en: {
     stepBadge: "Step 2 · Create your AmorIAI",
     pageTitle: "Customize your AI partner",
-    pageSubtitle: "Describe their personality and role in your life. You’ll be able to tweak everything later.",
+    pageSubtitle:
+      "Describe their personality and role in your life. You’ll be able to tweak everything later.",
     currentPlanLabel: "Current plan:",
-    planName: (p) => (p === "free" ? "Discovery plan (free)" : p === "chat" ? "AmorIAI Chat" : p === "plus" ? "AmorIAI Plus" : "AmorIAI Unlimited"),
+    planName: (p) =>
+      p === "free" ? "Discovery plan (free)" : p === "chat" ? "AmorIAI Chat" : p === "plus" ? "AmorIAI Plus" : "AmorIAI Unlimited",
     nameLabel: "Your AmorIAI’s name",
     relationLabel: "Relationship type",
     toneLabel: "Preferred tone",
     categoryLabel: "AmorIAI category",
     categoryPlaceholder: "Choose a category…",
     expectationLabel: "What you expect most from your AmorIAI",
-    expectationPlaceholder: '"Help me feel less alone at night", "Motivate me for my projects", "Emotionally coach me"…',
+    expectationPlaceholder:
+      '"Help me feel less alone at night", "Motivate me for my projects", "Emotionally coach me"…',
     helperText: "You’ll be able to adjust personality, style and voice later from your space.",
     createButton: "Create my AmorIAI",
     backHome: "Back to home",
@@ -94,31 +153,47 @@ const STRINGS: Record<Locale, Copy> = {
     genericError: "Something went wrong while creating your AmorIAI. Please try again.",
     formError: "Please fill in all fields before creating your AmorIAI.",
     previewTitle: "Set things up first, magic comes after ✨",
-    previewText: 'Here you only define your AmorIAI’s personality and role. It will actually be created when you click “Create my AmorIAI”.',
+    previewText:
+      'Here you only define your AmorIAI’s personality and role. It will actually be created when you click “Create my AmorIAI”.',
     loadingText: "Loading your space…",
+
+    limitReachedTitle: "Limit reached",
+    limitReachedBody: (max) => `You reached your plan limit (${max} max AmorIA).`,
+    goUpgrade: "See plans",
+    goMyAmoria: "Back to my space",
   },
   es: {
     stepBadge: "Paso 2 · Crea tu AmorIAI",
     pageTitle: "Personaliza tu pareja de IA",
-    pageSubtitle: "Describe su personalidad y su papel a tu lado. Podrás ajustar la configuración más tarde.",
+    pageSubtitle:
+      "Describe su personalidad y su papel a tu lado. Podrás ajustar la configuración más tarde.",
     currentPlanLabel: "Plan actual:",
-    planName: (p) => (p === "free" ? "Plan Descubrimiento (gratis)" : p === "chat" ? "AmorIAI Chat" : p === "plus" ? "AmorIAI Plus" : "AmorIAI Ilimitado"),
+    planName: (p) =>
+      p === "free" ? "Plan Descubrimiento (gratis)" : p === "chat" ? "AmorIAI Chat" : p === "plus" ? "AmorIAI Plus" : "AmorIAI Ilimitado",
     nameLabel: "Nombre de tu AmorIAI",
     relationLabel: "Tipo de relación",
     toneLabel: "Tono preferido",
     categoryLabel: "Categoría de AmorIAI",
     categoryPlaceholder: "Elegir la categoría…",
     expectationLabel: "Lo que más esperas de tu AmorIAI",
-    expectationPlaceholder: 'Ej.: « Ayudarme a sentirme menos sola por la noche », « Motivarme con mis proyectos », « Acompañarme emocionalmente »…',
-    helperText: "Podrás ajustar la personalidad, el estilo y la voz de tu AmorIAI más adelante desde tu espacio.",
+    expectationPlaceholder:
+      'Ej.: « Ayudarme a sentirme menos sola por la noche », « Motivarme con mis proyectos », « Acompañarme emocionalmente »…',
+    helperText:
+      "Podrás ajustar la personalidad, el estilo y la voz de tu AmorIAI más adelante desde tu espacio.",
     createButton: "Crear mi AmorIAI",
     backHome: "Volver al inicio",
     saving: "Creando tu AmorIAI…",
     genericError: "Ocurrió un error al crear tu AmorIAI. Inténtalo de nuevo, por favor.",
     formError: "Por favor, completa todos los campos antes de crear tu AmorIAI.",
     previewTitle: "Primero la configuración, luego la magia ✨",
-    previewText: "Aquí solo defines la personalidad y el papel de tu AmorIAI. Se creará realmente cuando pulses «Crear mi AmorIAI».",
+    previewText:
+      "Aquí solo defines la personalidad y el papel de tu AmorIAI. Se creará realmente cuando pulses «Crear mi AmorIAI».",
     loadingText: "Cargando tu espacio…",
+
+    limitReachedTitle: "Límite alcanzado",
+    limitReachedBody: (max) => `Alcanzaste el límite de tu plan (${max} AmorIA máx).`,
+    goUpgrade: "Ver planes",
+    goMyAmoria: "Volver a mi espacio",
   },
 };
 
@@ -147,8 +222,21 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
 function normalizeLocale(raw: string | null): Locale {
   return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
-function normalizePlan(raw: string | null): PlanId {
-  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
+
+function looksLikeRlsError(message: string) {
+  const msg = (message || "").toLowerCase();
+  return (
+    msg.includes("permission") ||
+    msg.includes("not allowed") ||
+    msg.includes("rls") ||
+    msg.includes("policy") ||
+    msg.includes("violates row-level security")
+  );
+}
+
+function normalizePlanCode(raw: any): PlanId {
+  const v = String(raw ?? "").toLowerCase().trim();
+  return v === "free" || v === "chat" || v === "plus" || v === "unlimited" ? (v as PlanId) : "free";
 }
 
 /* ============ PAGE ============ */
@@ -158,14 +246,14 @@ export default function CreateAmoriaPage() {
   const sp = useSearchParams();
 
   const locale = useMemo(() => normalizeLocale(sp.get("lang")), [sp]);
-  const plan = useMemo(() => normalizePlan(sp.get("plan")), [sp]);
-  const force = sp.get("force") === "1";
-
   const t = STRINGS[locale];
   const relationOptions = RELATION_OPTIONS[locale];
   const toneOptions = TONE_OPTIONS[locale];
 
   const [ready, setReady] = useState(false);
+  const [plan, setPlan] = useState<PlanId>("free");
+  const [maxAllowed, setMaxAllowed] = useState<number>(1);
+  const [aiCount, setAiCount] = useState<number>(0);
 
   const [name, setName] = useState("");
   const [relationType, setRelationType] = useState("");
@@ -176,58 +264,126 @@ export default function CreateAmoriaPage() {
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // ✅ init (affiche le loader tout de suite, puis redirige "smooth")
+  const handleBackHome = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    router.push("/?" + params.toString());
+  };
+
+  const goMyAmoria = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    router.replace(`/my-amoria?${params.toString()}`);
+  };
+
+  const goPricing = () => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    router.push(`/pricing?${params.toString()}`);
+  };
+
+  // ✅ init: auth + plan DB + count DB + enforcement
   useEffect(() => {
     let cancelled = false;
 
     const goLogin = () => {
       const qp = new URLSearchParams();
       qp.set("lang", locale);
-      qp.set("plan", plan);
       router.replace(`/login?${qp.toString()}`);
     };
 
-    const goMyAi = () => {
-      const qp = new URLSearchParams();
-      qp.set("lang", locale);
-      // petit tick pour éviter l’écran “Redirecting…” de transition
-      setTimeout(() => {
-        if (!cancelled) router.replace(`/my-ai?${qp.toString()}`);
-      }, 50);
-    };
-
     const init = async () => {
-      // on montre la page (loader) immédiatement
       setReady(false);
+      setErrorMsg(null);
 
-      const { data, error } = await supabase.auth.getSession();
-      if (cancelled) return;
+      // 1) Auth
+      const { data: authData, error: authErr } = await supabase.auth.getUser();
+      if (authErr) console.error("auth.getUser error:", authErr);
 
-      const session = data?.session;
-      const userId = session?.user?.id;
-
-      if (error || !userId) {
+      const user = authData?.user;
+      if (!user) {
         goLogin();
         return;
       }
 
-      if (!force) {
-        const { data: existing, error: existingError } = await supabase
-          .from("user_amoria")
-          .select("id")
-          .eq("user_id", userId)
-          .eq("is_archived", false)
-          .limit(1);
+      const userId = user.id;
 
-        if (cancelled) return;
+      // 2) Plan via join pricing_plans(code)
+      let planLocal: PlanId = "free";
 
-        if (!existingError && existing && existing.length > 0) {
-          goMyAi();
-          return;
+      const { data: sub, error: subErr } = await supabase
+        .from("user_subscriptions")
+        .select(
+          `
+            current,
+            status,
+            pricing_plans:pricing_plan_id (
+              code
+            )
+          `
+        )
+        .eq("user_id", userId)
+        .eq("current", true)
+        .maybeSingle();
+
+      if (subErr) {
+        console.error("user_subscriptions SELECT error:", subErr);
+        const rls = looksLikeRlsError(subErr.message || "");
+        setErrorMsg(rls ? "Accès refusé (RLS/policies)." : t.genericError);
+        // on laisse quand même l'écran loader + message
+      } else {
+        let code: any = (sub as any)?.pricing_plans?.code;
+
+        // fallback status=active
+        if (!code) {
+          const { data: sub2, error: sub2Err } = await supabase
+            .from("user_subscriptions")
+            .select(
+              `
+                status,
+                pricing_plans:pricing_plan_id (
+                  code
+                )
+              `
+            )
+            .eq("user_id", userId)
+            .eq("status", "active")
+            .maybeSingle();
+
+          if (sub2Err) {
+            console.error("user_subscriptions(active) SELECT error:", sub2Err);
+          } else {
+            code = (sub2 as any)?.pricing_plans?.code;
+          }
         }
+
+        planLocal = normalizePlanCode(code);
       }
 
-      // sinon on affiche le formulaire
+      const maxLocal = maxAmoriaForPlan(planLocal);
+
+      // 3) Count (non-archived)
+      const { count, error: countErr } = await supabase
+        .from("user_amoria")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("is_archived", false);
+
+      if (countErr) {
+        console.error("user_amoria COUNT error:", countErr);
+        const rls = looksLikeRlsError(countErr.message || "");
+        if (!cancelled) setErrorMsg(rls ? "Accès refusé (RLS/policies)." : t.genericError);
+      }
+
+      const countLocal = typeof count === "number" ? count : 0;
+
+      if (cancelled) return;
+
+      setPlan(planLocal);
+      setMaxAllowed(maxLocal);
+      setAiCount(countLocal);
+
+      // 4) Enforcement: si déjà au max -> on n'affiche pas le formulaire
       setReady(true);
     };
 
@@ -236,13 +392,9 @@ export default function CreateAmoriaPage() {
     return () => {
       cancelled = true;
     };
-  }, [router, locale, plan, force]);
+  }, [router, locale, t.genericError]);
 
-  const handleBackHome = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    router.push("/?" + params.toString());
-  };
+  const limitReached = aiCount >= maxAllowed;
 
   const isFormValid =
     name.trim().length > 0 &&
@@ -255,22 +407,50 @@ export default function CreateAmoriaPage() {
     e.preventDefault();
     setErrorMsg(null);
 
+    if (saving) return;
     if (!isFormValid || !category) {
       setErrorMsg(t.formError);
+      return;
+    }
+
+    // ✅ Hard enforcement client-side (plus server-side idéalement)
+    if (limitReached) {
+      setErrorMsg(t.limitReachedBody(maxAllowed));
       return;
     }
 
     setSaving(true);
 
     try {
-      const { data, error } = await supabase.auth.getSession();
-      const userId = data?.session?.user?.id;
-
-      if (error || !userId) {
+      // Auth (re-check)
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
+      if (!user) {
         const params = new URLSearchParams();
         params.set("lang", locale);
-        params.set("plan", plan);
         router.replace("/login?" + params.toString());
+        return;
+      }
+
+      const userId = user.id;
+
+      // Re-check count just before insert (avoid race)
+      const { count: freshCount, error: freshCountErr } = await supabase
+        .from("user_amoria")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("is_archived", false);
+
+      if (freshCountErr) {
+        console.error("user_amoria COUNT(recheck) error:", freshCountErr);
+        setErrorMsg(t.genericError);
+        return;
+      }
+
+      const current = typeof freshCount === "number" ? freshCount : 0;
+      if (current >= maxAllowed) {
+        setAiCount(current);
+        setErrorMsg(t.limitReachedBody(maxAllowed));
         return;
       }
 
@@ -290,27 +470,38 @@ sans jugement, en respectant les limites de l’utilisateur.
 
       const avatarUrl = randomAvatar(personaType);
 
-      const { error: insErr } = await supabase.from("user_amoria").insert({
-        user_id: userId,
-        name,
-        persona_type: personaType,
-        main_language: locale,
-        avatar_image_url: avatarUrl,
-        accent_color: "#fb37ff",
-        system_prompt: systemPrompt,
-        voice_id: null,
-        is_archived: false,
-      });
+      const { data: inserted, error: insErr } = await supabase
+        .from("user_amoria")
+        .insert({
+          user_id: userId,
+          name,
+          persona_type: personaType,
+          main_language: locale,
+          avatar_image_url: avatarUrl,
+          accent_color: "#fb37ff",
+          system_prompt: systemPrompt,
+          voice_id: null,
+          is_archived: false,
+        })
+        .select("id")
+        .maybeSingle();
 
       if (insErr) {
+        console.error("user_amoria INSERT error:", insErr);
         setErrorMsg(insErr.message || t.genericError);
         return;
       }
 
-      const params = new URLSearchParams();
-      params.set("lang", locale);
-      router.replace("/my-ai?" + params.toString());
-    } catch {
+      // ✅ après création: si l'utilisateur n'a qu'une IA -> on peut aller direct chat
+      if (inserted?.id) {
+        router.replace(`/chat?iaId=${inserted.id}&lang=${locale}`);
+        return;
+      }
+
+      // fallback
+      goMyAmoria();
+    } catch (err) {
+      console.error("create-amoria error:", err);
       setErrorMsg(t.genericError);
     } finally {
       setSaving(false);
@@ -322,6 +513,7 @@ sans jugement, en respectant les limites de l’utilisateur.
       <main className="amoria-create-root">
         <div className="amoria-loading-card">
           <p>{t.loadingText}</p>
+          {errorMsg ? <p style={{ marginTop: "0.75rem", color: "#fecaca", fontSize: "0.85rem" }}>{errorMsg}</p> : null}
         </div>
 
         <style jsx global>{`
@@ -340,7 +532,7 @@ sans jugement, en respectant les limites de l’utilisateur.
           .amoria-loading-card {
             margin: 0 auto;
             margin-top: 6rem;
-            max-width: 420px;
+            max-width: 460px;
             border-radius: 1.4rem;
             padding: 1.4rem 1.6rem;
             background: rgba(15, 23, 42, 0.96);
@@ -354,6 +546,98 @@ sans jugement, en respectant les limites de l’utilisateur.
     );
   }
 
+  // Si limite atteinte -> écran simple (pas de formulaire)
+  if (limitReached) {
+    return (
+      <main className="amoria-create-root">
+        <div className="amoria-shell" style={{ maxWidth: 720, width: "100%" }}>
+          <section className="amoria-card">
+            <div className="amoria-banner amoria-banner--error">
+              <strong>{t.limitReachedTitle}</strong>
+              <div style={{ marginTop: "0.35rem" }}>{t.limitReachedBody(maxAllowed)}</div>
+            </div>
+
+            <div className="amoria-actions amoria-actions--under-right" style={{ justifyContent: "flex-start" }}>
+              <button type="button" className="amoria-btn amoria-btn--secondary" onClick={goMyAmoria}>
+                {t.goMyAmoria}
+              </button>
+              <button type="button" className="amoria-btn amoria-btn--primary" onClick={goPricing}>
+                {t.goUpgrade}
+              </button>
+            </div>
+          </section>
+        </div>
+
+        {/* réutilise ton style global existant */}
+        <style jsx global>{`
+          .amoria-create-root {
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+            background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 80%),
+              radial-gradient(circle at bottom, #020617, #000);
+            color: #e5e7eb;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+              "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+          }
+          .amoria-shell {
+            width: 100%;
+            max-width: 980px;
+          }
+          .amoria-card {
+            margin-top: 5rem;
+            border-radius: 1.6rem;
+            padding: 1.7rem 1.5rem 1.5rem;
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            background: radial-gradient(circle at top left, rgba(251, 113, 133, 0.2), transparent 55%),
+              radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.2), transparent 55%),
+              rgba(15, 23, 42, 0.98);
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.9);
+          }
+          .amoria-banner {
+            border-radius: 0.9rem;
+            padding: 0.55rem 0.9rem;
+            font-size: 0.9rem;
+            margin-bottom: 0.9rem;
+          }
+          .amoria-banner--error {
+            background: rgba(185, 28, 28, 0.2);
+            border: 1px solid rgba(248, 113, 113, 0.9);
+            color: #fecaca;
+          }
+          .amoria-actions {
+            display: flex;
+            gap: 0.65rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+          }
+          .amoria-btn {
+            border-radius: 999px;
+            padding: 0.65rem 1.35rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            white-space: nowrap;
+          }
+          .amoria-btn--primary {
+            background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
+            color: #f9fafb;
+            box-shadow: 0 16px 40px rgba(248, 113, 113, 0.75);
+            font-weight: 600;
+          }
+          .amoria-btn--secondary {
+            background: rgba(15, 23, 42, 0.95);
+            color: #e5e7eb;
+            border-color: rgba(148, 163, 184, 0.8);
+          }
+        `}</style>
+      </main>
+    );
+  }
+
+  // Formulaire (si pas limite)
   return (
     <main className="amoria-create-root">
       <div className="amoria-shell">
@@ -385,35 +669,57 @@ sans jugement, en respectant les limites de l’utilisateur.
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={locale === "fr" ? "Ex. : Léo, Amélia, Nova…" : locale === "en" ? "e.g. Leo, Amelia, Nova…" : "Ej.: Leo, Amelia, Nova…"}
+                  disabled={saving}
                 />
               </label>
 
               <label className="amoria-field">
                 <span className="amoria-label">{t.relationLabel}</span>
-                <select className="amoria-select" value={relationType} onChange={(e) => setRelationType(e.target.value)}>
+                <select
+                  className="amoria-select"
+                  value={relationType}
+                  onChange={(e) => setRelationType(e.target.value)}
+                  disabled={saving}
+                >
                   <option value="">{locale === "fr" ? "Choisir…" : locale === "en" ? "Choose…" : "Elegir…"}</option>
                   {relationOptions.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
                   ))}
                 </select>
               </label>
 
               <label className="amoria-field">
                 <span className="amoria-label">{t.toneLabel}</span>
-                <select className="amoria-select" value={tone} onChange={(e) => setTone(e.target.value)}>
+                <select
+                  className="amoria-select"
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value)}
+                  disabled={saving}
+                >
                   <option value="">{locale === "fr" ? "Choisir…" : locale === "en" ? "Choose…" : "Elegir…"}</option>
                   {toneOptions.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
                   ))}
                 </select>
               </label>
 
               <label className="amoria-field">
                 <span className="amoria-label">{t.categoryLabel}</span>
-                <select className="amoria-select" value={category} onChange={(e) => setCategory(e.target.value as PersonaType | "")}>
+                <select
+                  className="amoria-select"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as PersonaType | "")}
+                  disabled={saving}
+                >
                   <option value="">{t.categoryPlaceholder}</option>
                   {CATEGORY_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label[locale]}</option>
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label[locale]}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -435,6 +741,7 @@ sans jugement, en respectant les limites de l’utilisateur.
                   onChange={(e) => setExpectation(e.target.value)}
                   placeholder={t.expectationPlaceholder}
                   rows={6}
+                  disabled={saving}
                 />
               </label>
 
