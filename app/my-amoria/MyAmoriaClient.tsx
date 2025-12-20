@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import { maxAmoriaForPlan, planFromPricingName, type PlanId } from "@/lib/plans";
+import { maxAmoriaForPlan, planFromPricingName, type PlanId } from "@/lib/plan";
 
 type Locale = "fr" | "en" | "es";
 
