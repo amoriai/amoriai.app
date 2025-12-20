@@ -22,3 +22,14 @@ export function planFromPricingName(name: string | null | undefined): PlanId {
   if (n.includes("illimit") || n.includes("unlimited")) return "unlimited";
   return "free";
 }
+
+/** Si tu reçois déjà plan_id = free/chat/plus/unlimited */
+export function normalizePlan(raw: string | null | undefined): PlanId {
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
+    ? raw
+    : "free";
+}
+
+export function canCreateAmoria(plan: PlanId, activeCount: number): boolean {
+  return activeCount < maxAmoriaForPlan(plan);
+}
