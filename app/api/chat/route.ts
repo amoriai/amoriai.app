@@ -8,15 +8,14 @@ import { createClient } from "@supabase/supabase-js";
 type PlanCode = "free" | "chat" | "plus" | "unlimited";
 
 function quotaFor(plan: PlanCode) {
-  // ⚠️ Mets ici les LIMITES MENSUELLES que tu veux
-  // (ex: free 200/mois, chat 400/mois, plus 1000/mois, unlimited 10000/mois)
+  // Limites MENSUELLES chat (messages/mois)
   switch (plan) {
     case "chat":
       return 400;
     case "plus":
       return 1000;
     case "unlimited":
-      return 10000; // ou 100000 si tu veux quasi illimité
+      return 10000;
     default:
       return 200; // free
   }
@@ -42,6 +41,11 @@ const I18N = {
     en: "You’ve reached your monthly message limit. Try again next month or upgrade your plan.",
     es: "Has alcanzado tu límite mensual de mensajes. Inténtalo el próximo mes o mejora tu plan.",
   },
+  voiceQuotaExceeded: {
+    fr: "Tu as atteint la limite de voix pour ce mois-ci. Le texte reste disponible.",
+    en: "You’ve reached your monthly voice limit. Text is still available.",
+    es: "Has alcanzado tu límite mensual de voz. El texto sigue disponible.",
+  },
   fallbackReply: {
     fr: "Je ne sais pas.",
     en: "I don’t know.",
@@ -58,6 +62,10 @@ const I18N = {
     es: "missing_message",
   },
 } as const;
+
+function hasBearer(authHeader: string) {
+  return /^Bearer\s+.+$/i.test(authHeader.trim());
+}
 
 export async function POST(req: Request) {
   try {
@@ -94,6 +102,9 @@ export async function POST(req: Request) {
        1) Auth user via JWT du front
     =========================== */
     const authHeader = req.headers.get("authorization") ?? "";
+    if (!hasBearer(authHeader)) {
+      return NextResponse.json({ error: "missing_or_invalid_authorization" }, { status: 401 });
+    }
 
     const supabaseAuth = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -113,6 +124,7 @@ export async function POST(req: Request) {
 
     /* ===========================
        2) Admin client (lecture des plans, vérif IA)
+       ⚠️ service role bypass RLS: on filtre strictement par user_id
     =========================== */
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
@@ -133,8 +145,7 @@ export async function POST(req: Request) {
     }
 
     /* ===========================
-       3) Lire abonnement & plan
-       - Si pas d’abonnement actif => free
+       3) Lire abonnement & plan (active sinon free)
     =========================== */
     let planCode: PlanCode = "free";
     let planName = "Free";
@@ -169,33 +180,33 @@ export async function POST(req: Request) {
       }
     }
 
-    // ✅ Historique PAYANT seulement
+    // Historique PAYANT seulement (note: si tu veux l’imposer vraiment, ça doit aussi être dans RLS)
     const canStoreHistory = planCode !== "free";
 
     /* ===========================
-       4) Appliquer quota MENSUEL (RPC)
-       - RPC via supabaseAuth (JWT), pas admin
-       - Le RPC doit s'appeler: consume_monthly_message(quota int)
+       4) Quota MENSUEL CHAT (RPC avec JWT)
+       RPC attendu: consume_monthly_message(quota int)
+       Retour attendu: { ok: boolean, remaining: int, ... }
     =========================== */
-    const quota = quotaFor(planCode);
+    const chatQuota = quotaFor(planCode);
 
-    const { data: usage, error: usageErr } = await supabaseAuth.rpc(
+    const { data: chatUsage, error: chatUsageErr } = await supabaseAuth.rpc(
       "consume_monthly_message",
-      { quota }
+      { quota: chatQuota }
     );
 
-    if (usageErr) {
-      console.error("consume_monthly_message error:", usageErr);
+    if (chatUsageErr) {
+      console.error("consume_monthly_message error:", chatUsageErr);
       return NextResponse.json({ error: "quota_check_failed" }, { status: 500 });
     }
 
-    if (!usage?.ok) {
+    if (!chatUsage?.ok) {
       return NextResponse.json(
         {
           error: "quota_exceeded",
           planName,
           planCode,
-          details: usage,
+          details: chatUsage,
           message: I18N.quotaExceeded[safeLang],
         },
         { status: 429 }
@@ -204,10 +215,7 @@ export async function POST(req: Request) {
 
     /* ===========================
        5) System prompt + verrou de langue
-       - IMPORTANT: ton normalizeLang() choisit la langue.
-       - Si le front envoie toujours "fr", tu verras toujours français.
     =========================== */
-
     const defaultSystemPromptFr =
       "Tu es une IA de compagnie bienveillante et chaleureuse. Tu réponds avec un ton naturel, doux et empathique.";
     const defaultSystemPromptEn =
@@ -286,59 +294,106 @@ export async function POST(req: Request) {
     }
 
     /* ===========================
-       9) Voix optionnelle (selon plan)
+       9) Voix optionnelle (selon plan) + QUOTA MENSUEL VOICE (RPC)
+       RPC attendu: consume_monthly_voice(quota int)
+       Retour attendu: { ok: boolean, remaining: int, ... }
     =========================== */
-    const allowAudio = !!withAudio && hasVoiceFromPlan && voiceLimitFromPlan > 0;
+    const allowAudioRequested = !!withAudio;
+    const allowAudioByPlan = hasVoiceFromPlan && voiceLimitFromPlan > 0;
+    const allowAudio = allowAudioRequested && allowAudioByPlan;
 
     let audioBase64: string | null = null;
     let audioMimeType: string | null = null;
 
+    let voiceUsage: any = null;
+    let voiceBlockedReason: string | null = null;
+
     if (allowAudio) {
-      try {
-        const voice = iaRow.voice_id || "alloy";
+      // 9.1) Consommer quota mensuel voice AVANT de générer l’audio
+      const { data: vUsage, error: vErr } = await supabaseAuth.rpc("consume_monthly_voice", {
+        quota: voiceLimitFromPlan,
+      });
 
-        const ttsRes = await fetch("https://api.openai.com/v1/audio/speech", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "tts-1",
-            voice,
-            input: text,
-            format: "mp3",
-          }),
-        });
+      if (vErr) {
+        console.error("consume_monthly_voice error:", vErr);
+        // Ici je bloque l’audio mais je renvoie le texte
+        voiceBlockedReason = "voice_quota_check_failed";
+      } else if (!vUsage?.ok) {
+        // Quota voix dépassé: on renvoie texte sans audio
+        voiceUsage = vUsage;
+        voiceBlockedReason = "voice_quota_exceeded";
+      } else {
+        voiceUsage = vUsage;
 
-        if (!ttsRes.ok) {
-          const ttsErr = await ttsRes.text();
-          console.error("OpenAI TTS error:", ttsErr);
-        } else {
-          const audioBuffer = await ttsRes.arrayBuffer();
-          // @ts-ignore Buffer dispo en runtime Node
-          audioBase64 = Buffer.from(audioBuffer).toString("base64");
-          audioMimeType = "audio/mpeg";
+        // 9.2) Génération TTS
+        try {
+          const voice = iaRow.voice_id || "alloy";
+
+          const ttsRes = await fetch("https://api.openai.com/v1/audio/speech", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "tts-1",
+              voice,
+              input: text,
+              format: "mp3",
+            }),
+          });
+
+          if (!ttsRes.ok) {
+            const ttsErr = await ttsRes.text();
+            console.error("OpenAI TTS error:", ttsErr);
+            voiceBlockedReason = "openai_tts_error";
+          } else {
+            const audioBuffer = await ttsRes.arrayBuffer();
+            // @ts-ignore Buffer dispo en runtime Node
+            audioBase64 = Buffer.from(audioBuffer).toString("base64");
+            audioMimeType = "audio/mpeg";
+          }
+        } catch (e) {
+          console.error("TTS generation error:", e);
+          voiceBlockedReason = "tts_exception";
         }
-      } catch (e) {
-        console.error("TTS generation error:", e);
       }
     }
+
+    const voiceWarning =
+      voiceBlockedReason === "voice_quota_exceeded" ? I18N.voiceQuotaExceeded[safeLang] : null;
 
     /* ===========================
        10) Réponse
     =========================== */
     return NextResponse.json({
       reply: text,
+
+      // audio
       audioBase64,
       audioMimeType,
+
+      // meta plan
       planName,
       planCode,
+
+      // ia
       iaId: iaRow.id,
       iaName: iaRow.name,
-      quota_per_month: quota,
-      remaining_this_month: usage?.remaining ?? null,
+
+      // quotas
+      chat_quota_per_month: chatQuota,
+      chat_remaining_this_month: chatUsage?.remaining ?? null,
+
+      voice_quota_per_month: allowAudioByPlan ? voiceLimitFromPlan : 0,
+      voice_remaining_this_month: voiceUsage?.remaining ?? null,
+      voice_warning: voiceWarning,
+      voice_blocked_reason: voiceBlockedReason,
+
+      // history
       history_enabled: canStoreHistory,
+
+      // lang
       lang: safeLang,
     });
   } catch (e) {
