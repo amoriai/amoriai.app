@@ -1,7 +1,8 @@
 // app/layout.tsx
 import type { ReactNode } from "react";
 import "./globals.css";
-import CookieBanner from "@/components/CookieBanner"; // ✅ AJOUT ICI
+import CookieBanner from "@/components/CookieBanner";
+import RegisterSW from "@/components/RegisterSW"; // ✅ ICI
 
 export const metadata = {
   title: "AmorIAI.app",
@@ -17,9 +18,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr">
       <body className="min-h-screen bg-[#050816] text-white antialiased">
+        {/* ✅ ENREGISTRE LE SERVICE WORKER */}
+        <RegisterSW />
+
         {children}
 
-        {/* ✅ BANDEAU COOKIES TOUJOURS EN BAS */}
+        {/* ✅ BANDEAU COOKIES */}
         <CookieBanner />
       </body>
     </html>
