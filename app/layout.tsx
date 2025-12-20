@@ -2,7 +2,7 @@
 import type { ReactNode } from "react";
 import "./globals.css";
 
-import CookieBanner from "./components/CookieBanner";
+import CookieBanner from "../components/CookieBanner";
 import RegisterSW from "./components/RegisterSW";
 
 export const metadata = {
@@ -21,10 +21,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-screen bg-[#050816] text-white antialiased">
         {children}
 
-        {/* ✅ Enregistrement du Service Worker (PWA) */}
+        {/* PWA */}
         <RegisterSW />
 
-        {/* ✅ Bandeau cookies */}
+        {/* Cookies */}
         <CookieBanner />
       </body>
     </html>
