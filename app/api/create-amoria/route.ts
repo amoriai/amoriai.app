@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const runtime = "nodejs";
+
 type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 type PersonaType = "woman" | "man" | "woman50" | "man50" | "androgynous";
 
-// --- avatars & catégories (même logique que dans la page) ---
+/* ===========================
+   Avatars & labels
+=========================== */
 
 const AVATARS: Record<PersonaType, string[]> = {
   woman: [
@@ -49,13 +53,6 @@ const AVATARS: Record<PersonaType, string[]> = {
   ],
 };
 
-function randomAvatar(type: PersonaType): string {
-  const list = AVATARS[type];
-  if (!list || list.length === 0) return "/amoria-avatar-preview.png";
-  const index = Math.floor(Math.random() * list.length);
-  return list[index];
-}
-
 const CATEGORY_LABELS: Record<PersonaType, Record<Locale, string>> = {
   woman: { fr: "Femme", en: "Woman", es: "Mujer" },
   man: { fr: "Homme", en: "Man", es: "Hombre" },
@@ -68,6 +65,48 @@ const CATEGORY_LABELS: Record<PersonaType, Record<Locale, string>> = {
   },
 };
 
+function randomAvatar(type: PersonaType): string {
+  const list = AVATARS[type];
+  if (!list || list.length === 0) return "/amoria-avatar-preview.png";
+  const index = Math.floor(Math.random() * list.length);
+  return list[index];
+}
+
+function normalizeLocale(raw: unknown): Locale {
+  const v = String(raw ?? "").toLowerCase();
+  return v === "fr" || v === "en" || v === "es" ? (v as Locale) : "fr";
+}
+
+function normalizePersonaType(raw: unknown): PersonaType | null {
+  const v = String(raw ?? "").toLowerCase().trim();
+  return v === "woman" || v === "man" || v === "woman50" || v === "man50" || v === "androgynous"
+    ? (v as PersonaType)
+    : null;
+}
+
+function normalizePlanCode(raw: unknown): PlanId {
+  const v = String(raw ?? "").toLowerCase().trim();
+  return v === "free" || v === "chat" || v === "plus" || v === "unlimited" ? (v as PlanId) : "free";
+}
+
+// ⚠️ IMPORTANT: applique ici la même règle que ton lib/plan côté front
+function maxAmoriaForPlan(plan: PlanId): number {
+  switch (plan) {
+    case "chat":
+      return 2;
+    case "plus":
+      return 10;
+    case "unlimited":
+      return 30;
+    default:
+      return 1; // free
+  }
+}
+
+function hasBearer(authHeader: string) {
+  return /^Bearer\s+.+$/i.test((authHeader || "").trim());
+}
+
 export async function POST(req: Request) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -76,51 +115,33 @@ export async function POST(req: Request) {
 
     if (!supabaseUrl || !anonKey || !serviceKey) {
       console.error("Missing Supabase env vars for create-amoria");
-      return NextResponse.json(
-        { error: "supabase_env_missing" },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "supabase_env_missing" }, { status: 500 });
     }
 
-    const {
-      name,
-      relationType,
-      tone,
-      category,
-      expectation,
-      locale,
-      plan,
-    }: {
-      name: string;
-      relationType: string;
-      tone: string;
-      category: PersonaType;
-      expectation: string;
-      locale: Locale;
-      plan?: PlanId;
-    } = await req.json();
+    const authHeader = req.headers.get("authorization") ?? req.headers.get("Authorization") ?? "";
+    if (!hasBearer(authHeader)) {
+      return NextResponse.json({ error: "missing_or_invalid_authorization" }, { status: 401 });
+    }
 
-    // Validation basique
-    if (
-      !name?.trim() ||
-      !relationType?.trim() ||
-      !tone?.trim() ||
-      !category ||
-      !expectation?.trim()
-    ) {
+    const body = await req.json().catch(() => ({}));
+
+    const name = String(body?.name ?? "").trim();
+    const relationType = String(body?.relationType ?? "").trim();
+    const tone = String(body?.tone ?? "").trim();
+    const expectation = String(body?.expectation ?? "").trim();
+    const loc = normalizeLocale(body?.locale);
+    const personaType = normalizePersonaType(body?.category);
+
+    if (!name || !relationType || !tone || !expectation || !personaType) {
       return NextResponse.json(
-        { error: "invalid_payload", message: "Missing fields" },
+        { error: "invalid_payload", message: "Missing/invalid fields" },
         { status: 400 }
       );
     }
 
-    // --- client auth avec le token envoyé en header ---
+    // 1) Auth user via JWT du front
     const supabaseAuth = createClient(supabaseUrl, anonKey, {
-      global: {
-        headers: {
-          Authorization: req.headers.get("authorization") ?? "",
-        },
-      },
+      global: { headers: { Authorization: authHeader } },
     });
 
     const {
@@ -130,25 +151,69 @@ export async function POST(req: Request) {
 
     if (userError || !user) {
       console.error("create-amoria: not_authenticated", userError);
+      return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+    }
+
+    // 2) Admin client (lecture plan + insert)
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+
+    // 2.1) Lire le plan depuis la DB (current=true)
+    let plan: PlanId = "free";
+
+    const { data: sub, error: subErr } = await supabaseAdmin
+      .from("user_subscriptions")
+      .select(
+        `
+          pricing_plan_id,
+          current,
+          pricing_plans:pricing_plan_id (
+            code
+          )
+        `
+      )
+      .eq("user_id", user.id)
+      .eq("current", true)
+      .maybeSingle();
+
+    if (subErr) {
+      console.error("create-amoria: subscription read error:", subErr);
+      // On ne bloque pas, mais on retombe sur free
+    }
+
+    const planCode = (sub as any)?.pricing_plans?.code;
+    plan = normalizePlanCode(planCode);
+
+    const maxAllowed = maxAmoriaForPlan(plan);
+
+    // 2.2) Compter les IA actives (non archivées)
+    const { count, error: countErr } = await supabaseAdmin
+      .from("user_amoria")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("is_archived", false);
+
+    if (countErr) {
+      console.error("create-amoria: user_amoria count error:", countErr);
+      return NextResponse.json({ error: "count_failed" }, { status: 500 });
+    }
+
+    const aiCount = typeof count === "number" ? count : 0;
+
+    if (aiCount >= maxAllowed) {
       return NextResponse.json(
-        { error: "not_authenticated" },
-        { status: 401 }
+        { error: "limit_reached", plan, maxAllowed, aiCount },
+        { status: 403 }
       );
     }
 
-    // --- client admin pour insérer dans user_amoria ---
-    const supabaseAdmin = createClient(supabaseUrl, serviceKey);
-
-    const loc: Locale = locale ?? "fr";
-    const personaType: PersonaType = category;
-    const categoryLabel =
-      CATEGORY_LABELS[personaType]?.[loc] ?? personaType;
+    // 3) Construire prompt
+    const categoryLabel = CATEGORY_LABELS[personaType]?.[loc] ?? personaType;
 
     const systemPrompt = `
 Tu es ${name}, une AmorIAI de type "${categoryLabel}".
-- Type de relation : ${relationType || "non précisé"}.
-- Ton préféré : ${tone || "non précisé"}.
-- Ce que l’utilisateur attend le plus de toi : ${expectation || "non précisé"}.
+- Type de relation : ${relationType}.
+- Ton préféré : ${tone}.
+- Ce que l’utilisateur attend le plus de toi : ${expectation}.
 
 Ta mission est d’apporter soutien, écoute et accompagnement bienveillant,
 sans jugement, en respectant les limites de l’utilisateur.
@@ -156,7 +221,8 @@ sans jugement, en respectant les limites de l’utilisateur.
 
     const avatarUrl = randomAvatar(personaType);
 
-    const { data, error: insertError } = await supabaseAdmin
+    // 4) Insert
+    const { data: inserted, error: insertError } = await supabaseAdmin
       .from("user_amoria")
       .insert({
         user_id: user.id,
@@ -168,23 +234,24 @@ sans jugement, en respectant les limites de l’utilisateur.
         system_prompt: systemPrompt,
         voice_id: null,
         is_archived: false,
-        // plan_id a probablement un default "free" en base
       })
       .select("id")
       .single();
 
-    if (insertError) {
+    if (insertError || !inserted?.id) {
       console.error("create-amoria insert error:", insertError);
       return NextResponse.json(
-        { error: "insert_failed", details: insertError.message },
+        { error: "insert_failed", details: insertError?.message ?? "unknown" },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       ok: true,
-      amoriaId: data.id,
-      plan: plan ?? "free",
+      amoriaId: inserted.id,
+      plan,
+      maxAllowed,
+      aiCount: aiCount + 1,
     });
   } catch (e: any) {
     console.error("create-amoria server error:", e);
