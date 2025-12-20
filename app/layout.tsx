@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-screen bg-[#050816] text-white antialiased">
         {children}
 
-        {/* ✅ PWA: enregistre le service worker côté client */}
+        {/* ✅ Enregistrement du Service Worker (PWA) */}
         <RegisterSW />
 
         {/* ✅ Bandeau cookies */}
