@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 import React, { FormEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { LogoutButton } from "../components/LogoutButton";
 import { maxAmoriaForPlan, type PlanId } from "@/lib/plan";
@@ -298,7 +298,9 @@ export default function ChatPage() {
 }
 
 function ChatClient() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+
   const iaId = searchParams.get("iaId");
   const locale = normalizeLocale(searchParams.get("lang"));
   const t = STRINGS[locale];
@@ -384,6 +386,13 @@ function ChatClient() {
     params.set("lang", locale);
     return `/pricing?${params.toString()}`;
   }, [locale]);
+
+  // ✅ IMPORTANT: si /chat sans iaId -> on renvoie toujours vers /my-amoria
+  useEffect(() => {
+    if (!iaId) {
+      router.replace(myAmoriaUrl);
+    }
+  }, [iaId, router, myAmoriaUrl]);
 
   const handleUpgradeClick = () => {
     const params = new URLSearchParams();
@@ -611,8 +620,8 @@ function ChatClient() {
       setAiError(null);
       setAi(null);
 
+      // iaId manquant => la redirection (useEffect) gère déjà le cas
       if (!iaId) {
-        setAiError(t.genericError);
         setAiLoading(false);
         return;
       }
@@ -861,12 +870,10 @@ function ChatClient() {
         </a>
 
         <div className="topbar__right">
-          {/* Toujours présent pour changer d’AmorIAI */}
           <Link href={myAmoriaUrl} className="topbar__pill">
             {t.myAmoria}
           </Link>
 
-          {/* ✅ Caché sur Free + seulement si quota dispo */}
           {canCreate && (
             <Link href={createAmoriaUrl} className="topbar__pill topbar__pill--primary">
               {t.createAmoria}
@@ -910,6 +917,7 @@ function ChatClient() {
                       aria-label="Avatar animé"
                     />
                   ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={avatarImageUrl} alt={`Avatar de ${displayName}`} className="avatarImg" />
                   )
                 ) : (
