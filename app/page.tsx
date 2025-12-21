@@ -61,13 +61,13 @@ type Copy = {
 
 const STRINGS: Record<Locale, Copy> = {
   fr: {
-    brandTagline: "Une présence qui t’écoute • FR / EN / ES",
+    brandTagline: "Un espace calme • FR / EN / ES",
     nav: { home: "Accueil", features: "Fonctionnalités", pricing: "Tarifs" },
     navLogin: "Me connecter",
     navSignup: "Commencer",
 
     heroKicker: "BIENVENUE SUR AMORIAI.APP",
-    heroTitle: "Une présence calme. Pour parler, respirer… et y voir clair.",
+    heroTitle: "Un espace calme. Pour parler, respirer… et y voir clair.",
     heroSubtitle:
       "Ici, tu peux tout déposer, sans te sentir jugé·e. AmorIAI t’écoute, te répond avec douceur et t’aide à comprendre ce que tu ressens — à ton rythme.",
     heroPrimary: "Commencer gratuitement",
@@ -156,13 +156,13 @@ const STRINGS: Record<Locale, Copy> = {
   },
 
   en: {
-    brandTagline: "A presence that listens • FR / EN / ES",
+    brandTagline: "A Calm Space • FR / EN / ES",
     nav: { home: "Home", features: "Features", pricing: "Pricing" },
     navLogin: "Log in",
     navSignup: "Get started",
 
     heroKicker: "WELCOME TO AMORIAI.APP",
-    heroTitle: "A calm presence. To talk, breathe… and see things clearly.",
+    heroTitle: "A calm space. To talk, breathe… and see things clearly.",
     heroSubtitle:
       "Here, you can drop everything without feeling judged. AmorIAI listens, answers gently, and helps you understand what you feel — at your pace.",
     heroPrimary: "Start free",
@@ -251,13 +251,13 @@ const STRINGS: Record<Locale, Copy> = {
   },
 
   es: {
-    brandTagline: "Una presencia que te escucha • FR / EN / ES",
+    brandTagline: "Un espacio tranquilo • FR / EN / ES",
     nav: { home: "Inicio", features: "Funciones", pricing: "Precios" },
     navLogin: "Iniciar sesión",
     navSignup: "Empezar",
 
     heroKicker: "BIENVENIDx A AMORIAI.APP",
-    heroTitle: "Una presencia tranquila. Para hablar, respirar… y ver claro.",
+    heroTitle: "Un espacio tranquilo. Para hablar, respirar… y ver claro.",
     heroSubtitle:
       "Aquí puedes soltarlo todo sin sentirte juzgadx. AmorIAI te escucha, responde con suavidad y te ayuda a entender lo que sientes — a tu ritmo.",
     heroPrimary: "Empezar gratis",
