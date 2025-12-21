@@ -37,7 +37,6 @@ type Copy = {
   usageTitle: string;
   usageBullets: string[];
 
-  // ✅ New: “messages people write” section (not reviews)
   messagesTitle: string;
   messagesSubtitle: string;
   messagesPrivacyNote: string;
@@ -113,7 +112,6 @@ const STRINGS: Record<Locale, Copy> = {
       "Te sentir accompagné, sans pression ni jugement.",
     ],
 
-    // ✅ clean, credible, masculine
     messagesTitle: "Ce que des gens écrivent ici",
     messagesSubtitle: "Des phrases simples, comme dans la vraie vie.",
     messagesPrivacyNote: "Personne ne lit tes messages. Ils sont privés. Ils restent ici.",
@@ -402,7 +400,7 @@ export default function HomePage({ searchParams }: PageProps) {
               ))}
             </div>
 
-            {/* Login – desktop/tablette seulement */}
+            {/* Login */}
             <Link
               href={withLang("/login")}
               className="hidden items-center justify-center rounded-full border border-slate-500/70 px-3 py-1 text-[0.7rem] text-slate-100 transition hover:bg-slate-900/80 md:inline-flex"
@@ -410,7 +408,7 @@ export default function HomePage({ searchParams }: PageProps) {
               {t.navLogin}
             </Link>
 
-            {/* Signup header – desktop seulement */}
+            {/* Signup */}
             <Link
               href={withLang("/signup")}
               className="hidden items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3.5 py-1.5 text-[0.78rem] font-medium text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110 sm:inline-flex"
@@ -531,39 +529,98 @@ export default function HomePage({ searchParams }: PageProps) {
         </ul>
       </section>
 
-      {/* MESSAGES (replaces “testimonials”) */}
-      <section className="mx-auto max-w-5xl px-4 pb-10">
-        <div className="mb-4">
+      {/* MESSAGES (premium chips) */}
+      <section className="mx-auto max-w-5xl px-4 pb-12 pt-2">
+        <div className="mb-5">
           <h2 className="text-lg font-semibold md:text-xl">{t.messagesTitle}</h2>
           <p className="mt-1 text-sm text-slate-300">{t.messagesSubtitle}</p>
-          <p className="mt-2 inline-flex rounded-full border border-slate-700/60 bg-slate-950/60 px-3 py-1 text-[0.78rem] text-slate-300">
-            {t.messagesPrivacyNote}
-          </p>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-700/60 bg-slate-950/60 px-3 py-1 text-[0.78rem] text-slate-300">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-rose-400 shadow-[0_0_18px_rgba(244,63,94,0.55)]" />
+              {t.messagesPrivacyNote}
+            </span>
+
+            <span className="text-[0.78rem] text-slate-500">
+              {locale === "fr"
+                ? "Exemples illustratifs, pas des avis."
+                : locale === "en"
+                ? "Illustrative examples, not reviews."
+                : "Ejemplos ilustrativos, no reseñas."}
+            </span>
+          </div>
         </div>
 
-        {/* ✅ nicer grid + nicer cards */}
         <div className="grid gap-4 md:grid-cols-2">
           {t.messages.map((item, index) => (
             <div
               key={index}
-              className="rounded-2xl border border-slate-700/60 bg-gradient-to-b from-slate-950/80 via-slate-950 to-black/90 p-4 shadow-lg shadow-black/30"
+              className="
+                group relative overflow-hidden rounded-2xl border border-slate-700/60
+                bg-gradient-to-b from-slate-950/75 via-slate-950 to-black/90
+                p-4 shadow-lg shadow-black/25 transition
+                hover:-translate-y-0.5 hover:border-rose-400/40 hover:bg-slate-950/90
+              "
             >
-              <p className="text-[0.95rem] leading-relaxed text-slate-100">{item.quote}</p>
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-rose-400/40 to-transparent opacity-0 transition group-hover:opacity-100" />
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl border border-slate-700/60 bg-slate-950/60">
+                  <span className="text-rose-300">✦</span>
+                </div>
+
+                <div className="flex-1">
+                  <p className="text-[0.95rem] leading-relaxed text-slate-100">
+                    <span className="text-slate-400">“</span>
+                    {item.quote}
+                    <span className="text-slate-400">”</span>
+                  </p>
+
+                  <div className="mt-2 text-[0.78rem] text-slate-500">
+                    {locale === "fr" ? "Exemple" : locale === "en" ? "Example" : "Ejemplo"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pointer-events-none absolute -bottom-16 -right-16 h-40 w-40 rounded-full bg-rose-500/10 blur-2xl opacity-0 transition group-hover:opacity-100" />
             </div>
           ))}
         </div>
       </section>
 
-      {/* PRICING TEASER */}
-      <section id="pricing" className="mx-auto max-w-5xl space-y-3 px-4 pb-10 text-center">
-        <h2 className="text-lg font-semibold md:text-xl">{t.pricingTitle}</h2>
-        <p className="mx-auto max-w-xl text-sm text-slate-300">{t.pricingText}</p>
-        <Link
-          href={withLang("/signup")}
-          className="inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-5 py-2 text-[0.9rem] font-medium text-white shadow-lg shadow-rose-400/40 transition hover:brightness-110"
+      {/* PRICING TEASER (premium card) */}
+      <section id="pricing" className="mx-auto max-w-5xl px-4 pb-12">
+        <div
+          className="
+            rounded-3xl border border-slate-800/70
+            bg-gradient-to-b from-slate-950/75 via-slate-950 to-black/90
+            p-6 text-center shadow-xl shadow-black/30
+          "
         >
-          {t.pricingCta}
-        </Link>
+          <h2 className="text-lg font-semibold md:text-xl">{t.pricingTitle}</h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-slate-300">{t.pricingText}</p>
+
+          <div className="mt-5 flex flex-col items-center gap-2">
+            <Link
+              href={withLang("/signup")}
+              className="
+                inline-flex w-full max-w-sm items-center justify-center rounded-full
+                bg-gradient-to-tr from-fuchsia-500 to-rose-400
+                px-6 py-3 text-[0.98rem] font-medium text-white
+                shadow-lg shadow-rose-400/40 transition hover:brightness-110
+              "
+            >
+              {t.pricingCta}
+            </Link>
+
+            <div className="text-[0.78rem] text-slate-400">
+              {locale === "fr"
+                ? "Gratuit • Sans engagement • Annule quand tu veux"
+                : locale === "en"
+                ? "Free • No commitment • Cancel anytime"
+                : "Gratis • Sin compromiso • Cancela cuando quieras"}
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* FOOTER */}
@@ -589,4 +646,4 @@ export default function HomePage({ searchParams }: PageProps) {
       </footer>
     </main>
   );
-    }
+}
