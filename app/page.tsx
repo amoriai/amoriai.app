@@ -10,9 +10,8 @@ type Persona = {
   description: string;
 };
 
-type Testimonial = {
+type QuoteCard = {
   quote: string;
-  name: string;
 };
 
 type Copy = {
@@ -32,18 +31,17 @@ type Copy = {
   personasSubtitle: string;
   personas: Persona[];
 
-  // ✅ CTA clair (pas “avec moi”)
   personaCta: string;
-  // ✅ Micro-clarification sous le CTA
   personaCtaHint: string;
 
   usageTitle: string;
   usageBullets: string[];
 
-  // ✅ IMPORTANT: si tu n’as pas de vrais avis, on ne présente pas ça comme “utilisateurs”
-  testimonialsTitle: string;
-  testimonialsDisclaimer: string;
-  testimonials: Testimonial[];
+  // ✅ New: “messages people write” section (not reviews)
+  messagesTitle: string;
+  messagesSubtitle: string;
+  messagesPrivacyNote: string;
+  messages: QuoteCard[];
 
   pricingTitle: string;
   pricingText: string;
@@ -71,12 +69,11 @@ const STRINGS: Record<Locale, Copy> = {
     heroKicker: "BIENVENUE SUR AMORIAI.APP",
     heroTitle: "Un espace calme. Pour parler, respirer… et y voir clair.",
     heroSubtitle:
-      "Ici, tu peux tout déposer, sans te sentir jugé·e. AmorIAI t’écoute, te répond avec douceur et t’aide à comprendre ce que tu ressens — à ton rythme.",
+      "Ici, tu peux tout déposer, sans te sentir jugé. AmorIAI t’écoute, te répond avec douceur et t’aide à comprendre ce que tu ressens — à ton rythme.",
     heroPrimary: "Commencer gratuitement",
     heroSupport: "Gratuit pour commencer • Sans engagement • Tu peux arrêter quand tu veux",
     langNote: "Choisis ta langue. Le reste, je m’en occupe.",
 
-    // ✅ Remplacer “présence” partout par une formulation claire
     personasTitle: "Choisis ton compagnon IA — et commence à écrire",
     personasSubtitle:
       "Crée ton compte et commence maintenant. Tu peux écrire librement, comme dans un journal… avec une réponse en face. La voix est disponible avec l’abonnement.",
@@ -94,17 +91,16 @@ const STRINGS: Record<Locale, Copy> = {
       {
         id: "kai",
         title: "Kai — Compagnon IA nuancé",
-        description: "Inclusif·ve et subtil·e. Pour parler sans cases, sans pression.",
+        description: "Subtil et ouvert. Pour parler sans cases, sans pression.",
       },
       {
         id: "maelis",
         title: "Maelis — Compagnon IA mature",
-        description: "Bienveillant·e, réaliste et posé·e. Comme quelqu’un qui comprend.",
+        description: "Bienveillant, réaliste et posé. Comme quelqu’un qui comprend.",
       },
     ],
 
     personaCta: "Créer mon AmorIAI",
-    // ✅ plus clair que “exemple de présence”
     personaCtaHint: "Exemple de compagnon IA — tu crées le tien après l’inscription.",
 
     usageTitle: "AmorIAI peut t’aider au quotidien",
@@ -114,40 +110,25 @@ const STRINGS: Record<Locale, Copy> = {
       "Te déposer le soir pour calmer ton mental.",
       "Clarifier une décision quand tu hésites.",
       "Revenir quand ça déborde, même pour 2 minutes.",
-      "Te sentir accompagné·e, sans pression et sans jugement.",
+      "Te sentir accompagné, sans pression ni jugement.",
     ],
 
-    // ✅ Reframing safe
-    testimonialsTitle: "Exemples de messages que des personnes écrivent souvent",
-    testimonialsDisclaimer:
-      "Exemples illustratifs (pas des avis clients).",
-    testimonials: [
-      {
-        quote: "Le soir, j’ai besoin de vider ma tête avant de dormir.",
-        name: "Exemple",
-      },
-      {
-        quote: "J’ai peur d’être jugé·e si j’en parle à quelqu’un.",
-        name: "Exemple",
-      },
-      {
-        quote: "Aide-moi à clarifier ce que je ressens, je suis mêlé·e.",
-        name: "Exemple",
-      },
-      {
-        quote: "Je suis en doute total… j’ai besoin d’y voir clair.",
-        name: "Exemple",
-      },
-      {
-        quote: "Je veux juste une réponse douce, sans pression.",
-        name: "Exemple",
-      },
+    // ✅ clean, credible, masculine
+    messagesTitle: "Ce que des gens écrivent ici",
+    messagesSubtitle: "Des phrases simples, comme dans la vraie vie.",
+    messagesPrivacyNote: "Personne ne lit tes messages. Ils sont privés. Ils restent ici.",
+    messages: [
+      { quote: "Le soir, j’ai besoin de vider ma tête avant de dormir." },
+      { quote: "J’ai peur d’être jugé si j’en parle à quelqu’un." },
+      { quote: "Aide-moi à y voir clair, je suis mêlé." },
+      { quote: "Je suis en doute total. J’ai besoin de comprendre." },
+      { quote: "Je veux juste une réponse calme, sans pression." },
     ],
 
-    pricingTitle: "Quand tu veux aller plus loin",
+    pricingTitle: "Quand tu te sens prêt",
     pricingText:
-      "Commence gratuitement. Quand tu en auras besoin, tu pourras déverrouiller plus d’échanges — et la voix pour parler vraiment, pas seulement écrire.",
-    pricingCta: "Voir comment continuer",
+      "Commence gratuitement. Si tu en ressens le besoin, tu pourras débloquer plus d’échanges — et la voix pour parler, pas seulement écrire.",
+    pricingCta: "Écrire maintenant",
 
     videoCaption: "Disponible en français, anglais et espagnol.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -191,7 +172,7 @@ const STRINGS: Record<Locale, Copy> = {
       {
         id: "kai",
         title: "Kai — Nuanced AI companion",
-        description: "Inclusive and subtle. A space without labels or pressure.",
+        description: "Open-minded and subtle. A space without labels or pressure.",
       },
       {
         id: "maelis",
@@ -210,23 +191,24 @@ const STRINGS: Record<Locale, Copy> = {
       "Unwind at night and quiet your mind.",
       "Think through a decision when you’re hesitating.",
       "Come back when it’s too much, even for two minutes.",
-      "Feel listened to, with no pressure and no judgement.",
+      "Feel supported, with no pressure and no judgement.",
     ],
 
-    testimonialsTitle: "Examples of messages people often write",
-    testimonialsDisclaimer: "Illustrative examples (not customer reviews).",
-    testimonials: [
-      { quote: "At night, I need to empty my head before sleep.", name: "Example" },
-      { quote: "I’m afraid of being judged if I talk to someone.", name: "Example" },
-      { quote: "Help me understand what I’m feeling — I’m confused.", name: "Example" },
-      { quote: "I’m overthinking… I need clarity.", name: "Example" },
-      { quote: "I just want a gentle reply, no pressure.", name: "Example" },
+    messagesTitle: "What people write here",
+    messagesSubtitle: "Simple lines, like real life.",
+    messagesPrivacyNote: "No one reads your messages. They’re private. They stay here.",
+    messages: [
+      { quote: "At night, I need to empty my head before sleep." },
+      { quote: "I’m afraid of being judged if I talk to someone." },
+      { quote: "Help me see clearly — I’m confused." },
+      { quote: "I’m overthinking. I need clarity." },
+      { quote: "I just want a calm reply, no pressure." },
     ],
 
-    pricingTitle: "When you’re ready to go further",
+    pricingTitle: "When you feel ready",
     pricingText:
       "Start free. When you need more, unlock more messages — and voice to actually talk, not just type.",
-    pricingCta: "See how to continue",
+    pricingCta: "Start writing",
 
     videoCaption: "Available in French, English, and Spanish.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -260,22 +242,22 @@ const STRINGS: Record<Locale, Copy> = {
       {
         id: "lyra",
         title: "Lyra — Compañero de IA suave",
-        description: "Dulce y tranquilizadorx. Ideal para decir lo que guardas dentro.",
+        description: "Dulce y tranquilizador. Ideal para decir lo que guardas dentro.",
       },
       {
         id: "orion",
         title: "Orion — Compañero de IA estable",
-        description: "Calmx y estructuradx. Para pensar con claridad y decidir.",
+        description: "Calmo y estructurado. Para pensar con claridad y decidir.",
       },
       {
         id: "kai",
         title: "Kai — Compañero de IA con matices",
-        description: "Inclusivx y sutil. Un espacio sin etiquetas ni presión.",
+        description: "Sutil y abierto. Un espacio sin etiquetas ni presión.",
       },
       {
         id: "maelis",
         title: "Maelis — Compañero de IA maduro",
-        description: "Realista, serenx y amable. Como alguien que comprende.",
+        description: "Realista, sereno y amable. Como alguien que comprende.",
       },
     ],
 
@@ -289,23 +271,24 @@ const STRINGS: Record<Locale, Copy> = {
       "Relajarte por la noche y calmar la mente.",
       "Pensar una decisión cuando dudas.",
       "Volver cuando te sobrepasa, aunque sea dos minutos.",
-      "Sentirte escuchadx, sin presión y sin juicios.",
+      "Sentirte acompañado, sin presión y sin juicios.",
     ],
 
-    testimonialsTitle: "Ejemplos de mensajes que la gente suele escribir",
-    testimonialsDisclaimer: "Ejemplos ilustrativos (no son reseñas de clientes).",
-    testimonials: [
-      { quote: "Por la noche necesito vaciar la cabeza antes de dormir.", name: "Ejemplo" },
-      { quote: "Me da miedo que me juzguen si lo hablo con alguien.", name: "Ejemplo" },
-      { quote: "Ayúdame a entender lo que siento, estoy confundidx.", name: "Ejemplo" },
-      { quote: "Le doy demasiadas vueltas… necesito claridad.", name: "Ejemplo" },
-      { quote: "Solo quiero una respuesta suave, sin presión.", name: "Ejemplo" },
+    messagesTitle: "Lo que la gente escribe aquí",
+    messagesSubtitle: "Frases simples, como en la vida real.",
+    messagesPrivacyNote: "Nadie lee tus mensajes. Son privados. Se quedan aquí.",
+    messages: [
+      { quote: "Por la noche necesito vaciar la cabeza antes de dormir." },
+      { quote: "Me da miedo que me juzguen si lo hablo con alguien." },
+      { quote: "Ayúdame a verlo claro — estoy confundido." },
+      { quote: "Le doy demasiadas vueltas. Necesito claridad." },
+      { quote: "Solo quiero una respuesta calmada, sin presión." },
     ],
 
-    pricingTitle: "Cuando quieras ir más allá",
+    pricingTitle: "Cuando te sientas listo",
     pricingText:
       "Empieza gratis. Cuando lo necesites, desbloquea más mensajes — y la voz para hablar de verdad, no solo escribir.",
-    pricingCta: "Ver cómo continuar",
+    pricingCta: "Empezar a escribir",
 
     videoCaption: "Disponible en francés, inglés y español.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -519,7 +502,6 @@ export default function HomePage({ searchParams }: PageProps) {
                 <h3 className="text-sm font-semibold">{persona.title}</h3>
                 <p className="flex-1 text-[0.8rem] text-slate-300">{persona.description}</p>
 
-                {/* ✅ CTA clair */}
                 <Link
                   href={withLang("/signup")}
                   className="mt-1 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3 py-2 text-[0.85rem] font-medium text-white shadow-lg shadow-rose-400/35 transition hover:brightness-110"
@@ -527,7 +509,6 @@ export default function HomePage({ searchParams }: PageProps) {
                   {t.personaCta}
                 </Link>
 
-                {/* ✅ Micro-clarification */}
                 <p className="text-center text-[0.72rem] leading-snug text-slate-400">
                   {t.personaCtaHint}
                 </p>
@@ -550,24 +531,25 @@ export default function HomePage({ searchParams }: PageProps) {
         </ul>
       </section>
 
-      {/* TESTIMONIALS (safe reframing) */}
+      {/* MESSAGES (replaces “testimonials”) */}
       <section className="mx-auto max-w-5xl px-4 pb-10">
-        <div className="mb-2 flex flex-col gap-1">
-          <h2 className="text-lg font-semibold md:text-xl">{t.testimonialsTitle}</h2>
-          <p className="text-[0.78rem] text-slate-400">{t.testimonialsDisclaimer}</p>
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold md:text-xl">{t.messagesTitle}</h2>
+          <p className="mt-1 text-sm text-slate-300">{t.messagesSubtitle}</p>
+          <p className="mt-2 inline-flex rounded-full border border-slate-700/60 bg-slate-950/60 px-3 py-1 text-[0.78rem] text-slate-300">
+            {t.messagesPrivacyNote}
+          </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {t.testimonials.map((item, index) => (
-            <figure
+        {/* ✅ nicer grid + nicer cards */}
+        <div className="grid gap-4 md:grid-cols-2">
+          {t.messages.map((item, index) => (
+            <div
               key={index}
-              className="flex min-h-full flex-col gap-2 rounded-2xl border border-slate-700/70 bg-gradient-to-b from-slate-950 via-slate-950 to-black p-4"
+              className="rounded-2xl border border-slate-700/60 bg-gradient-to-b from-slate-950/80 via-slate-950 to-black/90 p-4 shadow-lg shadow-black/30"
             >
-              <blockquote className="text-[0.86rem] leading-relaxed text-slate-100">
-                “{item.quote}”
-              </blockquote>
-              <figcaption className="mt-auto text-[0.8rem] text-slate-400">{item.name}</figcaption>
-            </figure>
+              <p className="text-[0.95rem] leading-relaxed text-slate-100">{item.quote}</p>
+            </div>
           ))}
         </div>
       </section>
@@ -577,7 +559,7 @@ export default function HomePage({ searchParams }: PageProps) {
         <h2 className="text-lg font-semibold md:text-xl">{t.pricingTitle}</h2>
         <p className="mx-auto max-w-xl text-sm text-slate-300">{t.pricingText}</p>
         <Link
-          href={withLang("/pricing")}
+          href={withLang("/signup")}
           className="inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-5 py-2 text-[0.9rem] font-medium text-white shadow-lg shadow-rose-400/40 transition hover:brightness-110"
         >
           {t.pricingCta}
@@ -607,4 +589,4 @@ export default function HomePage({ searchParams }: PageProps) {
       </footer>
     </main>
   );
-}
+    }
