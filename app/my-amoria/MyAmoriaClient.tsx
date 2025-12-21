@@ -164,26 +164,29 @@ export default function MyAmoriaClient() {
         return;
       }
 
-      // 5) Plan free: 1 IA -> chat direct, sinon select (fallback)
-      if (aiCount === 1) {
-        const { data: one } = await supabase
-          .from("user_amoria")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("is_archived", false)
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle();
+      // 5) Plan free: on ne montre jamais /select.
+// -> S'il existe au moins 1 IA, on ouvre toujours la première (ou la plus récente si tu préfères).
+if (plan === "free") {
+  const { data: first } = await supabase
+    .from("user_amoria")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("is_archived", false)
+    .order("created_at", { ascending: true }) // première IA créée
+    .limit(1)
+    .maybeSingle();
 
-        if (cancelledRef.current) return;
+  if (cancelledRef.current) return;
 
-        if (one?.id) {
-          toChat(one.id);
-          return;
-        }
-      }
+  if (first?.id) {
+    toChat(first.id);
+    return;
+  }
 
-      safeReplace(`/my-amoria/select?lang=${encodeURIComponent(lang)}`);
+  // fallback: s'il y a un count > 0 mais rien ne revient (rare)
+  return;
+}
+
     };
 
     void run();
