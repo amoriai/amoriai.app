@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { FormEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import React, { FormEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
@@ -341,6 +341,8 @@ function ChatClient() {
   const [avatarPlaying, setAvatarPlaying] = useState(false);
   const avatarTimerRef = useRef<number | null>(null);
 
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
+
   const planId: PlanId = useMemo(() => normalizePlan(planCode), [planCode]);
   const maxAllowed = useMemo(() => maxAmoriaForPlan(planId), [planId]);
 
@@ -389,19 +391,17 @@ function ChatClient() {
 
   // ✅ IMPORTANT: si /chat sans iaId -> on renvoie toujours vers /my-amoria
   useEffect(() => {
-    if (!iaId) {
-      router.replace(myAmoriaUrl);
-    }
+    if (!iaId) router.replace(myAmoriaUrl);
   }, [iaId, router, myAmoriaUrl]);
 
-  const handleUpgradeClick = () => {
+  const handleUpgradeClick = useCallback(() => {
     const params = new URLSearchParams();
     params.set("lang", locale);
     params.set("plan", "plus");
     window.location.href = `/pricing?${params.toString()}`;
-  };
+  }, [locale]);
 
-  const unlockAudio = async () => {
+  const unlockAudio = useCallback(async () => {
     try {
       const a = new Audio();
       a.muted = true;
@@ -412,23 +412,23 @@ function ChatClient() {
     } finally {
       setAudioUnlocked(true);
     }
-  };
+  }, []);
 
-  const handleWindowScroll = () => {
+  const handleWindowScroll = useCallback(() => {
     const el = windowRef.current;
     if (!el) return;
     const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
     shouldAutoScrollRef.current = nearBottom;
-  };
+  }, []);
 
-  const scrollToBottomIfNeeded = () => {
+  const scrollToBottomIfNeeded = useCallback(() => {
     const el = windowRef.current;
     if (!el) return;
     if (!shouldAutoScrollRef.current) return;
     el.scrollTop = el.scrollHeight;
-  };
+  }, []);
 
-  const triggerAvatarAnimation = () => {
+  const triggerAvatarAnimation = useCallback(() => {
     if (!canPlayAvatarVideo) return;
     if (!avatarVideoUrl) return;
 
@@ -442,14 +442,31 @@ function ChatClient() {
       setAvatarPlaying(false);
       avatarTimerRef.current = null;
     }, 10_000);
-  };
+  }, [canPlayAvatarVideo, avatarVideoUrl]);
 
-  // 1) plan + quota IA
+  // Auto-grow textarea (simple + stable)
+  const autoGrow = useCallback(() => {
+    const el = composerRef.current;
+    if (!el) return;
+    el.style.height = "0px";
+    const next = Math.min(el.scrollHeight, 180);
+    el.style.height = `${next}px`;
+  }, []);
+
   useEffect(() => {
+    autoGrow();
+  }, [newMessage, autoGrow]);
+
+  // 1) plan + quota IA (avec guard unmount)
+  useEffect(() => {
+    let cancelled = false;
+
     const loadSubscriptionAndQuota = async () => {
       try {
         const { data: userData } = await supabase.auth.getUser();
         const user = userData?.user;
+
+        if (cancelled) return;
 
         if (!user) {
           setPlanCode(null);
@@ -515,6 +532,8 @@ function ChatClient() {
         if (Array.isArray(rawPlans)) pickPlan(rawPlans[0] ?? {});
         else if (rawPlans && typeof rawPlans === "object") pickPlan(rawPlans);
 
+        if (cancelled) return;
+
         setPlanCode(code);
 
         const paid = !!code && code !== "free";
@@ -534,9 +553,11 @@ function ChatClient() {
           .eq("user_id", user.id)
           .eq("is_archived", false);
 
+        if (cancelled) return;
         setActiveAmoriaCount(countRes.count ?? 0);
       } catch (err) {
         console.error("Erreur loadSubscription:", err);
+        if (cancelled) return;
         setPlanCode(null);
         setActiveAmoriaCount(0);
         setCanUseVoice(false);
@@ -547,6 +568,10 @@ function ChatClient() {
     };
 
     loadSubscriptionAndQuota();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // 2) STT support
@@ -560,7 +585,7 @@ function ChatClient() {
     setSttSupported(!!SpeechRecognition);
   }, [canUseVoice]);
 
-  const startRecording = () => {
+  const startRecording = useCallback(() => {
     if (!canUseVoice || isBlocked) return;
     if (typeof window === "undefined") return;
 
@@ -599,28 +624,29 @@ function ChatClient() {
 
     setIsRecording(true);
     recognition.start();
-  };
+  }, [canUseVoice, isBlocked, locale, newMessage]);
 
-  const stopRecording = () => {
+  const stopRecording = useCallback(() => {
     const r = recognitionRef.current;
     if (r) r.stop();
     setIsRecording(false);
-  };
+  }, []);
 
-  const handleToggleRecording = () => {
+  const handleToggleRecording = useCallback(() => {
     if (!canUseVoice || !sttSupported || sending || isBlocked) return;
     if (isRecording) stopRecording();
     else startRecording();
-  };
+  }, [canUseVoice, sttSupported, sending, isBlocked, isRecording, stopRecording, startRecording]);
 
-  // 3) Charger AI
+  // 3) Charger AI (abort-safe)
   useEffect(() => {
+    let cancelled = false;
+
     const loadAI = async () => {
       setAiLoading(true);
       setAiError(null);
       setAi(null);
 
-      // iaId manquant => la redirection (useEffect) gère déjà le cas
       if (!iaId) {
         setAiLoading(false);
         return;
@@ -628,25 +654,34 @@ function ChatClient() {
 
       try {
         const { data, error } = await supabase.from("user_amoria").select("*").eq("id", iaId).maybeSingle();
+
+        if (cancelled) return;
+
         if (error || !data) setAiError(t.genericError);
         else setAi(data as AmoriaRow);
       } catch {
+        if (cancelled) return;
         setAiError(t.genericError);
       } finally {
-        setAiLoading(false);
+        if (!cancelled) setAiLoading(false);
       }
     };
 
     loadAI();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [iaId, locale]);
 
-  // 4) Historique (paid)
+    return () => {
+      cancelled = true;
+    };
+  }, [iaId, t.genericError]);
+
+  // 4) Historique (paid) + abort controller
   useEffect(() => {
-    const loadHistory = async () => {
-      if (!iaId) return;
-      if (!isPaidPlan) return;
+    if (!iaId) return;
+    if (!isPaidPlan) return;
 
+    const ac = new AbortController();
+
+    const loadHistory = async () => {
       try {
         const { data: sessionData } = await supabase.auth.getSession();
         const accessToken = sessionData?.session?.access_token;
@@ -654,24 +689,35 @@ function ChatClient() {
 
         const res = await fetch(`/api/chat/history?iaId=${encodeURIComponent(iaId)}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
+          signal: ac.signal,
         });
+
         if (!res.ok) return;
+
         const data = (await res.json()) as ChatMessage[];
+
+        if (ac.signal.aborted) return;
+
         setMessages(
           data
             .map((m) => ({ ...m, createdAt: m.createdAt ?? new Date().toISOString() }))
             .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
         );
-      } catch {}
+      } catch {
+        // silence
+      }
     };
 
     loadHistory();
+
+    return () => {
+      ac.abort();
+    };
   }, [iaId, isPaidPlan]);
 
   useEffect(() => {
     scrollToBottomIfNeeded();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages.length]);
+  }, [messages.length, scrollToBottomIfNeeded]);
 
   // cleanup
   useEffect(() => {
@@ -700,87 +746,103 @@ function ChatClient() {
     };
   }, []);
 
-  // 5) Voice (TTS)
-  const playAssistantVoice = async (text: string) => {
-    if (!canUseVoice || isBlocked) return;
-    if (!voiceEnabled) return;
-    if (!audioUnlocked) return;
-    if (!iaId || !text?.trim()) return;
-    if (voiceBusyRef.current) return;
+  // 5) Voice (TTS) + abort controller
+  const playAssistantVoice = useCallback(
+    async (text: string) => {
+      if (!canUseVoice || isBlocked) return;
+      if (!voiceEnabled) return;
+      if (!audioUnlocked) return;
+      if (!iaId || !text?.trim()) return;
+      if (voiceBusyRef.current) return;
 
-    voiceBusyRef.current = true;
-    setSendError(null);
+      voiceBusyRef.current = true;
+      setSendError(null);
 
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
-      if (!accessToken) {
-        setSendError(t.notAuthenticated);
-        return;
-      }
+      const ac = new AbortController();
 
-      const res = await fetch("/api/voice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-        body: JSON.stringify({ iaId, text }),
-      });
-
-      const contentType = res.headers.get("Content-Type") || "";
-
-      if (!res.ok) {
-        if (contentType.includes("application/json")) {
-          const data = await res.json().catch(() => ({}));
-          if (data?.error === "audio_limit_reached") setSendError(t.voiceLimitReached);
-          else if (data?.error) setSendError(`Voice error: ${data.error}`);
-          else setSendError(t.voiceServerError);
-        } else {
-          setSendError(t.voiceServerError);
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+        if (!accessToken) {
+          setSendError(t.notAuthenticated);
+          return;
         }
-        return;
-      }
 
-      const audioBlob = await res.blob();
+        const res = await fetch("/api/voice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ iaId, text }),
+          signal: ac.signal,
+        });
 
-      if (audioRef.current) {
-        try {
-          audioRef.current.pause();
-        } catch {}
-        audioRef.current = null;
-      }
-      if (audioUrlRef.current) {
-        try {
-          URL.revokeObjectURL(audioUrlRef.current);
-        } catch {}
-        audioUrlRef.current = null;
-      }
+        const contentType = res.headers.get("Content-Type") || "";
 
-      const url = URL.createObjectURL(audioBlob);
-      audioUrlRef.current = url;
+        if (!res.ok) {
+          if (contentType.includes("application/json")) {
+            const data = await res.json().catch(() => ({}));
+            if (data?.error === "audio_limit_reached") setSendError(t.voiceLimitReached);
+            else if (data?.error) setSendError(`Voice error: ${data.error}`);
+            else setSendError(t.voiceServerError);
+          } else {
+            setSendError(t.voiceServerError);
+          }
+          return;
+        }
 
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audio.volume = 1;
+        const audioBlob = await res.blob();
 
-      audio.onended = () => {
+        if (audioRef.current) {
+          try {
+            audioRef.current.pause();
+          } catch {}
+          audioRef.current = null;
+        }
         if (audioUrlRef.current) {
-          URL.revokeObjectURL(audioUrlRef.current);
+          try {
+            URL.revokeObjectURL(audioUrlRef.current);
+          } catch {}
           audioUrlRef.current = null;
         }
-        audioRef.current = null;
-      };
 
-      await audio.play();
-    } catch (err) {
-      console.error("Erreur /api/voice:", err);
-      setSendError(t.voiceNetworkError);
-    } finally {
-      voiceBusyRef.current = false;
-    }
-  };
+        const url = URL.createObjectURL(audioBlob);
+        audioUrlRef.current = url;
 
-  // 6) Send message
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        audio.volume = 1;
+
+        audio.onended = () => {
+          if (audioUrlRef.current) {
+            URL.revokeObjectURL(audioUrlRef.current);
+            audioUrlRef.current = null;
+          }
+          audioRef.current = null;
+        };
+
+        await audio.play();
+      } catch (err) {
+        console.error("Erreur /api/voice:", err);
+        setSendError(t.voiceNetworkError);
+      } finally {
+        ac.abort();
+        voiceBusyRef.current = false;
+      }
+    },
+    [
+      canUseVoice,
+      isBlocked,
+      voiceEnabled,
+      audioUnlocked,
+      iaId,
+      t.notAuthenticated,
+      t.voiceLimitReached,
+      t.voiceServerError,
+      t.voiceNetworkError,
+    ]
+  );
+
+  // 6) Send message (abort-safe) + ENTER to send
+  const sendMessage = useCallback(async () => {
     setSendError(null);
 
     if (!newMessage.trim() || !iaId || isBlocked) return;
@@ -800,6 +862,8 @@ function ChatClient() {
     setNewMessage("");
     setSending(true);
 
+    const ac = new AbortController();
+
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData?.session?.access_token;
@@ -813,6 +877,7 @@ function ChatClient() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
         body: JSON.stringify({ iaId, message: content, lang: locale }),
+        signal: ac.signal,
       });
 
       let data: any = null;
@@ -849,18 +914,124 @@ function ChatClient() {
       if (assistantMessage.content && !isBlocked) triggerAvatarAnimation();
 
       if (assistantMessage.content && canUseVoice && voiceEnabled && audioUnlocked && !isBlocked) {
-        setTimeout(() => void playAssistantVoice(assistantMessage.content), 80);
+        window.setTimeout(() => void playAssistantVoice(assistantMessage.content), 80);
       }
     } catch (err) {
       console.error("Erreur réseau /api/chat:", err);
       setSendError(t.chatNetworkError);
     } finally {
+      ac.abort();
       setSending(false);
     }
-  };
+  }, [
+    newMessage,
+    iaId,
+    isBlocked,
+    isRecording,
+    stopRecording,
+    t.notAuthenticated,
+    locale,
+    isFreePlan,
+    t.profileNotFound,
+    t.chatServerErrorPrefix,
+    t.chatNetworkError,
+    triggerAvatarAnimation,
+    canUseVoice,
+    voiceEnabled,
+    audioUnlocked,
+    playAssistantVoice,
+  ]);
+
+  const handleSubmit = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault();
+      await sendMessage();
+    },
+    [sendMessage]
+  );
+
+  const handleComposerKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key !== "Enter") return;
+      if (e.shiftKey) return; // Shift+Enter => nouvelle ligne
+      e.preventDefault();
+      if (sending) return;
+      void sendMessage();
+    },
+    [sendMessage, sending]
+  );
 
   const avatarRingClass = canPulseAvatar ? "avatarRing avatarRing--live" : "avatarRing";
   const showVideoNow = !!avatarImageUrl && canPlayAvatarVideo && !!avatarVideoUrl && avatarPlaying;
+
+  // Tant que iaId est absent, on laisse l’effet router.replace faire sa job
+  if (!iaId) {
+    return (
+      <main className="chat-shell">
+        <div className="chat-shell__loader">
+          <span className="chat-shell__dot" />
+          <span className="chat-shell__dot" />
+          <span className="chat-shell__dot" />
+        </div>
+        <p className="chat-shell__text">{t.loading}</p>
+        <style jsx>{`
+          .chat-shell {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px 16px;
+            color: rgba(226, 232, 240, 0.92);
+            background: radial-gradient(1200px 800px at 50% -10%, rgba(251, 55, 255, 0.25), transparent 60%),
+              radial-gradient(900px 700px at 90% 10%, rgba(56, 189, 248, 0.22), transparent 55%),
+              radial-gradient(1000px 900px at 10% 25%, rgba(249, 115, 22, 0.14), transparent 60%),
+              linear-gradient(180deg, #020617, #000);
+          }
+          .chat-shell__loader {
+            display: inline-flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 18px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(2, 6, 23, 0.55);
+            box-shadow: 0 16px 60px rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(10px);
+          }
+          .chat-shell__dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(226, 232, 240, 0.85);
+            animation: chatDot 900ms ease-in-out infinite;
+          }
+          .chat-shell__dot:nth-child(2) {
+            animation-delay: 120ms;
+          }
+          .chat-shell__dot:nth-child(3) {
+            animation-delay: 240ms;
+          }
+          .chat-shell__text {
+            margin-top: 14px;
+            font-size: 0.9rem;
+            color: rgba(148, 163, 184, 0.9);
+            text-align: center;
+          }
+          @keyframes chatDot {
+            0%,
+            100% {
+              transform: translateY(0);
+              opacity: 0.45;
+            }
+            50% {
+              transform: translateY(-6px);
+              opacity: 1;
+            }
+          }
+        `}</style>
+      </main>
+    );
+  }
 
   return (
     <main className="page">
@@ -1000,10 +1171,12 @@ function ChatClient() {
         <form className="composer" onSubmit={handleSubmit}>
           <div className="composer__field">
             <textarea
+              ref={composerRef}
               className="composer__input"
               placeholder={t.inputPlaceholder(displayName)}
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={handleComposerKeyDown}
               rows={1}
               disabled={isBlocked && isFreePlan}
             />
@@ -1038,6 +1211,7 @@ function ChatClient() {
         <p className="note">{t.notePrivate}</p>
       </section>
 
+      {/* ✅ CSS identique à ton style (avec petits ajustements: textarea auto-grow + overflow stable) */}
       <style jsx>{`
         :global(html) {
           color-scheme: dark;
@@ -1258,13 +1432,23 @@ function ChatClient() {
           }
         }
         .avatarRing--skeleton {
-          background: linear-gradient(90deg, rgba(148, 163, 184, 0.16), rgba(148, 163, 184, 0.32), rgba(148, 163, 184, 0.16));
+          background: linear-gradient(
+            90deg,
+            rgba(148, 163, 184, 0.16),
+            rgba(148, 163, 184, 0.32),
+            rgba(148, 163, 184, 0.16)
+          );
           background-size: 200% 100%;
           animation: shimmer 1.3s infinite;
         }
         .skeletonLine {
           border-radius: 999px;
-          background: linear-gradient(90deg, rgba(148, 163, 184, 0.14), rgba(148, 163, 184, 0.28), rgba(148, 163, 184, 0.14));
+          background: linear-gradient(
+            90deg,
+            rgba(148, 163, 184, 0.14),
+            rgba(148, 163, 184, 0.28),
+            rgba(148, 163, 184, 0.14)
+          );
           background-size: 200% 100%;
           animation: shimmer 1.3s infinite;
         }
@@ -1507,6 +1691,7 @@ function ChatClient() {
           padding: 10px 0;
           resize: none;
           line-height: 1.35;
+          overflow: hidden; /* ✅ auto-grow propre */
         }
         .composer__input::placeholder {
           color: rgba(148, 163, 184, 0.65);
