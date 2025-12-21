@@ -101,7 +101,7 @@ const STRINGS: Record<Locale, Copy> = {
     ],
 
     // ✅ CTA clair
-    personaCta: "Créer mon AmorAI",
+    personaCta: "Créer mon AmorIAI",
     // ✅ Micro-clarification
     personaCtaHint: "Exemple de présence — tu crées le tien après l’inscription.",
 
@@ -196,7 +196,7 @@ const STRINGS: Record<Locale, Copy> = {
     ],
 
     // ✅ Clear CTA
-    personaCta: "Create my AmorAI",
+    personaCta: "Create my AmorIAI",
     // ✅ Micro clarification
     personaCtaHint: "Example presence — you’ll create yours after signup.",
 
@@ -291,7 +291,7 @@ const STRINGS: Record<Locale, Copy> = {
     ],
 
     // ✅ CTA claro
-    personaCta: "Crear mi AmorAI",
+    personaCta: "Crear mi AmorIAI",
     // ✅ Micro-clarificación
     personaCtaHint: "Presencia de ejemplo — crearás la tuya después de registrarte.",
 
