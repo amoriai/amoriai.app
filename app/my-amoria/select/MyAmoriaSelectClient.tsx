@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
@@ -29,10 +29,14 @@ type Ui = {
   createDisabled: (max: number) => string;
 
   home: string;
-  empty: string;
+  emptyTitle: string;
+  emptyText: string;
 
   lastUsed: string;
   continue: string;
+
+  // micro-copy optionnel (si tu veux)
+  hint: string;
 };
 
 const STRINGS: Record<Locale, Ui> = {
@@ -45,9 +49,12 @@ const STRINGS: Record<Locale, Ui> = {
     createDisabled: (max) => `Limite atteinte (${max}).`,
 
     home: "Accueil",
-    empty: "Tu n’as pas encore d’AmorIAI. Crée-en une pour commencer.",
+    emptyTitle: "Aucune AmorIAI pour l’instant",
+    emptyText: "Crée ta première AmorIAI pour commencer.",
     lastUsed: "Dernier utilisé",
-    continue: "Ouvrir le chat →",
+    continue: "Reprendre la discussion →",
+
+    hint: "Chaque AmorIAI a sa propre personnalité. Choisis celle qui te convient aujourd’hui.",
   },
   en: {
     title: "Choose your AmorIAI",
@@ -58,9 +65,12 @@ const STRINGS: Record<Locale, Ui> = {
     createDisabled: (max) => `Limit reached (${max}).`,
 
     home: "Home",
-    empty: "You don’t have an AmorIAI yet. Create one to get started.",
+    emptyTitle: "No AmorIAI yet",
+    emptyText: "Create your first AmorIAI to get started.",
     lastUsed: "Last used",
-    continue: "Open chat →",
+    continue: "Continue the chat →",
+
+    hint: "Each AmorIAI has its own personality. Pick the one that fits you today.",
   },
   es: {
     title: "Elige tu AmorIAI",
@@ -71,9 +81,12 @@ const STRINGS: Record<Locale, Ui> = {
     createDisabled: (max) => `Límite alcanzado (${max}).`,
 
     home: "Inicio",
-    empty: "Aún no tienes un AmorIAI. Crea uno para empezar.",
+    emptyTitle: "Aún no hay AmorIAI",
+    emptyText: "Crea tu primera AmorIAI para empezar.",
     lastUsed: "Último usado",
-    continue: "Abrir chat →",
+    continue: "Continuar chat →",
+
+    hint: "Cada AmorIAI tiene su propia personalidad. Elige la que encaje contigo hoy.",
   },
 };
 
@@ -83,6 +96,11 @@ function safeGetLastId(): string | null {
   } catch {
     return null;
   }
+}
+function safeSetLastId(id: string) {
+  try {
+    window.localStorage.setItem("amoria_last_ia_id", id);
+  } catch {}
 }
 
 export default function MyAmoriaSelectClient() {
@@ -102,14 +120,24 @@ export default function MyAmoriaSelectClient() {
 
   const goChat = useCallback(
     (id: string) => {
-      // on enregistre le dernier utilisé (utile pour login auto->chat)
-      try {
-        window.localStorage.setItem("amoria_last_ia_id", id);
-      } catch {}
+      safeSetLastId(id);
       router.push(`/chat?iaId=${encodeURIComponent(id)}&lang=${encodeURIComponent(lang)}`);
     },
     [router, lang]
   );
+
+  const createUrl = useMemo(() => {
+    const qs = new URLSearchParams();
+    qs.set("lang", lang);
+    qs.set("plan", plan);
+    return `/create-amoria?${qs.toString()}`;
+  }, [lang, plan]);
+
+  const homeUrl = useMemo(() => {
+    const qs = new URLSearchParams();
+    qs.set("lang", lang);
+    return `/?${qs.toString()}`;
+  }, [lang]);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,7 +153,7 @@ export default function MyAmoriaSelectClient() {
         return;
       }
 
-      // last used (client only)
+      // last used
       const last = safeGetLastId();
       if (!cancelled) setLastUsedId(last);
 
@@ -166,7 +194,7 @@ export default function MyAmoriaSelectClient() {
 
       const rows = (data ?? []) as AmoriaRow[];
 
-      // tri: dernier utilisé en premier (si présent et valide)
+      // tri: last used en premier (si présent)
       const sorted = (() => {
         if (!last) return rows;
         const idx = rows.findIndex((x) => x.id === last);
@@ -184,7 +212,6 @@ export default function MyAmoriaSelectClient() {
     };
 
     void run();
-
     return () => {
       cancelled = true;
     };
@@ -266,19 +293,20 @@ export default function MyAmoriaSelectClient() {
     <main className="page">
       <section className="wrap">
         <header className="head">
-          <div>
+          <div className="headLeft">
             <h1 className="title">{t.title}</h1>
             <p className="subtitle">{t.subtitle}</p>
+            <p className="hint">{t.hint}</p>
           </div>
 
           <div className="actions">
-            <Link href={`/?lang=${encodeURIComponent(lang)}`} className="pill">
+            <Link href={homeUrl} className="pill">
               {t.home}
             </Link>
 
             <button
               type="button"
-              onClick={() => router.push(`/create-amoria?lang=${encodeURIComponent(lang)}&plan=${encodeURIComponent(plan)}`)}
+              onClick={() => router.push(createUrl)}
               disabled={limitReached}
               className={limitReached ? "pill pill--disabled" : "pill pill--primary"}
               title={limitReached ? t.createDisabled(maxAllowed) : t.create}
@@ -290,12 +318,11 @@ export default function MyAmoriaSelectClient() {
 
         {list.length === 0 ? (
           <div className="empty">
-            <p className="emptyText">{t.empty}</p>
-            <button
-              type="button"
-              onClick={() => router.push(`/create-amoria?lang=${encodeURIComponent(lang)}&plan=${encodeURIComponent(plan)}`)}
-              className="pill pill--primary"
-            >
+            <div className="emptyInner">
+              <h2 className="emptyTitle">{t.emptyTitle}</h2>
+              <p className="emptyText">{t.emptyText}</p>
+            </div>
+            <button type="button" onClick={() => router.push(createUrl)} className="pill pill--primary">
               {t.create}
             </button>
           </div>
@@ -306,7 +333,14 @@ export default function MyAmoriaSelectClient() {
               const isLast = !!lastUsedId && a.id === lastUsedId;
 
               return (
-                <button key={a.id} type="button" className="card" onClick={() => goChat(a.id)}>
+                <button
+                  key={a.id}
+                  type="button"
+                  className={isLast ? "card card--last" : "card"}
+                  onClick={() => goChat(a.id)}
+                >
+                  {isLast && <div className="cardGlow" aria-hidden="true" />}
+
                   <div className="cardTop">
                     <div className="avatarRing">
                       <div className="avatar">
@@ -353,7 +387,6 @@ export default function MyAmoriaSelectClient() {
           --bg0: #000;
           --bg1: #020617;
           --glass: rgba(2, 6, 23, 0.55);
-          --card: rgba(15, 23, 42, 0.78);
           --line: rgba(148, 163, 184, 0.22);
           --text: rgba(226, 232, 240, 0.92);
 
@@ -385,22 +418,34 @@ export default function MyAmoriaSelectClient() {
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
-          gap: 12px;
+          gap: 14px;
           flex-wrap: wrap;
           padding: 8px 4px;
         }
 
+        .headLeft {
+          min-width: min(560px, 100%);
+        }
+
         .title {
           margin: 0;
-          font-size: 1.55rem;
+          font-size: 1.58rem;
           letter-spacing: -0.02em;
-          font-weight: 780;
+          font-weight: 800;
         }
 
         .subtitle {
           margin: 6px 0 0;
           font-size: 0.92rem;
           color: rgba(148, 163, 184, 0.92);
+        }
+
+        .hint {
+          margin: 10px 0 0;
+          font-size: 0.88rem;
+          color: rgba(226, 232, 240, 0.82);
+          max-width: 720px;
+          line-height: 1.35;
         }
 
         .actions {
@@ -450,15 +495,24 @@ export default function MyAmoriaSelectClient() {
             radial-gradient(800px 520px at 80% 0%, rgba(56, 189, 248, 0.1), transparent 55%),
             linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.78));
           padding: 22px;
-          display: grid;
-          gap: 12px;
-          place-items: start;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 14px;
           box-shadow: 0 26px 90px rgba(0, 0, 0, 0.75);
           backdrop-filter: blur(12px);
         }
-        .emptyText {
+        .emptyInner {
+          min-width: 0;
+        }
+        .emptyTitle {
           margin: 0;
-          color: rgba(226, 232, 240, 0.9);
+          font-size: 1.05rem;
+          font-weight: 780;
+        }
+        .emptyText {
+          margin: 6px 0 0;
+          color: rgba(226, 232, 240, 0.86);
           line-height: 1.4;
         }
 
@@ -476,6 +530,10 @@ export default function MyAmoriaSelectClient() {
           .grid {
             grid-template-columns: 1fr;
           }
+          .empty {
+            flex-direction: column;
+            align-items: flex-start;
+          }
         }
 
         .card {
@@ -491,6 +549,7 @@ export default function MyAmoriaSelectClient() {
           gap: 10px;
           position: relative;
           overflow: hidden;
+          outline: none;
         }
 
         .card::before {
@@ -507,6 +566,25 @@ export default function MyAmoriaSelectClient() {
           transform: translateY(-2px);
           border-color: rgba(148, 163, 184, 0.4);
           filter: brightness(1.02);
+        }
+        .card:active {
+          transform: translateY(-1px);
+        }
+        .card:focus-visible {
+          box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(56, 189, 248, 0.35);
+        }
+
+        /* Dernier utilisé : glow très léger */
+        .card--last {
+          border-color: rgba(251, 55, 255, 0.38);
+        }
+        .cardGlow {
+          position: absolute;
+          inset: -40px -60px auto -60px;
+          height: 120px;
+          background: radial-gradient(circle at 40% 50%, rgba(251, 55, 255, 0.22), transparent 65%);
+          pointer-events: none;
+          z-index: 0;
         }
 
         .cardTop {
@@ -551,7 +629,7 @@ export default function MyAmoriaSelectClient() {
           display: grid;
           place-items: center;
           color: rgba(226, 232, 240, 0.92);
-          font-weight: 800;
+          font-weight: 850;
         }
 
         .meta {
@@ -568,7 +646,7 @@ export default function MyAmoriaSelectClient() {
         }
 
         .name {
-          font-weight: 760;
+          font-weight: 780;
           letter-spacing: 0.06em;
           text-transform: uppercase;
           font-size: 0.92rem;
@@ -578,7 +656,7 @@ export default function MyAmoriaSelectClient() {
         }
 
         .badge {
-          font-size: 0.68rem;
+          font-size: 0.66rem;
           padding: 6px 10px;
           border-radius: 999px;
           border: 1px solid rgba(248, 250, 252, 0.18);
@@ -615,4 +693,4 @@ export default function MyAmoriaSelectClient() {
       `}</style>
     </main>
   );
-                    }
+                                   }
