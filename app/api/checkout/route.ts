@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 
 export const runtime = "nodejs";
 
@@ -18,7 +19,6 @@ const cleanUrl = (url: string) => (url.endsWith("/") ? url.slice(0, -1) : url);
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 const stripe = STRIPE_SECRET_KEY
@@ -36,7 +36,10 @@ const supabaseAdmin =
 export async function POST(req: Request) {
   try {
     if (!stripe) {
-      return NextResponse.json({ error: "Stripe non configuré (clé manquante)." }, { status: 500 });
+      return NextResponse.json(
+        { error: "Stripe non configuré (clé manquante)." },
+        { status: 500 }
+      );
     }
     if (!supabaseAdmin) {
       return NextResponse.json(
@@ -45,10 +48,10 @@ export async function POST(req: Request) {
       );
     }
     if (!SITE_URL) {
-      return NextResponse.json({ error: "NEXT_PUBLIC_SITE_URL manquante." }, { status: 500 });
-    }
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      return NextResponse.json({ error: "Supabase URL/ANON manquants." }, { status: 500 });
+      return NextResponse.json(
+        { error: "NEXT_PUBLIC_SITE_URL manquante." },
+        { status: 500 }
+      );
     }
 
     // Parse JSON
@@ -60,23 +63,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Plan invalide." }, { status: 400 });
     }
 
-    // ✅ Récupère l'utilisateur via cookies (session Supabase)
-    const cookieStore = cookies();
-    const access_token =
-      cookieStore.get("sb-access-token")?.value ||
-      cookieStore.get("supabase-auth-token")?.value ||
-      "";
+    // ✅ Auth via cookies (robuste)
+    const supabase = createRouteHandlerClient({ cookies });
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
 
-    if (!access_token) {
-      return NextResponse.json({ error: "Utilisateur non authentifié." }, { status: 401 });
-    }
-
-    const supabaseFromCookies = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: `Bearer ${access_token}` } },
-      auth: { persistSession: false },
-    });
-
-    const { data: userData, error: userErr } = await supabaseFromCookies.auth.getUser();
     if (userErr || !userData?.user) {
       return NextResponse.json({ error: "Utilisateur non authentifié." }, { status: 401 });
     }
@@ -100,16 +90,34 @@ export async function POST(req: Request) {
     }
 
     const site = cleanUrl(SITE_URL);
-    const langParam = lang ? `&lang=${encodeURIComponent(lang)}` : "";
+
+    // success_url: si lang est vide -> juste ?session_id=...
+    const successUrl =
+      `${site}/stripe/return?session_id={CHECKOUT_SESSION_ID}` +
+      (lang ? `&lang=${encodeURIComponent(lang)}` : "");
+
+    const cancelUrl =
+      `${site}/payment/cancel` + (lang ? `?lang=${encodeURIComponent(lang)}` : "");
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      payment_method_types: ["card"],
+      // ✅ recommandé par Stripe (au lieu de payment_method_types)
+      automatic_payment_methods: { enabled: true },
+
       line_items: [{ price: planRow.stripe_price_id, quantity: 1 }],
-      success_url: `${site}/stripe/return?session_id={CHECKOUT_SESSION_ID}${langParam}`,
-      cancel_url: `${site}/payment/cancel${lang ? `?lang=${encodeURIComponent(lang)}` : ""}`,
+
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+
       client_reference_id: user_id,
+
+      // ✅ metadata utile dans le webhook
       metadata: { user_id, plan },
+
+      // ✅ pour retrouver aussi côté subscription/invoice si besoin
+      subscription_data: {
+        metadata: { user_id, plan },
+      },
     });
 
     if (!session.url) {
@@ -124,4 +132,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
+  }
