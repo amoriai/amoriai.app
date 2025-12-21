@@ -535,18 +535,11 @@ export default function HomePage({ searchParams }: PageProps) {
           <h2 className="text-lg font-semibold md:text-xl">{t.messagesTitle}</h2>
           <p className="mt-1 text-sm text-slate-300">{t.messagesSubtitle}</p>
 
+          {/* ✅ kept privacy note, removed "Exemples illustratifs..." */}
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-2 rounded-full border border-slate-700/60 bg-slate-950/60 px-3 py-1 text-[0.78rem] text-slate-300">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-rose-400 shadow-[0_0_18px_rgba(244,63,94,0.55)]" />
               {t.messagesPrivacyNote}
-            </span>
-
-            <span className="text-[0.78rem] text-slate-500">
-              {locale === "fr"
-                ? "Exemples illustratifs, pas des avis."
-                : locale === "en"
-                ? "Illustrative examples, not reviews."
-                : "Ejemplos ilustrativos, no reseñas."}
             </span>
           </div>
         </div>
@@ -563,6 +556,7 @@ export default function HomePage({ searchParams }: PageProps) {
               "
             >
               <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-rose-400/40 to-transparent opacity-0 transition group-hover:opacity-100" />
+
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl border border-slate-700/60 bg-slate-950/60">
                   <span className="text-rose-300">✦</span>
@@ -575,9 +569,7 @@ export default function HomePage({ searchParams }: PageProps) {
                     <span className="text-slate-400">”</span>
                   </p>
 
-                  <div className="mt-2 text-[0.78rem] text-slate-500">
-                    {locale === "fr" ? "Exemple" : locale === "en" ? "Example" : "Ejemplo"}
-                  </div>
+                  {/* ✅ removed "Exemple / Example / Ejemplo" */}
                 </div>
               </div>
 
