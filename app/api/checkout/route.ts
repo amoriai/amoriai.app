@@ -55,8 +55,12 @@ export async function POST(req: Request) {
     }
 
     // Parse JSON
-    const body = await req.json().catch(() => ({}));
-    const plan = body?.plan as unknown;
+    const body = (await req.json().catch(() => ({}))) as {
+      plan?: unknown;
+      lang?: unknown;
+    };
+
+    const plan = body?.plan;
     const lang = typeof body?.lang === "string" ? body.lang : "";
 
     if (!isPlan(plan)) {
@@ -68,8 +72,12 @@ export async function POST(req: Request) {
     const { data: userData, error: userErr } = await supabase.auth.getUser();
 
     if (userErr || !userData?.user) {
-      return NextResponse.json({ error: "Utilisateur non authentifié." }, { status: 401 });
+      return NextResponse.json(
+        { error: "Utilisateur non authentifié." },
+        { status: 401 }
+      );
     }
+
     const user_id = userData.user.id;
 
     // Prix Stripe depuis pricing_plans
@@ -80,8 +88,12 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     if (planErr) {
-      return NextResponse.json({ error: `Supabase: ${planErr.message}` }, { status: 500 });
+      return NextResponse.json(
+        { error: `Supabase: ${planErr.message}` },
+        { status: 500 }
+      );
     }
+
     if (!planRow?.stripe_price_id) {
       return NextResponse.json(
         { error: `stripe_price_id manquant pour le plan "${plan}".` },
@@ -91,7 +103,6 @@ export async function POST(req: Request) {
 
     const site = cleanUrl(SITE_URL);
 
-    // success_url: si lang est vide -> juste ?session_id=...
     const successUrl =
       `${site}/stripe/return?session_id={CHECKOUT_SESSION_ID}` +
       (lang ? `&lang=${encodeURIComponent(lang)}` : "");
@@ -99,10 +110,10 @@ export async function POST(req: Request) {
     const cancelUrl =
       `${site}/payment/cancel` + (lang ? `?lang=${encodeURIComponent(lang)}` : "");
 
+    // ✅ Build-safe: pas de automatic_payment_methods
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      // ✅ recommandé par Stripe (au lieu de payment_method_types)
-      automatic_payment_methods: { enabled: true },
+      payment_method_types: ["card"],
 
       line_items: [{ price: planRow.stripe_price_id, quantity: 1 }],
 
@@ -111,25 +122,26 @@ export async function POST(req: Request) {
 
       client_reference_id: user_id,
 
-      // ✅ metadata utile dans le webhook
+      // ✅ utile pour le webhook
       metadata: { user_id, plan },
 
-      // ✅ pour retrouver aussi côté subscription/invoice si besoin
+      // ✅ utile pour retrouver aussi côté subscription/invoice
       subscription_data: {
         metadata: { user_id, plan },
       },
     });
 
     if (!session.url) {
-      return NextResponse.json({ error: "Session Stripe sans URL." }, { status: 500 });
+      return NextResponse.json(
+        { error: "Session Stripe sans URL." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ url: session.url }, { status: 200 });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Erreur serveur checkout.";
     console.error("[checkout] ERROR:", err);
-    return NextResponse.json(
-      { error: err?.message ?? "Erreur serveur checkout." },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-  }
+                              }
