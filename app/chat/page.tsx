@@ -80,136 +80,136 @@ type UiCopy = {
 
 const STRINGS: Record<Locale, UiCopy> = {
   fr: {
-    backHome: "← Retour à l’accueil",
+    backHome: "← Accueil",
     title: (name) => `Chat avec ${name}`,
-    subtitle: (name) => `${name} est là pour t’écouter et t’aider à mettre des mots sur ce que tu vis.`,
-    emptyState: (name) => `Aucun message pour l’instant. Dis bonjour à ${name} pour commencer 💬`,
-    inputPlaceholder: (name) => `Écris quelque chose à ${name}…`,
+    subtitle: (name) => `${name} est là. Tu peux parler librement, à ton rythme.`,
+    emptyState: (name) => `Aucun message pour l’instant. Dis simplement “salut” à ${name} 💬`,
+    inputPlaceholder: (name) => `Écris à ${name}…`,
 
     send: "Envoyer",
     sending: "Envoi…",
-    loading: "Chargement du chat…",
+    loading: "Ouverture du chat…",
 
     aiNotFoundTitle: "AmorIA introuvable",
-    genericError: "Impossible de charger cette conversation pour le moment. Vérifie le lien ou réessaie plus tard.",
-    notAuthenticated: "Nous n’avons pas pu vérifier ta session. Actualise la page ou reconnecte-toi, puis réessaie.",
-    profileNotFound: "Aucun profil AmorIA trouvé. Crée ton profil dans « Mon AmorIA » puis reviens sur ce lien.",
+    genericError: "Impossible d’ouvrir cette conversation pour le moment. Réessaie dans quelques secondes.",
+    notAuthenticated: "Session introuvable. Actualise la page ou reconnecte-toi, puis réessaie.",
+    profileNotFound: "Aucune AmorIA trouvée. Va dans « Mes AmorIAI » pour en créer une, puis reviens ici.",
 
-    paywallTitle: "🔒 Tu as atteint la limite de ton accès gratuit.",
-    paywallText: "Pour continuer à discuter plus librement et débloquer la voix de ton AmorIAI, passe à AmorIAI Plus.",
-    paywallCta: "Débloquer AmorIAI Plus",
-    paywallSeePlans: "Voir tous les forfaits →",
+    paywallTitle: "🔒 Limite atteinte pour ton accès gratuit.",
+    paywallText: "Pour continuer et débloquer la voix, passe à AmorIAI Plus.",
+    paywallCta: "Passer à AmorIAI Plus",
+    paywallSeePlans: "Voir les forfaits →",
 
-    promoTitle: "Plus de temps avec ton AmorIAI ?",
-    promoText: "Passe à AmorIAI Plus pour beaucoup plus de messages chaque mois et la voix de ton compagnon.",
+    promoTitle: "Tu veux plus de messages ?",
+    promoText: "AmorIAI Plus te donne plus de messages et la voix de ton compagnon.",
     promoCta: "Découvrir AmorIAI Plus",
 
-    voiceUnlock: "🔓 Activer la voix",
+    voiceUnlock: "🔓 Activer l’audio",
     voiceOn: "🔊 Voix : ON",
     voiceOff: "🔇 Voix : OFF",
 
     sttStart: "Dicter",
     sttStop: "Stop",
 
-    notePrivate: "Tes messages sont privés et ne sont jamais visibles par les autres utilisateurs.",
+    notePrivate: "Tes messages sont privés.",
 
-    voiceLimitReached: "Tu as atteint la limite de messages vocaux pour ton forfait actuel.",
-    voiceServerError: "Erreur voice. Vérifie la configuration serveur.",
-    voiceNetworkError: "Erreur voice. Vérifie ta connexion et réessaie.",
+    voiceLimitReached: "Tu as atteint la limite de voix pour ton forfait.",
+    voiceServerError: "Erreur voice (serveur).",
+    voiceNetworkError: "Erreur voice (réseau).",
 
-    chatNetworkError: "Erreur réseau. Vérifie ta connexion Internet et réessaie dans quelques secondes.",
+    chatNetworkError: "Erreur réseau. Vérifie ta connexion et réessaie.",
     chatServerErrorPrefix: "Erreur serveur : ",
 
     myAmoria: "Mes AmorIAI",
-    createAmoria: "Créer une AmorIAI",
+    createAmoria: "Créer",
   },
   en: {
-    backHome: "← Back to home",
+    backHome: "← Home",
     title: (name) => `Chat with ${name}`,
-    subtitle: (name) => `${name} is here to listen and help you put words on what you’re feeling.`,
-    emptyState: (name) => `No messages yet. Say hi to ${name} to get started 💬`,
-    inputPlaceholder: (name) => `Write something to ${name}…`,
+    subtitle: (name) => `${name} is here. Take your time.`,
+    emptyState: (name) => `No messages yet. Say “hi” to ${name} 💬`,
+    inputPlaceholder: (name) => `Write to ${name}…`,
 
     send: "Send",
     sending: "Sending…",
-    loading: "Loading your chat…",
+    loading: "Opening chat…",
 
     aiNotFoundTitle: "Companion not found",
-    genericError: "We couldn’t load this conversation. Please check the link or try again later.",
-    notAuthenticated: "We couldn’t verify your session. Please refresh the page or log in again, then try once more.",
-    profileNotFound: "No AmorIA profile was found. Create your profile in “My AmorIA”, then come back to this link.",
+    genericError: "We couldn’t open this conversation. Please try again.",
+    notAuthenticated: "Session missing. Refresh or log in again, then retry.",
+    profileNotFound: "No AmorIA found. Go to “My AmorIAI” to create one, then come back.",
 
-    paywallTitle: "🔒 You’ve reached your free access limit.",
-    paywallText: "To keep talking more freely and unlock your AmorIAI’s voice, switch to AmorIAI Plus.",
-    paywallCta: "Unlock AmorIAI Plus",
-    paywallSeePlans: "See all plans →",
+    paywallTitle: "🔒 You’ve reached your free limit.",
+    paywallText: "To continue and unlock voice, upgrade to AmorIAI Plus.",
+    paywallCta: "Upgrade to AmorIAI Plus",
+    paywallSeePlans: "See plans →",
 
-    promoTitle: "Want more time with your AmorIAI?",
-    promoText: "Upgrade to AmorIAI Plus for more messages every month and your companion’s voice.",
+    promoTitle: "Want more messages?",
+    promoText: "AmorIAI Plus gives you more messages and voice.",
     promoCta: "Discover AmorIAI Plus",
 
-    voiceUnlock: "🔓 Enable voice",
+    voiceUnlock: "🔓 Enable audio",
     voiceOn: "🔊 Voice: ON",
     voiceOff: "🔇 Voice: OFF",
 
     sttStart: "Dictate",
     sttStop: "Stop",
 
-    notePrivate: "Your messages are private and are never visible to other users.",
+    notePrivate: "Your messages are private.",
 
-    voiceLimitReached: "You’ve reached the voice message limit for your current plan.",
-    voiceServerError: "Voice error. Please check the server configuration.",
-    voiceNetworkError: "Voice error. Check your connection and try again.",
+    voiceLimitReached: "You’ve reached the voice limit for your plan.",
+    voiceServerError: "Voice error (server).",
+    voiceNetworkError: "Voice error (network).",
 
-    chatNetworkError: "Network error. Check your Internet connection and try again in a few seconds.",
+    chatNetworkError: "Network error. Check your connection and try again.",
     chatServerErrorPrefix: "Server error: ",
 
     myAmoria: "My AmorIAI",
-    createAmoria: "Create an AmorIAI",
+    createAmoria: "Create",
   },
   es: {
-    backHome: "← Volver al inicio",
+    backHome: "← Inicio",
     title: (name) => `Chat con ${name}`,
-    subtitle: (name) => `${name} está aquí para escucharte y ayudarte a poner en palabras lo que sientes.`,
-    emptyState: (name) => `Todavía no hay mensajes. Saluda a ${name} para empezar 💬`,
-    inputPlaceholder: (name) => `Escribe algo a ${name}…`,
+    subtitle: (name) => `${name} está aquí. Tómate tu tiempo.`,
+    emptyState: (name) => `Aún no hay mensajes. Di “hola” a ${name} 💬`,
+    inputPlaceholder: (name) => `Escribe a ${name}…`,
 
     send: "Enviar",
     sending: "Enviando…",
-    loading: "Cargando tu chat…",
+    loading: "Abriendo chat…",
 
     aiNotFoundTitle: "Compañero no encontrado",
-    genericError: "No pudimos cargar esta conversación. Verifica el enlace o inténtalo más tarde.",
-    notAuthenticated: "No pudimos verificar tu sesión. Actualiza la página o vuelve a iniciar sesión y prueba de nuevo.",
-    profileNotFound: "No se encontró ningún perfil de AmorIA. Crea tu perfil en « Mi AmorIA » y vuelve a este enlace.",
+    genericError: "No pudimos abrir la conversación. Intenta de nuevo.",
+    notAuthenticated: "Sesión no encontrada. Actualiza o vuelve a iniciar sesión.",
+    profileNotFound: "No se encontró ninguna AmorIA. Ve a “Mis AmorIAI” para crear una y vuelve aquí.",
 
-    paywallTitle: "🔒 Has alcanzado el límite de tu acceso gratuito.",
-    paywallText: "Para seguir hablando con más libertad y desbloquear la voz de tu AmorIAI, pasa a AmorIAI Plus.",
-    paywallCta: "Desbloquear AmorIAI Plus",
-    paywallSeePlans: "Ver todos los planes →",
+    paywallTitle: "🔒 Has alcanzado tu límite gratuito.",
+    paywallText: "Para continuar y desbloquear la voz, pásate a AmorIAI Plus.",
+    paywallCta: "Pasar a AmorIAI Plus",
+    paywallSeePlans: "Ver planes →",
 
-    promoTitle: "¿Quieres más tiempo con tu AmorIAI?",
-    promoText: "Pasa a AmorIAI Plus para muchos más mensajes cada mes y la voz de tu compañero.",
+    promoTitle: "¿Quieres más mensajes?",
+    promoText: "AmorIAI Plus te da más mensajes y voz.",
     promoCta: "Descubrir AmorIAI Plus",
 
-    voiceUnlock: "🔓 Activar voz",
+    voiceUnlock: "🔓 Activar audio",
     voiceOn: "🔊 Voz: ON",
     voiceOff: "🔇 Voz: OFF",
 
     sttStart: "Dictar",
     sttStop: "Stop",
 
-    notePrivate: "Tus mensajes son privados y nunca son visibles para otros usuarios.",
+    notePrivate: "Tus mensajes son privados.",
 
-    voiceLimitReached: "Has alcanzado el límite de mensajes de voz para tu plan actual.",
-    voiceServerError: "Error de voz. Verifica la configuración del servidor.",
-    voiceNetworkError: "Error de voz. Verifica tu conexión e inténtalo de nuevo.",
+    voiceLimitReached: "Has alcanzado el límite de voz para tu plan.",
+    voiceServerError: "Error de voz (servidor).",
+    voiceNetworkError: "Error de voz (red).",
 
-    chatNetworkError: "Error de red. Verifica tu conexión e inténtalo de nuevo en unos segundos.",
+    chatNetworkError: "Error de red. Verifica tu conexión e inténtalo de nuevo.",
     chatServerErrorPrefix: "Error del servidor: ",
 
     myAmoria: "Mis AmorIAI",
-    createAmoria: "Crear un AmorIAI",
+    createAmoria: "Crear",
   },
 };
 
@@ -222,78 +222,80 @@ function normalizePlan(raw: string | null): PlanId {
 
 export default function ChatPage() {
   return (
-    <Suspense
-      fallback={
-        <main className="chat-shell">
-          <div className="chat-shell__loader">
-            <span className="chat-shell__dot" />
-            <span className="chat-shell__dot" />
-            <span className="chat-shell__dot" />
-          </div>
-          <p className="chat-shell__text">Chargement du chat…</p>
-
-          <style jsx>{`
-            .chat-shell {
-              min-height: 100vh;
-              display: grid;
-              place-items: center;
-              padding: 24px 16px;
-              color: rgba(226, 232, 240, 0.92);
-              background: radial-gradient(1200px 800px at 50% -10%, rgba(251, 55, 255, 0.25), transparent 60%),
-                radial-gradient(900px 700px at 90% 10%, rgba(56, 189, 248, 0.22), transparent 55%),
-                radial-gradient(1000px 900px at 10% 25%, rgba(249, 115, 22, 0.14), transparent 60%),
-                linear-gradient(180deg, #020617, #000);
-              font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
-                "Segoe UI Emoji";
-            }
-            .chat-shell__loader {
-              display: inline-flex;
-              gap: 10px;
-              align-items: center;
-              justify-content: center;
-              padding: 14px 18px;
-              border-radius: 999px;
-              border: 1px solid rgba(148, 163, 184, 0.22);
-              background: rgba(2, 6, 23, 0.55);
-              box-shadow: 0 16px 60px rgba(15, 23, 42, 0.9);
-              backdrop-filter: blur(10px);
-            }
-            .chat-shell__dot {
-              width: 10px;
-              height: 10px;
-              border-radius: 999px;
-              background: rgba(226, 232, 240, 0.85);
-              animation: chatDot 900ms ease-in-out infinite;
-            }
-            .chat-shell__dot:nth-child(2) {
-              animation-delay: 120ms;
-            }
-            .chat-shell__dot:nth-child(3) {
-              animation-delay: 240ms;
-            }
-            .chat-shell__text {
-              margin-top: 14px;
-              font-size: 0.9rem;
-              color: rgba(148, 163, 184, 0.9);
-              text-align: center;
-            }
-            @keyframes chatDot {
-              0%,
-              100% {
-                transform: translateY(0);
-                opacity: 0.45;
-              }
-              50% {
-                transform: translateY(-6px);
-                opacity: 1;
-              }
-            }
-          `}</style>
-        </main>
-      }
-    >
+    <Suspense fallback={<ChatSkeleton />}>
       <ChatClient />
     </Suspense>
+  );
+}
+
+function ChatSkeleton() {
+  return (
+    <main className="chat-shell">
+      <div className="chat-shell__loader">
+        <span className="chat-shell__dot" />
+        <span className="chat-shell__dot" />
+        <span className="chat-shell__dot" />
+      </div>
+      <p className="chat-shell__text">Chargement…</p>
+
+      <style jsx>{`
+        .chat-shell {
+          min-height: 100vh;
+          display: grid;
+          place-items: center;
+          padding: 24px 16px;
+          color: rgba(226, 232, 240, 0.92);
+          background: radial-gradient(1200px 800px at 50% -10%, rgba(251, 55, 255, 0.25), transparent 60%),
+            radial-gradient(900px 700px at 90% 10%, rgba(56, 189, 248, 0.22), transparent 55%),
+            radial-gradient(1000px 900px at 10% 25%, rgba(249, 115, 22, 0.14), transparent 60%),
+            linear-gradient(180deg, #020617, #000);
+          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+            "Segoe UI Emoji";
+        }
+        .chat-shell__loader {
+          display: inline-flex;
+          gap: 10px;
+          align-items: center;
+          justify-content: center;
+          padding: 14px 18px;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.22);
+          background: rgba(2, 6, 23, 0.55);
+          box-shadow: 0 16px 60px rgba(15, 23, 42, 0.9);
+          backdrop-filter: blur(10px);
+        }
+        .chat-shell__dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 999px;
+          background: rgba(226, 232, 240, 0.85);
+          animation: chatDot 900ms ease-in-out infinite;
+        }
+        .chat-shell__dot:nth-child(2) {
+          animation-delay: 120ms;
+        }
+        .chat-shell__dot:nth-child(3) {
+          animation-delay: 240ms;
+        }
+        .chat-shell__text {
+          margin-top: 14px;
+          font-size: 0.9rem;
+          color: rgba(148, 163, 184, 0.9);
+          text-align: center;
+        }
+        @keyframes chatDot {
+          0%,
+          100% {
+            transform: translateY(0);
+            opacity: 0.45;
+          }
+          50% {
+            transform: translateY(-6px);
+            opacity: 1;
+          }
+        }
+      `}</style>
+    </main>
   );
 }
 
@@ -349,7 +351,6 @@ function ChatClient() {
   const isFreePlan = planId === "free";
   const isPaidPlan = !isFreePlan;
 
-  // ✅ bouton Créer : jamais en free + seulement si quota dispo
   const canCreate = useMemo(() => {
     if (planId === "free") return false;
     return activeAmoriaCount < maxAllowed;
@@ -365,34 +366,23 @@ function ChatClient() {
     return avatarImageUrl.replace(/\.(png|jpe?g|webp)$/i, ".mp4");
   }, [avatarImageUrl]);
 
-  const homeUrl = useMemo(() => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/?${params.toString()}`;
-  }, [locale]);
+  const homeUrl = useMemo(() => `/?lang=${locale}`, [locale]);
+  const myAmoriaUrl = useMemo(() => `/my-amoria?lang=${locale}`, [locale]);
+  const createAmoriaUrl = useMemo(() => `/create-amoria?lang=${locale}`, [locale]);
+  const pricingUrl = useMemo(() => `/pricing?lang=${locale}`, [locale]);
 
-  const myAmoriaUrl = useMemo(() => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/my-amoria?${params.toString()}`;
-  }, [locale]);
-
-  const createAmoriaUrl = useMemo(() => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/create-amoria?${params.toString()}`;
-  }, [locale]);
-
-  const pricingUrl = useMemo(() => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/pricing?${params.toString()}`;
-  }, [locale]);
-
-  // ✅ IMPORTANT: si /chat sans iaId -> on renvoie toujours vers /my-amoria
+  // ✅ IMPORTANT: si /chat sans iaId -> back /my-amoria
   useEffect(() => {
     if (!iaId) router.replace(myAmoriaUrl);
   }, [iaId, router, myAmoriaUrl]);
+
+  // ✅ Save last IA used (pour ton /my-amoria redirect “style Replika”)
+  useEffect(() => {
+    if (!iaId) return;
+    try {
+      window.localStorage.setItem("amoria_last_ia_id", iaId);
+    } catch {}
+  }, [iaId]);
 
   const handleUpgradeClick = useCallback(() => {
     const params = new URLSearchParams();
@@ -444,7 +434,7 @@ function ChatClient() {
     }, 10_000);
   }, [canPlayAvatarVideo, avatarVideoUrl]);
 
-  // Auto-grow textarea (simple + stable)
+  // Auto-grow textarea
   const autoGrow = useCallback(() => {
     const el = composerRef.current;
     if (!el) return;
@@ -452,12 +442,11 @@ function ChatClient() {
     const next = Math.min(el.scrollHeight, 180);
     el.style.height = `${next}px`;
   }, []);
-
   useEffect(() => {
     autoGrow();
   }, [newMessage, autoGrow]);
 
-  // 1) plan + quota IA (avec guard unmount)
+  // 1) plan + quota IA
   useEffect(() => {
     let cancelled = false;
 
@@ -546,7 +535,7 @@ function ChatClient() {
 
         if (code !== "unlimited") setAvatarPlaying(false);
 
-        // quota IA : compter les IA actives
+        // quota IA
         const countRes = await supabase
           .from("user_amoria")
           .select("id", { count: "exact", head: true })
@@ -638,7 +627,7 @@ function ChatClient() {
     else startRecording();
   }, [canUseVoice, sttSupported, sending, isBlocked, isRecording, stopRecording, startRecording]);
 
-  // 3) Charger AI (abort-safe)
+  // 3) Charger AI
   useEffect(() => {
     let cancelled = false;
 
@@ -654,9 +643,7 @@ function ChatClient() {
 
       try {
         const { data, error } = await supabase.from("user_amoria").select("*").eq("id", iaId).maybeSingle();
-
         if (cancelled) return;
-
         if (error || !data) setAiError(t.genericError);
         else setAi(data as AmoriaRow);
       } catch {
@@ -674,7 +661,7 @@ function ChatClient() {
     };
   }, [iaId, t.genericError]);
 
-  // 4) Historique (paid) + abort controller
+  // 4) Historique (paid)
   useEffect(() => {
     if (!iaId) return;
     if (!isPaidPlan) return;
@@ -695,7 +682,6 @@ function ChatClient() {
         if (!res.ok) return;
 
         const data = (await res.json()) as ChatMessage[];
-
         if (ac.signal.aborted) return;
 
         setMessages(
@@ -746,7 +732,7 @@ function ChatClient() {
     };
   }, []);
 
-  // 5) Voice (TTS) + abort controller
+  // 5) Voice (TTS)
   const playAssistantVoice = useCallback(
     async (text: string) => {
       if (!canUseVoice || isBlocked) return;
@@ -841,7 +827,7 @@ function ChatClient() {
     ]
   );
 
-  // 6) Send message (abort-safe) + ENTER to send
+  // 6) Send message
   const sendMessage = useCallback(async () => {
     setSendError(null);
 
@@ -953,7 +939,7 @@ function ChatClient() {
   const handleComposerKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key !== "Enter") return;
-      if (e.shiftKey) return; // Shift+Enter => nouvelle ligne
+      if (e.shiftKey) return;
       e.preventDefault();
       if (sending) return;
       void sendMessage();
@@ -964,74 +950,8 @@ function ChatClient() {
   const avatarRingClass = canPulseAvatar ? "avatarRing avatarRing--live" : "avatarRing";
   const showVideoNow = !!avatarImageUrl && canPlayAvatarVideo && !!avatarVideoUrl && avatarPlaying;
 
-  // Tant que iaId est absent, on laisse l’effet router.replace faire sa job
-  if (!iaId) {
-    return (
-      <main className="chat-shell">
-        <div className="chat-shell__loader">
-          <span className="chat-shell__dot" />
-          <span className="chat-shell__dot" />
-          <span className="chat-shell__dot" />
-        </div>
-        <p className="chat-shell__text">{t.loading}</p>
-        <style jsx>{`
-          .chat-shell {
-            min-height: 100vh;
-            display: grid;
-            place-items: center;
-            padding: 24px 16px;
-            color: rgba(226, 232, 240, 0.92);
-            background: radial-gradient(1200px 800px at 50% -10%, rgba(251, 55, 255, 0.25), transparent 60%),
-              radial-gradient(900px 700px at 90% 10%, rgba(56, 189, 248, 0.22), transparent 55%),
-              radial-gradient(1000px 900px at 10% 25%, rgba(249, 115, 22, 0.14), transparent 60%),
-              linear-gradient(180deg, #020617, #000);
-          }
-          .chat-shell__loader {
-            display: inline-flex;
-            gap: 10px;
-            align-items: center;
-            justify-content: center;
-            padding: 14px 18px;
-            border-radius: 999px;
-            border: 1px solid rgba(148, 163, 184, 0.22);
-            background: rgba(2, 6, 23, 0.55);
-            box-shadow: 0 16px 60px rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(10px);
-          }
-          .chat-shell__dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 999px;
-            background: rgba(226, 232, 240, 0.85);
-            animation: chatDot 900ms ease-in-out infinite;
-          }
-          .chat-shell__dot:nth-child(2) {
-            animation-delay: 120ms;
-          }
-          .chat-shell__dot:nth-child(3) {
-            animation-delay: 240ms;
-          }
-          .chat-shell__text {
-            margin-top: 14px;
-            font-size: 0.9rem;
-            color: rgba(148, 163, 184, 0.9);
-            text-align: center;
-          }
-          @keyframes chatDot {
-            0%,
-            100% {
-              transform: translateY(0);
-              opacity: 0.45;
-            }
-            50% {
-              transform: translateY(-6px);
-              opacity: 1;
-            }
-          }
-        `}</style>
-      </main>
-    );
-  }
+  // Tant que iaId est absent, on laisse le router.replace faire sa job
+  if (!iaId) return <ChatSkeleton />;
 
   return (
     <main className="page">
@@ -1211,7 +1131,6 @@ function ChatClient() {
         <p className="note">{t.notePrivate}</p>
       </section>
 
-      {/* ✅ CSS identique à ton style (avec petits ajustements: textarea auto-grow + overflow stable) */}
       <style jsx>{`
         :global(html) {
           color-scheme: dark;
@@ -1559,7 +1478,12 @@ function ChatClient() {
           backdrop-filter: blur(10px);
         }
         .bubble--user {
-          background: linear-gradient(135deg, rgba(251, 55, 255, 0.95), rgba(255, 107, 156, 0.95), rgba(249, 115, 22, 0.92));
+          background: linear-gradient(
+            135deg,
+            rgba(251, 55, 255, 0.95),
+            rgba(255, 107, 156, 0.95),
+            rgba(249, 115, 22, 0.92)
+          );
           color: rgba(248, 250, 252, 0.98);
           border-bottom-right-radius: 6px;
           border: none;
@@ -1691,7 +1615,7 @@ function ChatClient() {
           padding: 10px 0;
           resize: none;
           line-height: 1.35;
-          overflow: hidden; /* ✅ auto-grow propre */
+          overflow: hidden;
         }
         .composer__input::placeholder {
           color: rgba(148, 163, 184, 0.65);
@@ -1803,4 +1727,4 @@ function ChatClient() {
       `}</style>
     </main>
   );
-}
+          }
