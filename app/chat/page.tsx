@@ -376,7 +376,7 @@ function ChatClient() {
     if (!iaId) router.replace(myAmoriaUrl);
   }, [iaId, router, myAmoriaUrl]);
 
-  // ✅ Save last IA used (pour ton /my-amoria redirect “style Replika”)
+  // ✅ Save last IA used
   useEffect(() => {
     if (!iaId) return;
     try {
@@ -961,10 +961,14 @@ function ChatClient() {
         </a>
 
         <div className="topbar__right">
-          <Link href={myAmoriaUrl} className="topbar__pill">
-            {t.myAmoria}
-          </Link>
+          {/* ✅ FREE: on cache “Mes AmorIAI” */}
+          {!isFreePlan && (
+            <Link href={myAmoriaUrl} className="topbar__pill">
+              {t.myAmoria}
+            </Link>
+          )}
 
+          {/* canCreate est déjà false en FREE */}
           {canCreate && (
             <Link href={createAmoriaUrl} className="topbar__pill topbar__pill--primary">
               {t.createAmoria}
