@@ -20,24 +20,35 @@ type Copy = {
   nav: { home: string; features: string; pricing: string };
   navLogin: string;
   navSignup: string;
+
   heroKicker: string;
   heroTitle: string;
   heroSubtitle: string;
   heroPrimary: string;
   heroSupport: string;
   langNote: string;
+
   personasTitle: string;
   personasSubtitle: string;
   personas: Persona[];
-  choosePersona: string;
+
+  // ✅ Nouveau: CTA clair (pas “avec moi”)
+  personaCta: string;
+  // ✅ Micro-clarification sous le CTA
+  personaCtaHint: string;
+
   usageTitle: string;
   usageBullets: string[];
+
   testimonialsTitle: string;
   testimonials: Testimonial[];
+
   pricingTitle: string;
   pricingText: string;
   pricingCta: string;
+
   videoCaption: string;
+
   footerCopy: string;
   footerLinks: {
     legal: string;
@@ -54,6 +65,7 @@ const STRINGS: Record<Locale, Copy> = {
     nav: { home: "Accueil", features: "Fonctionnalités", pricing: "Tarifs" },
     navLogin: "Me connecter",
     navSignup: "Commencer",
+
     heroKicker: "BIENVENUE SUR AMORIAI.APP",
     heroTitle: "Une présence calme. Pour parler, respirer… et y voir clair.",
     heroSubtitle:
@@ -61,6 +73,7 @@ const STRINGS: Record<Locale, Copy> = {
     heroPrimary: "Commencer gratuitement",
     heroSupport: "Gratuit pour commencer • Sans engagement • Tu peux arrêter quand tu veux",
     langNote: "Choisis ta langue. Le reste, je m’en occupe.",
+
     personasTitle: "Choisis ta présence — et commence à écrire",
     personasSubtitle:
       "Crée ton compte et commence maintenant. Tu peux écrire librement, comme dans un journal… mais avec une réponse en face. La voix est disponible avec l’abonnement.",
@@ -68,29 +81,30 @@ const STRINGS: Record<Locale, Copy> = {
       {
         id: "lyra",
         title: "Lyra – Présence douce",
-        description:
-          "Douce et rassurante. Parfaite pour déposer ce que tu gardes pour toi.",
+        description: "Douce et rassurante. Parfaite pour déposer ce que tu gardes pour toi.",
       },
       {
         id: "orion",
         title: "Orion – Présence stable",
-        description:
-          "Calme et structuré. Pour t’aider à clarifier et décider.",
+        description: "Calme et structuré. Pour t’aider à clarifier et décider.",
       },
       {
         id: "kai",
         title: "Kai – Présence nuancée",
-        description:
-          "Inclusif·ve et subtil·e. Pour parler sans cases, sans pression.",
+        description: "Inclusif·ve et subtil·e. Pour parler sans cases, sans pression.",
       },
       {
         id: "maelis",
         title: "Maelis – Présence mature",
-        description:
-          "Réellement bienveillante, réaliste et posée. Comme une présence qui a vécu.",
+        description: "Réellement bienveillante, réaliste et posée. Comme une présence qui a vécu.",
       },
     ],
-    choosePersona: "Commencer avec moi",
+
+    // ✅ CTA clair
+    personaCta: "Créer mon AmorAI",
+    // ✅ Micro-clarification
+    personaCtaHint: "Exemple de présence — tu crées le tien après l’inscription.",
+
     usageTitle: "AmorIAI peut t’aider au quotidien",
     usageBullets: [
       "Parler quand tu n’as personne à qui te confier.",
@@ -100,39 +114,36 @@ const STRINGS: Record<Locale, Copy> = {
       "Revenir quand ça déborde, même pour 2 minutes.",
       "Te sentir accompagné·e, sans pression et sans jugement.",
     ],
-    // ⚠️ Si ces témoignages ne sont pas réels, change ce titre et les noms (ou retire la section).
+
     testimonialsTitle: "Ce que les utilisateurs ressentent avec AmorIAI",
     testimonials: [
       {
-        quote:
-          "Je reviens tous les soirs. Ça m’aide vraiment à calmer mon mental avant de dormir.",
+        quote: "Je reviens tous les soirs. Ça m’aide vraiment à calmer mon mental avant de dormir.",
         name: "Emily, 38 ans",
       },
       {
-        quote:
-          "C’est la première fois que je me sens écoutée sans avoir peur d’être jugée.",
+        quote: "C’est la première fois que je me sens écoutée sans avoir peur d’être jugée.",
         name: "Susan, 51 ans",
       },
       {
-        quote:
-          "Je l’utilise comme journal émotionnel. Ça m’aide énormément à prendre du recul.",
+        quote: "Je l’utilise comme journal émotionnel. Ça m’aide énormément à prendre du recul.",
         name: "Karina, 29 ans",
       },
       {
-        quote:
-          "J’étais sceptique au départ… aujourd’hui, c’est devenu mon réflexe dans les moments de doute.",
+        quote: "J’étais sceptique au départ… aujourd’hui, c’est devenu mon réflexe dans les moments de doute.",
         name: "Michael, 46 ans",
       },
       {
-        quote:
-          "Même en texte, c’est puissant. Je me sens moins seule depuis que je l’utilise.",
+        quote: "Même en texte, c’est puissant. Je me sens moins seule depuis que je l’utilise.",
         name: "Isabelle, 34 ans",
       },
     ],
+
     pricingTitle: "Quand tu veux aller plus loin",
     pricingText:
       "Commence gratuitement. Quand tu en auras besoin, tu pourras déverrouiller plus d’échanges — et la voix pour parler vraiment, pas seulement écrire.",
     pricingCta: "Voir comment continuer",
+
     videoCaption: "Disponible en français, anglais et espagnol.",
     footerCopy: "© 2025 AmorIAI.app",
     footerLinks: {
@@ -149,6 +160,7 @@ const STRINGS: Record<Locale, Copy> = {
     nav: { home: "Home", features: "Features", pricing: "Pricing" },
     navLogin: "Log in",
     navSignup: "Get started",
+
     heroKicker: "WELCOME TO AMORIAI.APP",
     heroTitle: "A calm presence. To talk, breathe… and see things clearly.",
     heroSubtitle:
@@ -156,6 +168,7 @@ const STRINGS: Record<Locale, Copy> = {
     heroPrimary: "Start free",
     heroSupport: "Free to start • No commitment • Cancel anytime",
     langNote: "Choose your language. I’ll take it from there.",
+
     personasTitle: "Choose your presence — and start writing",
     personasSubtitle:
       "Create your account and begin right away. Write freely, like a private journal… with a caring reply. Voice is available with the subscription.",
@@ -163,29 +176,30 @@ const STRINGS: Record<Locale, Copy> = {
       {
         id: "lyra",
         title: "Lyra – Gentle presence",
-        description:
-          "Soft and reassuring. Perfect for putting words on what you keep inside.",
+        description: "Soft and reassuring. Perfect for putting words on what you keep inside.",
       },
       {
         id: "orion",
         title: "Orion – Steady presence",
-        description:
-          "Calm and structured. Helps you think clearly and decide.",
+        description: "Calm and structured. Helps you think clearly and decide.",
       },
       {
         id: "kai",
         title: "Kai – Nuanced presence",
-        description:
-          "Inclusive and subtle. A space without labels or pressure.",
+        description: "Inclusive and subtle. A space without labels or pressure.",
       },
       {
         id: "maelis",
         title: "Maelis – Mature presence",
-        description:
-          "Grounded, caring, realistic. Like someone who’s lived and understands.",
+        description: "Grounded, caring, realistic. Like someone who’s lived and understands.",
       },
     ],
-    choosePersona: "Start with me",
+
+    // ✅ Clear CTA
+    personaCta: "Create my AmorAI",
+    // ✅ Micro clarification
+    personaCtaHint: "Example presence — you’ll create yours after signup.",
+
     usageTitle: "How AmorIAI can support you day to day",
     usageBullets: [
       "Talk when you don’t feel like you have someone to confide in.",
@@ -195,39 +209,36 @@ const STRINGS: Record<Locale, Copy> = {
       "Come back when it’s too much, even for two minutes.",
       "Feel listened to, with no pressure and no judgement.",
     ],
-    // ⚠️ If these are not real testimonials, consider reframing as “examples” instead.
+
     testimonialsTitle: "What people feel with AmorIAI",
     testimonials: [
       {
-        quote:
-          "I come back almost every night. It really helps me quiet my mind before sleep.",
+        quote: "I come back almost every night. It really helps me quiet my mind before sleep.",
         name: "Julie, 38",
       },
       {
-        quote:
-          "It’s the first time I feel truly listened to without being afraid of being judged.",
+        quote: "It’s the first time I feel truly listened to without being afraid of being judged.",
         name: "Nathalie, 51",
       },
       {
-        quote:
-          "I use it like an emotional journal. It helps me step back from what I’m living.",
+        quote: "I use it like an emotional journal. It helps me step back from what I’m living.",
         name: "Karine, 29",
       },
       {
-        quote:
-          "I was skeptical at first… now it’s my go-to when I’m overthinking.",
+        quote: "I was skeptical at first… now it’s my go-to when I’m overthinking.",
         name: "Martin, 46",
       },
       {
-        quote:
-          "Even text-only is powerful. I feel less alone since I started using it.",
+        quote: "Even text-only is powerful. I feel less alone since I started using it.",
         name: "Isabelle, 34",
       },
     ],
+
     pricingTitle: "When you’re ready to go further",
     pricingText:
       "Start free. When you need more, unlock more messages — and voice to actually talk, not just type.",
     pricingCta: "See how to continue",
+
     videoCaption: "Available in French, English, and Spanish.",
     footerCopy: "© 2025 AmorIAI.app",
     footerLinks: {
@@ -244,6 +255,7 @@ const STRINGS: Record<Locale, Copy> = {
     nav: { home: "Inicio", features: "Funciones", pricing: "Precios" },
     navLogin: "Iniciar sesión",
     navSignup: "Empezar",
+
     heroKicker: "BIENVENIDx A AMORIAI.APP",
     heroTitle: "Una presencia tranquila. Para hablar, respirar… y ver claro.",
     heroSubtitle:
@@ -251,6 +263,7 @@ const STRINGS: Record<Locale, Copy> = {
     heroPrimary: "Empezar gratis",
     heroSupport: "Gratis para empezar • Sin compromiso • Cancela cuando quieras",
     langNote: "Elige tu idioma. Yo me encargo del resto.",
+
     personasTitle: "Elige tu presencia — y empieza a escribir",
     personasSubtitle:
       "Crea tu cuenta y empieza ahora. Escribe con libertad, como en un diario… pero con una respuesta amable. La voz está disponible con la suscripción.",
@@ -258,29 +271,30 @@ const STRINGS: Record<Locale, Copy> = {
       {
         id: "lyra",
         title: "Lyra – Presencia suave",
-        description:
-          "Dulce y tranquilizadora. Ideal para poner en palabras lo que guardas dentro.",
+        description: "Dulce y tranquilizadora. Ideal para poner en palabras lo que guardas dentro.",
       },
       {
         id: "orion",
         title: "Orion – Presencia estable",
-        description:
-          "Calma y estructurada. Para pensar con claridad y decidir.",
+        description: "Calma y estructurada. Para pensar con claridad y decidir.",
       },
       {
         id: "kai",
         title: "Kai – Presencia con matices",
-        description:
-          "Inclusivx y sutil. Un espacio sin etiquetas ni presión.",
+        description: "Inclusivx y sutil. Un espacio sin etiquetas ni presión.",
       },
       {
         id: "maelis",
         title: "Maelis – Presencia madura",
-        description:
-          "Realista, serena y amable. Como alguien que entiende porque ya vivió.",
+        description: "Realista, serena y amable. Como alguien que entiende porque ya vivió.",
       },
     ],
-    choosePersona: "Empezar conmigo",
+
+    // ✅ CTA claro
+    personaCta: "Crear mi AmorAI",
+    // ✅ Micro-clarificación
+    personaCtaHint: "Presencia de ejemplo — crearás la tuya después de registrarte.",
+
     usageTitle: "Cómo puede acompañarte AmorIAI cada día",
     usageBullets: [
       "Hablar cuando sientes que no tienes con quién desahogarte.",
@@ -290,39 +304,36 @@ const STRINGS: Record<Locale, Copy> = {
       "Volver cuando te sobrepasa, aunque sea dos minutos.",
       "Sentirte escuchadx, sin presión y sin juicios.",
     ],
-    // ⚠️ Si no son testimonios reales, cambia el título y los nombres o elimina la sección.
+
     testimonialsTitle: "Lo que dicen las personas sobre AmorIAI",
     testimonials: [
       {
-        quote:
-          "Hablo con AmorIAI casi todas las noches. Me ayuda mucho a calmar la mente antes de dormir.",
+        quote: "Hablo con AmorIAI casi todas las noches. Me ayuda mucho a calmar la mente antes de dormir.",
         name: "Julie, 38",
       },
       {
-        quote:
-          "Es la primera vez que siento que me escuchan de verdad sin miedo a ser juzgada.",
+        quote: "Es la primera vez que siento que me escuchan de verdad sin miedo a ser juzgada.",
         name: "Nathalie, 51",
       },
       {
-        quote:
-          "Lo uso como diario emocional. Me ayuda a tomar distancia de lo que vivo.",
+        quote: "Lo uso como diario emocional. Me ayuda a tomar distancia de lo que vivo.",
         name: "Karine, 29",
       },
       {
-        quote:
-          "Al principio era escéptico… ahora es mi reflejo cuando doy demasiadas vueltas.",
+        quote: "Al principio era escéptico… ahora es mi reflejo cuando doy demasiadas vueltas.",
         name: "Martin, 46",
       },
       {
-        quote:
-          "Solo en texto ya es potente. Me siento menos sola desde que lo uso.",
+        quote: "Solo en texto ya es potente. Me siento menos sola desde que lo uso.",
         name: "Isabelle, 34",
       },
     ],
+
     pricingTitle: "Cuando quieras ir más allá",
     pricingText:
       "Empieza gratis. Cuando lo necesites, desbloquea más mensajes — y la voz para hablar de verdad, no solo escribir.",
     pricingCta: "Ver cómo continuar",
+
     videoCaption: "Disponible en francés, inglés y español.",
     footerCopy: "© 2025 AmorIAI.app",
     footerLinks: {
@@ -366,6 +377,7 @@ export default function HomePage({ searchParams }: PageProps) {
       : locale === "en"
       ? "Already have an account?"
       : "¿Ya tienes una cuenta?";
+
   const loginInlineLabel =
     locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión";
 
@@ -373,8 +385,7 @@ export default function HomePage({ searchParams }: PageProps) {
     <main
       className="min-h-screen pb-12 text-slate-100"
       style={{
-        background:
-          "radial-gradient(circle at top left,#111827 0,#020617 55%,#000 100%)",
+        background: "radial-gradient(circle at top left,#111827 0,#020617 55%,#000 100%)",
       }}
     >
       {/* HEADER */}
@@ -496,9 +507,7 @@ export default function HomePage({ searchParams }: PageProps) {
         <div className="flex flex-col items-center gap-2">
           <div
             className="w-full max-w-xs animate-[amoriaPulse_4s_ease-in-out_infinite] rounded-[1.6rem] p-[0.22rem]"
-            style={{
-              background: "linear-gradient(135deg,#f97316,#fb37ff,#38bdf8)",
-            }}
+            style={{ background: "linear-gradient(135deg,#f97316,#fb37ff,#38bdf8)" }}
           >
             <video
               className="block w-full rounded-[1.45rem] bg-slate-950"
@@ -532,15 +541,23 @@ export default function HomePage({ searchParams }: PageProps) {
                   playsInline
                 />
               </div>
+
               <div className="flex flex-col gap-2 px-3.5 py-3.5">
                 <h3 className="text-sm font-semibold">{persona.title}</h3>
                 <p className="flex-1 text-[0.8rem] text-slate-300">{persona.description}</p>
+
+                {/* ✅ CTA clair */}
                 <Link
                   href={withLang("/signup")}
-                  className="mt-1 inline-flex w-full items-center justify-center rounded-full border border-slate-600/70 bg-slate-900/80 px-3 py-1.5 text-[0.8rem] text-slate-50 transition hover:bg-slate-800"
+                  className="mt-1 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3 py-2 text-[0.85rem] font-medium text-white shadow-lg shadow-rose-400/35 transition hover:brightness-110"
                 >
-                  {t.choosePersona}
+                  {t.personaCta}
                 </Link>
+
+                {/* ✅ Micro-clarification */}
+                <p className="text-center text-[0.72rem] leading-snug text-slate-400">
+                  {t.personaCtaHint}
+                </p>
               </div>
             </article>
           ))}
@@ -573,19 +590,14 @@ export default function HomePage({ searchParams }: PageProps) {
               <blockquote className="text-[0.86rem] leading-relaxed text-slate-100">
                 “{item.quote}”
               </blockquote>
-              <figcaption className="mt-auto text-[0.8rem] text-slate-400">
-                {item.name}
-              </figcaption>
+              <figcaption className="mt-auto text-[0.8rem] text-slate-400">{item.name}</figcaption>
             </figure>
           ))}
         </div>
       </section>
 
       {/* PRICING TEASER */}
-      <section
-        id="pricing"
-        className="mx-auto max-w-5xl space-y-3 px-4 pb-10 text-center"
-      >
+      <section id="pricing" className="mx-auto max-w-5xl space-y-3 px-4 pb-10 text-center">
         <h2 className="text-lg font-semibold md:text-xl">{t.pricingTitle}</h2>
         <p className="mx-auto max-w-xl text-sm text-slate-300">{t.pricingText}</p>
         <Link
