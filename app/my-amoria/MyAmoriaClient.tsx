@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { maxAmoriaForPlan, type PlanId } from "@/lib/plan";
@@ -11,36 +11,49 @@ function normalizeLocale(raw: string | null): Locale {
   return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
 
-function normalizePlan(raw: any): PlanId {
+function normalizePlan(raw: unknown): PlanId {
   return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
 }
 
 export default function MyAmoriaClient() {
   const router = useRouter();
   const sp = useSearchParams();
+
   const lang = useMemo(() => normalizeLocale(sp.get("lang")), [sp]);
 
-  useEffect(() => {
-    let cancelled = false;
+  const cancelledRef = useRef(false);
+  const redirectedRef = useRef(false);
 
-    const go = (url: string) => {
-      if (cancelled) return;
+  useEffect(() => {
+    cancelledRef.current = false;
+    redirectedRef.current = false;
+
+    const safeReplace = (url: string) => {
+      if (cancelledRef.current) return;
+      if (redirectedRef.current) return;
+      redirectedRef.current = true;
       router.replace(url);
     };
 
     const run = async () => {
       // 1) Auth
-      const { data: auth } = await supabase.auth.getUser();
-      const user = auth?.user;
-      if (!user) {
-        go(`/login?lang=${lang}`);
+      const { data: authData, error: authErr } = await supabase.auth.getUser();
+      if (cancelledRef.current) return;
+
+      const user = authData?.user ?? null;
+
+      if (authErr || !user) {
+        safeReplace(`/login?lang=${encodeURIComponent(lang)}`);
         return;
       }
 
-      // 2) Plan
+      // 2) Plan (current=true sinon status=active)
       let plan: PlanId = "free";
+
       try {
-        const { data: sub } = await supabase
+        let sub: any = null;
+
+        const q1 = await supabase
           .from("user_subscriptions")
           .select(
             `
@@ -53,12 +66,40 @@ export default function MyAmoriaClient() {
           .eq("current", true)
           .maybeSingle();
 
-        plan = normalizePlan((sub as any)?.pricing_plans?.code);
+        if (!q1.error && q1.data) sub = q1.data;
+
+        if (!sub) {
+          const q2 = await supabase
+            .from("user_subscriptions")
+            .select(
+              `
+              pricing_plans (
+                code
+              )
+            `
+            )
+            .eq("user_id", user.id)
+            .eq("status", "active")
+            .maybeSingle();
+
+          if (!q2.error && q2.data) sub = q2.data;
+        }
+
+        const rawPlans: any = sub?.pricing_plans;
+        const code =
+          Array.isArray(rawPlans) ? (rawPlans[0]?.code as unknown) : (rawPlans?.code as unknown);
+
+        plan = normalizePlan(code);
       } catch {
         plan = "free";
       }
 
+      if (cancelledRef.current) return;
+
+      // (optionnel) maxAllowed si tu l’utilises ailleurs
+      // Ici on le garde pour cohérence et futur guard.
       const maxAllowed = maxAmoriaForPlan(plan);
+      void maxAllowed;
 
       // 3) Count IA actives
       const countRes = await supabase
@@ -67,18 +108,17 @@ export default function MyAmoriaClient() {
         .eq("user_id", user.id)
         .eq("is_archived", false);
 
+      if (cancelledRef.current) return;
+
       const aiCount = typeof countRes.count === "number" ? countRes.count : 0;
 
       // 0 IA -> rester sur /my-amoria (page.tsx affichera l'écran create)
       if (aiCount === 0) return;
 
-      // helper: route vers chat
-      const toChat = (iaId: string) => go(`/chat?iaId=${encodeURIComponent(iaId)}&lang=${lang}`);
+      const toChat = (iaId: string) =>
+        safeReplace(`/chat?iaId=${encodeURIComponent(iaId)}&lang=${encodeURIComponent(lang)}`);
 
-      // 4) Si plan payant (chat/plus/unlimited) :
-      //    -> ouvrir DIRECT le chat sur la dernière IA utilisée (localStorage)
-      //    -> sinon ouvrir la plus récente
-      //    -> sinon fallback sélection
+      // 4) Plans payants: chat direct (last used -> most recent -> select)
       if (plan !== "free") {
         // a) last used
         let lastId: string | null = null;
@@ -95,13 +135,15 @@ export default function MyAmoriaClient() {
             .eq("is_archived", false)
             .maybeSingle();
 
+          if (cancelledRef.current) return;
+
           if (last?.id) {
             toChat(last.id);
             return;
           }
         }
 
-        // b) most recent (créée récemment)
+        // b) most recent
         const { data: recent } = await supabase
           .from("user_amoria")
           .select("id")
@@ -111,18 +153,18 @@ export default function MyAmoriaClient() {
           .limit(1)
           .maybeSingle();
 
+        if (cancelledRef.current) return;
+
         if (recent?.id) {
           toChat(recent.id);
           return;
         }
 
-        go(`/my-amoria/select?lang=${lang}`);
+        safeReplace(`/my-amoria/select?lang=${encodeURIComponent(lang)}`);
         return;
       }
 
-      // 5) Plan free :
-      //    -> 1 IA : chat direct
-      //    -> sinon : sélection (si jamais tu permets + d’une IA en free, sinon ça n’arrivera pas)
+      // 5) Plan free: 1 IA -> chat direct, sinon select (fallback)
       if (aiCount === 1) {
         const { data: one } = await supabase
           .from("user_amoria")
@@ -133,26 +175,114 @@ export default function MyAmoriaClient() {
           .limit(1)
           .maybeSingle();
 
+        if (cancelledRef.current) return;
+
         if (one?.id) {
           toChat(one.id);
           return;
         }
       }
 
-      go(`/my-amoria/select?lang=${lang}`);
-      return;
+      safeReplace(`/my-amoria/select?lang=${encodeURIComponent(lang)}`);
     };
 
     void run();
 
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
     };
   }, [lang, router]);
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-black text-white">
-      <p>Ouverture…</p>
+    <main className="boot">
+      <div className="boot__box" aria-live="polite">
+        <div className="boot__dots" aria-hidden="true">
+          <span className="boot__dot" />
+          <span className="boot__dot" />
+          <span className="boot__dot" />
+        </div>
+        <p className="boot__text">Ouverture…</p>
+      </div>
+
+      <style jsx>{`
+        :global(html) {
+          color-scheme: dark;
+        }
+        :global(body) {
+          margin: 0;
+          height: 100%;
+        }
+
+        .boot {
+          min-height: 100vh;
+          display: grid;
+          place-items: center;
+          padding: 24px 16px;
+          color: rgba(226, 232, 240, 0.92);
+          background: radial-gradient(1100px 700px at 50% -10%, rgba(251, 55, 255, 0.22), transparent 60%),
+            radial-gradient(900px 700px at 90% 10%, rgba(56, 189, 248, 0.16), transparent 55%),
+            radial-gradient(950px 700px at 10% 25%, rgba(249, 115, 22, 0.12), transparent 60%),
+            linear-gradient(180deg, #020617, #000);
+          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+            "Segoe UI Emoji";
+        }
+
+        .boot__box {
+          display: grid;
+          gap: 12px;
+          justify-items: center;
+          padding: 18px 18px 16px;
+          border-radius: 22px;
+          border: 1px solid rgba(148, 163, 184, 0.22);
+          background: rgba(2, 6, 23, 0.55);
+          box-shadow: 0 16px 60px rgba(15, 23, 42, 0.9);
+          backdrop-filter: blur(10px);
+        }
+
+        .boot__dots {
+          display: inline-flex;
+          gap: 10px;
+          align-items: center;
+          justify-content: center;
+          padding: 10px 12px;
+          border-radius: 999px;
+          border: 1px solid rgba(148, 163, 184, 0.18);
+          background: rgba(2, 6, 23, 0.35);
+        }
+
+        .boot__dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 999px;
+          background: rgba(226, 232, 240, 0.85);
+          animation: bootDot 900ms ease-in-out infinite;
+        }
+        .boot__dot:nth-child(2) {
+          animation-delay: 120ms;
+        }
+        .boot__dot:nth-child(3) {
+          animation-delay: 240ms;
+        }
+
+        .boot__text {
+          margin: 0;
+          font-size: 0.9rem;
+          color: rgba(148, 163, 184, 0.9);
+          text-align: center;
+        }
+
+        @keyframes bootDot {
+          0%,
+          100% {
+            transform: translateY(0);
+            opacity: 0.45;
+          }
+          50% {
+            transform: translateY(-6px);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </main>
   );
-}
+            }
