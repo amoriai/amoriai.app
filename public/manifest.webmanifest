@@ -1,10 +1,11 @@
 {
   "name": "AmorIAI",
   "short_name": "AmorIAI",
-  "description": "AmorIAI - AI companion",
+  "description": "AmorIAI – Partenaire IA bienveillant·e et multilingue.",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#000000",
   "theme_color": "#000000",
   "icons": [
