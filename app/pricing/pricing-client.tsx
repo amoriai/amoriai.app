@@ -144,7 +144,12 @@ const LABELS: Record<Locale, Labels> = {
         name: "AmorIAI Chat",
         price: "9,99 $ USD / mois",
         tagline: "Pour celles et ceux qui veulent écrire à leur AmorIAI chaque jour.",
-        features: ["Jusqu’à 2 AmorIAI différents", "400 messages texte / mois", "Mémoire longue durée activée", "FR / EN / ES"],
+        features: [
+          "Jusqu’à 2 AmorIAI différents",
+          "400 messages texte / mois",
+          "Mémoire longue durée activée",
+          "FR / EN / ES",
+        ],
         ctaLabel: "Activer AmorIAI Chat",
       },
       {
@@ -183,9 +188,18 @@ const LABELS: Record<Locale, Labels> = {
     ],
     faqTitle: "Questions fréquentes",
     faqs: [
-      { q: "Puis-je changer de forfait ou annuler quand je veux ?", a: "Oui. Tu peux changer de forfait ou annuler ton abonnement en tout temps depuis ton compte, sans engagement ni frais caché." },
-      { q: "Est-ce que je peux essayer AmorIAI gratuitement ?", a: "Oui. Tu peux créer un compte gratuit, découvrir l’expérience de base en texte, puis activer un forfait payant uniquement si tu le souhaites." },
-      { q: "Que se passe-t-il si j’atteins la limite de messages de mon forfait ?", a: "Ton AmorIAI t’informera quand tu approches de la limite. Tu peux ensuite attendre le prochain mois ou passer à un forfait supérieur." },
+      {
+        q: "Puis-je changer de forfait ou annuler quand je veux ?",
+        a: "Oui. Tu peux changer de forfait ou annuler ton abonnement en tout temps depuis ton compte, sans engagement ni frais caché.",
+      },
+      {
+        q: "Est-ce que je peux essayer AmorIAI gratuitement ?",
+        a: "Oui. Tu peux créer un compte gratuit, découvrir l’expérience de base en texte, puis activer un forfait payant uniquement si tu le souhaites.",
+      },
+      {
+        q: "Que se passe-t-il si j’atteins la limite de messages de mon forfait ?",
+        a: "Ton AmorIAI t’informera quand tu approches de la limite. Tu peux ensuite attendre le prochain mois ou passer à un forfait supérieur.",
+      },
     ],
   },
   en: {
@@ -200,14 +214,34 @@ const LABELS: Record<Locale, Labels> = {
     lockNote: "Log in or create an account to activate a plan.",
     lockCta: "Create my free account",
     plans: [
-      { id: "free", name: "Discovery plan", price: "Free", tagline: "Try AmorIAI gently.", features: ["1 AmorIAI", "Text access (basic experience)", "FR / EN / ES"], ctaLabel: "Start free" },
-      { id: "chat", name: "AmorIAI Chat", price: "$9.99 USD / month", tagline: "For those who want to text their AmorIAI every day.", features: ["Up to 2 AmorIAI", "400 text messages / month", "Long-term memory enabled", "FR / EN / ES"], ctaLabel: "Activate AmorIAI Chat" },
+      {
+        id: "free",
+        name: "Discovery plan",
+        price: "Free",
+        tagline: "Try AmorIAI gently.",
+        features: ["1 AmorIAI", "Text access (basic experience)", "FR / EN / ES"],
+        ctaLabel: "Start free",
+      },
+      {
+        id: "chat",
+        name: "AmorIAI Chat",
+        price: "$9.99 USD / month",
+        tagline: "For those who want to text their AmorIAI every day.",
+        features: ["Up to 2 AmorIAI", "400 text messages / month", "Long-term memory enabled", "FR / EN / ES"],
+        ctaLabel: "Activate AmorIAI Chat",
+      },
       {
         id: "plus",
         name: "AmorIAI Plus",
         price: "$19.99 USD / month",
         tagline: "Text + voice: your AmorIAI becomes part of your daily life.",
-        features: ["Up to 10 AmorIAI", "1,000 text messages / month", "100 AI-generated voice replies / month", "Long-term memory enabled", "Light processing priority"],
+        features: [
+          "Up to 10 AmorIAI",
+          "1,000 text messages / month",
+          "100 AI-generated voice replies / month",
+          "Long-term memory enabled",
+          "Light processing priority",
+        ],
         badgeLabel: "Most popular",
         badgeVariant: "popular",
         ctaLabel: "Upgrade to voice",
@@ -217,7 +251,14 @@ const LABELS: Record<Locale, Labels> = {
         name: "AmorIAI Unlimited",
         price: "$39.99 USD / month",
         tagline: "A deeply present companion, with voice and animated avatars.",
-        features: ["Up to 30 personalized AmorIAI", "10,000 text messages / month", "300 AI-generated voice replies / month", "Deep memory + extended context", "Maximum priority & early access", "Looping animated avatars (Unlimited only)"],
+        features: [
+          "Up to 30 personalized AmorIAI",
+          "10,000 text messages / month",
+          "300 AI-generated voice replies / month",
+          "Deep memory + extended context",
+          "Maximum priority & early access",
+          "Looping animated avatars (Unlimited only)",
+        ],
         badgeLabel: "Best value",
         badgeVariant: "value",
         ctaLabel: "Unlock Unlimited",
@@ -304,10 +345,7 @@ export default function PricingPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
-  // ✅ IMPORTANT: calcul immédiat (pas de state, pas de useEffect)
   const locale = useMemo(() => normalizeLocale(sp.get("lang")), [sp]);
-  const fromHero = sp.get("from") === "hero";
-  const disablePlanButtons = fromHero;
 
   const ui = LAYOUT_STRINGS[locale];
   const t = LABELS[locale];
@@ -318,9 +356,9 @@ export default function PricingPage() {
   const [activePlanLoading, setActivePlanLoading] = useState<PaidPlanId | null>(null);
 
   const disableEverything = activePlanLoading !== null;
-  const disablePlanCtas = disableEverything || disablePlanButtons;
+  const disablePlanCtas = disableEverything;
 
-  // ✅ Garde lang + from dans tous les liens
+  // ✅ Garde lang + from dans tous les liens (si tu gardes "from" ailleurs)
   const withLang = (path: string) => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -338,7 +376,6 @@ export default function PricingPage() {
     router.push(`${window.location.pathname}?${params.toString()}`);
   };
 
-  // load prices from DB (ok même si fromHero, mais si tu veux, tu peux skip quand locked)
   useEffect(() => {
     let cancelled = false;
 
@@ -409,14 +446,12 @@ export default function PricingPage() {
   };
 
   const startStripeCheckout = async (planId: PaidPlanId) => {
-    // ✅ sécurité côté UI (au cas où)
-    if (disablePlanButtons) return;
-
     const { data: userData, error: userErr } = await supabase.auth.getUser();
     if (userErr) {
       console.error("getUser error:", userErr);
       throw new Error(locale === "fr" ? "Erreur auth. Réessaie de te reconnecter." : "Auth error. Please log in again.");
     }
+
     if (!userData?.user) {
       goToSignupWithPlan(planId);
       return;
@@ -438,9 +473,6 @@ export default function PricingPage() {
   };
 
   const handleChoosePaidPlan = async (planId: PaidPlanId) => {
-    // ✅ bloque dur si from=hero
-    if (disablePlanButtons) return;
-
     setErrorMsg("");
     setActivePlanLoading(planId);
 
@@ -529,15 +561,6 @@ export default function PricingPage() {
         <h2 className="amoria-pricing-section-title">{t.chooseIntro}</h2>
         <p className="amoria-pricing-section-note">{t.usdNote}</p>
 
-        {disablePlanButtons && (
-          <div className="amoria-lock-box" role="status">
-            <p className="amoria-pricing-lock-note">{t.lockNote}</p>
-            <Link href={withLang("/signup")} className="amoria-lock-cta">
-              {t.lockCta}
-            </Link>
-          </div>
-        )}
-
         <div className="amoria-pricing-grid">
           {displayPaidPlans.map((plan) => {
             const isThisLoading = activePlanLoading === (plan.id as PaidPlanId);
@@ -573,15 +596,10 @@ export default function PricingPage() {
 
                 <button
                   type="button"
-                  className={
-                    "amoria-pricing-card-btn" +
-                    (isThisLoading ? " is-loading" : "") +
-                    (disablePlanButtons ? " is-locked" : "")
-                  }
+                  className={"amoria-pricing-card-btn" + (isThisLoading ? " is-loading" : "")}
                   onClick={() => handleChoosePaidPlan(plan.id as PaidPlanId)}
                   disabled={disablePlanCtas}
                   aria-disabled={disablePlanCtas}
-                  title={disablePlanButtons ? t.lockNote : undefined}
                 >
                   {isThisLoading ? (
                     <span className="amoria-dots" aria-label="Loading">
@@ -861,35 +879,6 @@ export default function PricingPage() {
           margin: 0 0 1.1rem;
         }
 
-        .amoria-lock-box {
-          max-width: 560px;
-          margin: 0 auto 1.4rem;
-          padding: 0.9rem 1rem;
-          border-radius: 1rem;
-          border: 1px solid rgba(148, 163, 184, 0.45);
-          background: rgba(2, 6, 23, 0.55);
-          text-align: center;
-        }
-
-        .amoria-pricing-lock-note {
-          margin: 0 0 0.65rem;
-          font-size: 0.86rem;
-          color: #fde68a;
-        }
-
-        .amoria-lock-cta {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 999px;
-          padding: 0.65rem 1rem;
-          text-decoration: none;
-          font-size: 0.85rem;
-          font-weight: 600;
-          color: #fff;
-          background: linear-gradient(135deg, var(--amoria-accent), var(--amoria-accent-2));
-        }
-
         .amoria-pricing-grid {
           width: 100%;
           display: grid;
@@ -1044,12 +1033,6 @@ export default function PricingPage() {
           transform: none;
           box-shadow: 0 14px 35px rgba(248, 113, 113, 0.25);
           filter: grayscale(0.2);
-        }
-
-        .amoria-pricing-card-btn.is-locked:disabled {
-          opacity: 0.45;
-          box-shadow: none;
-          filter: grayscale(0.35);
         }
 
         .amoria-dots {
