@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect } from "react";
@@ -20,8 +19,6 @@ export default function StripeReturnPage() {
 
     const run = async () => {
       const lang = searchParams.get("lang") || "fr";
-
-      // 0) Optionnel: session_id (utile si tu veux un check API Stripe plus tard)
       const sessionId = searchParams.get("session_id") || "";
 
       // 1) Attendre la session Supabase
@@ -46,26 +43,26 @@ export default function StripeReturnPage() {
         return;
       }
 
-      // 2) Attendre que le webhook ait écrit l’abonnement (current=true)
-      //    (Ça évite d’arriver sur /my-amoria alors que le plan n’est pas encore actif.)
+      // 2) Attendre que le webhook ait écrit l’abonnement (status='active' ou current=true)
       for (let i = 0; i < 30; i++) {
         if (cancelled) return;
 
         const { data, error } = await supabase
           .from(SUBS_TABLE)
-          .select("current, pricing_plan_id, stripe_subscription_id")
+          .select("status, current, pricing_plan_id, stripe_subscription_id")
           .eq("user_id", userId)
           .maybeSingle();
 
-        if (error) {
-          console.error("subscription fetch error:", error);
-        }
+        if (error) console.error("subscription fetch error:", error);
 
-        // ✅ webhook passé
-        if (data?.current === true) {
+        const isActive =
+          (typeof (data as any)?.current === "boolean" && (data as any).current === true) ||
+          (typeof (data as any)?.status === "string" && (data as any).status === "active");
+
+        if (isActive) {
           const qs = new URLSearchParams();
           qs.set("lang", lang);
-          if (sessionId) qs.set("session_id", sessionId); // optionnel
+          if (sessionId) qs.set("session_id", sessionId);
           router.replace(`/my-amoria?${qs.toString()}`);
           return;
         }
@@ -73,8 +70,7 @@ export default function StripeReturnPage() {
         await sleep(500);
       }
 
-      // 3) Fallback : webhook trop lent ou problème -> on va quand même à l'app
-      //    (ou tu peux rediriger vers /account pour debug)
+      // 3) Fallback (webhook lent)
       router.replace(`/my-amoria?lang=${encodeURIComponent(lang)}`);
     };
 
@@ -115,9 +111,7 @@ export default function StripeReturnPage() {
           On active ton forfait et on te redirige automatiquement.
         </p>
 
-        <style>{`
-          @keyframes spin { to { transform: rotate(360deg); } }
-        `}</style>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     </main>
   );
