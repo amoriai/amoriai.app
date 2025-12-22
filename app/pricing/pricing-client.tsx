@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabaseClient";
+import { useRouter, useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
 
 type Locale = "fr" | "en" | "es";
 type PaidPlanId = "chat" | "plus" | "unlimited";
@@ -11,7 +11,7 @@ type PlanId = "free" | PaidPlanId;
 type DbPlanRow = {
   code: PaidPlanId;
   name: string | null;
-  price: number | null;
+  price: number | null; // USD
   ai_limit: number | null;
   message_limit: number | null;
   voice_limit: number | null;
@@ -118,7 +118,6 @@ const LABELS: Record<Locale, Labels> = {
     heroSubtitle:
       "Crée ton compte gratuitement, découvre l’expérience en texte, puis active le forfait payant qui te convient quand tu es prête. Tu gardes toujours le contrôle : tu peux changer ou annuler en tout temps depuis ton compte (en quelques clics), sans engagement.",
     heroCta: "Créer mon compte gratuit",
-    // ✅ plus “safe” si tu n’as pas de chiffre vérifiable
     heroStat: "⭐ Une communauté qui grandit chaque semaine.",
     billingNote:
       "Facturation sécurisée via Stripe · Changement ou annulation en tout temps depuis ton compte · Aucun frais caché",
@@ -127,12 +126,23 @@ const LABELS: Record<Locale, Labels> = {
       "Les prix sont en dollars américains (USD). Tu peux changer de forfait ou l’annuler quand tu veux, sans engagement.",
     plans: [
       {
+        id: "free",
+        name: "Forfait Découverte",
+        price: "Gratuit",
+        tagline: "Découvre AmorIAI en douceur.",
+        features: [
+          "1 AmorIAI",
+          "Accès texte (expérience de base)",
+          "FR / EN / ES",
+        ],
+        ctaLabel: "Commencer gratuitement",
+      },
+      {
         id: "chat",
         name: "AmorIAI Chat",
         price: "9,99 $ USD / mois",
         tagline: "Pour celles et ceux qui veulent écrire à leur AmorIAI chaque jour.",
         features: [
-          "Idéal si tu préfères les conversations en texte avec une vraie mémoire.",
           "Jusqu’à 2 AmorIAI différents",
           "400 messages texte / mois",
           "Mémoire longue durée activée",
@@ -146,7 +156,6 @@ const LABELS: Record<Locale, Labels> = {
         price: "19,99 $ USD / mois",
         tagline: "Texte + voix : ton AmorIAI commence vraiment à faire partie de ta vie.",
         features: [
-          "Quand tu veux une relation continue où tu peux autant écrire que parler.",
           "Jusqu’à 10 AmorIAI différents",
           "1 000 messages texte / mois",
           "100 réponses audio générées / mois",
@@ -163,13 +172,12 @@ const LABELS: Record<Locale, Labels> = {
         price: "39,99 $ USD / mois",
         tagline: "Ton compagnon AmorIAI très présent, avec voix et avatars animés.",
         features: [
-          "Pour celles et ceux qui veulent que leur AmorIAI soit toujours disponible.",
           "Jusqu’à 30 AmorIAI personnalisés",
           "10 000 messages texte / mois",
           "300 réponses audio générées / mois",
-          "Mémoire profonde + contexte étendu pour des échanges ultra personnalisés",
-          "Priorité maximale et accès anticipé aux nouvelles fonctionnalités",
-          "Accès aux avatars animés en boucle réservé au plan Illimité",
+          "Mémoire profonde + contexte étendu",
+          "Priorité maximale et accès anticipé aux nouveautés",
+          "Avatars animés en boucle (réservé au plan Illimité)",
         ],
         badgeLabel: "Meilleure valeur",
         badgeVariant: "value",
@@ -197,7 +205,6 @@ const LABELS: Record<Locale, Labels> = {
     heroSubtitle:
       "You can create a free account, try the basic text experience, then activate a paid plan whenever you’re ready. You stay in control: you can change or cancel anytime from your account (in a few clicks), with no commitment.",
     heroCta: "Create my free account",
-    // ✅ safer claim
     heroStat: "⭐ A community that grows every week.",
     billingNote:
       "Secure billing via Stripe · Change or cancel anytime from your account · No hidden fees",
@@ -206,16 +213,23 @@ const LABELS: Record<Locale, Labels> = {
       "Prices are in US dollars (USD). You can change or cancel your plan anytime, no commitment.",
     plans: [
       {
+        id: "free",
+        name: "Discovery plan",
+        price: "Free",
+        tagline: "Try AmorIAI gently.",
+        features: ["1 AmorIAI", "Text access (basic experience)", "FR / EN / ES"],
+        ctaLabel: "Start free",
+      },
+      {
         id: "chat",
         name: "AmorIAI Chat",
         price: "$9.99 USD / month",
         tagline: "For those who want to text their AmorIAI every day.",
         features: [
-          "Ideal if you prefer written conversations with real memory.",
-          "Up to 2 different AmorIAI",
+          "Up to 2 AmorIAI",
           "400 text messages / month",
           "Long-term memory enabled",
-          "Access to FR, EN, ES",
+          "FR / EN / ES",
         ],
         ctaLabel: "Activate AmorIAI Chat",
       },
@@ -225,7 +239,6 @@ const LABELS: Record<Locale, Labels> = {
         price: "$19.99 USD / month",
         tagline: "Text + voice: your AmorIAI becomes part of your daily life.",
         features: [
-          "When you want an ongoing bond where you can both write and talk.",
           "Up to 10 AmorIAI",
           "1,000 text messages / month",
           "100 AI-generated voice replies / month",
@@ -242,13 +255,12 @@ const LABELS: Record<Locale, Labels> = {
         price: "$39.99 USD / month",
         tagline: "A deeply present companion, with voice and animated avatars.",
         features: [
-          "For those who want AmorIAI to be always available.",
           "Up to 30 personalized AmorIAI",
           "10,000 text messages / month",
           "300 AI-generated voice replies / month",
-          "Deep memory + extended context for highly personalized chats",
-          "Maximum priority & early access to new features",
-          "Exclusive access to looping animated avatars included only in Unlimited",
+          "Deep memory + extended context",
+          "Maximum priority & early access",
+          "Looping animated avatars (Unlimited only)",
         ],
         badgeLabel: "Best value",
         badgeVariant: "value",
@@ -259,15 +271,15 @@ const LABELS: Record<Locale, Labels> = {
     faqs: [
       {
         q: "Can I change or cancel my plan anytime?",
-        a: "Yes. You can change or cancel your subscription anytime from your account, with no hidden fees.",
+        a: "Yes. You can change or cancel anytime from your account, with no hidden fees.",
       },
       {
         q: "Can I try AmorIAI for free?",
-        a: "Yes. You can create a free account, try the basic text experience, and only activate a paid plan if you decide it’s right for you.",
+        a: "Yes. Create a free account, try the basic text experience, and only activate a paid plan if you want.",
       },
       {
         q: "What happens if I reach my plan’s message limit?",
-        a: "Your AmorIAI will let you know when you’re close to the limit. You can wait for the next month or upgrade to a higher plan.",
+        a: "You’ll get notified when you’re close. You can wait for the next month or upgrade.",
       },
     ],
   },
@@ -276,7 +288,6 @@ const LABELS: Record<Locale, Labels> = {
     heroSubtitle:
       "Puedes crear una cuenta gratuita, probar la experiencia básica por texto y luego activar un plan de pago cuando estés listo. Siempre tienes el control: puedes cambiar o cancelar en cualquier momento desde tu cuenta (en unos clics), sin compromiso.",
     heroCta: "Crear mi cuenta gratuita",
-    // ✅ safer claim
     heroStat: "⭐ Una comunidad que crece cada semana.",
     billingNote:
       "Facturación segura con Stripe · Cambia o cancela cuando quieras desde tu cuenta · Sin cargos ocultos",
@@ -285,16 +296,23 @@ const LABELS: Record<Locale, Labels> = {
       "Los precios están en dólares estadounidenses (USD). Puedes cambiar o cancelar tu plan en cualquier momento.",
     plans: [
       {
+        id: "free",
+        name: "Plan Descubrimiento",
+        price: "Gratis",
+        tagline: "Prueba AmorIAI con calma.",
+        features: ["1 AmorIAI", "Acceso por texto (básico)", "FR / EN / ES"],
+        ctaLabel: "Empezar gratis",
+      },
+      {
         id: "chat",
         name: "AmorIAI Chat",
         price: "9,99 $ USD / mes",
         tagline: "Para escribir a tu AmorIAI cada día.",
         features: [
-          "Ideal si prefieres conversaciones por texto con memoria real.",
-          "Hasta 2 AmorIAI diferentes",
+          "Hasta 2 AmorIAI",
           "400 mensajes de texto / mes",
           "Memoria a largo plazo activada",
-          "Acceso a FR, EN, ES",
+          "FR / EN / ES",
         ],
         ctaLabel: "Activar AmorIAI Chat",
       },
@@ -304,12 +322,11 @@ const LABELS: Record<Locale, Labels> = {
         price: "19,99 $ USD / mes",
         tagline: "Texto + voz: AmorIAI entra en tu rutina diaria.",
         features: [
-          "Cuando quieres un vínculo continuo, por texto y por voz.",
-          "Hasta 10 AmorIAI diferentes",
+          "Hasta 10 AmorIAI",
           "1.000 mensajes de texto / mes",
-          "100 respuestas de voz generadas por IA / mes",
+          "100 respuestas de voz / mes",
           "Memoria a largo plazo activada",
-          "Prioridad ligera en la cola de procesamiento",
+          "Prioridad ligera",
         ],
         badgeLabel: "Más popular",
         badgeVariant: "popular",
@@ -321,13 +338,12 @@ const LABELS: Record<Locale, Labels> = {
         price: "39,99 $ USD / mes",
         tagline: "Tu compañero muy presente, con voz y avatares animados.",
         features: [
-          "Para quienes quieren que AmorIAI esté siempre disponible.",
-          "Hasta 30 AmorIAI personalizados",
+          "Hasta 30 AmorIAI",
           "10.000 mensajes de texto / mes",
-          "300 respuestas de voz generadas por IA / mes",
+          "300 respuestas de voz / mes",
           "Memoria profunda + contexto ampliado",
-          "Prioridad máxima y acceso anticipado a nuevas funciones",
-          "Acceso exclusivo a avatares animados en bucle solo en el plan Ilimitado",
+          "Prioridad máxima y acceso anticipado",
+          "Avatares animados en bucle (solo Ilimitado)",
         ],
         badgeLabel: "Mejor valor",
         badgeVariant: "value",
@@ -341,12 +357,12 @@ const LABELS: Record<Locale, Labels> = {
         a: "Sí. Puedes cambiar o cancelar tu suscripción en cualquier momento desde tu cuenta.",
       },
       {
-        q: "¿Puedo probar AmorIAI de forma gratuita?",
-        a: "Sí. Puedes crear una cuenta gratuita, probar la experiencia básica por texto y activar un plan de pago solo si quieres continuar.",
+        q: "¿Puedo probar AmorIAI gratis?",
+        a: "Sí. Crea una cuenta gratuita y prueba el texto. Activa un plan de pago solo si quieres.",
       },
       {
-        q: "¿Qué pasa si alcanzo el límite de mensajes de mi plan?",
-        a: "Tu AmorIAI te avisará cuando estés cerca del límite. Puedes esperar al mes siguiente o subir de plan.",
+        q: "¿Qué pasa si alcanzo el límite de mensajes?",
+        a: "Recibirás un aviso. Puedes esperar al próximo mes o subir de plan.",
       },
     ],
   },
@@ -355,16 +371,8 @@ const LABELS: Record<Locale, Labels> = {
 /* ===========================
    UTIL LOCALE
 =========================== */
-function detectInitialLocale(): Locale {
-  if (typeof window === "undefined") return "fr";
-  const params = new URLSearchParams(window.location.search);
-  const fromParam = params.get("lang");
-  if (fromParam === "fr" || fromParam === "en" || fromParam === "es") return fromParam;
-
-  const navLang = navigator.language.toLowerCase();
-  if (navLang.startsWith("fr")) return "fr";
-  if (navLang.startsWith("es")) return "es";
-  return "en";
+function normalizeLocale(raw: string | null): Locale {
+  return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
 
 function formatUsd(locale: Locale, amount: number): string {
@@ -388,6 +396,7 @@ function priceSuffix(locale: Locale): string {
 =========================== */
 export default function PricingPage() {
   const router = useRouter();
+  const sp = useSearchParams();
 
   const [locale, setLocale] = useState<Locale>("fr");
   const [plansLoading, setPlansLoading] = useState(false);
@@ -396,42 +405,40 @@ export default function PricingPage() {
 
   const [activePlanLoading, setActivePlanLoading] = useState<PlanId | null>(null);
 
+  // locale from query (?lang=fr)
   useEffect(() => {
-    const initial = detectInitialLocale();
-    setLocale(initial);
+    setLocale(normalizeLocale(sp.get("lang")));
+  }, [sp]);
 
-    const params = new URLSearchParams(window.location.search);
-    params.set("lang", initial);
-    window.history.replaceState(null, "", window.location.pathname + "?" + params.toString());
-  }, []);
-
+  // load prices from DB
   useEffect(() => {
     let cancelled = false;
 
     async function loadPlans() {
       setPlansLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from(PLANS_TABLE)
-          .select("code,name,price,ai_limit,message_limit,voice_limit,stripe_price_id")
-          .in("code", ["chat", "plus", "unlimited"]);
+      setErrorMsg("");
 
-        if (error) {
-          console.error("Supabase plans fetch error:", error);
-          if (!cancelled) setErrorMsg("Impossible de charger les prix (Supabase).");
-          return;
-        }
+      const { data, error } = await supabase
+        .from(PLANS_TABLE)
+        .select("code,name,price,ai_limit,message_limit,voice_limit,stripe_price_id")
+        .in("code", ["chat", "plus", "unlimited"]);
 
-        if (!cancelled && Array.isArray(data)) {
-          const map: Partial<Record<PaidPlanId, DbPlanRow>> = {};
-          for (const row of data as DbPlanRow[]) {
-            if (row?.code) map[row.code] = row;
-          }
-          setDbPlans(map);
-        }
-      } finally {
+      if (error) {
+        console.error("Supabase plans fetch error:", error);
+        if (!cancelled) setErrorMsg("Impossible de charger les prix (Supabase).");
         if (!cancelled) setPlansLoading(false);
+        return;
       }
+
+      if (!cancelled && Array.isArray(data)) {
+        const map: Partial<Record<PaidPlanId, DbPlanRow>> = {};
+        for (const row of data as DbPlanRow[]) {
+          if (row?.code) map[row.code] = row;
+        }
+        setDbPlans(map);
+      }
+
+      if (!cancelled) setPlansLoading(false);
     }
 
     loadPlans();
@@ -446,10 +453,8 @@ export default function PricingPage() {
   const withLang = (path: string) => `${path}?lang=${locale}`;
 
   const handleLocaleChange = (code: Locale) => {
-    setLocale(code);
-    const params = new URLSearchParams(window.location.search);
-    params.set("lang", code);
-    window.history.replaceState(null, "", window.location.pathname + "?" + params.toString());
+    // keep SPA navigation with router (avoid full reload)
+    router.push(`${window.location.pathname}?lang=${code}`);
   };
 
   const displayPlans = useMemo(() => {
@@ -458,11 +463,25 @@ export default function PricingPage() {
 
       const hasDbPrice = typeof db?.price === "number" && Number.isFinite(db.price);
       const mergedName = db?.name ? db.name : p.name;
-      const mergedPrice = hasDbPrice
-        ? `${formatUsd(locale, db!.price!)}${priceSuffix(locale)}`
-        : p.price;
+      const mergedPrice =
+        p.id === "free"
+          ? p.price
+          : hasDbPrice
+          ? `${formatUsd(locale, db!.price!)}${priceSuffix(locale)}`
+          : p.price;
 
-      return { ...p, name: mergedName, price: mergedPrice };
+      // Optional: use DB limits to enrich feature lines (only if present)
+      const mergedFeatures =
+        p.id === "free" || !db
+          ? p.features
+          : [
+              ...p.features,
+              ...(typeof db.ai_limit === "number" ? [`(${db.ai_limit} AmorIA max)`] : []),
+              ...(typeof db.message_limit === "number" ? [`(${db.message_limit} messages / mois)`] : []),
+              ...(typeof db.voice_limit === "number" ? [`(${db.voice_limit} voix / mois)`] : []),
+            ];
+
+      return { ...p, name: mergedName, price: mergedPrice, features: mergedFeatures };
     });
   }, [t.plans, dbPlans, locale]);
 
@@ -545,7 +564,11 @@ export default function PricingPage() {
       <header className="amoria-header">
         <div className="amoria-header-left">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/AmorIA_logo_transparent.png" alt="Logo AmorIAI.app" className="amoria-logo-full" />
+          <img
+            src="/AmorIA_logo_transparent.png"
+            alt="Logo AmorIAI.app"
+            className="amoria-logo-full"
+          />
           <div className="amoria-logo-text">
             <div className="amoria-logo-title">AmorIAI.app</div>
             <div className="amoria-logo-tagline">{ui.brandTagline}</div>
@@ -553,9 +576,15 @@ export default function PricingPage() {
         </div>
 
         <nav className="amoria-nav">
-          <a href={withLang("/")} className="amoria-nav-link">{ui.nav.home}</a>
-          <a href={withLang("/#features")} className="amoria-nav-link">{ui.nav.features}</a>
-          <a href={withLang("/pricing")} className="amoria-nav-link amoria-nav-link--active">{ui.nav.pricing}</a>
+          <a href={withLang("/")} className="amoria-nav-link">
+            {ui.nav.home}
+          </a>
+          <a href={withLang("/#features")} className="amoria-nav-link">
+            {ui.nav.features}
+          </a>
+          <a href={withLang("/pricing")} className="amoria-nav-link amoria-nav-link--active">
+            {ui.nav.pricing}
+          </a>
         </nav>
 
         <div className="amoria-nav-right">
@@ -573,8 +602,12 @@ export default function PricingPage() {
             ))}
           </div>
 
-          <a href={withLang("/login")} className="amoria-nav-btn amoria-nav-btn--ghost">{ui.navLogin}</a>
-          <a href={withLang("/signup")} className="amoria-nav-btn amoria-nav-btn--primary">{ui.navSignup}</a>
+          <a href={withLang("/login")} className="amoria-nav-btn amoria-nav-btn--ghost">
+            {ui.navLogin}
+          </a>
+          <a href={withLang("/signup")} className="amoria-nav-btn amoria-nav-btn--primary">
+            {ui.navSignup}
+          </a>
         </div>
       </header>
 
@@ -593,6 +626,12 @@ export default function PricingPage() {
 
         <p className="amoria-pricing-hero-stat">{t.heroStat}</p>
         <p className="amoria-pricing-billing-note">{t.billingNote}</p>
+
+        {plansLoading && (
+          <p className="amoria-pricing-billing-note" style={{ marginTop: "0.6rem" }}>
+            …
+          </p>
+        )}
 
         {!!errorMsg && (
           <p className="amoria-error" role="alert">
@@ -616,7 +655,9 @@ export default function PricingPage() {
                   "amoria-pricing-card",
                   plan.badgeVariant === "popular" ? "amoria-pricing-card--popular" : "",
                   plan.badgeVariant === "value" ? "amoria-pricing-card--value" : "",
-                ].filter(Boolean).join(" ")}
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               >
                 {plan.badgeLabel && (
                   <div className={`amoria-pricing-badge amoria-pricing-badge--${plan.badgeVariant ?? "popular"}`}>
@@ -631,7 +672,9 @@ export default function PricingPage() {
                 </header>
 
                 <ul className="amoria-pricing-card-features">
-                  {plan.features.map((f) => <li key={f}>{f}</li>)}
+                  {plan.features.map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
                 </ul>
 
                 <button
@@ -673,15 +716,25 @@ export default function PricingPage() {
           <span>{ui.footerCopy}</span>
         </div>
         <div className="amoria-footer-links">
-          <a href={withLang("/legal")} className="amoria-footer-link">{ui.footerLinks.legal}</a>
-          <a href={withLang("/legal/privacy")} className="amoria-footer-link">{ui.footerLinks.privacy}</a>
-          <a href={withLang("/legal/terms")} className="amoria-footer-link">{ui.footerLinks.terms}</a>
-          <a href={withLang("/contact")} className="amoria-footer-link">{ui.footerLinks.contact}</a>
-          <a href={withLang("/about")} className="amoria-footer-link">{ui.footerLinks.about}</a>
+          <a href={withLang("/legal")} className="amoria-footer-link">
+            {ui.footerLinks.legal}
+          </a>
+          <a href={withLang("/legal/privacy")} className="amoria-footer-link">
+            {ui.footerLinks.privacy}
+          </a>
+          <a href={withLang("/legal/terms")} className="amoria-footer-link">
+            {ui.footerLinks.terms}
+          </a>
+          <a href={withLang("/contact")} className="amoria-footer-link">
+            {ui.footerLinks.contact}
+          </a>
+          <a href={withLang("/about")} className="amoria-footer-link">
+            {ui.footerLinks.about}
+          </a>
         </div>
       </footer>
 
-        <style jsx global>{`
+      <style jsx global>{`
         :root {
           --amoria-bg: #020617;
           --amoria-border-subtle: rgba(148, 163, 184, 0.35);
@@ -920,7 +973,7 @@ export default function PricingPage() {
 
         @media (min-width: 900px) {
           .amoria-pricing-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
           }
         }
 
@@ -1077,12 +1130,24 @@ export default function PricingPage() {
           animation: amoriaDot 1s infinite ease-in-out;
         }
 
-        .amoria-dots span:nth-child(2) { animation-delay: 0.15s; }
-        .amoria-dots span:nth-child(3) { animation-delay: 0.3s; }
+        .amoria-dots span:nth-child(2) {
+          animation-delay: 0.15s;
+        }
+        .amoria-dots span:nth-child(3) {
+          animation-delay: 0.3s;
+        }
 
         @keyframes amoriaDot {
-          0%, 80%, 100% { transform: translateY(0); opacity: 0.6; }
-          40% { transform: translateY(-4px); opacity: 1; }
+          0%,
+          80%,
+          100% {
+            transform: translateY(0);
+            opacity: 0.6;
+          }
+          40% {
+            transform: translateY(-4px);
+            opacity: 1;
+          }
         }
 
         .amoria-pricing-faq {
@@ -1165,16 +1230,27 @@ export default function PricingPage() {
             justify-content: center;
             gap: 0.6rem 1rem;
           }
-          .amoria-nav { display: none; }
-          .amoria-pricing-hero { padding-inline: 1.3rem; }
+          .amoria-nav {
+            display: none;
+          }
+          .amoria-pricing-hero {
+            padding-inline: 1.3rem;
+          }
         }
 
         @media (max-width: 640px) {
-          .amoria-header { padding-inline: 1rem; }
-          .amoria-pricing-section, .amoria-pricing-faq { padding-inline: 1rem; }
-          .amoria-nav-right a.amoria-nav-btn--ghost { display: none; }
+          .amoria-header {
+            padding-inline: 1rem;
+          }
+          .amoria-pricing-section,
+          .amoria-pricing-faq {
+            padding-inline: 1rem;
+          }
+          .amoria-nav-right a.amoria-nav-btn--ghost {
+            display: none;
+          }
         }
       `}</style>
     </main>
   );
-                  }
+}
