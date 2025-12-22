@@ -46,11 +46,11 @@ type Copy = {
   pricingText: string;
 
   // ✅ pricing teaser CTAs
-  pricingCta: string; // "Create account to subscribe"
+  pricingCta: string; // kept for structure, but we remove the blue button UI
   pricingCtaHint?: string;
   seePricingLabel: string;
 
-  // ✅ NEW (requested): button to view pricing but with ?from=hero to lock paid CTAs
+  // ✅ NEW: view pricing with ?from=hero to lock paid CTAs
   seePricingFromHeroLabel: string;
 
   videoCaption: string;
@@ -345,13 +345,13 @@ export default function HomePage({ searchParams }: PageProps) {
   });
 
   const alreadyAccountText =
-    locale === "fr" ? "Déjà un compte ?" : locale === "en" ? "Already have an account?" : "¿Ya tienes una cuenta?";
+    locale === "fr"
+      ? "Déjà un compte ?"
+      : locale === "en"
+      ? "Already have an account?"
+      : "¿Ya tienes una cuenta?";
 
-  const loginInlineLabel =
-    locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión";
-
-  // ✅ teaser stays disabled (forces account first)
-  const PRICING_CTA_DISABLED = true;
+  const loginInlineLabel = locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión";
 
   return (
     <main
@@ -365,6 +365,7 @@ export default function HomePage({ searchParams }: PageProps) {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/AmorIA_logo_transparent.png"
               alt="Logo AmorIAI.app"
@@ -436,16 +437,11 @@ export default function HomePage({ searchParams }: PageProps) {
       </header>
 
       {/* HERO */}
-      <section
-        id="hero"
-        className="mx-auto grid max-w-5xl items-center gap-8 px-4 pb-10 pt-6 md:grid-cols-[1.3fr,1fr]"
-      >
+      <section id="hero" className="mx-auto grid max-w-5xl items-center gap-8 px-4 pb-10 pt-6 md:grid-cols-[1.3fr,1fr]">
         <div className="flex flex-col gap-3">
           <p className="text-[0.8rem] uppercase tracking-[0.18em] text-indigo-300">{t.heroKicker}</p>
           <h1 className="text-3xl font-bold leading-tight md:text-[2.3rem]">{t.heroTitle}</h1>
-          <p className="max-w-xl text-sm leading-relaxed text-slate-300 md:text-[0.92rem]">
-            {t.heroSubtitle}
-          </p>
+          <p className="max-w-xl text-sm leading-relaxed text-slate-300 md:text-[0.92rem]">{t.heroSubtitle}</p>
 
           <div className="mt-3 flex flex-col gap-2">
             <Link
@@ -462,7 +458,7 @@ export default function HomePage({ searchParams }: PageProps) {
               </Link>
             </div>
 
-            {/* ✅ NEW: hero secondary CTA -> pricing page with ?from=hero */}
+            {/* ✅ HERO secondary CTA -> pricing with lock */}
             <Link
               href={withLangAndFromHero("/pricing")}
               className="
@@ -485,6 +481,7 @@ export default function HomePage({ searchParams }: PageProps) {
             className="w-full max-w-xs animate-[amoriaPulse_4s_ease-in-out_infinite] rounded-[1.6rem] p-[0.22rem]"
             style={{ background: "linear-gradient(135deg,#f97316,#fb37ff,#38bdf8)" }}
           >
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
             <video className="block w-full rounded-[1.45rem] bg-slate-950" src={heroVideoSrc} controls playsInline />
           </div>
           <p className="text-center text-[0.78rem] text-slate-400">{t.videoCaption}</p>
@@ -505,6 +502,7 @@ export default function HomePage({ searchParams }: PageProps) {
               className="flex min-h-full flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-gradient-to-b from-slate-950/90 via-slate-950 to-black/90"
             >
               <div className="aspect-[4/5] w-full border-b border-slate-800 bg-slate-900">
+                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                 <video className="h-full w-full object-cover" src={getPersonaVideoSrc(persona.id)} controls playsInline />
               </div>
 
@@ -599,57 +597,28 @@ export default function HomePage({ searchParams }: PageProps) {
           <p className="mx-auto mt-2 max-w-xl text-sm text-slate-300">{t.pricingText}</p>
 
           <div className="mt-5 flex flex-col items-center gap-2">
-            {/* CTA 1 (disabled): forces account-first */}
-            {PRICING_CTA_DISABLED ? (
-              <>
-                <button
-                  type="button"
-                  disabled
-                  className="
-                    inline-flex w-full max-w-sm items-center justify-center rounded-full
-                    bg-slate-800/60
-                    px-6 py-3 text-[0.98rem] font-medium text-slate-200
-                    opacity-80 cursor-not-allowed
-                  "
-                  aria-disabled="true"
-                  title={t.pricingCtaHint || ""}
-                >
-                  {t.pricingCta}
-                </button>
+            {/* ✅ On enlève seulement le bouton bleu (disabled) */}
 
-                {!!t.pricingCtaHint && (
-                  <p className="max-w-sm text-center text-[0.78rem] text-slate-400">{t.pricingCtaHint}</p>
-                )}
-
-                <Link
-                  href={withLang("/signup")}
-                  className="
-                    inline-flex w-full max-w-sm items-center justify-center rounded-full
-                    bg-gradient-to-tr from-fuchsia-500 to-rose-400
-                    px-6 py-3 text-[0.92rem] font-medium text-white
-                    shadow-lg shadow-rose-400/40 transition hover:brightness-110
-                  "
-                >
-                  {locale === "fr" ? "Créer mon compte gratuit" : locale === "en" ? "Create my free account" : "Crear mi cuenta gratis"}
-                </Link>
-              </>
-            ) : (
-              <Link
-                href={withLang("/signup")}
-                className="
-                  inline-flex w-full max-w-sm items-center justify-center rounded-full
-                  bg-gradient-to-tr from-fuchsia-500 to-rose-400
-                  px-6 py-3 text-[0.98rem] font-medium text-white
-                  shadow-lg shadow-rose-400/40 transition hover:brightness-110
-                "
-              >
-                {t.pricingCta}
-              </Link>
-            )}
-
-            {/* CTA 2: pricing page stays available (normal) */}
+            {/* Bouton rose: créer compte */}
             <Link
-              href={withLang("/pricing")}
+              href={withLang("/signup")}
+              className="
+                inline-flex w-full max-w-sm items-center justify-center rounded-full
+                bg-gradient-to-tr from-fuchsia-500 to-rose-400
+                px-6 py-3 text-[0.92rem] font-medium text-white
+                shadow-lg shadow-rose-400/40 transition hover:brightness-110
+              "
+            >
+              {locale === "fr"
+                ? "Créer mon compte gratuit"
+                : locale === "en"
+                ? "Create my free account"
+                : "Crear mi cuenta gratis"}
+            </Link>
+
+            {/* Bouton gris: voir tarifs (lock via from=hero) */}
+            <Link
+              href={withLangAndFromHero("/pricing")}
               className="
                 inline-flex w-full max-w-sm items-center justify-center rounded-full
                 border border-slate-500/70 bg-transparent
@@ -695,4 +664,4 @@ export default function HomePage({ searchParams }: PageProps) {
       </footer>
     </main>
   );
-}
+              }
