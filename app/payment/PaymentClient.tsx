@@ -10,17 +10,16 @@ type PlanId = "chat" | "plus" | "unlimited";
 function isLocale(v: string | null): v is Locale {
   return v === "fr" || v === "en" || v === "es";
 }
-
 function isPlan(v: string | null): v is PlanId {
   return v === "chat" || v === "plus" || v === "unlimited";
 }
 
 export default function PaymentClient() {
-  const searchParams = useSearchParams();
+  const sp = useSearchParams();
   const router = useRouter();
 
-  const planParam = searchParams.get("plan");
-  const langParam = searchParams.get("lang");
+  const planParam = sp.get("plan");
+  const langParam = sp.get("lang");
 
   const plan = useMemo(() => (isPlan(planParam) ? planParam : null), [planParam]);
   const lang = useMemo<Locale>(() => (isLocale(langParam) ? langParam : "fr"), [langParam]);
@@ -38,11 +37,11 @@ export default function PaymentClient() {
         return;
       }
 
+      // Optionnel mais utile: si pas loggé, on l’envoie au login
       const { data, error: userErr } = await supabase.auth.getUser();
       if (userErr) console.error("supabase.auth.getUser error:", userErr);
 
-      const user = data?.user;
-      if (!user) {
+      if (!data?.user) {
         router.replace(`/login?lang=${lang}&plan=${plan}`);
         return;
       }
@@ -52,24 +51,19 @@ export default function PaymentClient() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            plan,              // chat | plus | unlimited
-            user_id: user.id,  // ✅ obligatoire pour TON api/checkout
+            plan,   // chat | plus | unlimited
+            lang,   // ✅ pour success_url
           }),
         });
 
-        const body = await res.json().catch(() => ({}));
+        const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
 
-        if (!res.ok) {
+        if (!res.ok || !body?.url) {
           const msg =
             typeof body?.error === "string"
               ? body.error
               : "Erreur Stripe : impossible de créer la session.";
           if (!cancelled) setError(msg);
-          return;
-        }
-
-        if (!body?.url || typeof body.url !== "string") {
-          if (!cancelled) setError("Erreur Stripe : URL de redirection manquante.");
           return;
         }
 
