@@ -45,10 +45,13 @@ type Copy = {
   pricingTitle: string;
   pricingText: string;
 
-  // ✅ CTA label changed for pricing teaser
-  pricingCta: string; // used as "Create account to subscribe"
-  pricingCtaHint?: string; // optional hint shown under disabled button
+  // ✅ pricing teaser CTAs
+  pricingCta: string; // "Create account to subscribe"
+  pricingCtaHint?: string;
   seePricingLabel: string;
+
+  // ✅ NEW (requested): button to view pricing but with ?from=hero to lock paid CTAs
+  seePricingFromHeroLabel: string;
 
   videoCaption: string;
 
@@ -130,11 +133,10 @@ const STRINGS: Record<Locale, Copy> = {
     pricingTitle: "Quand tu te sens prêt",
     pricingText:
       "Commence gratuitement. Si tu en ressens le besoin, tu pourras débloquer plus d’échanges — et la voix pour parler, pas seulement écrire.",
-    // ✅ Disabled CTA (prevents going to pricing/checkout without account)
     pricingCta: "Créer un compte pour s’abonner",
     pricingCtaHint: "Crée ton compte gratuit d’abord. Ensuite tu pourras choisir un forfait.",
-    // ✅ Keep pricing page visible
     seePricingLabel: "Voir les tarifs",
+    seePricingFromHeroLabel: "Voir les tarifs",
 
     videoCaption: "Disponible en français, anglais et espagnol.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -217,6 +219,7 @@ const STRINGS: Record<Locale, Copy> = {
     pricingCta: "Create an account to subscribe",
     pricingCtaHint: "Create your free account first. Then you can pick a plan.",
     seePricingLabel: "See pricing",
+    seePricingFromHeroLabel: "See pricing",
 
     videoCaption: "Available in French, English, and Spanish.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -299,6 +302,7 @@ const STRINGS: Record<Locale, Copy> = {
     pricingCta: "Crear cuenta para suscribirme",
     pricingCtaHint: "Primero crea tu cuenta gratis. Luego podrás elegir un plan.",
     seePricingLabel: "Ver precios",
+    seePricingFromHeroLabel: "Ver precios",
 
     videoCaption: "Disponible en francés, inglés y español.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -332,22 +336,21 @@ export default function HomePage({ searchParams }: PageProps) {
   const heroVideoSrc = `/amoria_${locale}.mp4`;
   const getPersonaVideoSrc = (id: PersonaId) => `/amoria_${id}_${locale}.mp4`;
 
-  const withLang = (path: string) => ({
+  const withLang = (path: string) => ({ pathname: path, query: { lang: locale } });
+
+  // ✅ helper: go to pricing but lock paid CTAs (from=hero)
+  const withLangAndFromHero = (path: string) => ({
     pathname: path,
-    query: { lang: locale },
+    query: { lang: locale, from: "hero" },
   });
 
   const alreadyAccountText =
-    locale === "fr"
-      ? "Déjà un compte ?"
-      : locale === "en"
-      ? "Already have an account?"
-      : "¿Ya tienes una cuenta?";
+    locale === "fr" ? "Déjà un compte ?" : locale === "en" ? "Already have an account?" : "¿Ya tienes una cuenta?";
 
   const loginInlineLabel =
     locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión";
 
-  // ✅ This makes the pricing teaser CTA disabled (no direct pricing flow from homepage)
+  // ✅ teaser stays disabled (forces account first)
   const PRICING_CTA_DISABLED = true;
 
   return (
@@ -405,9 +408,7 @@ export default function HomePage({ searchParams }: PageProps) {
                   key={code}
                   href={{ pathname: "/", query: { lang: code } }}
                   className={`rounded-full px-2 py-0.5 transition ${
-                    locale === code
-                      ? "bg-slate-800 text-slate-50"
-                      : "text-slate-400 hover:text-slate-100"
+                    locale === code ? "bg-slate-800 text-slate-50" : "text-slate-400 hover:text-slate-100"
                   }`}
                 >
                   {code.toUpperCase()}
@@ -440,9 +441,7 @@ export default function HomePage({ searchParams }: PageProps) {
         className="mx-auto grid max-w-5xl items-center gap-8 px-4 pb-10 pt-6 md:grid-cols-[1.3fr,1fr]"
       >
         <div className="flex flex-col gap-3">
-          <p className="text-[0.8rem] uppercase tracking-[0.18em] text-indigo-300">
-            {t.heroKicker}
-          </p>
+          <p className="text-[0.8rem] uppercase tracking-[0.18em] text-indigo-300">{t.heroKicker}</p>
           <h1 className="text-3xl font-bold leading-tight md:text-[2.3rem]">{t.heroTitle}</h1>
           <p className="max-w-xl text-sm leading-relaxed text-slate-300 md:text-[0.92rem]">
             {t.heroSubtitle}
@@ -458,13 +457,23 @@ export default function HomePage({ searchParams }: PageProps) {
 
             <div className="text-[0.8rem] text-slate-300">
               {alreadyAccountText}{" "}
-              <Link
-                href={withLang("/login")}
-                className="font-semibold text-rose-300 hover:text-rose-200"
-              >
+              <Link href={withLang("/login")} className="font-semibold text-rose-300 hover:text-rose-200">
                 {loginInlineLabel}
               </Link>
             </div>
+
+            {/* ✅ NEW: hero secondary CTA -> pricing page with ?from=hero */}
+            <Link
+              href={withLangAndFromHero("/pricing")}
+              className="
+                inline-flex items-center justify-center rounded-full
+                border border-slate-500/70 bg-transparent
+                px-6 py-2.5 text-[0.92rem] font-medium text-slate-100
+                transition hover:bg-slate-900/70
+              "
+            >
+              {t.seePricingFromHeroLabel}
+            </Link>
           </div>
 
           <p className="mt-1 text-[0.82rem] text-slate-400">{t.heroSupport}</p>
@@ -476,12 +485,7 @@ export default function HomePage({ searchParams }: PageProps) {
             className="w-full max-w-xs animate-[amoriaPulse_4s_ease-in-out_infinite] rounded-[1.6rem] p-[0.22rem]"
             style={{ background: "linear-gradient(135deg,#f97316,#fb37ff,#38bdf8)" }}
           >
-            <video
-              className="block w-full rounded-[1.45rem] bg-slate-950"
-              src={heroVideoSrc}
-              controls
-              playsInline
-            />
+            <video className="block w-full rounded-[1.45rem] bg-slate-950" src={heroVideoSrc} controls playsInline />
           </div>
           <p className="text-center text-[0.78rem] text-slate-400">{t.videoCaption}</p>
         </div>
@@ -501,12 +505,7 @@ export default function HomePage({ searchParams }: PageProps) {
               className="flex min-h-full flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-gradient-to-b from-slate-950/90 via-slate-950 to-black/90"
             >
               <div className="aspect-[4/5] w-full border-b border-slate-800 bg-slate-900">
-                <video
-                  className="h-full w-full object-cover"
-                  src={getPersonaVideoSrc(persona.id)}
-                  controls
-                  playsInline
-                />
+                <video className="h-full w-full object-cover" src={getPersonaVideoSrc(persona.id)} controls playsInline />
               </div>
 
               <div className="flex flex-col gap-2 px-3.5 py-3.5">
@@ -520,9 +519,7 @@ export default function HomePage({ searchParams }: PageProps) {
                   {t.personaCta}
                 </Link>
 
-                <p className="text-center text-[0.72rem] leading-snug text-slate-400">
-                  {t.personaCtaHint}
-                </p>
+                <p className="text-center text-[0.72rem] leading-snug text-slate-400">{t.personaCtaHint}</p>
               </div>
             </article>
           ))}
@@ -589,7 +586,7 @@ export default function HomePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      {/* PRICING TEASER (premium card) */}
+      {/* PRICING TEASER */}
       <section id="pricing" className="mx-auto max-w-5xl px-4 pb-12">
         <div
           className="
@@ -602,7 +599,7 @@ export default function HomePage({ searchParams }: PageProps) {
           <p className="mx-auto mt-2 max-w-xl text-sm text-slate-300">{t.pricingText}</p>
 
           <div className="mt-5 flex flex-col items-center gap-2">
-            {/* ✅ CTA 1 (disabled): forces "create account first" behavior */}
+            {/* CTA 1 (disabled): forces account-first */}
             {PRICING_CTA_DISABLED ? (
               <>
                 <button
@@ -612,8 +609,7 @@ export default function HomePage({ searchParams }: PageProps) {
                     inline-flex w-full max-w-sm items-center justify-center rounded-full
                     bg-slate-800/60
                     px-6 py-3 text-[0.98rem] font-medium text-slate-200
-                    opacity-80
-                    cursor-not-allowed
+                    opacity-80 cursor-not-allowed
                   "
                   aria-disabled="true"
                   title={t.pricingCtaHint || ""}
@@ -622,12 +618,9 @@ export default function HomePage({ searchParams }: PageProps) {
                 </button>
 
                 {!!t.pricingCtaHint && (
-                  <p className="max-w-sm text-center text-[0.78rem] text-slate-400">
-                    {t.pricingCtaHint}
-                  </p>
+                  <p className="max-w-sm text-center text-[0.78rem] text-slate-400">{t.pricingCtaHint}</p>
                 )}
 
-                {/* optional: give them the correct path */}
                 <Link
                   href={withLang("/signup")}
                   className="
@@ -637,11 +630,7 @@ export default function HomePage({ searchParams }: PageProps) {
                     shadow-lg shadow-rose-400/40 transition hover:brightness-110
                   "
                 >
-                  {locale === "fr"
-                    ? "Créer mon compte gratuit"
-                    : locale === "en"
-                    ? "Create my free account"
-                    : "Crear mi cuenta gratis"}
+                  {locale === "fr" ? "Créer mon compte gratuit" : locale === "en" ? "Create my free account" : "Crear mi cuenta gratis"}
                 </Link>
               </>
             ) : (
@@ -658,7 +647,7 @@ export default function HomePage({ searchParams }: PageProps) {
               </Link>
             )}
 
-            {/* CTA 2: pricing page stays available */}
+            {/* CTA 2: pricing page stays available (normal) */}
             <Link
               href={withLang("/pricing")}
               className="
@@ -703,6 +692,37 @@ export default function HomePage({ searchParams }: PageProps) {
           </Link>
         </div>
       </footer>
+
+      {/* ✅ CSS (global, because this file is server component) */}
+      <style jsx global>{`
+        @keyframes amoriaPulse {
+          0% {
+            transform: translateY(0);
+            filter: brightness(1);
+          }
+          50% {
+            transform: translateY(-2px);
+            filter: brightness(1.08);
+          }
+          100% {
+            transform: translateY(0);
+            filter: brightness(1);
+          }
+        }
+
+        /* ensure videos look consistent */
+        video {
+          outline: none;
+        }
+
+        /* nicer focus */
+        a:focus-visible,
+        button:focus-visible {
+          outline: 2px solid rgba(251, 55, 255, 0.8);
+          outline-offset: 3px;
+          border-radius: 999px;
+        }
+      `}</style>
     </main>
   );
 }
