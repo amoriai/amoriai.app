@@ -19,6 +19,13 @@ type PricingPlan = {
   voice_limit: number | null;
 };
 
+function isLocale(v: string | null): v is Locale {
+  return v === "fr" || v === "en" || v === "es";
+}
+function isPlanCode(v: unknown): v is PlanCode {
+  return v === "free" || v === "chat" || v === "plus" || v === "unlimited";
+}
+
 function detectLocaleFromUrl(params: URLSearchParams): Locale {
   const lang = (params.get("lang") || "").toLowerCase();
   if (lang === "fr" || lang === "en" || lang === "es") return lang;
@@ -41,82 +48,66 @@ function suffix(locale: Locale): string {
   return " / month";
 }
 
-function t(locale: Locale) {
+function copyFor(locale: Locale) {
+  const isEn = locale === "en";
+  const isEs = locale === "es";
+
   return {
-    title:
-      locale === "en"
-        ? "Choose your AmorIAI plan"
-        : locale === "es"
-        ? "Elige tu plan AmorIAI"
-        : "Choisis ton forfait AmorIAI",
+    title: isEn ? "Choose your AmorIAI plan" : isEs ? "Elige tu plan AmorIAI" : "Choisis ton forfait AmorIAI",
 
-    subtitle:
-      locale === "en"
-        ? "Same core AI on every plan. You pay for message volume, number of AmorIAI, and voice."
-        : locale === "es"
-        ? "La misma IA base en todos los planes. Pagas por mensajes, número de AmorIAI y voz."
-        : "Tous les forfaits utilisent la même IA de base. Tu payes en fonction de la quantité de messages, du nombre d’AmorIAI personnalisés et de la voix.",
+    subtitle: isEn
+      ? "Same core AI on every plan. You pay for message volume, number of AmorIAI, and voice."
+      : isEs
+      ? "La misma IA base en todos los planes. Pagas por mensajes, número de AmorIAI y voz."
+      : "Tous les forfaits utilisent la même IA de base. Tu payes en fonction de la quantité de messages, du nombre d’AmorIAI personnalisés et de la voix.",
 
-    loading:
-      locale === "en"
-        ? "Loading plans…"
-        : locale === "es"
-        ? "Cargando planes…"
-        : "Chargement des forfaits…",
+    loading: isEn ? "Loading plans…" : isEs ? "Cargando planes…" : "Chargement des forfaits…",
 
-    loadError:
-      locale === "en"
-        ? "Unable to load plans. Please try again later."
-        : locale === "es"
-        ? "No se pueden cargar los planes. Inténtalo más tarde."
-        : "Impossible de charger les forfaits. Réessaie plus tard.",
+    loadError: isEn
+      ? "Unable to load plans. Please try again later."
+      : isEs
+      ? "No se pueden cargar los planes. Inténtalo más tarde."
+      : "Impossible de charger les forfaits. Réessaie plus tard.",
 
-    checkoutError:
-      locale === "en"
-        ? "Could not create the payment session."
-        : locale === "es"
-        ? "Error al crear la sesión de pago."
-        : "Erreur lors de la création de la session de paiement.",
+    checkoutError: isEn
+      ? "Could not create the payment session."
+      : isEs
+      ? "Error al crear la sesión de pago."
+      : "Erreur lors de la création de la session de paiement.",
 
-    unexpected:
-      locale === "en"
-        ? "Unexpected payment API response."
-        : locale === "es"
-        ? "Respuesta inesperada de la API de pago."
-        : "Réponse inattendue de l’API de paiement.",
+    unexpected: isEn
+      ? "Unexpected payment API response."
+      : isEs
+      ? "Respuesta inesperada de la API de pago."
+      : "Réponse inattendue de l’API de paiement.",
 
-    generic:
-      locale === "en"
-        ? "Something went wrong. Please try again."
-        : locale === "es"
-        ? "Ocurrió un error. Inténtalo de nuevo."
-        : "Une erreur est survenue. Réessaie plus tard.",
+    generic: isEn ? "Something went wrong. Please try again."
+      : isEs ? "Ocurrió un error. Inténtalo de nuevo."
+      : "Une erreur est survenue. Réessaie plus tard.",
 
-    billed:
-      locale === "en"
-        ? "Billed monthly, cancel anytime."
-        : locale === "es"
-        ? "Facturación mensual, cancela cuando quieras."
-        : "Facturé mensuellement, résiliable en tout temps.",
+    billed: isEn ? "Billed monthly, cancel anytime."
+      : isEs ? "Facturación mensual, cancela cuando quieras."
+      : "Facturé mensuellement, résiliable en tout temps.",
 
-    freeLabel: locale === "en" ? "Free" : locale === "es" ? "Gratis" : "Gratuit",
+    freeLabel: isEn ? "Free" : isEs ? "Gratis" : "Gratuit",
+    freeBtn: isEn ? "Start for free" : isEs ? "Empezar gratis" : "Commencer gratuitement",
+    chooseBtn: isEn ? "Choose this plan" : isEs ? "Elegir este plan" : "Choisir ce forfait",
+    stripeBtn: isEn ? "Redirecting to Stripe…" : isEs ? "Redirigiendo a Stripe…" : "Redirection vers Stripe…",
 
-    freeBtn:
-      locale === "en"
-        ? "Start for free"
-        : locale === "es"
-        ? "Empezar gratis"
-        : "Commencer gratuitement",
+    upToAi: (n: number) =>
+      isEn ? `Up to ${n} AmorIAI` : isEs ? `Hasta ${n} AmorIAI` : `Jusqu’à ${n} AmorIA personnalisés`,
 
-    chooseBtn:
-      locale === "en" ? "Choose this plan" : locale === "es" ? "Elegir este plan" : "Choisir ce forfait",
+    oneAi: isEn ? "1 AmorIAI" : isEs ? "1 AmorIAI" : "1 AmorIA personnalisé",
 
-    stripeBtn:
-      locale === "en"
-        ? "Redirecting to Stripe…"
-        : locale === "es"
-        ? "Redirigiendo a Stripe…"
-        : "Redirection vers Stripe…",
+    msgUnlimited: isEn ? "Text messages: unlimited (fair use)" : isEs ? "Mensajes de texto: ilimitados (uso razonable)" : "Messages texte illimités (usage équitable)",
+    msgPerMonth: (n: number) =>
+      isEn ? `${n} text messages / month` : isEs ? `${n} mensajes / mes` : `${n} messages texte / mois`,
+    msgNotSet: isEn ? "Text messages (limit not set)" : isEs ? "Mensajes de texto (límite no definido)" : "Messages texte (limite non définie)",
+
+    voiceNone: isEn ? "No voice on this plan" : isEs ? "Sin voz en este plan" : "Pas de voix dans ce forfait",
+    voiceFair: isEn ? "Voice included (fair use)" : isEs ? "Voz incluida (uso razonable)" : "Conversations vocales incluses (usage équitable)",
+    voiceLimited: (n: number) =>
+      isEn ? `Voice replies included (~${n} / month)` : isEs ? `Voz incluida (~${n} / mes)` : `Conversations vocales limitées (~${n} échanges / mois)`,
   };
 }
 
@@ -124,20 +115,20 @@ export default function SubscriptionPage() {
   const router = useRouter();
   const sp = useSearchParams();
 
+  // locale depuis URL
   const locale = useMemo(() => detectLocaleFromUrl(new URLSearchParams(sp.toString())), [sp]);
-  const copy = useMemo(() => t(locale), [locale]);
+  const copy = useMemo(() => copyFor(locale), [locale]);
 
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
 
-  // ✅ Charger les plans
+  // Load plans from Supabase
   useEffect(() => {
     let cancelled = false;
 
-    const loadPlans = async () => {
+    async function load() {
       setError(null);
       setLoading(true);
 
@@ -152,18 +143,62 @@ export default function SubscriptionPage() {
         console.error("pricing_plans load error:", error);
         setError(copy.loadError);
         setPlans([]);
-      } else {
-        setPlans(((data ?? []) as PricingPlan[]).filter(Boolean));
+        setLoading(false);
+        return;
       }
 
-      setLoading(false);
-    };
+      const cleaned: PricingPlan[] = Array.isArray(data)
+        ? (data as any[])
+            .filter(Boolean)
+            .filter((p) => p && typeof p.id === "string" && isPlanCode(p.code))
+            .map((p) => ({
+              id: String(p.id),
+              code: p.code as PlanCode,
+              name: typeof p.name === "string" && p.name.trim() ? p.name : String(p.code),
+              price: typeof p.price === "number" ? p.price : p.price == null ? null : Number(p.price),
+              ai_limit: typeof p.ai_limit === "number" ? p.ai_limit : p.ai_limit == null ? null : Number(p.ai_limit),
+              message_limit:
+                typeof p.message_limit === "number"
+                  ? p.message_limit
+                  : p.message_limit == null
+                  ? null
+                  : Number(p.message_limit),
+              stripe_price_id: typeof p.stripe_price_id === "string" ? p.stripe_price_id : null,
+              has_voice: typeof p.has_voice === "boolean" ? p.has_voice : !!p.has_voice,
+              voice_limit:
+                typeof p.voice_limit === "number" ? p.voice_limit : p.voice_limit == null ? null : Number(p.voice_limit),
+            }))
+        : [];
 
-    loadPlans();
+      // Bonus: ensure stable order (Free first, then by price)
+      const orderRank = (c: PlanCode) => (c === "free" ? 0 : c === "chat" ? 1 : c === "plus" ? 2 : 3);
+      cleaned.sort((a, b) => {
+        const ra = orderRank(a.code);
+        const rb = orderRank(b.code);
+        if (ra !== rb) return ra - rb;
+        const pa = a.price ?? 0;
+        const pb = b.price ?? 0;
+        return pa - pb;
+      });
+
+      setPlans(cleaned);
+      setLoading(false);
+    }
+
+    load();
     return () => {
       cancelled = true;
     };
   }, [copy.loadError]);
+
+  const goto = (path: string, params?: Record<string, string>) => {
+    const qs = new URLSearchParams();
+    qs.set("lang", locale);
+    if (params) {
+      for (const [k, v] of Object.entries(params)) qs.set(k, v);
+    }
+    router.push(`${path}?${qs.toString()}`);
+  };
 
   const handleSubscribe = async (plan: PricingPlan) => {
     const isFree = plan.code === "free" || plan.price === 0;
@@ -172,39 +207,38 @@ export default function SubscriptionPage() {
     setLoadingPlanId(plan.id);
 
     try {
-      // ✅ Free: pas de Stripe, mais on laisse CLIQUABLE
+      // FREE -> direct create
       if (isFree) {
-        router.push(`/create-amoria?lang=${locale}&plan=free`);
+        goto("/create-amoria", { plan: "free" });
         return;
       }
 
-      // ✅ Si pas connecté: login et revenir ici avec plan
+      // must be logged in for paid checkout
       const { data: userData, error: userErr } = await supabase.auth.getUser();
       if (userErr) console.error("getUser error:", userErr);
 
       if (!userData?.user) {
-        // retour = subscription
-        router.push(`/login?lang=${locale}&plan=${plan.code}&return=subscription`);
+        // login, then come back
+        goto("/login", { plan: plan.code, return: "subscription" });
         return;
       }
 
-      // ✅ Checkout (server doit récupérer user via cookies/session)
+      // server uses cookies session; send { plan, lang }
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: plan.code, lang: locale }),
       });
 
+      const json = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+
       if (!res.ok) {
-        const bodyText = await res.text().catch(() => "");
-        console.error("checkout error:", res.status, bodyText);
-        setError(copy.checkoutError);
+        console.error("checkout error:", res.status, json);
+        setError(typeof json?.error === "string" ? json.error : copy.checkoutError);
         return;
       }
 
-      const json = (await res.json().catch(() => ({}))) as { url?: string };
-
-      if (!json.url) {
+      if (!json.url || typeof json.url !== "string") {
         console.error("checkout missing url:", json);
         setError(copy.unexpected);
         return;
@@ -248,60 +282,23 @@ export default function SubscriptionPage() {
               ? copy.freeLabel
               : `${formatUsd(locale, plan.price ?? 0)} USD${suffix(locale)}`;
 
-            const hasVoice = !!plan.has_voice;
-
-            const voiceText = hasVoice
+            const voiceText = plan.has_voice
               ? plan.voice_limit && plan.voice_limit > 0
-                ? locale === "en"
-                  ? `Voice replies included (~${plan.voice_limit} / month)`
-                  : locale === "es"
-                  ? `Voz incluida (~${plan.voice_limit} / mes)`
-                  : `Conversations vocales limitées (~${plan.voice_limit} échanges / mois)`
-                : locale === "en"
-                ? "Voice included (fair use)"
-                : locale === "es"
-                ? "Voz incluida (uso razonable)"
-                : "Conversations vocales incluses (usage équitable)"
-              : locale === "en"
-              ? "No voice on this plan"
-              : locale === "es"
-              ? "Sin voz en este plan"
-              : "Pas de voix dans ce forfait";
+                ? copy.voiceLimited(plan.voice_limit)
+                : copy.voiceFair
+              : copy.voiceNone;
 
             const messagesText =
               plan.message_limit && plan.message_limit >= 10000
-                ? locale === "en"
-                  ? "Text messages: unlimited (fair use)"
-                  : locale === "es"
-                  ? "Mensajes de texto: ilimitados (uso razonable)"
-                  : "Messages texte illimités (usage équitable)"
+                ? copy.msgUnlimited
                 : plan.message_limit
-                ? locale === "en"
-                  ? `${plan.message_limit} text messages / month`
-                  : locale === "es"
-                  ? `${plan.message_limit} mensajes / mes`
-                  : `${plan.message_limit} messages texte / mois`
-                : locale === "en"
-                ? "Text messages (limit not set)"
-                : locale === "es"
-                ? "Mensajes de texto (límite no definido)"
-                : "Messages texte (limite non définie)";
+                ? copy.msgPerMonth(plan.message_limit)
+                : copy.msgNotSet;
 
             const aisText =
-              plan.ai_limit && plan.ai_limit > 0
-                ? locale === "en"
-                  ? `Up to ${plan.ai_limit} AmorIAI`
-                  : locale === "es"
-                  ? `Hasta ${plan.ai_limit} AmorIAI`
-                  : `Jusqu’à ${plan.ai_limit} AmorIA personnalisés`
-                : locale === "en"
-                ? "1 AmorIAI"
-                : locale === "es"
-                ? "1 AmorIAI"
-                : "1 AmorIA personnalisé";
+              plan.ai_limit && plan.ai_limit > 0 ? copy.upToAi(plan.ai_limit) : copy.oneAi;
 
             const isBusy = loadingPlanId === plan.id;
-
             const btnLabel = isFree ? copy.freeBtn : isBusy ? copy.stripeBtn : copy.chooseBtn;
 
             return (
@@ -318,12 +315,18 @@ export default function SubscriptionPage() {
                   backdropFilter: "blur(20px)",
                 }}
               >
-                <h2 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: "0.6rem" }}>{plan.name}</h2>
+                <h2 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: "0.6rem" }}>
+                  {plan.name}
+                </h2>
 
-                <p style={{ fontSize: "1.6rem", fontWeight: 700, marginBottom: "0.25rem" }}>{priceLabel}</p>
+                <p style={{ fontSize: "1.6rem", fontWeight: 700, marginBottom: "0.25rem" }}>
+                  {priceLabel}
+                </p>
 
                 {!isFree && (
-                  <p style={{ fontSize: "0.9rem", opacity: 0.7, marginBottom: "1rem" }}>{copy.billed}</p>
+                  <p style={{ fontSize: "0.9rem", opacity: 0.7, marginBottom: "1rem" }}>
+                    {copy.billed}
+                  </p>
                 )}
 
                 <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.5rem", fontSize: "0.95rem" }}>
@@ -360,4 +363,3 @@ export default function SubscriptionPage() {
     </main>
   );
 }
-
