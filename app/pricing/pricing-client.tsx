@@ -111,8 +111,6 @@ const LAYOUT_STRINGS: Record<Locale, LayoutStrings> = {
 
 /* ===========================
    STRINGS PRICING
-   (Option A: on garde la définition "free" ici si tu veux la réutiliser ailleurs,
-    mais on ne l'affiche plus dans la grille.)
 =========================== */
 const LABELS: Record<Locale, Labels> = {
   fr: {
@@ -282,7 +280,7 @@ const LABELS: Record<Locale, Labels> = {
     ],
   },
   es: {
-    heroTitle: "Elige el plan que encaja con tu vínculo con AmorIAI.",
+    heroTitle: "Elige el plan que encaja con tu vínculo con tu AmorIAI.",
     heroSubtitle:
       "Puedes crear una cuenta gratuita, probar la experiencia básica por texto y luego activar un plan de pago cuando estés listo. Siempre tienes el control: puedes cambiar o cancelar en cualquier momento desde tu cuenta (en unos clics), sin compromiso.",
     heroCta: "Crear mi cuenta gratuita",
@@ -390,7 +388,7 @@ function priceSuffix(locale: Locale): string {
 }
 
 /* ===========================
-   COMPONENT (Option A)
+   COMPONENT
 =========================== */
 export default function PricingPage() {
   const router = useRouter();
@@ -401,7 +399,6 @@ export default function PricingPage() {
   const [dbPlans, setDbPlans] = useState<Partial<Record<PaidPlanId, DbPlanRow>>>({});
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Option A: on ne met plus jamais "free" en loading since it's not in grid
   const [activePlanLoading, setActivePlanLoading] = useState<PaidPlanId | null>(null);
 
   // locale from query (?lang=fr)
@@ -455,7 +452,6 @@ export default function PricingPage() {
     router.push(`${window.location.pathname}?lang=${code}`);
   };
 
-  // ✅ Option A: only paid plans in grid
   const displayPaidPlans = useMemo(() => {
     return t.plans
       .filter((p) => p.id !== "free")
@@ -745,9 +741,18 @@ export default function PricingPage() {
           padding-bottom: 3rem;
         }
 
+        /* ✅ Conteneur cohérent pour aligner header/hero/section/faq/footer */
+        .amoria-header,
+        .amoria-pricing-hero,
+        .amoria-pricing-section,
+        .amoria-pricing-faq,
+        .amoria-footer {
+          max-width: 1280px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+
         .amoria-header {
-          max-width: 1120px;
-          margin: 0 auto;
           padding: 1rem 1.5rem;
           display: flex;
           align-items: center;
@@ -870,22 +875,22 @@ export default function PricingPage() {
         }
 
         .amoria-pricing-hero {
-          max-width: 960px;
-          margin: 0 auto;
-          padding: 1.8rem 1.5rem 2.3rem;
+          padding: 1.2rem 1.5rem 1.4rem;
           text-align: center;
         }
 
         .amoria-pricing-title {
           font-size: 1.9rem;
           font-weight: 600;
-          margin-bottom: 0.8rem;
+          margin: 0 auto 0.8rem;
+          max-width: 980px;
         }
 
         .amoria-pricing-subtitle {
           font-size: 0.98rem;
           color: #9ca3af;
-          margin-bottom: 1.4rem;
+          margin: 0 auto 1.2rem;
+          max-width: 860px;
         }
 
         .amoria-pricing-hero-btn {
@@ -896,7 +901,7 @@ export default function PricingPage() {
           background: linear-gradient(135deg, #fb37ff, #ff6b9c, #f97316);
           color: #f9fafb;
           cursor: pointer;
-          margin-bottom: 0.8rem;
+          margin-bottom: 0.75rem;
           box-shadow: 0 16px 40px rgba(248, 113, 113, 0.5);
           transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
         }
@@ -916,12 +921,13 @@ export default function PricingPage() {
         .amoria-pricing-hero-stat {
           font-size: 0.86rem;
           color: #fde68a;
-          margin-bottom: 0.3rem;
+          margin: 0.2rem 0 0.2rem;
         }
 
         .amoria-pricing-billing-note {
           font-size: 0.8rem;
           color: #9ca3af;
+          margin: 0.1rem 0;
         }
 
         .amoria-error {
@@ -931,47 +937,58 @@ export default function PricingPage() {
         }
 
         .amoria-pricing-section {
-          max-width: 1100px;
           width: 100%;
-          margin: 0 auto;
-          padding: 0 1.5rem 2.2rem;
+          padding: 0.5rem 1.5rem 2.2rem;
         }
 
         .amoria-pricing-section-title {
           text-align: center;
           font-size: 1.1rem;
-          margin-bottom: 0.4rem;
+          margin: 0 0 0.4rem;
         }
 
         .amoria-pricing-section-note {
           text-align: center;
           font-size: 0.82rem;
           color: #9ca3af;
-          margin-bottom: 1.7rem;
+          margin: 0 0 1.7rem;
         }
 
+        /* ✅ Grid: 3 plans => 3 colonnes, centré, cartes alignées */
         .amoria-pricing-grid {
+          width: 100%;
           display: grid;
           grid-template-columns: repeat(1, minmax(0, 1fr));
-          gap: 1.3rem;
+          gap: 1.6rem;
+          justify-content: center;
+          align-items: stretch;
         }
 
         @media (min-width: 900px) {
           .amoria-pricing-grid {
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(320px, 1fr));
+          }
+        }
+
+        @media (min-width: 1400px) {
+          .amoria-pricing-grid {
+            grid-template-columns: repeat(3, minmax(360px, 1fr));
           }
         }
 
         .amoria-pricing-card {
           position: relative;
           border-radius: 1.6rem;
-          padding: 2.1rem 1.2rem 1.4rem;
+          padding: 2.2rem 1.4rem 1.5rem;
           background: radial-gradient(circle at top, #020617 0, #020617 45%, #020617 100%);
           border: 1px solid rgba(148, 163, 184, 0.45);
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          min-height: 280px;
+          min-height: 520px;
+          max-width: 440px;
+          margin-left: auto;
+          margin-right: auto;
           box-shadow: 0 18px 45px rgba(15, 23, 42, 0.8);
         }
 
@@ -1029,29 +1046,30 @@ export default function PricingPage() {
         .amoria-pricing-card-name {
           font-size: 1rem;
           font-weight: 600;
-          margin-bottom: 0.25rem;
+          margin: 0 0 0.25rem;
         }
 
         .amoria-pricing-card-price {
           font-size: 1.05rem;
           font-weight: 600;
-          margin-bottom: 0.4rem;
+          margin: 0 0 0.4rem;
         }
 
         .amoria-pricing-card-tagline {
           font-size: 0.8rem;
           color: #9ca3af;
+          margin: 0;
         }
 
         .amoria-pricing-card-features {
           list-style: none;
           padding: 0;
-          margin: 0 0 1.1rem;
+          margin: 1.1rem 0 1.2rem;
           font-size: 0.78rem;
           color: #d1d5db;
           display: flex;
           flex-direction: column;
-          gap: 0.4rem;
+          gap: 0.45rem;
         }
 
         .amoria-pricing-card-features li {
@@ -1136,22 +1154,22 @@ export default function PricingPage() {
         }
 
         .amoria-pricing-faq {
-          max-width: 960px;
           width: 100%;
-          margin: 0 auto;
           padding: 0 1.5rem 2.5rem;
         }
 
         .amoria-pricing-faq-title {
           text-align: center;
           font-size: 1.05rem;
-          margin-bottom: 1rem;
+          margin: 0 0 1rem;
         }
 
         .amoria-pricing-faq-grid {
           display: grid;
           grid-template-columns: repeat(1, minmax(0, 1fr));
           gap: 0.9rem;
+          max-width: 960px;
+          margin: 0 auto;
         }
 
         @media (min-width: 800px) {
@@ -1170,17 +1188,16 @@ export default function PricingPage() {
 
         .amoria-pricing-faq-card h3 {
           font-size: 0.86rem;
-          margin-bottom: 0.4rem;
+          margin: 0 0 0.4rem;
         }
 
         .amoria-pricing-faq-card p {
           color: #d1d5db;
           line-height: 1.5;
+          margin: 0;
         }
 
         .amoria-footer {
-          max-width: 1120px;
-          margin: 0 auto;
           padding: 1.5rem 1.5rem 0;
           font-size: 0.78rem;
           color: var(--amoria-text-muted);
@@ -1218,17 +1235,16 @@ export default function PricingPage() {
           .amoria-nav {
             display: none;
           }
-          .amoria-pricing-hero {
-            padding-inline: 1.3rem;
-          }
         }
 
         @media (max-width: 640px) {
           .amoria-header {
             padding-inline: 1rem;
           }
+          .amoria-pricing-hero,
           .amoria-pricing-section,
-          .amoria-pricing-faq {
+          .amoria-pricing-faq,
+          .amoria-footer {
             padding-inline: 1rem;
           }
           .amoria-nav-right a.amoria-nav-btn--ghost {
