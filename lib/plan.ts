@@ -15,19 +15,35 @@ export function maxAmoriaForPlan(plan: PlanId): number {
   }
 }
 
+/**
+ * Si tu reçois un nom marketing (ex: "AmorIAI Plus", "AmorIAI Illimité")
+ * -> on map vers un plan.
+ */
 export function planFromPricingName(name: string | null | undefined): PlanId {
-  const n = (name || "").toLowerCase();
-  if (n.includes("chat")) return "chat";
-  if (n.includes("plus")) return "plus";
+  const n = String(name ?? "")
+    .toLowerCase()
+    .trim();
+
+  // Unlimited / Illimité
   if (n.includes("illimit") || n.includes("unlimited")) return "unlimited";
+
+  // Plus
+  // on évite "surplus" etc. en checkant " plus" ou "plus " ou "-plus" etc.
+  if (/\bplus\b/.test(n)) return "plus";
+
+  // Chat
+  if (/\bchat\b/.test(n)) return "chat";
+
   return "free";
 }
 
 /** Si tu reçois déjà plan_id = free/chat/plus/unlimited */
 export function normalizePlan(raw: string | null | undefined): PlanId {
-  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
-    ? raw
-    : "free";
+  const v = String(raw ?? "")
+    .toLowerCase()
+    .trim();
+
+  return v === "free" || v === "chat" || v === "plus" || v === "unlimited" ? (v as PlanId) : "free";
 }
 
 export function canCreateAmoria(plan: PlanId, activeCount: number): boolean {
