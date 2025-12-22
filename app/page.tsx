@@ -44,7 +44,11 @@ type Copy = {
 
   pricingTitle: string;
   pricingText: string;
-  pricingCta: string;
+
+  // ✅ CTA label changed for pricing teaser
+  pricingCta: string; // used as "Create account to subscribe"
+  pricingCtaHint?: string; // optional hint shown under disabled button
+  seePricingLabel: string;
 
   videoCaption: string;
 
@@ -126,7 +130,11 @@ const STRINGS: Record<Locale, Copy> = {
     pricingTitle: "Quand tu te sens prêt",
     pricingText:
       "Commence gratuitement. Si tu en ressens le besoin, tu pourras débloquer plus d’échanges — et la voix pour parler, pas seulement écrire.",
-    pricingCta: "Écrire maintenant",
+    // ✅ Disabled CTA (prevents going to pricing/checkout without account)
+    pricingCta: "Créer un compte pour s’abonner",
+    pricingCtaHint: "Crée ton compte gratuit d’abord. Ensuite tu pourras choisir un forfait.",
+    // ✅ Keep pricing page visible
+    seePricingLabel: "Voir les tarifs",
 
     videoCaption: "Disponible en français, anglais et espagnol.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -206,7 +214,9 @@ const STRINGS: Record<Locale, Copy> = {
     pricingTitle: "When you feel ready",
     pricingText:
       "Start free. When you need more, unlock more messages — and voice to actually talk, not just type.",
-    pricingCta: "Start writing",
+    pricingCta: "Create an account to subscribe",
+    pricingCtaHint: "Create your free account first. Then you can pick a plan.",
+    seePricingLabel: "See pricing",
 
     videoCaption: "Available in French, English, and Spanish.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -286,7 +296,9 @@ const STRINGS: Record<Locale, Copy> = {
     pricingTitle: "Cuando te sientas listo",
     pricingText:
       "Empieza gratis. Cuando lo necesites, desbloquea más mensajes — y la voz para hablar de verdad, no solo escribir.",
-    pricingCta: "Empezar a escribir",
+    pricingCta: "Crear cuenta para suscribirme",
+    pricingCtaHint: "Primero crea tu cuenta gratis. Luego podrás elegir un plan.",
+    seePricingLabel: "Ver precios",
 
     videoCaption: "Disponible en francés, inglés y español.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -335,9 +347,8 @@ export default function HomePage({ searchParams }: PageProps) {
   const loginInlineLabel =
     locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión";
 
-  // ✅ NEW: label for the new pricing button
-  const seePricingLabel =
-    locale === "fr" ? "Voir les tarifs" : locale === "en" ? "See pricing" : "Ver precios";
+  // ✅ This makes the pricing teaser CTA disabled (no direct pricing flow from homepage)
+  const PRICING_CTA_DISABLED = true;
 
   return (
     <main
@@ -591,20 +602,63 @@ export default function HomePage({ searchParams }: PageProps) {
           <p className="mx-auto mt-2 max-w-xl text-sm text-slate-300">{t.pricingText}</p>
 
           <div className="mt-5 flex flex-col items-center gap-2">
-            {/* CTA 1: signup */}
-            <Link
-              href={withLang("/signup")}
-              className="
-                inline-flex w-full max-w-sm items-center justify-center rounded-full
-                bg-gradient-to-tr from-fuchsia-500 to-rose-400
-                px-6 py-3 text-[0.98rem] font-medium text-white
-                shadow-lg shadow-rose-400/40 transition hover:brightness-110
-              "
-            >
-              {t.pricingCta}
-            </Link>
+            {/* ✅ CTA 1 (disabled): forces "create account first" behavior */}
+            {PRICING_CTA_DISABLED ? (
+              <>
+                <button
+                  type="button"
+                  disabled
+                  className="
+                    inline-flex w-full max-w-sm items-center justify-center rounded-full
+                    bg-slate-800/60
+                    px-6 py-3 text-[0.98rem] font-medium text-slate-200
+                    opacity-80
+                    cursor-not-allowed
+                  "
+                  aria-disabled="true"
+                  title={t.pricingCtaHint || ""}
+                >
+                  {t.pricingCta}
+                </button>
 
-            {/* ✅ CTA 2: pricing page */}
+                {!!t.pricingCtaHint && (
+                  <p className="max-w-sm text-center text-[0.78rem] text-slate-400">
+                    {t.pricingCtaHint}
+                  </p>
+                )}
+
+                {/* optional: give them the correct path */}
+                <Link
+                  href={withLang("/signup")}
+                  className="
+                    inline-flex w-full max-w-sm items-center justify-center rounded-full
+                    bg-gradient-to-tr from-fuchsia-500 to-rose-400
+                    px-6 py-3 text-[0.92rem] font-medium text-white
+                    shadow-lg shadow-rose-400/40 transition hover:brightness-110
+                  "
+                >
+                  {locale === "fr"
+                    ? "Créer mon compte gratuit"
+                    : locale === "en"
+                    ? "Create my free account"
+                    : "Crear mi cuenta gratis"}
+                </Link>
+              </>
+            ) : (
+              <Link
+                href={withLang("/signup")}
+                className="
+                  inline-flex w-full max-w-sm items-center justify-center rounded-full
+                  bg-gradient-to-tr from-fuchsia-500 to-rose-400
+                  px-6 py-3 text-[0.98rem] font-medium text-white
+                  shadow-lg shadow-rose-400/40 transition hover:brightness-110
+                "
+              >
+                {t.pricingCta}
+              </Link>
+            )}
+
+            {/* CTA 2: pricing page stays available */}
             <Link
               href={withLang("/pricing")}
               className="
@@ -614,7 +668,7 @@ export default function HomePage({ searchParams }: PageProps) {
                 transition hover:bg-slate-900/70
               "
             >
-              {seePricingLabel}
+              {t.seePricingLabel}
             </Link>
 
             <div className="text-[0.78rem] text-slate-400">
