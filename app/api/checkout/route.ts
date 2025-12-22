@@ -16,16 +16,15 @@ const isPlan = (v: unknown): v is PlanId =>
 const cleanUrl = (url: string) => (url.endsWith("/") ? url.slice(0, -1) : url);
 
 // ENV
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "";
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY ?? "";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 const stripe = STRIPE_SECRET_KEY
   ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" })
   : null;
 
-// Admin client (lecture pricing_plans)
 const supabaseAdmin =
   SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
     ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -37,13 +36,13 @@ export async function POST(req: Request) {
   try {
     if (!stripe) {
       return NextResponse.json(
-        { error: "Stripe non configuré (clé manquante)." },
+        { error: "Stripe non configuré (STRIPE_SECRET_KEY manquante)." },
         { status: 500 }
       );
     }
     if (!supabaseAdmin) {
       return NextResponse.json(
-        { error: "Supabase admin non configuré (URL/Service Role)." },
+        { error: "Supabase admin non configuré (URL/Service Role manquants)." },
         { status: 500 }
       );
     }
@@ -54,20 +53,19 @@ export async function POST(req: Request) {
       );
     }
 
-    // Parse JSON
     const body = (await req.json().catch(() => ({}))) as {
       plan?: unknown;
       lang?: unknown;
     };
 
-    const plan = body?.plan;
-    const lang = typeof body?.lang === "string" ? body.lang : "";
+    const plan = body.plan;
+    const lang = typeof body.lang === "string" ? body.lang : "";
 
     if (!isPlan(plan)) {
       return NextResponse.json({ error: "Plan invalide." }, { status: 400 });
     }
 
-    // ✅ Auth via cookies (robuste)
+    // Auth via cookies
     const supabase = createRouteHandlerClient({ cookies });
     const { data: userData, error: userErr } = await supabase.auth.getUser();
 
@@ -80,7 +78,7 @@ export async function POST(req: Request) {
 
     const user_id = userData.user.id;
 
-    // Prix Stripe depuis pricing_plans
+    // Fetch stripe_price_id from pricing_plans
     const { data: planRow, error: planErr } = await supabaseAdmin
       .from(PLANS_TABLE)
       .select("stripe_price_id")
@@ -108,13 +106,12 @@ export async function POST(req: Request) {
       (lang ? `&lang=${encodeURIComponent(lang)}` : "");
 
     const cancelUrl =
-      `${site}/payment/cancel` + (lang ? `?lang=${encodeURIComponent(lang)}` : "");
+      `${site}/payment/cancel` +
+      (lang ? `?lang=${encodeURIComponent(lang)}` : "");
 
-    // ✅ Build-safe: pas de automatic_payment_methods
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
-
       line_items: [{ price: planRow.stripe_price_id, quantity: 1 }],
 
       success_url: successUrl,
@@ -122,26 +119,18 @@ export async function POST(req: Request) {
 
       client_reference_id: user_id,
 
-      // ✅ utile pour le webhook
       metadata: { user_id, plan },
-
-      // ✅ utile pour retrouver aussi côté subscription/invoice
-      subscription_data: {
-        metadata: { user_id, plan },
-      },
+      subscription_data: { metadata: { user_id, plan } },
     });
 
     if (!session.url) {
-      return NextResponse.json(
-        { error: "Session Stripe sans URL." },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Session Stripe sans URL." }, { status: 500 });
     }
 
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Erreur serveur checkout.";
     console.error("[checkout] ERROR:", err);
+    const msg = err instanceof Error ? err.message : "Erreur serveur checkout.";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
-                              }
+}
