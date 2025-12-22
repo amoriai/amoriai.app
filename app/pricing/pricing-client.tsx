@@ -111,6 +111,8 @@ const LAYOUT_STRINGS: Record<Locale, LayoutStrings> = {
 
 /* ===========================
    STRINGS PRICING
+   (Option A: on garde la définition "free" ici si tu veux la réutiliser ailleurs,
+    mais on ne l'affiche plus dans la grille.)
 =========================== */
 const LABELS: Record<Locale, Labels> = {
   fr: {
@@ -121,7 +123,7 @@ const LABELS: Record<Locale, Labels> = {
     heroStat: "⭐ Une communauté qui grandit chaque semaine.",
     billingNote:
       "Facturation sécurisée via Stripe · Changement ou annulation en tout temps depuis ton compte · Aucun frais caché",
-    chooseIntro: "Choisis comment ton AmorIAI prend sa place dans ta vie.",
+    chooseIntro: "Choisis ton forfait payant quand tu es prête.",
     usdNote:
       "Les prix sont en dollars américains (USD). Tu peux changer de forfait ou l’annuler quand tu veux, sans engagement.",
     plans: [
@@ -130,11 +132,7 @@ const LABELS: Record<Locale, Labels> = {
         name: "Forfait Découverte",
         price: "Gratuit",
         tagline: "Découvre AmorIAI en douceur.",
-        features: [
-          "1 AmorIAI",
-          "Accès texte (expérience de base)",
-          "FR / EN / ES",
-        ],
+        features: ["1 AmorIAI", "Accès texte (expérience de base)", "FR / EN / ES"],
         ctaLabel: "Commencer gratuitement",
       },
       {
@@ -208,7 +206,7 @@ const LABELS: Record<Locale, Labels> = {
     heroStat: "⭐ A community that grows every week.",
     billingNote:
       "Secure billing via Stripe · Change or cancel anytime from your account · No hidden fees",
-    chooseIntro: "Choose how AmorIAI fits into your life.",
+    chooseIntro: "Pick a paid plan whenever you’re ready.",
     usdNote:
       "Prices are in US dollars (USD). You can change or cancel your plan anytime, no commitment.",
     plans: [
@@ -291,7 +289,7 @@ const LABELS: Record<Locale, Labels> = {
     heroStat: "⭐ Una comunidad que crece cada semana.",
     billingNote:
       "Facturación segura con Stripe · Cambia o cancela cuando quieras desde tu cuenta · Sin cargos ocultos",
-    chooseIntro: "Elige cómo AmorIAI toma su lugar en tu vida.",
+    chooseIntro: "Elige un plan de pago cuando estés listo.",
     usdNote:
       "Los precios están en dólares estadounidenses (USD). Puedes cambiar o cancelar tu plan en cualquier momento.",
     plans: [
@@ -392,7 +390,7 @@ function priceSuffix(locale: Locale): string {
 }
 
 /* ===========================
-   COMPONENT
+   COMPONENT (Option A)
 =========================== */
 export default function PricingPage() {
   const router = useRouter();
@@ -403,7 +401,8 @@ export default function PricingPage() {
   const [dbPlans, setDbPlans] = useState<Partial<Record<PaidPlanId, DbPlanRow>>>({});
   const [errorMsg, setErrorMsg] = useState("");
 
-  const [activePlanLoading, setActivePlanLoading] = useState<PlanId | null>(null);
+  // Option A: on ne met plus jamais "free" en loading since it's not in grid
+  const [activePlanLoading, setActivePlanLoading] = useState<PaidPlanId | null>(null);
 
   // locale from query (?lang=fr)
   useEffect(() => {
@@ -453,36 +452,35 @@ export default function PricingPage() {
   const withLang = (path: string) => `${path}?lang=${locale}`;
 
   const handleLocaleChange = (code: Locale) => {
-    // keep SPA navigation with router (avoid full reload)
     router.push(`${window.location.pathname}?lang=${code}`);
   };
 
-  const displayPlans = useMemo(() => {
-    return t.plans.map((p) => {
-      const db = p.id === "free" ? undefined : dbPlans[p.id];
+  // ✅ Option A: only paid plans in grid
+  const displayPaidPlans = useMemo(() => {
+    return t.plans
+      .filter((p) => p.id !== "free")
+      .map((p) => {
+        const db = dbPlans[p.id as PaidPlanId];
 
-      const hasDbPrice = typeof db?.price === "number" && Number.isFinite(db.price);
-      const mergedName = db?.name ? db.name : p.name;
-      const mergedPrice =
-        p.id === "free"
-          ? p.price
-          : hasDbPrice
+        const hasDbPrice = typeof db?.price === "number" && Number.isFinite(db.price);
+        const mergedName = db?.name ? db.name : p.name;
+        const mergedPrice = hasDbPrice
           ? `${formatUsd(locale, db!.price!)}${priceSuffix(locale)}`
           : p.price;
 
-      // Optional: use DB limits to enrich feature lines (only if present)
-      const mergedFeatures =
-        p.id === "free" || !db
+        const mergedFeatures = !db
           ? p.features
           : [
               ...p.features,
               ...(typeof db.ai_limit === "number" ? [`(${db.ai_limit} AmorIA max)`] : []),
-              ...(typeof db.message_limit === "number" ? [`(${db.message_limit} messages / mois)`] : []),
+              ...(typeof db.message_limit === "number"
+                ? [`(${db.message_limit} messages / mois)`]
+                : []),
               ...(typeof db.voice_limit === "number" ? [`(${db.voice_limit} voix / mois)`] : []),
             ];
 
-      return { ...p, name: mergedName, price: mergedPrice, features: mergedFeatures };
-    });
+        return { ...p, name: mergedName, price: mergedPrice, features: mergedFeatures };
+      });
   }, [t.plans, dbPlans, locale]);
 
   const goToSignupWithPlan = (planId: PlanId) => {
@@ -490,13 +488,6 @@ export default function PricingPage() {
     params.set("lang", locale);
     params.set("plan", planId);
     router.push(`/signup?${params.toString()}`);
-  };
-
-  const goToCreateAmoriaFree = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    params.set("plan", "free");
-    router.push(`/create-amoria?${params.toString()}`);
   };
 
   const handleHeroCta = () => {
@@ -533,24 +524,14 @@ export default function PricingPage() {
     window.location.href = json.url;
   };
 
-  const handleChoosePlan = async (planId: PlanId) => {
+  const handleChoosePaidPlan = async (planId: PaidPlanId) => {
     setErrorMsg("");
     setActivePlanLoading(planId);
 
     try {
-      if (planId === "free") {
-        const { data } = await supabase.auth.getUser();
-        if (!data?.user) {
-          goToSignupWithPlan("free");
-          return;
-        }
-        goToCreateAmoriaFree();
-        return;
-      }
-
       await startStripeCheckout(planId);
     } catch (e: any) {
-      console.error("handleChoosePlan error:", e);
+      console.error("handleChoosePaidPlan error:", e);
       setErrorMsg(e?.message || "Erreur. Réessaie.");
     } finally {
       setActivePlanLoading(null);
@@ -645,8 +626,8 @@ export default function PricingPage() {
         <p className="amoria-pricing-section-note">{t.usdNote}</p>
 
         <div className="amoria-pricing-grid">
-          {displayPlans.map((plan) => {
-            const isThisLoading = activePlanLoading === plan.id;
+          {displayPaidPlans.map((plan) => {
+            const isThisLoading = activePlanLoading === (plan.id as PaidPlanId);
 
             return (
               <article
@@ -660,7 +641,11 @@ export default function PricingPage() {
                   .join(" ")}
               >
                 {plan.badgeLabel && (
-                  <div className={`amoria-pricing-badge amoria-pricing-badge--${plan.badgeVariant ?? "popular"}`}>
+                  <div
+                    className={`amoria-pricing-badge amoria-pricing-badge--${
+                      plan.badgeVariant ?? "popular"
+                    }`}
+                  >
                     {plan.badgeLabel.toUpperCase()}
                   </div>
                 )}
@@ -680,7 +665,7 @@ export default function PricingPage() {
                 <button
                   type="button"
                   className={"amoria-pricing-card-btn" + (isThisLoading ? " is-loading" : "")}
-                  onClick={() => handleChoosePlan(plan.id)}
+                  onClick={() => handleChoosePaidPlan(plan.id as PaidPlanId)}
                   disabled={disableEverything}
                 >
                   {isThisLoading ? (
