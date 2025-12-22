@@ -335,6 +335,10 @@ export default function HomePage({ searchParams }: PageProps) {
   const loginInlineLabel =
     locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión";
 
+  // ✅ NEW: label for the new pricing button
+  const seePricingLabel =
+    locale === "fr" ? "Voir les tarifs" : locale === "en" ? "See pricing" : "Ver precios";
+
   return (
     <main
       className="min-h-screen pb-12 text-slate-100"
@@ -428,9 +432,7 @@ export default function HomePage({ searchParams }: PageProps) {
           <p className="text-[0.8rem] uppercase tracking-[0.18em] text-indigo-300">
             {t.heroKicker}
           </p>
-          <h1 className="text-3xl font-bold leading-tight md:text-[2.3rem]">
-            {t.heroTitle}
-          </h1>
+          <h1 className="text-3xl font-bold leading-tight md:text-[2.3rem]">{t.heroTitle}</h1>
           <p className="max-w-xl text-sm leading-relaxed text-slate-300 md:text-[0.92rem]">
             {t.heroSubtitle}
           </p>
@@ -529,13 +531,12 @@ export default function HomePage({ searchParams }: PageProps) {
         </ul>
       </section>
 
-      {/* MESSAGES (premium chips) */}
+      {/* MESSAGES */}
       <section className="mx-auto max-w-5xl px-4 pb-12 pt-2">
         <div className="mb-5">
           <h2 className="text-lg font-semibold md:text-xl">{t.messagesTitle}</h2>
           <p className="mt-1 text-sm text-slate-300">{t.messagesSubtitle}</p>
 
-          {/* ✅ kept privacy note, removed "Exemples illustratifs..." */}
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-2 rounded-full border border-slate-700/60 bg-slate-950/60 px-3 py-1 text-[0.78rem] text-slate-300">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-rose-400 shadow-[0_0_18px_rgba(244,63,94,0.55)]" />
@@ -568,8 +569,6 @@ export default function HomePage({ searchParams }: PageProps) {
                     {item.quote}
                     <span className="text-slate-400">”</span>
                   </p>
-
-                  {/* ✅ removed "Exemple / Example / Ejemplo" */}
                 </div>
               </div>
 
@@ -592,6 +591,7 @@ export default function HomePage({ searchParams }: PageProps) {
           <p className="mx-auto mt-2 max-w-xl text-sm text-slate-300">{t.pricingText}</p>
 
           <div className="mt-5 flex flex-col items-center gap-2">
+            {/* CTA 1: signup */}
             <Link
               href={withLang("/signup")}
               className="
@@ -602,6 +602,19 @@ export default function HomePage({ searchParams }: PageProps) {
               "
             >
               {t.pricingCta}
+            </Link>
+
+            {/* ✅ CTA 2: pricing page */}
+            <Link
+              href={withLang("/pricing")}
+              className="
+                inline-flex w-full max-w-sm items-center justify-center rounded-full
+                border border-slate-500/70 bg-transparent
+                px-6 py-3 text-[0.92rem] font-medium text-slate-100
+                transition hover:bg-slate-900/70
+              "
+            >
+              {seePricingLabel}
             </Link>
 
             <div className="text-[0.78rem] text-slate-400">
