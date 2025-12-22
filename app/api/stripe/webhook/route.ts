@@ -5,35 +5,58 @@ import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 
-// ✅ ENV (validation propre, pas de "!")
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-
-if (!STRIPE_SECRET_KEY) throw new Error("Missing STRIPE_SECRET_KEY");
-if (!STRIPE_WEBHOOK_SECRET) throw new Error("Missing STRIPE_WEBHOOK_SECRET");
-if (!SUPABASE_URL) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL");
-if (!SUPABASE_SERVICE_ROLE_KEY) throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
-
-const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" });
-
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
-
-// 🔒 Tes plans Stripe payants (free ne passe pas par Stripe)
 type PlanCode = "chat" | "plus" | "unlimited";
 
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY ?? "";
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET ?? "";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+
+const stripe =
+  STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" }) : null;
+
+const supabaseAdmin =
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false },
+      })
+    : null;
+
+async function planIdFromCode(planCode: PlanCode) {
+  const { data, error } = await supabaseAdmin!
+    .from("pricing_plans")
+    .select("id")
+    .eq("code", planCode)
+    .maybeSingle();
+
+  if (error || !data?.id) return null;
+  return data.id as string;
+}
+
+async function planIdFromStripePriceId(priceId: string | null | undefined) {
+  if (!priceId) return null;
+
+  const { data, error } = await supabaseAdmin!
+    .from("pricing_plans")
+    .select("id")
+    .eq("stripe_price_id", priceId)
+    .maybeSingle();
+
+  if (error || !data?.id) return null;
+  return data.id as string;
+}
+
 export async function POST(req: Request) {
-  // 1) Signature Stripe
+  // Basic env checks (safe)
+  if (!stripe || !STRIPE_WEBHOOK_SECRET || !supabaseAdmin) {
+    return new NextResponse("Webhook not configured", { status: 500 });
+  }
+
   const sig = req.headers.get("stripe-signature");
   if (!sig) return new NextResponse("Missing Stripe signature", { status: 400 });
 
-  // 2) Raw body obligatoire
   const rawBody = await req.text();
 
-  // 3) Vérification signature
   let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(rawBody, sig, STRIPE_WEBHOOK_SECRET);
@@ -43,51 +66,39 @@ export async function POST(req: Request) {
   }
 
   try {
-    // ✅ On traite au minimum: completed + update + deleted
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        // ✅ IMPORTANT: ton /api/checkout envoie metadata: { user_id, plan }
         const userId = session.metadata?.user_id || null;
         const planCode = (session.metadata?.plan as PlanCode | undefined) || undefined;
 
         if (!userId || !planCode) {
-          console.warn("Webhook: metadata manquante", session.metadata);
+          console.warn("Webhook: missing session metadata", session.metadata);
           return new NextResponse("Missing metadata", { status: 200 });
         }
 
-        // 1) Récupérer pricing_plan_id depuis pricing_plans.code
-        const { data: planRow, error: planErr } = await supabaseAdmin
-          .from("pricing_plans")
-          .select("id")
-          .eq("code", planCode)
-          .maybeSingle();
-
-        if (planErr || !planRow?.id) {
-          console.error("Webhook: plan introuvable", planCode, planErr);
+        const pricing_plan_id = await planIdFromCode(planCode);
+        if (!pricing_plan_id) {
+          console.error("Webhook: plan code not found in pricing_plans", planCode);
           return new NextResponse("Plan not found", { status: 200 });
         }
 
-        // 2) ✅ Modèle SIMPLE: 1 ligne par user_id (onConflict user_id)
-        //    -> pas besoin de "current=false" avant, pas besoin d'historique
         const payload = {
           user_id: userId,
-          pricing_plan_id: planRow.id,
+          pricing_plan_id,
           stripe_customer_id: session.customer ? String(session.customer) : null,
           stripe_subscription_id: session.subscription ? String(session.subscription) : null,
           status: "active",
+          current: true,
           updated_at: new Date().toISOString(),
         };
 
-        const { error: upsertErr } = await supabaseAdmin
+        const { error } = await supabaseAdmin
           .from("user_subscriptions")
           .upsert(payload, { onConflict: "user_id" });
 
-        if (upsertErr) {
-          console.error("Webhook: upsert error", upsertErr);
-        }
-
+        if (error) console.error("Webhook upsert error:", error);
         break;
       }
 
@@ -95,52 +106,38 @@ export async function POST(req: Request) {
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
 
-        // On récupère user_id depuis metadata de la subscription (tu l’ajoutes dans /api/checkout)
         const userId = (sub.metadata?.user_id as string | undefined) || undefined;
-        const planCode = (sub.metadata?.plan as PlanCode | undefined) || undefined;
-
-        // Si pas de userId, on ne peut pas relier (mais on répond 200 pour Stripe)
         if (!userId) {
-          console.warn("Webhook: subscription metadata user_id manquante", sub.metadata);
-          return new NextResponse("Missing subscription user_id", { status: 200 });
+          console.warn("Webhook: missing subscription metadata.user_id", sub.metadata);
+          return new NextResponse("Missing user_id", { status: 200 });
         }
 
-        // status Stripe: active, canceled, unpaid, past_due, etc.
+        const priceId = sub.items?.data?.[0]?.price?.id;
+        const pricing_plan_id = await planIdFromStripePriceId(priceId);
+
         const status = sub.status || (event.type === "customer.subscription.deleted" ? "canceled" : "unknown");
-
-        // (optionnel) remettre pricing_plan_id si on a plan metadata
-        let pricing_plan_id: string | null = null;
-        if (planCode) {
-          const { data: planRow, error: planErr } = await supabaseAdmin
-            .from("pricing_plans")
-            .select("id")
-            .eq("code", planCode)
-            .maybeSingle();
-
-          if (!planErr && planRow?.id) pricing_plan_id = planRow.id;
-        }
+        const isCurrent = status === "active";
 
         const payload: any = {
           user_id: userId,
           stripe_customer_id: sub.customer ? String(sub.customer) : null,
           stripe_subscription_id: sub.id,
           status,
+          current: event.type === "customer.subscription.deleted" ? false : isCurrent,
           updated_at: new Date().toISOString(),
         };
 
         if (pricing_plan_id) payload.pricing_plan_id = pricing_plan_id;
 
-        const { error: upsertErr } = await supabaseAdmin
+        const { error } = await supabaseAdmin
           .from("user_subscriptions")
           .upsert(payload, { onConflict: "user_id" });
 
-        if (upsertErr) console.error("Webhook: subscription upsert error", upsertErr);
-
+        if (error) console.error("Webhook subscription upsert error:", error);
         break;
       }
 
       default:
-        // On ignore le reste
         break;
     }
 
