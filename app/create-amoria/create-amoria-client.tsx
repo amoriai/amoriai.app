@@ -60,6 +60,38 @@ function randomAvatar(type: PersonaType): string {
   return list[Math.floor(Math.random() * list.length)];
 }
 
+/**
+ * ✅ Choisit un avatar non encore utilisé par l’utilisateur pour ce persona_type,
+ * puis retombe en random quand tous les avatars de ce type ont été utilisés.
+ */
+async function pickAvatarForUser(userId: string, personaType: PersonaType): Promise<string> {
+  const candidates = AVATARS[personaType] ?? [];
+  if (candidates.length === 0) return "/amoria-avatar-preview.png";
+
+  const { data, error } = await supabase
+    .from("user_amoria")
+    .select("avatar_image_url")
+    .eq("user_id", userId)
+    .eq("persona_type", personaType)
+    .eq("is_archived", false);
+
+  if (error) {
+    console.error("pickAvatarForUser SELECT error:", error);
+    return randomAvatar(personaType);
+  }
+
+  const used = new Set(
+    (data ?? [])
+      .map((r: any) => String(r?.avatar_image_url ?? "").trim())
+      .filter(Boolean)
+  );
+
+  const notUsed = candidates.find((url) => !used.has(url));
+  if (notUsed) return notUsed;
+
+  return randomAvatar(personaType);
+}
+
 /* =========================
    TEXTES
 ========================= */
@@ -359,7 +391,6 @@ export default function CreateAmoriaPage() {
 
       if (subErr) {
         console.error("user_subscriptions SELECT error:", subErr);
-        // on garde free si erreur
       } else {
         const code: any = (sub as any)?.pricing_plans?.code;
         planLocal = normalizePlanCode(code);
@@ -376,7 +407,6 @@ export default function CreateAmoriaPage() {
 
       if (countErr) {
         console.error("user_amoria COUNT error:", countErr);
-        // on continue quand même
       }
 
       const countLocal = typeof count === "number" ? count : 0;
@@ -470,7 +500,8 @@ Ta mission est d’apporter soutien, écoute et accompagnement bienveillant,
 sans jugement, en respectant les limites de l’utilisateur.
       `.trim();
 
-      const avatarUrl = randomAvatar(personaType);
+      // ✅ NEW: avatar non utilisé si possible, sinon random
+      const avatarUrl = await pickAvatarForUser(userId, personaType);
 
       const { data: inserted, error: insErr } = await supabase
         .from("user_amoria")
@@ -655,7 +686,12 @@ sans jugement, en respectant les limites de l’utilisateur.
 
             <div className="amoria-plan-pill">
               <span className="amoria-plan-label">{t.currentPlanLabel}</span>
-              <span className="amoria-plan-name">{t.planName(plan)}</span>
+              <span className="amoria-plan-name">
+                {t.planName(plan)}{" "}
+                <span style={{ color: "#9ca3af", fontWeight: 400 }}>
+                  · {aiCount}/{maxAllowed}
+                </span>
+              </span>
             </div>
           </div>
         </header>
@@ -768,6 +804,7 @@ sans jugement, en respectant les limites de l’utilisateur.
         </section>
       </div>
 
+      {/* ✅ Ton CSS global original inchangé */}
       <style jsx global>{`
         .amoria-create-root {
           min-height: 100vh;
