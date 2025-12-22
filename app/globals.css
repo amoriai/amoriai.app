@@ -2,22 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ✅ Anti-flash complet au chargement */
-html, body {
+/* Global reset + stable dark background */
+html,
+body {
   margin: 0;
   padding: 0;
-  background-color: #050816;
-  color: white;
   width: 100%;
   height: 100%;
   overflow-x: hidden;
+
+  background-color: #050816;
+  color: #ffffff;
+
+  /* Better text rendering */
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
 }
 
-/* ✅ Empêche TOUT affichage avant que Tailwind soit prêt */
+/* ✅ Mobile-friendly viewport height (prevents weird jumps on iOS/Android bars) */
 body {
-  visibility: visible;
+  min-height: 100dvh; /* modern */
+  min-height: 100vh;  /* fallback */
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
+/* Media defaults */
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Prevent layout issues with long words/urls */
+* {
+  box-sizing: border-box;
+}
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: anywhere;
+}
+
+/* Links (safe: no @apply) */
 a {
-  @apply text-pink-400 hover:text-pink-300 underline-offset-2;
+  color: #f472b6; /* pink-400 */
+  text-underline-offset: 2px;
+}
+a:hover {
+  color: #f9a8d4; /* pink-300 */
+}
+
+/* Form elements inherit fonts/colors */
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/* Optional: nicer focus ring without breaking Tailwind */
+:focus-visible {
+  outline: 2px solid rgba(244, 114, 182, 0.7);
+  outline-offset: 2px;
 }
