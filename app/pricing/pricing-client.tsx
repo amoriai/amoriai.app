@@ -221,12 +221,7 @@ const LABELS: Record<Locale, Labels> = {
         name: "AmorIAI Chat",
         price: "$9.99 USD / month",
         tagline: "For those who want to text their AmorIAI every day.",
-        features: [
-          "Up to 2 AmorIAI",
-          "400 text messages / month",
-          "Long-term memory enabled",
-          "FR / EN / ES",
-        ],
+        features: ["Up to 2 AmorIAI", "400 text messages / month", "Long-term memory enabled", "FR / EN / ES"],
         ctaLabel: "Activate AmorIAI Chat",
       },
       {
@@ -265,18 +260,9 @@ const LABELS: Record<Locale, Labels> = {
     ],
     faqTitle: "Frequently asked questions",
     faqs: [
-      {
-        q: "Can I change or cancel my plan anytime?",
-        a: "Yes. You can change or cancel anytime from your account, with no hidden fees.",
-      },
-      {
-        q: "Can I try AmorIAI for free?",
-        a: "Yes. Create a free account, try the basic text experience, and only activate a paid plan if you want.",
-      },
-      {
-        q: "What happens if I reach my plan’s message limit?",
-        a: "You’ll get notified when you’re close. You can wait for the next month or upgrade.",
-      },
+      { q: "Can I change or cancel my plan anytime?", a: "Yes. You can change or cancel anytime from your account, with no hidden fees." },
+      { q: "Can I try AmorIAI for free?", a: "Yes. Create a free account, try the basic text experience, and only activate a paid plan if you want." },
+      { q: "What happens if I reach my plan’s message limit?", a: "You’ll get notified when you’re close. You can wait for the next month or upgrade." },
     ],
   },
   es: {
@@ -304,12 +290,7 @@ const LABELS: Record<Locale, Labels> = {
         name: "AmorIAI Chat",
         price: "9,99 $ USD / mes",
         tagline: "Para escribir a tu AmorIAI cada día.",
-        features: [
-          "Hasta 2 AmorIAI",
-          "400 mensajes de texto / mes",
-          "Memoria a largo plazo activada",
-          "FR / EN / ES",
-        ],
+        features: ["Hasta 2 AmorIAI", "400 mensajes de texto / mes", "Memoria a largo plazo activada", "FR / EN / ES"],
         ctaLabel: "Activar AmorIAI Chat",
       },
       {
@@ -348,18 +329,9 @@ const LABELS: Record<Locale, Labels> = {
     ],
     faqTitle: "Preguntas frecuentes",
     faqs: [
-      {
-        q: "¿Puedo cambiar o cancelar mi plan cuando quiera?",
-        a: "Sí. Puedes cambiar o cancelar tu suscripción en cualquier momento desde tu cuenta.",
-      },
-      {
-        q: "¿Puedo probar AmorIAI gratis?",
-        a: "Sí. Crea una cuenta gratuita y prueba el texto. Activa un plan de pago solo si quieres.",
-      },
-      {
-        q: "¿Qué pasa si alcanzo el límite de mensajes?",
-        a: "Recibirás un aviso. Puedes esperar al próximo mes o subir de plan.",
-      },
+      { q: "¿Puedo cambiar o cancelar mi plan cuando quiera?", a: "Sí. Puedes cambiar o cancelar tu suscripción en cualquier momento desde tu cuenta." },
+      { q: "¿Puedo probar AmorIAI gratis?", a: "Sí. Crea una cuenta gratuita y prueba el texto. Activa un plan de pago solo si quieres." },
+      { q: "¿Qué pasa si alcanzo el límite de mensajes?", a: "Recibirás un aviso. Puedes esperar al próximo mes o subir de plan." },
     ],
   },
 };
@@ -401,9 +373,17 @@ export default function PricingPage() {
 
   const [activePlanLoading, setActivePlanLoading] = useState<PaidPlanId | null>(null);
 
+  // ✅ NEW: bloque les CTA plans si on vient du bouton "Voir les tarifs" (ex: ?from=hero)
+  const [disablePlanButtons, setDisablePlanButtons] = useState(false);
+
   // locale from query (?lang=fr)
   useEffect(() => {
     setLocale(normalizeLocale(sp.get("lang")));
+  }, [sp]);
+
+  // ✅ NEW: détecte l'origine
+  useEffect(() => {
+    setDisablePlanButtons(sp.get("from") === "hero");
   }, [sp]);
 
   // load prices from DB
@@ -446,10 +426,21 @@ export default function PricingPage() {
   const t = LABELS[locale];
   const ui = LAYOUT_STRINGS[locale];
 
-  const withLang = (path: string) => `${path}?lang=${locale}`;
+  // ⚠️ garde les query existants si possible (lang + from)
+  const withLang = (path: string) => {
+    const params = new URLSearchParams();
+    params.set("lang", locale);
+    const from = sp.get("from");
+    if (from) params.set("from", from);
+    return `${path}?${params.toString()}`;
+  };
 
   const handleLocaleChange = (code: Locale) => {
-    router.push(`${window.location.pathname}?lang=${code}`);
+    const params = new URLSearchParams();
+    params.set("lang", code);
+    const from = sp.get("from");
+    if (from) params.set("from", from);
+    router.push(`${window.location.pathname}?${params.toString()}`);
   };
 
   const displayPaidPlans = useMemo(() => {
@@ -536,6 +527,9 @@ export default function PricingPage() {
 
   const disableEverything = activePlanLoading !== null;
 
+  // ✅ Désactive seulement les 3 CTA des plans si "from=hero"
+  const disablePlanCtas = disableEverything || disablePlanButtons;
+
   return (
     <main className="amoria-root">
       <header className="amoria-header">
@@ -621,6 +615,12 @@ export default function PricingPage() {
         <h2 className="amoria-pricing-section-title">{t.chooseIntro}</h2>
         <p className="amoria-pricing-section-note">{t.usdNote}</p>
 
+        {disablePlanButtons && (
+          <p className="amoria-pricing-lock-note" role="status">
+            Connecte-toi ou crée un compte pour activer un forfait.
+          </p>
+        )}
+
         <div className="amoria-pricing-grid">
           {displayPaidPlans.map((plan) => {
             const isThisLoading = activePlanLoading === (plan.id as PaidPlanId);
@@ -660,9 +660,18 @@ export default function PricingPage() {
 
                 <button
                   type="button"
-                  className={"amoria-pricing-card-btn" + (isThisLoading ? " is-loading" : "")}
-                  onClick={() => handleChoosePaidPlan(plan.id as PaidPlanId)}
-                  disabled={disableEverything}
+                  className={
+                    "amoria-pricing-card-btn" +
+                    (isThisLoading ? " is-loading" : "") +
+                    (disablePlanButtons ? " is-locked" : "")
+                  }
+                  onClick={() => {
+                    if (disablePlanCtas) return;
+                    handleChoosePaidPlan(plan.id as PaidPlanId);
+                  }}
+                  disabled={disablePlanCtas}
+                  aria-disabled={disablePlanCtas}
+                  title={disablePlanButtons ? "Connecte-toi ou crée un compte pour activer un forfait." : undefined}
                 >
                   {isThisLoading ? (
                     <span className="amoria-dots" aria-label="Loading">
@@ -741,7 +750,6 @@ export default function PricingPage() {
           padding-bottom: 3rem;
         }
 
-        /* ✅ Conteneur cohérent pour aligner header/hero/section/faq/footer */
         .amoria-header,
         .amoria-pricing-hero,
         .amoria-pricing-section,
@@ -951,10 +959,17 @@ export default function PricingPage() {
           text-align: center;
           font-size: 0.82rem;
           color: #9ca3af;
+          margin: 0 0 1.1rem;
+        }
+
+        /* ✅ NEW: note "lock" si from=hero */
+        .amoria-pricing-lock-note {
+          text-align: center;
+          font-size: 0.82rem;
+          color: #fde68a;
           margin: 0 0 1.7rem;
         }
 
-        /* ✅ Grid: 3 plans => 3 colonnes, centré, cartes alignées */
         .amoria-pricing-grid {
           width: 100%;
           display: grid;
@@ -1098,7 +1113,8 @@ export default function PricingPage() {
           cursor: pointer;
           width: 100%;
           box-shadow: 0 14px 35px rgba(248, 113, 113, 0.55);
-          transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+          transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease,
+            filter 0.15s ease;
           min-height: 44px;
         }
 
@@ -1108,10 +1124,18 @@ export default function PricingPage() {
         }
 
         .amoria-pricing-card-btn:disabled {
-          opacity: 0.65;
+          opacity: 0.55;
           cursor: not-allowed;
           transform: none;
           box-shadow: 0 14px 35px rgba(248, 113, 113, 0.25);
+          filter: grayscale(0.2);
+        }
+
+        /* ✅ NEW: style visuel quand c’est "locké" par from=hero */
+        .amoria-pricing-card-btn.is-locked:disabled {
+          opacity: 0.45;
+          box-shadow: none;
+          filter: grayscale(0.35);
         }
 
         .amoria-pricing-card-btn.is-loading {
