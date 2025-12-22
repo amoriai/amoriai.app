@@ -12,13 +12,16 @@ const STRINGS: Record<Locale, { logout: string; loggingOut: string }> = {
   es: { logout: "Cerrar sesión", loggingOut: "Cerrando sesión…" },
 };
 
+function normalizeLocale(raw: string | null): Locale {
+  return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
+}
+
 export function LogoutButton() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const sp = useSearchParams();
 
-  const rawLang = searchParams.get("lang");
-  const locale: Locale = rawLang === "fr" || rawLang === "en" || rawLang === "es" ? rawLang : "fr";
+  const locale = normalizeLocale(sp.get("lang"));
   const t = STRINGS[locale];
 
   const handleLogout = async () => {
@@ -26,25 +29,34 @@ export function LogoutButton() {
     setLoading(true);
 
     try {
-      await supabase.auth.signOut();
-
-      if (typeof window !== "undefined") {
-        window.localStorage.clear();
-        window.sessionStorage.clear();
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("supabase signOut error:", error);
+        return;
       }
 
-      const params = new URLSearchParams();
-      params.set("lang", locale);
+      // Optionnel: si tu veux vraiment nettoyer, fais-le de façon ciblée
+      // (évite localStorage.clear())
+      try {
+        if (typeof window !== "undefined") {
+          // Supabase v2 (selon config) utilise souvent ces clés:
+          // supabase.auth.token / sb-<project-ref>-auth-token / etc.
+          // Ici on ne touche à rien par défaut.
+        }
+      } catch {}
 
-      router.replace(`/login?${params.toString()}`);
+      router.replace(`/login?lang=${locale}`);
+      router.refresh(); // ✅ optionnel mais souvent utile avec Next app router
     } catch (err) {
-      console.error("logout error", err);
+      console.error("logout error:", err);
+    } finally {
       setLoading(false);
     }
   };
 
   return (
     <button
+      type="button"
       onClick={handleLogout}
       disabled={loading}
       style={{
