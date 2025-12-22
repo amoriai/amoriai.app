@@ -674,6 +674,7 @@ export default function HomePage({ searchParams }: PageProps) {
       {/* FOOTER */}
       <footer className="mx-auto max-w-5xl px-4 pb-4 text-center text-[0.78rem] text-slate-400">
         <div className="mb-2">{t.footerCopy}</div>
+
         <div className="flex flex-wrap justify-center gap-3">
           <Link href={withLang("/legal")} className="hover:text-slate-100">
             {t.footerLinks.legal}
@@ -692,37 +693,6 @@ export default function HomePage({ searchParams }: PageProps) {
           </Link>
         </div>
       </footer>
-
-      {/* ✅ CSS (global, because this file is server component) */}
-      <style jsx global>{`
-        @keyframes amoriaPulse {
-          0% {
-            transform: translateY(0);
-            filter: brightness(1);
-          }
-          50% {
-            transform: translateY(-2px);
-            filter: brightness(1.08);
-          }
-          100% {
-            transform: translateY(0);
-            filter: brightness(1);
-          }
-        }
-
-        /* ensure videos look consistent */
-        video {
-          outline: none;
-        }
-
-        /* nicer focus */
-        a:focus-visible,
-        button:focus-visible {
-          outline: 2px solid rgba(251, 55, 255, 0.8);
-          outline-offset: 3px;
-          border-radius: 999px;
-        }
-      `}</style>
     </main>
   );
 }
