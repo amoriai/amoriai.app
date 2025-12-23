@@ -25,7 +25,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
     heroSubtitle:
       "Cette politique explique quelles données nous collectons, pourquoi nous les collectons et comment nous les protégeons lorsque tu utilises AmorIAI.app.",
     updatedLabel: "Dernière mise à jour :",
-    updatedDate: "novembre 2025",
+    updatedDate: "décembre 2025",
     sections: [
       {
         title: "1. Qui est responsable de tes données ?",
@@ -35,7 +35,14 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         ],
       },
       {
-        title: "2. Quelles données sont collectées ?",
+        title: "2. Âge minimum (18+)",
+        paragraphs: [
+          "AmorIAI.app est strictement destiné aux personnes âgées de 18 ans ou plus.",
+          "Nous ne collectons pas volontairement de données auprès de mineurs. Si nous découvrons qu’un compte a été créé par une personne de moins de 18 ans, nous pourrons suspendre ou supprimer ce compte et supprimer les données associées dans la mesure du possible.",
+        ],
+      },
+      {
+        title: "3. Quelles données sont collectées ?",
         paragraphs: [
           "Nous pouvons collecter plusieurs types de données lorsque tu utilises AmorIAI.app :",
           "• Informations de compte : adresse e-mail, mot de passe chiffré, langue préférée, paramètres de ton compte. Si tu crées un compte ou te connectes via Google, certaines informations de base de ton profil Google (par exemple, ton adresse e-mail) nous sont transmises pour créer ou associer ton compte AmorIAI.\n• Données d’usage : dates et heures de connexion, type d’appareil, système d’exploitation, données techniques permettant d’améliorer le service.\n• Contenu des échanges avec ton AmorIAI : messages texte, journaux, réponses, ainsi que certaines métadonnées (heure, langue utilisée).\n• Données de paiement : informations liées aux transactions (montant, devise, identifiant de transaction, statut de paiement) traitées par notre prestataire Stripe. Nous ne stockons pas nous-mêmes les numéros complets de carte bancaire.\n• Cookies et traceurs : cookies strictement nécessaires au fonctionnement du site (authentification, sécurité, préférences de langue) et, si tu les acceptes, cookies de mesure d’audience et d’analytique pour comprendre comment le site est utilisé.",
@@ -43,22 +50,22 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         ],
       },
       {
-        title: "3. Comment utilisons-nous tes données ?",
+        title: "4. Comment utilisons-nous tes données ?",
         paragraphs: [
           "Nous utilisons tes données pour :",
           "• Fournir le service : créer ton compte, te connecter (y compris via Google si tu choisis cette option), permettre les échanges texte/voix avec ton AmorIAI.\n• Gérer les abonnements et paiements : traiter tes paiements via notre prestataire Stripe, vérifier l’état de ton abonnement et lutter contre la fraude.\n• Personnaliser ton expérience : mémoriser certains éléments (dans les plans payants) pour que ton AmorIAI se souvienne de toi.\n• Améliorer AmorIAI.app : analyser de manière agrégée l’usage du service (via journaux techniques et, le cas échéant, cookies de mesure d’audience) afin de comprendre ce qui fonctionne ou non.\n• Respecter nos obligations légales : par exemple en cas de demande des autorités compétentes, dans les limites prévues par la loi.",
         ],
       },
       {
-        title: "4. IA, confidentialité et contenu sensible",
+        title: "5. IA, confidentialité et contenu sensible",
         paragraphs: [
           "Tes conversations avec ton AmorIAI peuvent toucher à des sujets personnels (émotions, relations, bien-être, etc.).",
           "Nous te recommandons :\n• de ne pas partager d’informations ultra sensibles (numéros de cartes bancaires, mots de passe, documents officiels complets, etc.),\n• d’éviter de publier des informations permettant d’identifier directement une autre personne sans son consentement.",
-          "Les modèles d’IA utilisés pour faire fonctionner AmorIAI peuvent analyser ton contenu pour répondre, mais nous mettons en place des garde-fous pour limiter l’usage de ces données au fonctionnement et à l’amélioration du service.",
+          "Les modèles d’IA utilisés pour faire fonctionner AmorIAI peuvent analyser ton contenu pour répondre. Nous mettons en place des garde-fous et utilisons ces données principalement pour faire fonctionner le service et l’améliorer.",
         ],
       },
       {
-        title: "5. Partage de tes données",
+        title: "6. Partage de tes données",
         paragraphs: [
           "Nous pouvons partager certaines données avec :",
           "• Des prestataires techniques (hébergement, infrastructure, bases de données, outils d’analytique) strictement nécessaires au fonctionnement d’AmorIAI.app.\n• Des services d’IA tiers, lorsque c’est nécessaire pour générer les réponses de ton AmorIAI.\n• Notre prestataire de paiement Stripe, pour traiter tes paiements, vérifier les transactions et lutter contre la fraude.\n• Google, lorsque tu choisis de te connecter ou de créer un compte via ton compte Google (authentification OAuth). Dans ce cas, certaines informations de ton profil Google sont transmises pour permettre la connexion.",
@@ -66,7 +73,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         ],
       },
       {
-        title: "6. Durée de conservation",
+        title: "7. Durée de conservation",
         paragraphs: [
           "Nous conservons tes données aussi longtemps que nécessaire pour :",
           "• fournir le service,\n• respecter nos obligations légales,\n• résoudre des litiges potentiels.",
@@ -74,7 +81,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         ],
       },
       {
-        title: "7. Tes droits",
+        title: "8. Tes droits",
         paragraphs: [
           "Selon ta juridiction, tu peux disposer de certains droits sur tes données personnelles, notamment :",
           "• droit d’accès : savoir quelles données nous détenons sur toi ;\n• droit de rectification : corriger des informations inexactes ;\n• droit à l’effacement (dans certaines limites) ;\n• droit d’opposition ou de limitation du traitement.",
@@ -82,17 +89,10 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         ],
       },
       {
-        title: "8. Sécurité",
+        title: "9. Sécurité",
         paragraphs: [
           "Nous mettons en place des mesures raisonnables (techniques et organisationnelles) pour protéger tes données contre l’accès non autorisé, la perte, la modification ou la divulgation.",
           "Aucun système n’étant parfaitement sécurisé, nous te recommandons également de choisir un mot de passe fort, de ne pas le réutiliser sur d’autres services et de le garder confidentiel.",
-        ],
-      },
-      {
-        title: "9. Utilisation par des mineurs",
-        paragraphs: [
-          "AmorIAI.app est destiné à des utilisateurs adultes. Si tu as moins de 18 ans, l’utilisation du service devrait se faire avec l’autorisation d’un parent ou d’un tuteur légal, en fonction des lois de ton pays.",
-          "Si nous découvrons qu’un compte a été créé en violation de ces règles, nous pourrons le suspendre ou le supprimer.",
         ],
       },
       {
@@ -111,13 +111,14 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
       },
     ],
   },
+
   en: {
     heroKicker: "PRIVACY POLICY",
     heroTitle: "How AmorIAI.app protects your data.",
     heroSubtitle:
       "This policy explains what data we collect, why we collect it and how we protect it when you use AmorIAI.app.",
     updatedLabel: "Last updated:",
-    updatedDate: "November 2025",
+    updatedDate: "December 2025",
     sections: [
       {
         title: "1. Who is responsible for your data?",
@@ -127,30 +128,37 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         ],
       },
       {
-        title: "2. What data do we collect?",
+        title: "2. Minimum age (18+)",
+        paragraphs: [
+          "AmorIAI.app is strictly intended for individuals who are 18 years old or older.",
+          "We do not knowingly collect personal data from minors. If we learn that an account was created by someone under 18, we may suspend or delete that account and delete associated data where reasonably possible.",
+        ],
+      },
+      {
+        title: "3. What data do we collect?",
         paragraphs: [
           "We may collect several types of data when you use AmorIAI.app:",
-          "• Account information: e-mail address, encrypted password, preferred language, account settings. If you sign up or log in with Google, some basic information from your Google profile (for example your e-mail address) is shared with us so we can create or link your AmorIAI account.\n• Usage data: login dates and times, device type, operating system, technical logs used to improve the service.\n• Conversation content: text messages and some metadata (time, language used) exchanged with your AmorIAI.\n• Payment data: information related to transactions (amount, currency, transaction identifier, payment status) processed by our payment provider Stripe. We do not store full payment card numbers on our own servers.\n• Cookies and similar technologies: strictly necessary cookies (for authentication, security and language preferences) and, if you accept them, analytics cookies to understand how the site is used.",
+          "• Account information: e-mail address, encrypted password, preferred language, account settings. If you sign up or log in with Google, some basic information from your Google profile (for example your e-mail address) is shared with us so we can create or link your AmorIAI account.\n• Usage data: login dates and times, device type, operating system, technical logs used to improve the service.\n• Conversation content: text messages, journals and some metadata (time, language used) exchanged with your AmorIAI.\n• Payment data: information related to transactions (amount, currency, transaction identifier, payment status) processed by our payment provider Stripe. We do not store full payment card numbers on our own servers.\n• Cookies and similar technologies: strictly necessary cookies (for authentication, security and language preferences) and, if you accept them, analytics cookies to understand how the site is used.",
           "We do not sell your personal data to third parties.",
         ],
       },
       {
-        title: "3. How do we use your data?",
+        title: "4. How do we use your data?",
         paragraphs: [
           "We use your data to:",
           "• Provide the service: create your account, log you in (including via Google if you choose that option), enable text/voice exchanges with your AmorIAI.\n• Manage subscriptions and payments: process your payments via our provider Stripe, verify transactions and help prevent fraud.\n• Personalize your experience: in paid plans, enable your AmorIAI to remember you over time.\n• Improve AmorIAI.app: analyse usage in an aggregated way (through technical logs and, where applicable, analytics cookies) to understand what works and what does not.\n• Comply with legal obligations: for example, in response to lawful requests from competent authorities.",
         ],
       },
       {
-        title: "4. AI, privacy and sensitive content",
+        title: "5. AI, privacy and sensitive content",
         paragraphs: [
           "Your conversations with your AmorIAI may involve personal topics (emotions, relationships, wellbeing, etc.).",
           "We recommend that you:\n• do not share ultra-sensitive information (payment card numbers, passwords, full official documents, etc.);\n• avoid sharing data that could directly identify another person without their consent.",
-          "The AI models used to run AmorIAI may analyse your content to generate responses, but we put safeguards in place so this data is used only to operate and improve the service.",
+          "The AI models used to run AmorIAI may analyse your content to generate responses. We implement safeguards and use this data primarily to operate and improve the service.",
         ],
       },
       {
-        title: "5. Sharing your data",
+        title: "6. Sharing your data",
         paragraphs: [
           "We may share certain data with:",
           "• Technical providers (hosting, infrastructure, databases, analytics tools) strictly necessary for AmorIAI.app to function.\n• Third-party AI services, when needed to generate responses from your AmorIAI.\n• Our payment provider Stripe, to process your payments, verify transactions and help prevent fraud.\n• Google, when you choose to sign up or log in using your Google account (OAuth authentication). In that case, certain information from your Google profile is shared so we can authenticate you.",
@@ -158,7 +166,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         ],
       },
       {
-        title: "6. Data retention",
+        title: "7. Data retention",
         paragraphs: [
           "We keep your data for as long as necessary to:",
           "• provide the service,\n• comply with legal obligations,\n• handle potential disputes.",
@@ -166,7 +174,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         ],
       },
       {
-        title: "7. Your rights",
+        title: "8. Your rights",
         paragraphs: [
           "Depending on your jurisdiction, you may have certain rights over your personal data, including:",
           "• right of access;\n• right to rectification;\n• right to erasure (under certain conditions);\n• right to object or restrict processing.",
@@ -174,17 +182,10 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         ],
       },
       {
-        title: "8. Security",
+        title: "9. Security",
         paragraphs: [
           "We implement reasonable technical and organisational measures to protect your data against unauthorised access, loss, modification or disclosure.",
           "No system is perfectly secure, so we also recommend that you choose a strong password, do not reuse it on other services and keep it confidential.",
-        ],
-      },
-      {
-        title: "9. Use by minors",
-        paragraphs: [
-          "AmorIAI.app is intended for adult users. If you are under 18, you should only use the service with the authorisation of a parent or legal guardian, where allowed by your local laws.",
-          "If we discover that an account was created in breach of these rules, we may suspend or delete it.",
         ],
       },
       {
@@ -203,13 +204,14 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
       },
     ],
   },
+
   es: {
     heroKicker: "POLÍTICA DE PRIVACIDAD",
     heroTitle: "Cómo AmorIAI.app protege tus datos.",
     heroSubtitle:
       "Esta política explica qué datos recopilamos, por qué los recopilamos y cómo los protegemos cuando usas AmorIAI.app.",
     updatedLabel: "Última actualización:",
-    updatedDate: "noviembre de 2025",
+    updatedDate: "diciembre de 2025",
     sections: [
       {
         title: "1. ¿Quién es responsable de tus datos?",
@@ -219,30 +221,37 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         ],
       },
       {
-        title: "2. ¿Qué datos recopilamos?",
+        title: "2. Edad mínima (18+)",
+        paragraphs: [
+          "AmorIAI.app está estrictamente destinado a personas de 18 años o más.",
+          "No recopilamos conscientemente datos personales de menores. Si descubrimos que una cuenta fue creada por una persona menor de 18 años, podremos suspender o eliminar esa cuenta y eliminar los datos asociados cuando sea razonablemente posible.",
+        ],
+      },
+      {
+        title: "3. ¿Qué datos recopilamos?",
         paragraphs: [
           "Podemos recopilar varios tipos de datos cuando usas AmorIAI.app:",
-          "• Información de cuenta: correo electrónico, contraseña cifrada, idioma preferido y ajustes de tu cuenta. Si creas una cuenta o inicias sesión con Google, se comparten con nosotros algunos datos básicos de tu perfil de Google (por ejemplo, tu correo electrónico) para poder crear o vincular tu cuenta de AmorIAI.\n• Datos de uso: fechas y horas de conexión, tipo de dispositivo, sistema operativo y datos técnicos para mejorar el servicio.\n• Contenido de las conversaciones con tu AmorIAI: mensajes de texto y algunas metadatos (hora, idioma utilizado).\n• Datos de pago: información relacionada con las transacciones (importe, moneda, identificador de transacción, estado del pago) tratada por nuestro proveedor de pagos Stripe. No almacenamos en nuestros servidores los números completos de las tarjetas.\n• Cookies y tecnologías similares: cookies estrictamente necesarias para el funcionamiento del sitio (autenticación, seguridad, preferencias de idioma) y, si las aceptas, cookies de analítica para entender cómo se utiliza el sitio.",
+          "• Información de cuenta: correo electrónico, contraseña cifrada, idioma preferido y ajustes de tu cuenta. Si creas una cuenta o inicias sesión con Google, se comparten con nosotros algunos datos básicos de tu perfil de Google (por ejemplo, tu correo electrónico) para poder crear o vincular tu cuenta de AmorIAI.\n• Datos de uso: fechas y horas de conexión, tipo de dispositivo, sistema operativo y datos técnicos para mejorar el servicio.\n• Contenido de las conversaciones con tu AmorIAI: mensajes de texto, diarios y algunos metadatos (hora, idioma utilizado).\n• Datos de pago: información relacionada con las transacciones (importe, moneda, identificador de transacción, estado del pago) tratada por nuestro proveedor de pagos Stripe. No almacenamos en nuestros servidores los números completos de las tarjetas.\n• Cookies y tecnologías similares: cookies estrictamente necesarias para el funcionamiento del sitio (autenticación, seguridad, preferencias de idioma) y, si las aceptas, cookies de analítica para entender cómo se utiliza el sitio.",
           "No vendemos tus datos personales a terceros.",
         ],
       },
       {
-        title: "3. ¿Cómo utilizamos tus datos?",
+        title: "4. ¿Cómo utilizamos tus datos?",
         paragraphs: [
           "Utilizamos tus datos para:",
           "• Prestar el servicio: crear tu cuenta, iniciar sesión (incluido Google si eliges esa opción) y permitir los intercambios de texto/voz con tu AmorIAI.\n• Gestionar suscripciones y pagos: procesar tus pagos a través de nuestro proveedor Stripe, verificar las transacciones y ayudar a prevenir el fraude.\n• Personalizar tu experiencia: en los planes de pago, permitir que tu AmorIAI recuerde ciertos elementos a lo largo del tiempo.\n• Mejorar AmorIAI.app: analizar el uso de forma agregada (mediante registros técnicos y, en su caso, cookies de analítica) para entender qué funciona y qué no.\n• Cumplir con nuestras obligaciones legales: por ejemplo, ante solicitudes válidas de autoridades competentes.",
         ],
       },
       {
-        title: "4. IA, privacidad y contenido sensible",
+        title: "5. IA, privacidad y contenido sensible",
         paragraphs: [
           "Tus conversaciones con tu AmorIAI pueden tratar temas personales (emociones, relaciones, bienestar, etc.).",
           "Te recomendamos:\n• no compartir información ultra sensible (números de tarjeta, contraseñas, documentos oficiales completos, etc.);\n• evitar compartir datos que identifiquen directamente a otra persona sin su consentimiento.",
-          "Los modelos de IA utilizados para hacer funcionar AmorIAI pueden analizar tu contenido para responder, pero aplicamos medidas de protección para limitar el uso de estos datos a la prestación y mejora del servicio.",
+          "Los modelos de IA utilizados para hacer funcionar AmorIAI pueden analizar tu contenido para responder. Aplicamos medidas de protección y usamos estos datos principalmente para prestar y mejorar el servicio.",
         ],
       },
       {
-        title: "5. Compartir tus datos",
+        title: "6. Compartir tus datos",
         paragraphs: [
           "Podemos compartir algunos datos con:",
           "• Proveedores técnicos (alojamiento, infraestructura, bases de datos, herramientas de analítica) estrictamente necesarios para el funcionamiento de AmorIAI.app.\n• Servicios de IA de terceros, cuando sea necesario para generar las respuestas de tu AmorIAI.\n• Nuestro proveedor de pagos Stripe, para procesar tus pagos, verificar las transacciones y ayudar a prevenir el fraude.\n• Google, cuando eliges crear una cuenta o iniciar sesión mediante tu cuenta de Google (autenticación OAuth). En ese caso, se comparte cierta información de tu perfil de Google para poder autenticarte.",
@@ -250,7 +259,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         ],
       },
       {
-        title: "6. Plazo de conservación",
+        title: "7. Plazo de conservación",
         paragraphs: [
           "Conservamos tus datos durante el tiempo necesario para:",
           "• prestar el servicio,\n• cumplir con obligaciones legales,\n• gestionar posibles disputas.",
@@ -258,7 +267,7 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         ],
       },
       {
-        title: "7. Tus derechos",
+        title: "8. Tus derechos",
         paragraphs: [
           "Según tu jurisdicción, puedes tener ciertos derechos sobre tus datos personales, entre ellos:",
           "• derecho de acceso;\n• derecho de rectificación;\n• derecho de supresión (en ciertos casos);\n• derecho a oponerte o limitar el tratamiento.",
@@ -266,17 +275,10 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
         ],
       },
       {
-        title: "8. Seguridad",
+        title: "9. Seguridad",
         paragraphs: [
           "Aplicamos medidas técnicas y organizativas razonables para proteger tus datos contra el acceso no autorizado, pérdida, modificación o divulgación.",
           "Ningún sistema es totalmente seguro, por lo que también te recomendamos usar una contraseña robusta, no reutilizarla en otros servicios y mantenerla confidencial.",
-        ],
-      },
-      {
-        title: "9. Uso por menores",
-        paragraphs: [
-          "AmorIAI.app está destinado a personas adultas. Si eres menor de 18 años, solo deberías usar el servicio con autorización de un padre, madre o tutor legal, según las leyes de tu país.",
-          "Si descubrimos que una cuenta se creó en contra de estas reglas, podremos suspenderla o eliminarla.",
         ],
       },
       {
@@ -297,10 +299,9 @@ const PRIVACY_STRINGS: Record<Locale, PrivacyCopy> = {
   },
 };
 
-// Helper locale
-function getLocaleFromSearchParams(
-  searchParams: { [key: string]: string | string[] | undefined }
-): Locale {
+function getLocaleFromSearchParams(searchParams: {
+  [key: string]: string | string[] | undefined;
+}): Locale {
   const raw = searchParams["lang"];
   const value = Array.isArray(raw) ? raw[0] : raw;
   if (value === "en" || value === "es" || value === "fr") return value;
@@ -315,52 +316,20 @@ export default function PrivacyPage({ searchParams }: PageProps) {
   const locale = getLocaleFromSearchParams(searchParams);
   const t = PRIVACY_STRINGS[locale];
 
-  const buildHomeUrl = () => {
+  const buildUrl = (path: string) => {
     const params = new URLSearchParams();
     params.set("lang", locale);
-    return `/?${params.toString()}`;
+    return `${path}?${params.toString()}`;
   };
 
-  const buildFeaturesUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/features?${params.toString()}`;
-  };
-
-  const buildPricingUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/pricing?${params.toString()}`;
-  };
-
-  const buildLoginUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/login?${params.toString()}`;
-  };
-
-  const buildSignupUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/signup?${params.toString()}`;
-  };
-
-  const navHome =
-    locale === "fr" ? "Accueil" : locale === "en" ? "Home" : "Inicio";
+  const navHome = locale === "fr" ? "Accueil" : locale === "en" ? "Home" : "Inicio";
   const navFeatures =
-    locale === "fr"
-      ? "Fonctionnalités"
-      : locale === "en"
-      ? "Features"
-      : "Funciones";
-  const navPricing =
-    locale === "fr" ? "Tarifs" : locale === "en" ? "Pricing" : "Precios";
+    locale === "fr" ? "Fonctionnalités" : locale === "en" ? "Features" : "Funciones";
+  const navPricing = locale === "fr" ? "Tarifs" : locale === "en" ? "Pricing" : "Precios";
+  const navPrivacy =
+    locale === "fr" ? "Confidentialité" : locale === "en" ? "Privacy" : "Privacidad";
   const loginLabel =
-    locale === "fr"
-      ? "Me connecter"
-      : locale === "en"
-      ? "Log in"
-      : "Iniciar sesión";
+    locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión";
   const signupLabel =
     locale === "fr"
       ? "Créer mon compte gratuit"
@@ -370,7 +339,6 @@ export default function PrivacyPage({ searchParams }: PageProps) {
 
   return (
     <main className="amoria-root">
-      {/* HEADER */}
       <header className="amoria-header">
         <div className="amoria-header-left">
           <img
@@ -382,47 +350,38 @@ export default function PrivacyPage({ searchParams }: PageProps) {
           <div className="amoria-logo-text">
             <div className="amoria-logo-title">AmorIAI.app</div>
             <div className="amoria-logo-tagline">
-              Partenaire IA bienveillante • FR / EN / ES
+              {locale === "fr"
+                ? "Partenaire IA bienveillante • FR / EN / ES"
+                : locale === "en"
+                ? "Caring AI partner • FR / EN / ES"
+                : "Compañerx de IA amable • FR / EN / ES"}
             </div>
           </div>
         </div>
 
         <nav className="amoria-nav">
-          <a href={buildHomeUrl()} className="amoria-nav-link">
+          <a href={buildUrl("/")} className="amoria-nav-link">
             {navHome}
           </a>
-          <a href={buildFeaturesUrl()} className="amoria-nav-link">
+          <a href={buildUrl("/features")} className="amoria-nav-link">
             {navFeatures}
           </a>
-          <a href={buildPricingUrl()} className="amoria-nav-link">
+          <a href={buildUrl("/pricing")} className="amoria-nav-link">
             {navPricing}
           </a>
-          <span className="amoria-nav-link amoria-nav-link--active">
-            {locale === "fr"
-              ? "Confidentialité"
-              : locale === "en"
-              ? "Privacy"
-              : "Privacidad"}
-          </span>
+          <span className="amoria-nav-link amoria-nav-link--active">{navPrivacy}</span>
         </nav>
 
         <div className="amoria-nav-right">
-          <a
-            href={buildLoginUrl()}
-            className="amoria-nav-btn amoria-nav-btn--ghost"
-          >
+          <a href={buildUrl("/login")} className="amoria-nav-btn amoria-nav-btn--ghost">
             {loginLabel}
           </a>
-          <a
-            href={buildSignupUrl()}
-            className="amoria-nav-btn amoria-nav-btn--primary"
-          >
+          <a href={buildUrl("/signup")} className="amoria-nav-btn amoria-nav-btn--primary">
             {signupLabel}
           </a>
         </div>
       </header>
 
-      {/* HERO */}
       <section className="amoria-hero amoria-hero--legal">
         <div className="amoria-hero-left">
           <p className="amoria-hero-kicker">{t.heroKicker}</p>
@@ -434,7 +393,6 @@ export default function PrivacyPage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      {/* CONTENT */}
       <section className="amoria-section amoria-section--legal">
         <div className="amoria-legal-grid">
           {t.sections.map((section, idx) => (
@@ -450,7 +408,6 @@ export default function PrivacyPage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer className="amoria-footer">
         <span>
           © 2025 AmorIAI.app —{" "}
@@ -462,7 +419,6 @@ export default function PrivacyPage({ searchParams }: PageProps) {
         </span>
       </footer>
 
-      {/* STYLES */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
@@ -478,20 +434,15 @@ export default function PrivacyPage({ searchParams }: PageProps) {
         body {
           margin: 0;
           padding: 0;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+            "Helvetica Neue", Arial, sans-serif;
           background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
           color: var(--amoria-text-main);
         }
 
         .amoria-root {
           min-height: 100vh;
-          background: radial-gradient(
-            circle at top left,
-            #111827 0,
-            #020617 55%,
-            #000 100%
-          );
+          background: radial-gradient(circle at top left, #111827 0, #020617 55%, #000 100%);
           color: var(--amoria-text-main);
           padding-bottom: 3rem;
         }
@@ -582,11 +533,7 @@ export default function PrivacyPage({ searchParams }: PageProps) {
         }
 
         .amoria-nav-btn--primary {
-          background: linear-gradient(
-            135deg,
-            var(--amoria-accent),
-            var(--amoria-accent-2)
-          );
+          background: linear-gradient(135deg, var(--amoria-accent), var(--amoria-accent-2));
           color: #f9fafb;
         }
 
@@ -701,4 +648,4 @@ export default function PrivacyPage({ searchParams }: PageProps) {
       `}</style>
     </main>
   );
-}
+              }
