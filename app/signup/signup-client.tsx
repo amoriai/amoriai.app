@@ -82,8 +82,7 @@ const STRINGS: Record<Locale, Strings> = {
     passwordHint: "Minimum 6 caractères. Ne partage jamais ton mot de passe.",
 
     ageLabel: "Je confirme avoir 18 ans ou plus.",
-    ageHint: "AmorIAI.app est destiné aux utilisateurs adultes (18+).",
-
+   
     submit: "Créer mon accès gratuit",
     submitting: "Création de ton accès…",
 
@@ -123,8 +122,7 @@ const STRINGS: Record<Locale, Strings> = {
     passwordHint: "Minimum 6 characters. Never share your password.",
 
     ageLabel: "I confirm I am 18 or older.",
-    ageHint: "AmorIAI.app is intended for adult users (18+).",
-
+    
     submit: "Create my free access",
     submitting: "Creating your access…",
 
@@ -164,8 +162,7 @@ const STRINGS: Record<Locale, Strings> = {
     passwordHint: "Mínimo 6 caracteres. Nunca compartas tu contraseña.",
 
     ageLabel: "Confirmo que tengo 18 años o más.",
-    ageHint: "AmorIAI.app está destinado a usuarios adultos (18+).",
-
+    
     submit: "Crear mi acceso gratuito",
     submitting: "Creando tu acceso…",
 
