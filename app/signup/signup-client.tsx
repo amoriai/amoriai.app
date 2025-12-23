@@ -39,7 +39,6 @@ type Strings = {
   passwordPlaceholder: string;
   passwordHint: string;
 
-  // ✅ 18+
   ageLabel: string;
   errorAge: string;
 
@@ -197,9 +196,7 @@ function normalizeLocale(raw: string | null): Locale {
 }
 
 function normalizePlan(raw: string | null): PlanId {
-  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
-    ? raw
-    : "free";
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
 }
 
 function buildRedirectParams(locale: Locale, plan: PlanId) {
@@ -233,7 +230,7 @@ function SignupClientInner() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // ✅ 18+ obligatoire
+  // ✅ 18+
   const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -242,7 +239,6 @@ function SignupClientInner() {
 
   const [recaptchaReady, setRecaptchaReady] = useState(false);
 
-  // reCAPTCHA ready
   useEffect(() => {
     if (!RECAPTCHA_SITE_KEY) {
       setRecaptchaReady(false);
@@ -261,7 +257,6 @@ function SignupClientInner() {
         });
         return;
       }
-
       setTimeout(tick, 150);
     };
 
@@ -325,9 +320,6 @@ function SignupClientInner() {
     return false;
   };
 
-  /* ===========================
-     Email Signup
-  ============================ */
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
     if (loading) return;
@@ -397,9 +389,6 @@ function SignupClientInner() {
     }
   };
 
-  /* ===========================
-     Google OAuth Signup
-  ============================ */
   const handleGoogle = async () => {
     if (loading) return;
 
@@ -468,10 +457,11 @@ function SignupClientInner() {
             <p className="auth-subtitle">{t.subtitle}</p>
           </header>
 
-          {/* ✅ 18+ (PRO: discret, 1 ligne, sans "box") */}
+          {/* ✅ 18+ (PRO, discret, MAIS checkbox vraiment cliquable) */}
           <div className="auth-age-inline" role="group" aria-label="Age confirmation">
             <label className="auth-age-inline-row">
               <input
+                id="age_confirm"
                 type="checkbox"
                 checked={ageConfirmed}
                 onChange={(e) => {
@@ -479,7 +469,7 @@ function SignupClientInner() {
                   setErrorMsg(null);
                 }}
                 className="auth-age-inline-check"
-                disabled={loading || waitingConfirmation}
+                // ❗️Ne PAS désactiver la checkbox: sinon ça donne “ligne cliquable mais case dead”
               />
               <span className="auth-age-inline-text">{t.ageLabel}</span>
             </label>
@@ -494,12 +484,7 @@ function SignupClientInner() {
 
           {errorMsg && <p className="auth-error auth-error--block">{errorMsg}</p>}
 
-          <button
-            type="button"
-            onClick={handleGoogle}
-            disabled={googleDisabled}
-            className="auth-google-btn"
-          >
+          <button type="button" onClick={handleGoogle} disabled={googleDisabled} className="auth-google-btn">
             <span className="auth-google-icon" aria-hidden="true">
               <img src="/google-g.png" alt="" className="auth-google-img" />
             </span>
@@ -602,7 +587,7 @@ function SignupClientInner() {
             filter: blur(4px);
             top: -120px;
             left: -120px;
-            pointer-events: none;
+            pointer-events: none; /* ✅ important */
           }
 
           .auth-gradient-orbit--right {
@@ -674,21 +659,35 @@ function SignupClientInner() {
             line-height: 1.4;
           }
 
-          /* ✅ 18+ PRO (discret) */
+          /* ✅ 18+ discret + clic garanti (z-index + pointer-events) */
           .auth-age-inline {
             margin: 0.85rem 0 1rem;
+            position: relative;
+            z-index: 10;
+            pointer-events: auto;
           }
+
           .auth-age-inline-row {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 0.6rem;
             cursor: pointer;
+            user-select: none;
+            position: relative;
+            z-index: 10;
+            pointer-events: auto;
           }
+
           .auth-age-inline-check {
             width: 16px;
             height: 16px;
             accent-color: #fb7185;
+            cursor: pointer;
+            position: relative;
+            z-index: 11;
+            pointer-events: auto;
           }
+
           .auth-age-inline-text {
             font-size: 0.84rem;
             color: rgba(229, 231, 235, 0.92);
