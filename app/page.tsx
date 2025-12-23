@@ -45,13 +45,10 @@ type Copy = {
   pricingTitle: string;
   pricingText: string;
 
-  // ✅ pricing teaser CTAs
-  pricingCta: string; // kept for structure, but we remove the blue button UI
+  // pricing teaser CTAs
+  pricingCta: string;
   pricingCtaHint?: string;
   seePricingLabel: string;
-
-  // ✅ NEW: view pricing with ?from=hero to lock paid CTAs
-  seePricingFromHeroLabel: string;
 
   videoCaption: string;
 
@@ -136,7 +133,6 @@ const STRINGS: Record<Locale, Copy> = {
     pricingCta: "Créer un compte pour s’abonner",
     pricingCtaHint: "Crée ton compte gratuit d’abord. Ensuite tu pourras choisir un forfait.",
     seePricingLabel: "Voir les tarifs",
-    seePricingFromHeroLabel: "Voir les tarifs",
 
     videoCaption: "Disponible en français, anglais et espagnol.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -214,12 +210,10 @@ const STRINGS: Record<Locale, Copy> = {
     ],
 
     pricingTitle: "When you feel ready",
-    pricingText:
-      "Start free. When you need more, unlock more messages — and voice to actually talk, not just type.",
+    pricingText: "Start free. When you need more, unlock more messages — and voice to actually talk, not just type.",
     pricingCta: "Create an account to subscribe",
     pricingCtaHint: "Create your free account first. Then you can pick a plan.",
     seePricingLabel: "See pricing",
-    seePricingFromHeroLabel: "See pricing",
 
     videoCaption: "Available in French, English, and Spanish.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -302,7 +296,6 @@ const STRINGS: Record<Locale, Copy> = {
     pricingCta: "Crear cuenta para suscribirme",
     pricingCtaHint: "Primero crea tu cuenta gratis. Luego podrás elegir un plan.",
     seePricingLabel: "Ver precios",
-    seePricingFromHeroLabel: "Ver precios",
 
     videoCaption: "Disponible en francés, inglés y español.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -316,9 +309,7 @@ const STRINGS: Record<Locale, Copy> = {
   },
 };
 
-function getLocaleFromSearchParams(
-  searchParams: { [key: string]: string | string[] | undefined }
-): Locale {
+function getLocaleFromSearchParams(searchParams: { [key: string]: string | string[] | undefined }): Locale {
   const raw = searchParams["lang"];
   const value = Array.isArray(raw) ? raw[0] : raw;
   if (value === "en" || value === "es" || value === "fr") return value;
@@ -338,18 +329,11 @@ export default function HomePage({ searchParams }: PageProps) {
 
   const withLang = (path: string) => ({ pathname: path, query: { lang: locale } });
 
-  // ✅ helper: go to pricing but lock paid CTAs (from=hero)
-  const withLangAndFromHero = (path: string) => ({
-    pathname: path,
-    query: { lang: locale, from: "hero" },
-  });
+  // ✅ NEW: public pricing page (no locked CTAs)
+  const withLangPricingPublic = () => ({ pathname: "/pricing-public", query: { lang: locale } });
 
   const alreadyAccountText =
-    locale === "fr"
-      ? "Déjà un compte ?"
-      : locale === "en"
-      ? "Already have an account?"
-      : "¿Ya tienes una cuenta?";
+    locale === "fr" ? "Déjà un compte ?" : locale === "en" ? "Already have an account?" : "¿Ya tienes una cuenta?";
 
   const loginInlineLabel = locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión";
 
@@ -380,10 +364,7 @@ export default function HomePage({ searchParams }: PageProps) {
 
           {/* Nav desktop */}
           <nav className="hidden items-center gap-5 text-xs text-slate-300 md:flex">
-            <a
-              href="#hero"
-              className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
-            >
+            <a href="#hero" className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50">
               {t.nav.home}
             </a>
             <Link
@@ -392,8 +373,10 @@ export default function HomePage({ searchParams }: PageProps) {
             >
               {t.nav.features}
             </Link>
+
+            {/* ✅ Header pricing -> pricing-public */}
             <Link
-              href={withLang("/pricing")}
+              href={withLangPricingPublic()}
               className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
             >
               {t.nav.pricing}
@@ -458,18 +441,7 @@ export default function HomePage({ searchParams }: PageProps) {
               </Link>
             </div>
 
-            {/* ✅ HERO secondary CTA -> pricing with lock */}
-            <Link
-              href={withLangAndFromHero("/pricing")}
-              className="
-                inline-flex items-center justify-center rounded-full
-                border border-slate-500/70 bg-transparent
-                px-6 py-2.5 text-[0.92rem] font-medium text-slate-100
-                transition hover:bg-slate-900/70
-              "
-            >
-              {t.seePricingFromHeroLabel}
-            </Link>
+            {/* ✅ REMOVED: top "See pricing" button (not needed) */}
           </div>
 
           <p className="mt-1 text-[0.82rem] text-slate-400">{t.heroSupport}</p>
@@ -597,8 +569,6 @@ export default function HomePage({ searchParams }: PageProps) {
           <p className="mx-auto mt-2 max-w-xl text-sm text-slate-300">{t.pricingText}</p>
 
           <div className="mt-5 flex flex-col items-center gap-2">
-            {/* ✅ On enlève seulement le bouton bleu (disabled) */}
-
             {/* Bouton rose: créer compte */}
             <Link
               href={withLang("/signup")}
@@ -609,16 +579,12 @@ export default function HomePage({ searchParams }: PageProps) {
                 shadow-lg shadow-rose-400/40 transition hover:brightness-110
               "
             >
-              {locale === "fr"
-                ? "Créer mon compte gratuit"
-                : locale === "en"
-                ? "Create my free account"
-                : "Crear mi cuenta gratis"}
+              {locale === "fr" ? "Créer mon compte gratuit" : locale === "en" ? "Create my free account" : "Crear mi cuenta gratis"}
             </Link>
 
-            {/* Bouton gris: voir tarifs (lock via from=hero) */}
+            {/* ✅ Bouton gris: voir tarifs -> /pricing-public */}
             <Link
-              href={withLangAndFromHero("/pricing")}
+              href={withLangPricingPublic()}
               className="
                 inline-flex w-full max-w-sm items-center justify-center rounded-full
                 border border-slate-500/70 bg-transparent
@@ -664,4 +630,4 @@ export default function HomePage({ searchParams }: PageProps) {
       </footer>
     </main>
   );
-              }
+}
