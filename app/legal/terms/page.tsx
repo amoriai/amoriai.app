@@ -25,7 +25,7 @@ const TERMS_STRINGS: Record<Locale, TermsCopy> = {
     heroSubtitle:
       "En créant un compte ou en utilisant AmorIAI.app, tu acceptes les présentes conditions. Merci de les lire attentivement avant d’utiliser le service.",
     updatedLabel: "Dernière mise à jour :",
-    updatedDate: "novembre 2025",
+    updatedDate: "décembre 2025",
     sections: [
       {
         title: "1. Objet du service",
@@ -35,10 +35,10 @@ const TERMS_STRINGS: Record<Locale, TermsCopy> = {
         ],
       },
       {
-        title: "2. Acceptation des conditions",
+        title: "2. Âge minimum et acceptation des conditions",
         paragraphs: [
-          "En accédant à AmorIAI.app ou en créant un compte, tu confirmes :",
-          "• que tu as l’âge légal requis selon la loi de ton pays (ou l’autorisation d’un parent/tuteur là où applicable) ;\n• que tu as lu et compris ces conditions ;\n• que tu les acceptes sans réserve.",
+          "AmorIAI.app est strictement réservé aux personnes âgées de 18 ans ou plus.",
+          "En accédant à AmorIAI.app ou en créant un compte, tu confirmes avoir au moins 18 ans et accepter ces conditions sans réserve.",
           "Si tu n’acceptes pas ces conditions, tu ne dois pas utiliser le service.",
         ],
       },
@@ -55,7 +55,7 @@ const TERMS_STRINGS: Record<Locale, TermsCopy> = {
         paragraphs: [
           "AmorIAI.app propose :",
           "• un plan gratuit, avec un nombre limité de messages texte et une mémoire restreinte ;\n• des plans payants offrant plus de messages, de la voix et une mémoire prolongée.",
-          "Les détails des fonctionnalités et des prix sont décrits sur la page Tarifs. Nous pouvons ajuster ces plans à l’avenir (par exemple modifier les quotas, les prix ou les fonctionnalités), mais nous ferons en sorte de l’indiquer clairement.",
+          "Les détails des fonctionnalités et des prix sont décrits sur la page Tarifs. Nous pouvons ajuster ces plans à l’avenir (par exemple modifier les quotas, les prix ou les fonctionnalités). En cas de changement important, nous ferons en sorte de l’indiquer clairement.",
         ],
       },
       {
@@ -119,13 +119,14 @@ const TERMS_STRINGS: Record<Locale, TermsCopy> = {
       },
     ],
   },
+
   en: {
     heroKicker: "TERMS OF USE",
     heroTitle: "The rules for using AmorIAI.app.",
     heroSubtitle:
       "By creating an account or using AmorIAI.app, you agree to these terms. Please read them carefully before using the service.",
     updatedLabel: "Last updated:",
-    updatedDate: "November 2025",
+    updatedDate: "December 2025",
     sections: [
       {
         title: "1. Purpose of the service",
@@ -135,10 +136,10 @@ const TERMS_STRINGS: Record<Locale, TermsCopy> = {
         ],
       },
       {
-        title: "2. Acceptance of the terms",
+        title: "2. Minimum age and acceptance of the terms",
         paragraphs: [
-          "By accessing AmorIAI.app or creating an account, you confirm that:",
-          "• you meet the legal age requirements in your country (or have parental/guardian authorisation where applicable);\n• you have read and understood these terms;\n• you agree to them without reservation.",
+          "AmorIAI.app is strictly intended for individuals who are 18 years old or older.",
+          "By accessing AmorIAI.app or creating an account, you confirm you are at least 18 and you accept these terms without reservation.",
           "If you do not accept these terms, you must not use the service.",
         ],
       },
@@ -155,7 +156,7 @@ const TERMS_STRINGS: Record<Locale, TermsCopy> = {
         paragraphs: [
           "AmorIAI.app offers:",
           "• a free plan with a limited number of text messages and reduced memory;\n• paid plans with more messages, voice features and extended memory.",
-          "Details about features and pricing are available on the Pricing page. We may adjust these plans in the future (for example changing quotas, prices or features) and will try to communicate these changes clearly.",
+          "Details about features and pricing are available on the Pricing page. We may adjust these plans in the future (for example changing quotas, prices or features). If changes are significant, we will try to communicate them clearly.",
         ],
       },
       {
@@ -219,13 +220,14 @@ const TERMS_STRINGS: Record<Locale, TermsCopy> = {
       },
     ],
   },
+
   es: {
     heroKicker: "TÉRMINOS DE USO",
     heroTitle: "Las reglas para usar AmorIAI.app.",
     heroSubtitle:
       "Al crear una cuenta o usar AmorIAI.app, aceptas estos términos. Por favor, léelos con atención antes de usar el servicio.",
     updatedLabel: "Última actualización:",
-    updatedDate: "noviembre de 2025",
+    updatedDate: "diciembre de 2025",
     sections: [
       {
         title: "1. Objeto del servicio",
@@ -235,10 +237,10 @@ const TERMS_STRINGS: Record<Locale, TermsCopy> = {
         ],
       },
       {
-        title: "2. Aceptación de los términos",
+        title: "2. Edad mínima y aceptación de los términos",
         paragraphs: [
-          "Al acceder a AmorIAI.app o crear una cuenta, confirmas que:",
-          "• cumples con la edad legal requerida en tu país (o cuentas con la autorización de un padre/madre o tutor cuando corresponda);\n• has leído y entendido estos términos;\n• los aceptas sin reservas.",
+          "AmorIAI.app está estrictamente destinado a personas de 18 años o más.",
+          "Al acceder a AmorIAI.app o crear una cuenta, confirmas que tienes al menos 18 años y aceptas estos términos sin reservas.",
           "Si no aceptas estos términos, no debes usar el servicio.",
         ],
       },
@@ -255,7 +257,7 @@ const TERMS_STRINGS: Record<Locale, TermsCopy> = {
         paragraphs: [
           "AmorIAI.app ofrece:",
           "• un plan gratuito con un número limitado de mensajes de texto y memoria reducida;\n• planes de pago con más mensajes, funciones de voz y memoria ampliada.",
-          "Los detalles sobre funciones y precios se describen en la página de Precios. Podemos ajustar estos planes en el futuro (cambiar cuotas, precios o funciones) e intentaremos comunicar estos cambios con claridad.",
+          "Los detalles sobre funciones y precios se describen en la página de Precios. Podemos ajustar estos planes en el futuro (por ejemplo, cambiar cuotas, precios o funciones). Si los cambios son importantes, intentaremos comunicarlos con claridad.",
         ],
       },
       {
@@ -321,10 +323,9 @@ const TERMS_STRINGS: Record<Locale, TermsCopy> = {
   },
 };
 
-// Helper locale
-function getLocaleFromSearchParams(
-  searchParams: { [key: string]: string | string[] | undefined }
-): Locale {
+function getLocaleFromSearchParams(searchParams: {
+  [key: string]: string | string[] | undefined;
+}): Locale {
   const raw = searchParams["lang"];
   const value = Array.isArray(raw) ? raw[0] : raw;
   if (value === "en" || value === "es" || value === "fr") return value;
@@ -339,52 +340,18 @@ export default function TermsPage({ searchParams }: PageProps) {
   const locale = getLocaleFromSearchParams(searchParams);
   const t = TERMS_STRINGS[locale];
 
-  const buildHomeUrl = () => {
+  const buildUrl = (path: string) => {
     const params = new URLSearchParams();
     params.set("lang", locale);
-    return `/?${params.toString()}`;
+    return `${path}?${params.toString()}`;
   };
 
-  const buildFeaturesUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/features?${params.toString()}`;
-  };
-
-  const buildPricingUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/pricing?${params.toString()}`;
-  };
-
-  const buildLoginUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/login?${params.toString()}`;
-  };
-
-  const buildSignupUrl = () => {
-    const params = new URLSearchParams();
-    params.set("lang", locale);
-    return `/signup?${params.toString()}`;
-  };
-
-  const navHome =
-    locale === "fr" ? "Accueil" : locale === "en" ? "Home" : "Inicio";
+  const navHome = locale === "fr" ? "Accueil" : locale === "en" ? "Home" : "Inicio";
   const navFeatures =
-    locale === "fr"
-      ? "Fonctionnalités"
-      : locale === "en"
-      ? "Features"
-      : "Funciones";
-  const navPricing =
-    locale === "fr" ? "Tarifs" : locale === "en" ? "Pricing" : "Precios";
-  const loginLabel =
-    locale === "fr"
-      ? "Me connecter"
-      : locale === "en"
-      ? "Log in"
-      : "Iniciar sesión";
+    locale === "fr" ? "Fonctionnalités" : locale === "en" ? "Features" : "Funciones";
+  const navPricing = locale === "fr" ? "Tarifs" : locale === "en" ? "Pricing" : "Precios";
+  const navTerms = locale === "fr" ? "Conditions" : locale === "en" ? "Terms" : "Términos";
+  const loginLabel = locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión";
   const signupLabel =
     locale === "fr"
       ? "Créer mon compte gratuit"
@@ -394,7 +361,6 @@ export default function TermsPage({ searchParams }: PageProps) {
 
   return (
     <main className="amoria-root">
-      {/* HEADER avec le même logo que la vitrine */}
       <header className="amoria-header">
         <div className="amoria-header-left">
           <img
@@ -406,47 +372,38 @@ export default function TermsPage({ searchParams }: PageProps) {
           <div className="amoria-logo-text">
             <div className="amoria-logo-title">AmorIAI.app</div>
             <div className="amoria-logo-tagline">
-              Partenaire IA bienveillante • FR / EN / ES
+              {locale === "fr"
+                ? "Partenaire IA bienveillante • FR / EN / ES"
+                : locale === "en"
+                ? "Caring AI partner • FR / EN / ES"
+                : "Compañerx de IA amable • FR / EN / ES"}
             </div>
           </div>
         </div>
 
         <nav className="amoria-nav">
-          <a href={buildHomeUrl()} className="amoria-nav-link">
+          <a href={buildUrl("/")} className="amoria-nav-link">
             {navHome}
           </a>
-          <a href={buildFeaturesUrl()} className="amoria-nav-link">
+          <a href={buildUrl("/features")} className="amoria-nav-link">
             {navFeatures}
           </a>
-          <a href={buildPricingUrl()} className="amoria-nav-link">
+          <a href={buildUrl("/pricing")} className="amoria-nav-link">
             {navPricing}
           </a>
-          <span className="amoria-nav-link amoria-nav-link--active">
-            {locale === "fr"
-              ? "Conditions"
-              : locale === "en"
-              ? "Terms"
-              : "Términos"}
-          </span>
+          <span className="amoria-nav-link amoria-nav-link--active">{navTerms}</span>
         </nav>
 
         <div className="amoria-nav-right">
-          <a
-            href={buildLoginUrl()}
-            className="amoria-nav-btn amoria-nav-btn--ghost"
-          >
+          <a href={buildUrl("/login")} className="amoria-nav-btn amoria-nav-btn--ghost">
             {loginLabel}
           </a>
-          <a
-            href={buildSignupUrl()}
-            className="amoria-nav-btn amoria-nav-btn--primary"
-          >
+          <a href={buildUrl("/signup")} className="amoria-nav-btn amoria-nav-btn--primary">
             {signupLabel}
           </a>
         </div>
       </header>
 
-      {/* HERO */}
       <section className="amoria-hero amoria-hero--legal">
         <div className="amoria-hero-left">
           <p className="amoria-hero-kicker">{t.heroKicker}</p>
@@ -458,7 +415,6 @@ export default function TermsPage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      {/* CONTENT */}
       <section className="amoria-section amoria-section--legal">
         <div className="amoria-legal-grid">
           {t.sections.map((section, idx) => (
@@ -474,7 +430,6 @@ export default function TermsPage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer className="amoria-footer">
         <span>
           © 2025 AmorIAI.app —{" "}
@@ -486,7 +441,6 @@ export default function TermsPage({ searchParams }: PageProps) {
         </span>
       </footer>
 
-      {/* STYLES (mêmes bases que vitrine / privacy) */}
       <style jsx global>{`
         :root {
           --amoria-bg: #020617;
@@ -502,25 +456,15 @@ export default function TermsPage({ searchParams }: PageProps) {
         body {
           margin: 0;
           padding: 0;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont,
-            "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-          background: radial-gradient(
-            circle at top,
-            #020617 0,
-            #020617 40%,
-            #000 100%
-          );
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+            "Helvetica Neue", Arial, sans-serif;
+          background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
           color: var(--amoria-text-main);
         }
 
         .amoria-root {
           min-height: 100vh;
-          background: radial-gradient(
-            circle at top left,
-            #111827 0,
-            #020617 55%,
-            #000 100%
-          );
+          background: radial-gradient(circle at top left, #111827 0, #020617 55%, #000 100%);
           color: var(--amoria-text-main);
           padding-bottom: 3rem;
         }
@@ -611,11 +555,7 @@ export default function TermsPage({ searchParams }: PageProps) {
         }
 
         .amoria-nav-btn--primary {
-          background: linear-gradient(
-            135deg,
-            var(--amoria-accent),
-            var(--amoria-accent-2)
-          );
+          background: linear-gradient(135deg, var(--amoria-accent), var(--amoria-accent-2));
           color: #f9fafb;
         }
 
