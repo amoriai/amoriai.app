@@ -9,15 +9,13 @@ type Locale = "fr" | "en" | "es";
 type PlanId = "free" | "chat" | "plus" | "unlimited";
 
 const AUTH_CALLBACK_PATH = "/api/auth/callback";
-
-// ✅ Destination finale DIRECTE (plus de /auth/post-signup)
 const FINAL_PATH = "/create-amoria";
 
 // ✅ reCAPTCHA
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY ?? "";
 const MIN_RECAPTCHA_SCORE = 0.5;
 
-// ✅ 24h pour que l’utilisateur puisse confirmer son email plus tard
+// ✅ 24h pour confirmation email plus tard
 const SIGNUP_COOKIE_MAX_AGE = 86400;
 
 /* ===========================
@@ -41,6 +39,9 @@ type Strings = {
   passwordPlaceholder: string;
   passwordHint: string;
 
+  ageLabel: string; // ✅ 18+
+  ageHint: string; // ✅ 18+
+
   submit: string;
   submitting: string;
 
@@ -50,6 +51,7 @@ type Strings = {
   errorGeneric: string;
   errorGoogle: string;
   errorRecaptcha: string;
+  errorAge: string; // ✅ 18+
 
   confirmTitle: string;
   confirmBody: string;
@@ -79,6 +81,9 @@ const STRINGS: Record<Locale, Strings> = {
     passwordPlaceholder: "Choisis un mot de passe sécurisé",
     passwordHint: "Minimum 6 caractères. Ne partage jamais ton mot de passe.",
 
+    ageLabel: "Je confirme avoir 18 ans ou plus.",
+    ageHint: "AmorIAI.app est destiné aux utilisateurs adultes (18+).",
+
     submit: "Créer mon accès gratuit",
     submitting: "Création de ton accès…",
 
@@ -88,6 +93,7 @@ const STRINGS: Record<Locale, Strings> = {
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
     errorGoogle: "Une erreur est survenue avec la connexion Google.",
     errorRecaptcha: "La vérification de sécurité (reCAPTCHA) a échoué. Merci de réessayer.",
+    errorAge: "Tu dois confirmer que tu as 18 ans ou plus pour créer un compte.",
 
     confirmTitle: "✅ Ton compte a bien été créé.",
     confirmBody:
@@ -116,6 +122,9 @@ const STRINGS: Record<Locale, Strings> = {
     passwordPlaceholder: "Choose a secure password",
     passwordHint: "Minimum 6 characters. Never share your password.",
 
+    ageLabel: "I confirm I am 18 or older.",
+    ageHint: "AmorIAI.app is intended for adult users (18+).",
+
     submit: "Create my free access",
     submitting: "Creating your access…",
 
@@ -125,6 +134,7 @@ const STRINGS: Record<Locale, Strings> = {
     errorGeneric: "Something went wrong. Please try again.",
     errorGoogle: "Something went wrong with Google sign-in.",
     errorRecaptcha: "Security check (reCAPTCHA) failed. Please try again.",
+    errorAge: "You must confirm you are 18 or older to create an account.",
 
     confirmTitle: "✅ Your account has been created.",
     confirmBody:
@@ -153,6 +163,9 @@ const STRINGS: Record<Locale, Strings> = {
     passwordPlaceholder: "Elige una contraseña segura",
     passwordHint: "Mínimo 6 caracteres. Nunca compartas tu contraseña.",
 
+    ageLabel: "Confirmo que tengo 18 años o más.",
+    ageHint: "AmorIAI.app está destinado a usuarios adultos (18+).",
+
     submit: "Crear mi acceso gratuito",
     submitting: "Creando tu acceso…",
 
@@ -162,6 +175,7 @@ const STRINGS: Record<Locale, Strings> = {
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     errorGoogle: "Ocurrió un error con el inicio de sesión de Google.",
     errorRecaptcha: "La verificación de seguridad (reCAPTCHA) ha fallado. Inténtalo de nuevo.",
+    errorAge: "Debes confirmar que tienes 18 años o más para crear una cuenta.",
 
     confirmTitle: "✅ Tu cuenta ha sido creada.",
     confirmBody:
@@ -184,7 +198,9 @@ function normalizeLocale(raw: string | null): Locale {
 }
 
 function normalizePlan(raw: string | null): PlanId {
-  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
+    ? raw
+    : "free";
 }
 
 function buildRedirectParams(locale: Locale, plan: PlanId) {
@@ -218,6 +234,9 @@ function SignupClientInner() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // ✅ 18+
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -315,6 +334,12 @@ function SignupClientInner() {
     setWaitingConfirmation(false);
 
     try {
+      // ✅ 18+ requis
+      if (!ageConfirmed) {
+        setErrorMsg(t.errorAge);
+        return;
+      }
+
       if (!RECAPTCHA_SITE_KEY) {
         setErrorMsg(t.missingKey);
         return;
@@ -391,6 +416,12 @@ function SignupClientInner() {
     setWaitingConfirmation(false);
 
     try {
+      // ✅ 18+ requis (même pour Google)
+      if (!ageConfirmed) {
+        setErrorMsg(t.errorAge);
+        return;
+      }
+
       const origin = window.location.origin;
 
       const finalPath = buildFinalPath();
@@ -426,7 +457,12 @@ function SignupClientInner() {
   };
 
   const submitDisabled =
-    loading || waitingConfirmation || (RECAPTCHA_SITE_KEY ? !recaptchaReady : false);
+    loading ||
+    waitingConfirmation ||
+    (RECAPTCHA_SITE_KEY ? !recaptchaReady : false) ||
+    !ageConfirmed; // ✅ bloque submit si non coché
+
+  const googleDisabled = loading || waitingConfirmation || !ageConfirmed;
 
   return (
     <>
@@ -451,6 +487,24 @@ function SignupClientInner() {
             <p className="auth-subtitle">{t.subtitle}</p>
           </header>
 
+          {/* ✅ 18+ box */}
+          <div className="auth-age-box" role="group" aria-label="Age confirmation">
+            <label className="auth-age-row">
+              <input
+                type="checkbox"
+                checked={ageConfirmed}
+                onChange={(e) => {
+                  setAgeConfirmed(e.target.checked);
+                  setErrorMsg(null);
+                }}
+                className="auth-age-check"
+                disabled={loading || waitingConfirmation}
+              />
+              <span className="auth-age-label">{t.ageLabel}</span>
+            </label>
+            <div className="auth-age-hint">{t.ageHint}</div>
+          </div>
+
           {waitingConfirmation && (
             <div className="auth-confirm-box" role="status" aria-live="polite">
               <div className="auth-confirm-title">{t.confirmTitle}</div>
@@ -463,7 +517,7 @@ function SignupClientInner() {
           <button
             type="button"
             onClick={handleGoogle}
-            disabled={loading || waitingConfirmation}
+            disabled={googleDisabled}
             className="auth-google-btn"
           >
             <span className="auth-google-icon" aria-hidden="true">
@@ -623,7 +677,7 @@ function SignupClientInner() {
           }
 
           .auth-header {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.1rem;
           }
 
           .auth-title {
@@ -638,6 +692,43 @@ function SignupClientInner() {
             font-size: 0.9rem;
             color: #9ca3af;
             line-height: 1.4;
+          }
+
+          /* ✅ 18+ */
+          .auth-age-box {
+            margin: 0.95rem 0 1.05rem;
+            padding: 0.85rem 0.95rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(148, 163, 184, 0.45);
+            background: rgba(15, 23, 42, 0.68);
+          }
+
+          .auth-age-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.65rem;
+            cursor: pointer;
+          }
+
+          .auth-age-check {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            accent-color: #fb7185;
+          }
+
+          .auth-age-label {
+            font-size: 0.86rem;
+            color: #e5e7eb;
+            line-height: 1.25;
+          }
+
+          .auth-age-hint {
+            margin-top: 0.35rem;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            line-height: 1.3;
+            padding-left: calc(18px + 0.65rem);
           }
 
           .auth-confirm-box {
@@ -906,7 +997,6 @@ function SignupClientInner() {
 
 /* ===========================
    EXPORT (wrap Suspense)
-   ✅ corrige Next: useSearchParams() needs Suspense boundary
 =========================== */
 
 export default function SignupClient() {
