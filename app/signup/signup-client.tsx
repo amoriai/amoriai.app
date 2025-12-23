@@ -39,8 +39,9 @@ type Strings = {
   passwordPlaceholder: string;
   passwordHint: string;
 
-  ageLabel: string; // ✅ 18+
-  ageHint: string; // ✅ 18+
+  // ✅ 18+
+  ageLabel: string;
+  errorAge: string;
 
   submit: string;
   submitting: string;
@@ -51,7 +52,6 @@ type Strings = {
   errorGeneric: string;
   errorGoogle: string;
   errorRecaptcha: string;
-  errorAge: string; // ✅ 18+
 
   confirmTitle: string;
   confirmBody: string;
@@ -82,7 +82,8 @@ const STRINGS: Record<Locale, Strings> = {
     passwordHint: "Minimum 6 caractères. Ne partage jamais ton mot de passe.",
 
     ageLabel: "Je confirme avoir 18 ans ou plus.",
-   
+    errorAge: "Tu dois confirmer que tu as 18 ans ou plus pour créer un compte.",
+
     submit: "Créer mon accès gratuit",
     submitting: "Création de ton accès…",
 
@@ -92,7 +93,6 @@ const STRINGS: Record<Locale, Strings> = {
     errorGeneric: "Une erreur est survenue. Merci de réessayer.",
     errorGoogle: "Une erreur est survenue avec la connexion Google.",
     errorRecaptcha: "La vérification de sécurité (reCAPTCHA) a échoué. Merci de réessayer.",
-    errorAge: "Tu dois confirmer que tu as 18 ans ou plus pour créer un compte.",
 
     confirmTitle: "✅ Ton compte a bien été créé.",
     confirmBody:
@@ -104,6 +104,7 @@ const STRINGS: Record<Locale, Strings> = {
     missingKey: "Clé reCAPTCHA manquante (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
     recaptchaNotReady: "reCAPTCHA pas prêt",
   },
+
   en: {
     badge: "Create your AmorIAI account",
     title: "Create your account",
@@ -122,7 +123,8 @@ const STRINGS: Record<Locale, Strings> = {
     passwordHint: "Minimum 6 characters. Never share your password.",
 
     ageLabel: "I confirm I am 18 or older.",
-    
+    errorAge: "You must confirm you are 18 or older to create an account.",
+
     submit: "Create my free access",
     submitting: "Creating your access…",
 
@@ -132,7 +134,6 @@ const STRINGS: Record<Locale, Strings> = {
     errorGeneric: "Something went wrong. Please try again.",
     errorGoogle: "Something went wrong with Google sign-in.",
     errorRecaptcha: "Security check (reCAPTCHA) failed. Please try again.",
-    errorAge: "You must confirm you are 18 or older to create an account.",
 
     confirmTitle: "✅ Your account has been created.",
     confirmBody:
@@ -144,6 +145,7 @@ const STRINGS: Record<Locale, Strings> = {
     missingKey: "Missing reCAPTCHA key (NEXT_PUBLIC_RECAPTCHA_SITE_KEY).",
     recaptchaNotReady: "reCAPTCHA not ready",
   },
+
   es: {
     badge: "Crear tu cuenta AmorIAI",
     title: "Crear tu cuenta",
@@ -162,7 +164,8 @@ const STRINGS: Record<Locale, Strings> = {
     passwordHint: "Mínimo 6 caracteres. Nunca compartas tu contraseña.",
 
     ageLabel: "Confirmo que tengo 18 años o más.",
-    
+    errorAge: "Debes confirmar que tienes 18 años o más para crear una cuenta.",
+
     submit: "Crear mi acceso gratuito",
     submitting: "Creando tu acceso…",
 
@@ -172,7 +175,6 @@ const STRINGS: Record<Locale, Strings> = {
     errorGeneric: "Ocurrió un error. Inténtalo de nuevo.",
     errorGoogle: "Ocurrió un error con el inicio de sesión de Google.",
     errorRecaptcha: "La verificación de seguridad (reCAPTCHA) ha fallado. Inténtalo de nuevo.",
-    errorAge: "Debes confirmar que tienes 18 años o más para crear una cuenta.",
 
     confirmTitle: "✅ Tu cuenta ha sido creada.",
     confirmBody:
@@ -217,7 +219,6 @@ function setTempCookie(name: string, value: string, maxAgeSeconds = 600) {
 
 /* ===========================
    COMPONENT (inner)
-   ✅ useSearchParams est ici, donc WRAP dans <Suspense />
 =========================== */
 
 function SignupClientInner() {
@@ -232,7 +233,7 @@ function SignupClientInner() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // ✅ 18+
+  // ✅ 18+ obligatoire
   const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -318,9 +319,14 @@ function SignupClientInner() {
     return `${FINAL_PATH}?${params.toString()}`;
   };
 
+  const ensureAge = () => {
+    if (ageConfirmed) return true;
+    setErrorMsg(t.errorAge);
+    return false;
+  };
+
   /* ===========================
      Email Signup
-     ✅ Objectif: finir DIRECT sur /create-amoria
   ============================ */
   const handleSignup = async (e: FormEvent) => {
     e.preventDefault();
@@ -331,11 +337,7 @@ function SignupClientInner() {
     setWaitingConfirmation(false);
 
     try {
-      // ✅ 18+ requis
-      if (!ageConfirmed) {
-        setErrorMsg(t.errorAge);
-        return;
-      }
+      if (!ensureAge()) return;
 
       if (!RECAPTCHA_SITE_KEY) {
         setErrorMsg(t.missingKey);
@@ -361,16 +363,12 @@ function SignupClientInner() {
       }
 
       const origin = window.location.origin;
-
-      // ✅ destination finale
       const finalPath = buildFinalPath();
 
-      // ✅ cookies 24h (important pour confirmation email)
       setTempCookie("amoria_lang", locale, SIGNUP_COOKIE_MAX_AGE);
       setTempCookie("amoria_plan", plan, SIGNUP_COOKIE_MAX_AGE);
       setTempCookie("amoria_returnTo", finalPath, SIGNUP_COOKIE_MAX_AGE);
 
-      // ✅ Supabase reviendra sur /api/auth/callback (sans query)
       const emailRedirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
 
       const { data, error } = await supabase.auth.signUp({
@@ -385,13 +383,11 @@ function SignupClientInner() {
         return;
       }
 
-      // ✅ confirmation email requise (cas normal)
       if (!data?.session) {
         setWaitingConfirmation(true);
         return;
       }
 
-      // ✅ session immédiate (rare)
       router.replace(finalPath);
     } catch (err) {
       console.error("signup error", err);
@@ -403,7 +399,6 @@ function SignupClientInner() {
 
   /* ===========================
      Google OAuth Signup
-     ✅ Objectif: finir DIRECT sur /create-amoria
   ============================ */
   const handleGoogle = async () => {
     if (loading) return;
@@ -413,22 +408,15 @@ function SignupClientInner() {
     setWaitingConfirmation(false);
 
     try {
-      // ✅ 18+ requis (même pour Google)
-      if (!ageConfirmed) {
-        setErrorMsg(t.errorAge);
-        return;
-      }
+      if (!ensureAge()) return;
 
       const origin = window.location.origin;
-
       const finalPath = buildFinalPath();
 
-      // ✅ cookies 24h
       setTempCookie("amoria_lang", locale, SIGNUP_COOKIE_MAX_AGE);
       setTempCookie("amoria_plan", plan, SIGNUP_COOKIE_MAX_AGE);
       setTempCookie("amoria_returnTo", finalPath, SIGNUP_COOKIE_MAX_AGE);
 
-      // ✅ callback SANS query (cookies font le boulot)
       const redirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -444,7 +432,6 @@ function SignupClientInner() {
         setErrorMsg(t.errorGoogle);
         return;
       }
-      // OAuth fait la redirection navigateur
     } catch (err) {
       console.error("google oauth error:", err);
       setErrorMsg(t.errorGoogle);
@@ -454,10 +441,7 @@ function SignupClientInner() {
   };
 
   const submitDisabled =
-    loading ||
-    waitingConfirmation ||
-    (RECAPTCHA_SITE_KEY ? !recaptchaReady : false) ||
-    !ageConfirmed; // ✅ bloque submit si non coché
+    loading || waitingConfirmation || (RECAPTCHA_SITE_KEY ? !recaptchaReady : false) || !ageConfirmed;
 
   const googleDisabled = loading || waitingConfirmation || !ageConfirmed;
 
@@ -484,9 +468,9 @@ function SignupClientInner() {
             <p className="auth-subtitle">{t.subtitle}</p>
           </header>
 
-          {/* ✅ 18+ box */}
-          <div className="auth-age-box" role="group" aria-label="Age confirmation">
-            <label className="auth-age-row">
+          {/* ✅ 18+ (PRO: discret, 1 ligne, sans "box") */}
+          <div className="auth-age-inline" role="group" aria-label="Age confirmation">
+            <label className="auth-age-inline-row">
               <input
                 type="checkbox"
                 checked={ageConfirmed}
@@ -494,12 +478,11 @@ function SignupClientInner() {
                   setAgeConfirmed(e.target.checked);
                   setErrorMsg(null);
                 }}
-                className="auth-age-check"
+                className="auth-age-inline-check"
                 disabled={loading || waitingConfirmation}
               />
-              <span className="auth-age-label">{t.ageLabel}</span>
+              <span className="auth-age-inline-text">{t.ageLabel}</span>
             </label>
-            <div className="auth-age-hint">{t.ageHint}</div>
           </div>
 
           {waitingConfirmation && (
@@ -691,41 +674,25 @@ function SignupClientInner() {
             line-height: 1.4;
           }
 
-          /* ✅ 18+ */
-          .auth-age-box {
-            margin: 0.95rem 0 1.05rem;
-            padding: 0.85rem 0.95rem;
-            border-radius: 1rem;
-            border: 1px solid rgba(148, 163, 184, 0.45);
-            background: rgba(15, 23, 42, 0.68);
+          /* ✅ 18+ PRO (discret) */
+          .auth-age-inline {
+            margin: 0.85rem 0 1rem;
           }
-
-          .auth-age-row {
+          .auth-age-inline-row {
             display: flex;
-            align-items: flex-start;
-            gap: 0.65rem;
+            align-items: center;
+            gap: 0.6rem;
             cursor: pointer;
           }
-
-          .auth-age-check {
-            width: 18px;
-            height: 18px;
-            margin-top: 2px;
+          .auth-age-inline-check {
+            width: 16px;
+            height: 16px;
             accent-color: #fb7185;
           }
-
-          .auth-age-label {
-            font-size: 0.86rem;
-            color: #e5e7eb;
+          .auth-age-inline-text {
+            font-size: 0.84rem;
+            color: rgba(229, 231, 235, 0.92);
             line-height: 1.25;
-          }
-
-          .auth-age-hint {
-            margin-top: 0.35rem;
-            font-size: 0.75rem;
-            color: #9ca3af;
-            line-height: 1.3;
-            padding-left: calc(18px + 0.65rem);
           }
 
           .auth-confirm-box {
@@ -738,12 +705,10 @@ function SignupClientInner() {
             margin-bottom: 1rem;
             text-align: center;
           }
-
           .auth-confirm-title {
             font-weight: 700;
             margin-bottom: 0.25rem;
           }
-
           .auth-confirm-body {
             font-size: 0.82rem;
             white-space: pre-line;
@@ -772,19 +737,11 @@ function SignupClientInner() {
               border-color 0.15s ease, opacity 0.15s ease;
             box-shadow: 0 18px 45px rgba(15, 23, 42, 0.7);
           }
-
           .auth-google-btn:disabled {
             opacity: 0.7;
             cursor: default;
             box-shadow: none;
           }
-
-          .auth-google-btn:not(:disabled):hover {
-            transform: translateY(-1px);
-            border-color: rgba(248, 250, 252, 0.7);
-            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.85);
-          }
-
           .auth-google-icon {
             width: 1.5rem;
             height: 1.5rem;
@@ -794,7 +751,6 @@ function SignupClientInner() {
             justify-content: center;
             overflow: hidden;
           }
-
           .auth-google-img {
             width: 100%;
             height: 100%;
@@ -807,7 +763,6 @@ function SignupClientInner() {
             gap: 0.75rem;
             margin: 1.35rem 0 1.15rem;
           }
-
           .auth-divider-line {
             flex: 1;
             height: 1px;
@@ -818,7 +773,6 @@ function SignupClientInner() {
               transparent
             );
           }
-
           .auth-divider-label {
             font-size: 0.75rem;
             text-transform: uppercase;
@@ -831,18 +785,15 @@ function SignupClientInner() {
             flex-direction: column;
             gap: 0.95rem;
           }
-
           .auth-field {
             display: flex;
             flex-direction: column;
             gap: 0.25rem;
           }
-
           .auth-label {
             font-size: 0.8rem;
             color: #e5e7eb;
           }
-
           .auth-input {
             width: 100%;
             border-radius: 999px;
@@ -858,11 +809,9 @@ function SignupClientInner() {
             outline: none;
             transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
           }
-
           .auth-input::placeholder {
             color: #6b7280;
           }
-
           .auth-input:focus {
             border-color: #f97316;
             box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.65),
@@ -872,11 +821,9 @@ function SignupClientInner() {
           .auth-password-wrapper {
             position: relative;
           }
-
           .auth-input-password {
             padding-right: 2.9rem;
           }
-
           .auth-password-toggle {
             position: absolute;
             right: 0.7rem;
@@ -891,12 +838,10 @@ function SignupClientInner() {
             cursor: pointer;
             transition: color 0.15s ease, background 0.15s ease;
           }
-
           .auth-password-toggle:hover {
             color: #e5e7eb;
             background: rgba(15, 23, 42, 0.9);
           }
-
           .auth-password-hint {
             font-size: 0.75rem;
             color: #9ca3af;
@@ -908,7 +853,6 @@ function SignupClientInner() {
             font-size: 0.82rem;
             color: #fecaca;
           }
-
           .auth-error--block {
             margin-bottom: 0.85rem;
           }
@@ -928,14 +872,12 @@ function SignupClientInner() {
             transition: transform 0.1s ease, box-shadow 0.15s ease, filter 0.1s ease,
               opacity 0.15s ease;
           }
-
           .auth-submit-btn:disabled {
             opacity: 0.75;
             cursor: default;
             box-shadow: none;
             filter: grayscale(0.1);
           }
-
           .auth-submit-btn:not(:disabled):hover {
             transform: translateY(-1px);
             box-shadow: 0 24px 60px rgba(248, 113, 113, 0.9);
@@ -947,7 +889,6 @@ function SignupClientInner() {
             text-align: center;
             color: #9ca3af;
           }
-
           .auth-link-btn {
             border: none;
             background: none;
@@ -959,7 +900,6 @@ function SignupClientInner() {
             text-decoration: underline;
             text-underline-offset: 2px;
           }
-
           .auth-link-btn:disabled {
             opacity: 0.65;
             cursor: default;
