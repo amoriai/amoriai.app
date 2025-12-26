@@ -62,66 +62,76 @@ export async function GET(request: Request) {
   const finalLang = normalizeLocale(url.searchParams.get("lang") ?? cookieLang);
   const finalPlan = normalizePlan(url.searchParams.get("plan") ?? cookiePlan);
 
+  // Si provider renvoie ?error=...
   const oauthError = url.searchParams.get("error");
   if (oauthError) {
-    const p = new URLSearchParams();
-    p.set("lang", finalLang);
-    p.set("error", oauthError);
+    const p = new URLSearchParams({ lang: finalLang, error: oauthError });
     const res = NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
     clearTempCookies(res);
     res.headers.set("Cache-Control", "no-store");
     return res;
   }
 
+  // Où on veut revenir après auth
+  let finalReturnTo = returnToParam ?? cookieReturnTo;
+  if (!finalReturnTo || !isAllowedReturnTo(finalReturnTo)) finalReturnTo = "/create-amoria";
+  const finalWithParams = ensureLangPlan(finalReturnTo, finalLang, finalPlan);
+
   const supabase = createRouteHandlerClient({ cookies });
 
-  // ✅ 1) OAuth/PKCE
+  // 1) OAuth Code flow (PKCE) -> ?code=...
   const code = url.searchParams.get("code");
 
-  // ✅ 2) Email confirmation / magic link / etc.
+  // 2) Email confirmation / magic link -> ?token_hash=...&type=...
   const token_hash = url.searchParams.get("token_hash");
-  const type = url.searchParams.get("type"); // "signup" | "magiclink" | "recovery" | ...
+  const type = url.searchParams.get("type");
 
-  let authError: any = null;
-
+  // ✅ A) Si on a un code: exchange
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    authError = error;
-  } else if (token_hash && type) {
+    if (error) {
+      const p = new URLSearchParams({ lang: finalLang, error: "auth_exchange" });
+      const res = NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
+      clearTempCookies(res);
+      res.headers.set("Cache-Control", "no-store");
+      return res;
+    }
+
+    const res = NextResponse.redirect(new URL(finalWithParams, url.origin));
+    clearTempCookies(res);
+    res.headers.set("Cache-Control", "no-store");
+    return res;
+  }
+
+  // ✅ B) Si on a token_hash+type: verifyOtp
+  if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({
       token_hash,
       type: type as any,
     });
-    authError = error;
-  } else {
-    const p = new URLSearchParams();
-    p.set("lang", finalLang);
-    p.set("error", "missing_code_or_token");
-    const res = NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
+
+    if (error) {
+      const p = new URLSearchParams({ lang: finalLang, error: "auth_verify" });
+      const res = NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
+      clearTempCookies(res);
+      res.headers.set("Cache-Control", "no-store");
+      return res;
+    }
+
+    const res = NextResponse.redirect(new URL(finalWithParams, url.origin));
     clearTempCookies(res);
     res.headers.set("Cache-Control", "no-store");
     return res;
   }
 
-  if (authError) {
-    const p = new URLSearchParams();
-    p.set("lang", finalLang);
-    p.set("error", "auth_exchange");
-    const res = NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
-    clearTempCookies(res);
-    res.headers.set("Cache-Control", "no-store");
-    return res;
-  }
-
-  let finalReturnTo = returnToParam ?? cookieReturnTo;
-
-  if (!finalReturnTo || !isAllowedReturnTo(finalReturnTo)) {
-    finalReturnTo = "/create-amoria";
-  }
-
-  const finalWithParams = ensureLangPlan(finalReturnTo, finalLang, finalPlan);
-
-  const res = NextResponse.redirect(new URL(finalWithParams, url.origin));
+  // ✅ C) Fallback IMPORTANT:
+  // Si Google renvoie #access_token (hash), le serveur ne peut PAS le lire.
+  // On renvoie vers un callback CLIENT qui va consommer le hash et créer la session.
+  const p = new URLSearchParams();
+  p.set("lang", finalLang);
+  p.set("plan", finalPlan);
+  p.set("returnTo", finalReturnTo);
+  const res = NextResponse.redirect(new URL(`/auth/callback?${p.toString()}`, url.origin));
   clearTempCookies(res);
   res.headers.set("Cache-Control", "no-store");
   return res;
