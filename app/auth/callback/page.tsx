@@ -10,27 +10,38 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     (async () => {
-      // 🔑 Lit le #access_token renvoyé par Google
-      const { error } = await supabase.auth.getSessionFromUrl({
-        storeSession: true,
-      });
-
       const lang = sp.get("lang") ?? "fr";
       const plan = sp.get("plan") ?? "free";
-      const returnTo = sp.get("returnTo") ?? "/create-amoria";
+      const returnToRaw = sp.get("returnTo") ?? "/create-amoria";
+
+      // Sécurité: accepte seulement les chemins internes
+      const returnTo =
+        returnToRaw.startsWith("/") && !returnToRaw.startsWith("//") && !returnToRaw.includes("\\")
+          ? returnToRaw
+          : "/create-amoria";
+
+      // 1) Consomme le hash (#access_token...) et stocke la session
+      const { error } = await supabase.auth.getSessionFromUrl({ storeSession: true });
 
       if (error) {
-        router.replace(`/login?lang=${lang}&error=${encodeURIComponent(error.message)}`);
+        router.replace(
+          `/login?lang=${encodeURIComponent(lang)}&error=${encodeURIComponent(error.message)}`
+        );
         return;
       }
 
+      // 2) Vérifie session
       const { data } = await supabase.auth.getSession();
       if (!data.session) {
-        router.replace(`/login?lang=${lang}&error=no_session`);
+        router.replace(`/login?lang=${encodeURIComponent(lang)}&error=no_session_after_callback`);
         return;
       }
 
-      router.replace(`${returnTo}?lang=${lang}&plan=${plan}`);
+      // 3) Redirect final (gère ? ou &)
+      const sep = returnTo.includes("?") ? "&" : "?";
+      router.replace(
+        `${returnTo}${sep}lang=${encodeURIComponent(lang)}&plan=${encodeURIComponent(plan)}`
+      );
     })();
   }, [router, sp]);
 
