@@ -287,7 +287,10 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
   { value: "man", label: { fr: "Homme", en: "Man", es: "Hombre" } },
   { value: "woman50", label: { fr: "Femme 50+", en: "Woman 50+", es: "Mujer 50+" } },
   { value: "man50", label: { fr: "Homme 50+", en: "Man 50+", es: "Hombre 50+" } },
-  { value: "androgynous", label: { fr: "Androgyne / non-binaire", en: "Androgynous / non-binary", es: "Andrógino / no binario" } },
+  {
+    value: "androgynous",
+    label: { fr: "Androgyne / non-binaire", en: "Androgynous / non-binary", es: "Andrógino / no binario" },
+  },
 ];
 
 function normalizeLocale(raw: string | null): Locale {
@@ -360,11 +363,13 @@ export default function CreateAmoriaPage() {
       setReady(false);
       setErrorMsg(null);
 
-      // 1) Auth
-      const { data: authData, error: authErr } = await supabase.auth.getUser();
-      if (authErr) console.error("auth.getUser error:", authErr);
+      // 1) Auth (✅ getSession)
+      const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+      if (sessionErr) console.error("auth.getSession error:", sessionErr);
 
-      const user = authData?.user;
+      const session = sessionData?.session;
+      const user = session?.user;
+
       if (!user) {
         goLogin();
         return;
@@ -454,9 +459,13 @@ export default function CreateAmoriaPage() {
     setSaving(true);
 
     try {
-      // Auth (re-check)
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData?.user;
+      // Auth (re-check) (✅ getSession)
+      const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+      if (sessionErr) console.error("auth.getSession(recheck) error:", sessionErr);
+
+      const session = sessionData?.session;
+      const user = session?.user;
+
       if (!user) {
         const params = new URLSearchParams();
         params.set("lang", locale);
@@ -795,7 +804,11 @@ sans jugement, en respectant les limites de l’utilisateur.
                   {t.backHome}
                 </button>
 
-                <button type="submit" className="amoria-btn amoria-btn--primary" disabled={saving || !isFormValid}>
+                <button
+                  type="submit"
+                  className="amoria-btn amoria-btn--primary"
+                  disabled={saving || !isFormValid}
+                >
                   {saving ? t.saving : t.createButton}
                 </button>
               </div>
