@@ -355,19 +355,20 @@ function SignupClientInner() {
       }
 
       const origin = window.location.origin;
-      const finalPath = buildFinalPath();
+const finalPath = buildFinalPath();
 
-      setTempCookie("amoria_lang", locale, SIGNUP_COOKIE_MAX_AGE);
-      setTempCookie("amoria_plan", plan, SIGNUP_COOKIE_MAX_AGE);
-      setTempCookie("amoria_returnTo", finalPath, SIGNUP_COOKIE_MAX_AGE);
+setTempCookie("amoria_lang", locale, SIGNUP_COOKIE_MAX_AGE);
+setTempCookie("amoria_plan", plan, SIGNUP_COOKIE_MAX_AGE);
+setTempCookie("amoria_returnTo", finalPath, SIGNUP_COOKIE_MAX_AGE);
 
-      const emailRedirectTo = `${origin}${AUTH_CALLBACK_PATH}`;
+// ✅ IMPORTANT : lien email → page UI (pas API)
+const emailRedirectTo = `${origin}/auth/callback?lang=${locale}&plan=${plan}&returnTo=/create-amoria`;
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { emailRedirectTo },
-      });
+const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: { emailRedirectTo },
+});
 
       if (error) {
         console.error("supabase signUp error", error);
