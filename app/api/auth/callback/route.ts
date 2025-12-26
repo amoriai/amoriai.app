@@ -8,12 +8,10 @@ type PlanId = "free" | "chat" | "plus" | "unlimited";
 function normalizeLocale(raw: string | null): Locale {
   return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
-
 function normalizePlan(raw: string | null): PlanId {
   return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
 }
 
-/** Autorise uniquement un chemin interne (anti open-redirect) */
 function safeReturnTo(raw: string | null): string | null {
   if (!raw) return null;
   const v = raw.trim();
@@ -38,18 +36,14 @@ function clearTempCookies(res: NextResponse) {
   res.cookies.set("amoria_plan", "", { path: "/", maxAge: 0 });
 }
 
-/** Ajoute lang/plan si pas déjà présents dans l'URL */
 function ensureLangPlan(path: string, lang: Locale, plan: PlanId) {
-  const hasQuery = path.includes("?");
-  const url = new URL(path, "http://local"); // base dummy
+  const url = new URL(path, "http://local");
   if (!url.searchParams.get("lang")) url.searchParams.set("lang", lang);
   if (!url.searchParams.get("plan")) url.searchParams.set("plan", plan);
   return url.pathname + "?" + url.searchParams.toString();
 }
 
-/** Optionnel mais recommandé : whitelist des routes autorisées */
 function isAllowedReturnTo(path: string) {
-  // Autorise seulement ces écrans finaux (ajoute d'autres si besoin)
   return (
     path.startsWith("/create-amoria") ||
     path.startsWith("/chat") ||
@@ -61,7 +55,6 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
 
   const returnToParam = safeReturnTo(url.searchParams.get("returnTo"));
-
   const cookieReturnTo = safeReturnTo(readCookie("amoria_returnTo"));
   const cookieLang = readCookie("amoria_lang");
   const cookiePlan = readCookie("amoria_plan");
@@ -74,19 +67,6 @@ export async function GET(request: Request) {
     const p = new URLSearchParams();
     p.set("lang", finalLang);
     p.set("error", oauthError);
-
-    const res = NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
-    clearTempCookies(res);
-    res.headers.set("Cache-Control", "no-store");
-    return res;
-  }
-
-  const code = url.searchParams.get("code");
-  if (!code) {
-    const p = new URLSearchParams();
-    p.set("lang", finalLang);
-    p.set("error", "missing_code");
-
     const res = NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
     clearTempCookies(res);
     res.headers.set("Cache-Control", "no-store");
@@ -94,28 +74,51 @@ export async function GET(request: Request) {
   }
 
   const supabase = createRouteHandlerClient({ cookies });
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (error) {
+  // ✅ 1) OAuth/PKCE
+  const code = url.searchParams.get("code");
+
+  // ✅ 2) Email confirmation / magic link / etc.
+  const token_hash = url.searchParams.get("token_hash");
+  const type = url.searchParams.get("type"); // "signup" | "magiclink" | "recovery" | ...
+
+  let authError: any = null;
+
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    authError = error;
+  } else if (token_hash && type) {
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash,
+      type: type as any,
+    });
+    authError = error;
+  } else {
     const p = new URLSearchParams();
     p.set("lang", finalLang);
-    p.set("error", "oauth_exchange");
-
+    p.set("error", "missing_code_or_token");
     const res = NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
     clearTempCookies(res);
     res.headers.set("Cache-Control", "no-store");
     return res;
   }
 
-  // Destination finale (priorité param, puis cookie)
+  if (authError) {
+    const p = new URLSearchParams();
+    p.set("lang", finalLang);
+    p.set("error", "auth_exchange");
+    const res = NextResponse.redirect(new URL(`/login?${p.toString()}`, url.origin));
+    clearTempCookies(res);
+    res.headers.set("Cache-Control", "no-store");
+    return res;
+  }
+
   let finalReturnTo = returnToParam ?? cookieReturnTo;
 
-  // ✅ sécurité + anti-page-intermédiaire : si returnTo pointe ailleurs, on ignore
   if (!finalReturnTo || !isAllowedReturnTo(finalReturnTo)) {
     finalReturnTo = "/create-amoria";
   }
 
-  // ✅ injecte lang/plan si manquants
   const finalWithParams = ensureLangPlan(finalReturnTo, finalLang, finalPlan);
 
   const res = NextResponse.redirect(new URL(finalWithParams, url.origin));
