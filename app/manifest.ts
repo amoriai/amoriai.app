@@ -1,0 +1,19 @@
+// app/manifest.ts
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "AmorIAI",
+    short_name: "AmorIAI",
+    description: "AmorIAI - AI companion",
+    start_url: "/?source=pwa",
+    scope: "/",
+    display: "standalone",
+    background_color: "#000000",
+    theme_color: "#000000",
+    icons: [
+      { src: "/amoria-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/amoria-512.png", sizes: "512x512", type: "image/png" },
+    ],
+  };
+}
