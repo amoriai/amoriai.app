@@ -93,6 +93,23 @@ async function pickAvatarForUser(userId: string, personaType: PersonaType): Prom
 }
 
 /* =========================
+   AUTH (getSession with retry)
+========================= */
+
+async function getSessionWithRetry(retries = 6, delayMs = 150) {
+  for (let i = 0; i < retries; i++) {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) console.error("auth.getSession error:", error);
+
+    const session = data?.session ?? null;
+    if (session?.user) return session;
+
+    await new Promise((r) => setTimeout(r, delayMs));
+  }
+  return null;
+}
+
+/* =========================
    TEXTES
 ========================= */
 
@@ -287,10 +304,7 @@ const CATEGORY_OPTIONS: CategoryOption[] = [
   { value: "man", label: { fr: "Homme", en: "Man", es: "Hombre" } },
   { value: "woman50", label: { fr: "Femme 50+", en: "Woman 50+", es: "Mujer 50+" } },
   { value: "man50", label: { fr: "Homme 50+", en: "Man 50+", es: "Hombre 50+" } },
-  {
-    value: "androgynous",
-    label: { fr: "Androgyne / non-binaire", en: "Androgynous / non-binary", es: "Andrógino / no binario" },
-  },
+  { value: "androgynous", label: { fr: "Androgyne / non-binaire", en: "Androgynous / non-binary", es: "Andrógino / no binario" } },
 ];
 
 function normalizeLocale(raw: string | null): Locale {
@@ -363,11 +377,8 @@ export default function CreateAmoriaPage() {
       setReady(false);
       setErrorMsg(null);
 
-      // 1) Auth (✅ getSession)
-      const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
-      if (sessionErr) console.error("auth.getSession error:", sessionErr);
-
-      const session = sessionData?.session;
+      // 1) Auth (✅ getSession + retry)
+      const session = await getSessionWithRetry();
       const user = session?.user;
 
       if (!user) {
@@ -459,11 +470,8 @@ export default function CreateAmoriaPage() {
     setSaving(true);
 
     try {
-      // Auth (re-check) (✅ getSession)
-      const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
-      if (sessionErr) console.error("auth.getSession(recheck) error:", sessionErr);
-
-      const session = sessionData?.session;
+      // Auth (re-check) (✅ getSession + retry)
+      const session = await getSessionWithRetry();
       const user = session?.user;
 
       if (!user) {
@@ -848,7 +856,11 @@ sans jugement, en respectant les limites de l’utilisateur.
           padding: 0.25rem 0.85rem;
           border-radius: 999px;
           border: 1px solid rgba(96, 165, 250, 0.9);
-          background: radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.7), rgba(15, 23, 42, 0.9));
+          background: radial-gradient(
+            circle at 0% 0%,
+            rgba(59, 130, 246, 0.7),
+            rgba(15, 23, 42, 0.9)
+          );
           color: #dbeafe;
           font-size: 0.78rem;
           letter-spacing: 0.12em;
@@ -948,7 +960,11 @@ sans jugement, en respectant les limites de l’utilisateur.
           border-radius: 999px;
           border: 1px solid rgba(148, 163, 184, 0.6);
           padding: 0.65rem 1rem;
-          background: radial-gradient(circle at top left, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 1));
+          background: radial-gradient(
+            circle at top left,
+            rgba(15, 23, 42, 0.96),
+            rgba(15, 23, 42, 1)
+          );
           color: #f9fafb;
           font-size: 0.86rem;
         }
