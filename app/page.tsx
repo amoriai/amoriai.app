@@ -1,17 +1,11 @@
 // app/page.tsx
 import Link from "next/link";
-import styles from "./page.module.css";
 
 type Locale = "fr" | "en" | "es";
 type PersonaId = "lyra" | "orion" | "kai" | "maelis";
 
-type Persona = {
-  id: PersonaId;
-  title: string;
-  description: string;
-};
-
-type StartChip = { label: string };
+type Persona = { id: PersonaId; title: string; description: string };
+type QuoteCard = { quote: string };
 
 type Copy = {
   brandTagline: string;
@@ -29,25 +23,19 @@ type Copy = {
   personasTitle: string;
   personasSubtitle: string;
   personas: Persona[];
-
   personaCta: string;
   personaCtaHint: string;
 
   usageTitle: string;
   usageBullets: string[];
 
-  // ✅ NEW: replaced "messages" section
-  startTitle: string;
-  startSubtitle: string;
-  startPrivacyNote: string;
-  startChips: StartChip[];
-  startPrimaryCta: string;
-  startSecondaryCta: string;
+  messagesTitle: string;
+  messagesSubtitle: string;
+  messagesPrivacyNote: string;
+  messages: QuoteCard[];
 
   pricingTitle: string;
   pricingText: string;
-  pricingCta: string;
-  pricingCtaHint?: string;
   seePricingLabel: string;
 
   videoCaption: string;
@@ -72,7 +60,7 @@ const STRINGS: Record<Locale, Copy> = {
     heroKicker: "BIENVENUE SUR AMORIAI.APP",
     heroTitle: "Un espace calme. Pour parler, respirer… et y voir clair.",
     heroSubtitle:
-      "Ici, tu peux déposer ce que tu as en tête, sans pression. AmorIAI répond avec douceur et t’aide à clarifier — à ton rythme.",
+      "Ici, tu peux tout déposer, sans te sentir jugé. AmorIAI t’écoute, te répond avec douceur et t’aide à comprendre ce que tu ressens — à ton rythme.",
     heroPrimary: "Commencer gratuitement",
     heroSupport: "Gratuit pour commencer • Sans engagement • Tu peux arrêter quand tu veux",
     langNote: "Choisis ta langue. Le reste, je m’en occupe.",
@@ -81,26 +69,10 @@ const STRINGS: Record<Locale, Copy> = {
     personasSubtitle:
       "Crée ton compte et commence maintenant. Tu peux écrire librement, comme dans un journal… avec une réponse en face. La voix est disponible avec l’abonnement.",
     personas: [
-      {
-        id: "lyra",
-        title: "Lyra — Compagnon IA doux",
-        description: "Douce et rassurante. Parfaite pour déposer ce que tu gardes pour toi.",
-      },
-      {
-        id: "orion",
-        title: "Orion — Compagnon IA stable",
-        description: "Calme et structuré. Pour t’aider à clarifier et décider.",
-      },
-      {
-        id: "kai",
-        title: "Kai — Compagnon IA nuancé",
-        description: "Subtil et ouvert. Pour parler sans cases, sans pression.",
-      },
-      {
-        id: "maelis",
-        title: "Maelis — Compagnon IA mature",
-        description: "Bienveillant, réaliste et posé. Comme quelqu’un qui comprend.",
-      },
+      { id: "lyra", title: "Lyra — Compagnon IA doux", description: "Douce et rassurante. Parfaite pour déposer ce que tu gardes pour toi." },
+      { id: "orion", title: "Orion — Compagnon IA stable", description: "Calme et structuré. Pour t’aider à clarifier et décider." },
+      { id: "kai", title: "Kai — Compagnon IA nuancé", description: "Subtil et ouvert. Pour parler sans cases, sans pression." },
+      { id: "maelis", title: "Maelis — Compagnon IA mature", description: "Bienveillant, réaliste et posé. Comme quelqu’un qui comprend." },
     ],
     personaCta: "Créer mon AmorIAI",
     personaCtaHint: "Exemple de compagnon IA — tu crées le tien après l’inscription.",
@@ -115,26 +87,20 @@ const STRINGS: Record<Locale, Copy> = {
       "Te sentir accompagné, sans pression ni jugement.",
     ],
 
-    // ✅ NEW SECTION (trust + no fake testimonials)
-    startTitle: "Commence simplement",
-    startSubtitle: "Une phrase, un mot, ou même rien de précis — c’est correct.",
-    startPrivacyNote: "Tes messages restent privés. Personne ne les lit.",
-    startChips: [
-      { label: "J’ai la tête pleine." },
-      { label: "J’ai besoin d’y voir clair." },
-      { label: "Je veux juste écrire un peu." },
-      { label: "Je reviens plus tard si ça déborde." },
-      { label: "Je veux une réponse calme." },
-      { label: "Je ne sais pas par où commencer." },
+    messagesTitle: "Ce que des gens écrivent ici",
+    messagesSubtitle: "Des phrases simples, comme dans la vraie vie.",
+    messagesPrivacyNote: "Personne ne lit tes messages. Ils sont privés. Ils restent ici.",
+    messages: [
+      { quote: "Le soir, j’ai besoin de vider ma tête avant de dormir." },
+      { quote: "J’ai peur d’être jugé si j’en parle à quelqu’un." },
+      { quote: "Aide-moi à y voir clair, je suis mêlé." },
+      { quote: "Je suis en doute total. J’ai besoin de comprendre." },
+      { quote: "Je veux juste une réponse calme, sans pression." },
     ],
-    startPrimaryCta: "Commencer maintenant",
-    startSecondaryCta: "Me connecter",
 
     pricingTitle: "Quand tu te sens prêt",
     pricingText:
       "Commence gratuitement. Si tu en ressens le besoin, tu pourras débloquer plus d’échanges — et la voix pour parler, pas seulement écrire.",
-    pricingCta: "Créer un compte pour s’abonner",
-    pricingCtaHint: "Crée ton compte gratuit d’abord. Ensuite tu pourras choisir un forfait.",
     seePricingLabel: "Voir les tarifs",
 
     videoCaption: "Disponible en français, anglais et espagnol.",
@@ -157,7 +123,7 @@ const STRINGS: Record<Locale, Copy> = {
     heroKicker: "WELCOME TO AMORIAI.APP",
     heroTitle: "A calm space. To talk, breathe… and see things clearly.",
     heroSubtitle:
-      "Here, you can put down what’s on your mind without pressure. AmorIAI replies gently and helps you clarify — at your pace.",
+      "Here, you can drop everything without feeling judged. AmorIAI listens, answers gently, and helps you understand what you feel — at your pace.",
     heroPrimary: "Start free",
     heroSupport: "Free to start • No commitment • Cancel anytime",
     langNote: "Choose your language. I’ll take it from there.",
@@ -166,26 +132,10 @@ const STRINGS: Record<Locale, Copy> = {
     personasSubtitle:
       "Create your account and begin right away. Write freely, like a private journal… with a reply on the other side. Voice is available with the subscription.",
     personas: [
-      {
-        id: "lyra",
-        title: "Lyra — Gentle AI companion",
-        description: "Soft and reassuring. Great for putting words on what you keep inside.",
-      },
-      {
-        id: "orion",
-        title: "Orion — Steady AI companion",
-        description: "Calm and structured. Helps you think clearly and decide.",
-      },
-      {
-        id: "kai",
-        title: "Kai — Nuanced AI companion",
-        description: "Open-minded and subtle. A space without labels or pressure.",
-      },
-      {
-        id: "maelis",
-        title: "Maelis — Mature AI companion",
-        description: "Grounded, caring, realistic. Like someone who truly understands.",
-      },
+      { id: "lyra", title: "Lyra — Gentle AI companion", description: "Soft and reassuring. Great for putting words on what you keep inside." },
+      { id: "orion", title: "Orion — Steady AI companion", description: "Calm and structured. Helps you think clearly and decide." },
+      { id: "kai", title: "Kai — Nuanced AI companion", description: "Open-minded and subtle. A space without labels or pressure." },
+      { id: "maelis", title: "Maelis — Mature AI companion", description: "Grounded, caring, realistic. Like someone who truly understands." },
     ],
     personaCta: "Create my AmorIAI",
     personaCtaHint: "Example AI companion — you’ll create yours after signup.",
@@ -200,24 +150,19 @@ const STRINGS: Record<Locale, Copy> = {
       "Feel supported, with no pressure and no judgement.",
     ],
 
-    startTitle: "Start simple",
-    startSubtitle: "One line, one word, or nothing specific — that’s okay.",
-    startPrivacyNote: "Your messages stay private. No one reads them.",
-    startChips: [
-      { label: "My mind feels full." },
-      { label: "I need clarity." },
-      { label: "I just want to write a bit." },
-      { label: "I’ll come back later if it’s too much." },
-      { label: "I want a calm reply." },
-      { label: "I don’t know where to start." },
+    messagesTitle: "What people write here",
+    messagesSubtitle: "Simple lines, like real life.",
+    messagesPrivacyNote: "No one reads your messages. They’re private. They stay here.",
+    messages: [
+      { quote: "At night, I need to empty my head before sleep." },
+      { quote: "I’m afraid of being judged if I talk to someone." },
+      { quote: "Help me see clearly — I’m confused." },
+      { quote: "I’m overthinking. I need clarity." },
+      { quote: "I just want a calm reply, no pressure." },
     ],
-    startPrimaryCta: "Start now",
-    startSecondaryCta: "Log in",
 
     pricingTitle: "When you feel ready",
     pricingText: "Start free. When you need more, unlock more messages — and voice to actually talk, not just type.",
-    pricingCta: "Create an account to subscribe",
-    pricingCtaHint: "Create your free account first. Then you can pick a plan.",
     seePricingLabel: "See pricing",
 
     videoCaption: "Available in French, English, and Spanish.",
@@ -240,7 +185,7 @@ const STRINGS: Record<Locale, Copy> = {
     heroKicker: "BIENVENIDx A AMORIAI.APP",
     heroTitle: "Un espacio tranquilo. Para hablar, respirar… y ver claro.",
     heroSubtitle:
-      "Aquí puedes soltar lo que tienes en la mente sin presión. AmorIAI responde con suavidad y te ayuda a aclarar — a tu ritmo.",
+      "Aquí puedes soltarlo todo sin sentirte juzgadx. AmorIAI te escucha, responde con suavidad y te ayuda a entender lo que sientes — a tu ritmo.",
     heroPrimary: "Empezar gratis",
     heroSupport: "Gratis para empezar • Sin compromiso • Cancela cuando quieras",
     langNote: "Elige tu idioma. Yo me encargo del resto.",
@@ -249,26 +194,10 @@ const STRINGS: Record<Locale, Copy> = {
     personasSubtitle:
       "Crea tu cuenta y empieza ahora. Escribe con libertad, como en un diario… con una respuesta al frente. La voz está disponible con suscripción.",
     personas: [
-      {
-        id: "lyra",
-        title: "Lyra — Compañero de IA suave",
-        description: "Dulce y tranquilizador. Ideal para decir lo que guardas dentro.",
-      },
-      {
-        id: "orion",
-        title: "Orion — Compañero de IA estable",
-        description: "Calmo y estructurado. Para pensar con claridad y decidir.",
-      },
-      {
-        id: "kai",
-        title: "Kai — Compañero de IA con matices",
-        description: "Sutil y abierto. Un espacio sin etiquetas ni presión.",
-      },
-      {
-        id: "maelis",
-        title: "Maelis — Compañero de IA maduro",
-        description: "Realista, sereno y amable. Como alguien que comprende.",
-      },
+      { id: "lyra", title: "Lyra — Compañero de IA suave", description: "Dulce y tranquilizador. Ideal para decir lo que guardas dentro." },
+      { id: "orion", title: "Orion — Compañero de IA estable", description: "Calmo y estructurado. Para pensar con claridad y decidir." },
+      { id: "kai", title: "Kai — Compañero de IA con matices", description: "Sutil y abierto. Un espacio sin etiquetas ni presión." },
+      { id: "maelis", title: "Maelis — Compañero de IA maduro", description: "Realista, sereno y amable. Como alguien que comprende." },
     ],
     personaCta: "Crear mi AmorIAI",
     personaCtaHint: "Ejemplo de compañero de IA — crearás el tuyo después de registrarte.",
@@ -283,25 +212,20 @@ const STRINGS: Record<Locale, Copy> = {
       "Sentirte acompañado, sin presión y sin juicios.",
     ],
 
-    startTitle: "Empieza simple",
-    startSubtitle: "Una frase, una palabra, o nada específico — está bien.",
-    startPrivacyNote: "Tus mensajes son privados. Nadie los lee.",
-    startChips: [
-      { label: "Tengo la cabeza llena." },
-      { label: "Necesito claridad." },
-      { label: "Solo quiero escribir un poco." },
-      { label: "Vuelvo luego si me supera." },
-      { label: "Quiero una respuesta tranquila." },
-      { label: "No sé por dónde empezar." },
+    messagesTitle: "Lo que la gente escribe aquí",
+    messagesSubtitle: "Frases simples, como en la vida real.",
+    messagesPrivacyNote: "Nadie lee tus mensajes. Son privados. Se quedan aquí.",
+    messages: [
+      { quote: "Por la noche necesito vaciar la cabeza antes de dormir." },
+      { quote: "Me da miedo que me juzguen si lo hablo con alguien." },
+      { quote: "Ayúdame a verlo claro — estoy confundido." },
+      { quote: "Le doy demasiadas vueltas. Necesito claridad." },
+      { quote: "Solo quiero una respuesta calmada, sin presión." },
     ],
-    startPrimaryCta: "Empezar ahora",
-    startSecondaryCta: "Iniciar sesión",
 
     pricingTitle: "Cuando te sientas listo",
     pricingText:
       "Empieza gratis. Cuando lo necesites, desbloquea más mensajes — y la voz para hablar de verdad, no solo escribir.",
-    pricingCta: "Crear cuenta para suscribirme",
-    pricingCtaHint: "Primero crea tu cuenta gratis. Luego podrás elegir un plan.",
     seePricingLabel: "Ver precios",
 
     videoCaption: "Disponible en francés, inglés y español.",
@@ -342,49 +266,77 @@ export default function HomePage({ searchParams }: PageProps) {
   const loginInlineLabel = locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión";
 
   return (
-    <main className={styles.page}>
+    <main
+      className="min-h-screen pb-12 text-slate-100"
+      style={{
+        background: "radial-gradient(circle at top left,#111827 0,#020617 55%,#000 100%)",
+      }}
+    >
       {/* HEADER */}
-      <header className={styles.header}>
-        <div className={styles.headerInner}>
-          <div className={styles.brand}>
+      <header className="sticky top-0 z-20 bg-gradient-to-b from-slate-950/95 via-slate-950/80 to-transparent backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/AmorIA_logo_transparent.png" alt="Logo AmorIAI.app" className={styles.logo} draggable={false} />
-            <div className={styles.brandText}>
-              <div className={styles.brandName}>AmorIAI.app</div>
-              <div className={styles.brandTagline}>{t.brandTagline}</div>
+            <img
+              src="/AmorIA_logo_transparent.png"
+              alt="Logo AmorIAI.app"
+              className="h-9 w-auto select-none"
+              draggable={false}
+            />
+            <div className="flex flex-col">
+              <div className="text-sm font-semibold">AmorIAI.app</div>
+              <div className="text-[0.72rem] text-slate-400">{t.brandTagline}</div>
             </div>
           </div>
 
-          <nav className={styles.navDesktop}>
-            <a href="#hero" className={styles.navLink}>
+          {/* Nav desktop */}
+          <nav className="hidden items-center gap-5 text-xs text-slate-300 md:flex">
+            <a href="#hero" className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50">
               {t.nav.home}
             </a>
-            <Link href={withLang("/features")} className={styles.navLink}>
+            <Link
+              href={withLang("/features")}
+              className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
+            >
               {t.nav.features}
             </Link>
-            <Link href={withLangPricingPublic()} className={styles.navLink}>
+            <Link
+              href={withLangPricingPublic()}
+              className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
+            >
               {t.nav.pricing}
             </Link>
           </nav>
 
-          <div className={styles.actions}>
-            <div className={styles.langPill}>
+          {/* Lang + login + signup */}
+          <div className="flex items-center gap-2">
+            {/* Lang switcher */}
+            <div className="flex items-center gap-0.5 rounded-full border border-slate-600/70 bg-slate-900/80 px-0.5 py-0.5 text-[0.7rem]">
               {(["fr", "en", "es"] as Locale[]).map((code) => (
                 <Link
                   key={code}
                   href={{ pathname: "/", query: { lang: code } }}
-                  className={`${styles.langBtn} ${locale === code ? styles.langActive : ""}`}
+                  className={`rounded-full px-2 py-0.5 transition ${
+                    locale === code ? "bg-slate-800 text-slate-50" : "text-slate-400 hover:text-slate-100"
+                  }`}
                 >
                   {code.toUpperCase()}
                 </Link>
               ))}
             </div>
 
-            <Link href={withLang("/login")} className={styles.loginBtn}>
+            <Link
+              href={withLang("/login")}
+              className="hidden items-center justify-center rounded-full border border-slate-500/70 px-3 py-1 text-[0.7rem] text-slate-100 transition hover:bg-slate-900/80 md:inline-flex"
+            >
               {t.navLogin}
             </Link>
 
-            <Link href={withLang("/signup")} className={styles.signupBtn}>
+            <Link
+              href={withLang("/signup")}
+              className="hidden items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3.5 py-1.5 text-[0.78rem] font-medium text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110 sm:inline-flex"
+            >
               {t.navSignup}
             </Link>
           </div>
@@ -392,62 +344,74 @@ export default function HomePage({ searchParams }: PageProps) {
       </header>
 
       {/* HERO */}
-      <section id="hero" className={styles.hero}>
-        <div className={styles.heroLeft}>
-          <p className={styles.kicker}>{t.heroKicker}</p>
-          <h1 className={styles.heroTitle}>{t.heroTitle}</h1>
-          <p className={styles.heroSubtitle}>{t.heroSubtitle}</p>
+      <section id="hero" className="mx-auto grid max-w-5xl items-center gap-8 px-4 pb-10 pt-6 md:grid-cols-[1.3fr,1fr]">
+        <div className="flex flex-col gap-3">
+          <p className="text-[0.8rem] uppercase tracking-[0.18em] text-indigo-300">{t.heroKicker}</p>
+          <h1 className="text-3xl font-bold leading-tight md:text-[2.3rem]">{t.heroTitle}</h1>
+          <p className="max-w-xl text-sm leading-relaxed text-slate-300 md:text-[0.92rem]">{t.heroSubtitle}</p>
 
-          <div className={styles.heroCtas}>
-            <Link href={withLang("/signup")} className={styles.primaryCta}>
+          <div className="mt-3 flex flex-col gap-2">
+            <Link
+              href={withLang("/signup")}
+              className="inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-6 py-2.5 text-[0.96rem] font-medium text-white shadow-xl shadow-rose-400/40 transition hover:brightness-110"
+            >
               {t.heroPrimary}
             </Link>
 
-            <div className={styles.inlineLogin}>
+            <div className="text-[0.8rem] text-slate-300">
               {alreadyAccountText}{" "}
-              <Link href={withLang("/login")} className={styles.inlineLoginLink}>
+              <Link href={withLang("/login")} className="font-semibold text-rose-300 hover:text-rose-200">
                 {loginInlineLabel}
               </Link>
             </div>
           </div>
 
-          <p className={styles.heroSupport}>{t.heroSupport}</p>
-          <p className={styles.langNote}>{t.langNote}</p>
+          <p className="mt-1 text-[0.82rem] text-slate-400">{t.heroSupport}</p>
+          <p className="text-[0.8rem] text-slate-200">{t.langNote}</p>
         </div>
 
-        <div className={styles.heroRight}>
-          <div className={styles.videoFrame}>
+        <div className="flex flex-col items-center gap-2">
+          <div
+            className="w-full max-w-xs animate-[amoriaPulse_4s_ease-in-out_infinite] rounded-[1.6rem] p-[0.22rem]"
+            style={{ background: "linear-gradient(135deg,#f97316,#fb37ff,#38bdf8)" }}
+          >
             {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-            <video className={styles.video} src={heroVideoSrc} controls playsInline />
+            <video className="block w-full rounded-[1.45rem] bg-slate-950" src={heroVideoSrc} controls playsInline />
           </div>
-          <p className={styles.videoCaption}>{t.videoCaption}</p>
+          <p className="text-center text-[0.78rem] text-slate-400">{t.videoCaption}</p>
         </div>
       </section>
 
       {/* PERSONAS */}
-      <section id="features" className={styles.section}>
-        <div className={styles.sectionHead}>
-          <h2 className={styles.h2}>{t.personasTitle}</h2>
-          <p className={styles.p}>{t.personasSubtitle}</p>
+      <section id="features" className="mx-auto max-w-5xl space-y-4 px-4 pb-10">
+        <div>
+          <h2 className="text-lg font-semibold md:text-xl">{t.personasTitle}</h2>
+          <p className="mt-1 max-w-2xl text-sm text-slate-300">{t.personasSubtitle}</p>
         </div>
 
-        <div className={styles.personaGrid}>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {t.personas.map((persona) => (
-            <article key={persona.id} className={styles.card}>
-              <div className={styles.cardMedia}>
+            <article
+              key={persona.id}
+              className="flex min-h-full flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-gradient-to-b from-slate-950/90 via-slate-950 to-black/90"
+            >
+              <div className="aspect-[4/5] w-full border-b border-slate-800 bg-slate-900">
                 {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-                <video className={styles.cardVideo} src={getPersonaVideoSrc(persona.id)} controls playsInline />
+                <video className="h-full w-full object-cover" src={getPersonaVideoSrc(persona.id)} controls playsInline />
               </div>
 
-              <div className={styles.cardBody}>
-                <h3 className={styles.h3}>{persona.title}</h3>
-                <p className={styles.cardText}>{persona.description}</p>
+              <div className="flex flex-col gap-2 px-3.5 py-3.5">
+                <h3 className="text-sm font-semibold">{persona.title}</h3>
+                <p className="flex-1 text-[0.8rem] text-slate-300">{persona.description}</p>
 
-                <Link href={withLang("/signup")} className={styles.cardCta}>
+                <Link
+                  href={withLang("/signup")}
+                  className="mt-1 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3 py-2 text-[0.85rem] font-medium text-white shadow-lg shadow-rose-400/35 transition hover:brightness-110"
+                >
                   {t.personaCta}
                 </Link>
 
-                <p className={styles.mutedCenter}>{t.personaCtaHint}</p>
+                <p className="text-center text-[0.72rem] leading-snug text-slate-400">{t.personaCtaHint}</p>
               </div>
             </article>
           ))}
@@ -455,65 +419,91 @@ export default function HomePage({ searchParams }: PageProps) {
       </section>
 
       {/* USAGE */}
-      <section className={`${styles.section} ${styles.sectionDivider}`}>
-        <h2 className={styles.h2}>{t.usageTitle}</h2>
-        <ul className={styles.bullets}>
+      <section className="mx-auto max-w-5xl border-t border-slate-900 px-4 pb-8 pt-7">
+        <h2 className="mb-3 text-lg font-semibold md:text-xl">{t.usageTitle}</h2>
+        <ul className="max-w-xl space-y-2 text-sm text-slate-300">
           {t.usageBullets.map((item, index) => (
-            <li key={index} className={styles.bulletItem}>
-              <span className={styles.bulletDot}>•</span>
+            <li key={index} className="flex">
+              <span className="mr-2 text-rose-400">•</span>
               <span>{item}</span>
             </li>
           ))}
         </ul>
       </section>
 
-      {/* ✅ NEW: START SIMPLE (replaces fake "people write" quotes) */}
-      <section className={styles.section}>
-        <div className={styles.sectionHead}>
-          <h2 className={styles.h2}>{t.startTitle}</h2>
-          <p className={styles.p}>{t.startSubtitle}</p>
+      {/* MESSAGES (Trust section) */}
+      <section className="mx-auto max-w-5xl px-4 pb-12 pt-2">
+        <div className="mb-5">
+          <h2 className="text-lg font-semibold md:text-xl">{t.messagesTitle}</h2>
+          <p className="mt-1 text-sm text-slate-300">{t.messagesSubtitle}</p>
 
-          <div className={styles.privacyPill}>
-            <span className={styles.privacyDot} />
-            <span>{t.startPrivacyNote}</span>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-2 rounded-full border border-slate-700/60 bg-slate-950/60 px-3 py-1 text-[0.78rem] text-slate-300">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-rose-400 shadow-[0_0_18px_rgba(244,63,94,0.55)]" />
+              {t.messagesPrivacyNote}
+            </span>
           </div>
         </div>
 
-        <div className={styles.chipsGrid}>
-          {t.startChips.map((c, i) => (
-            <div key={i} className={styles.chip}>
-              <span className={styles.chipStar}>✦</span>
-              <span className={styles.chipText}>{c.label}</span>
+        <div className="grid gap-4 md:grid-cols-2">
+          {t.messages.map((item, index) => (
+            <div
+              key={index}
+              className="
+                group relative overflow-hidden rounded-2xl border border-slate-700/60
+                bg-gradient-to-b from-slate-950/75 via-slate-950 to-black/90
+                p-4 shadow-lg shadow-black/25 transition
+                hover:-translate-y-0.5 hover:border-rose-400/40 hover:bg-slate-950/90
+              "
+            >
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-rose-400/40 to-transparent opacity-0 transition group-hover:opacity-100" />
+
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl border border-slate-700/60 bg-slate-950/60">
+                  <span className="text-rose-300">✦</span>
+                </div>
+
+                <div className="flex-1">
+                  <p className="text-[0.95rem] leading-relaxed text-slate-100">
+                    <span className="text-slate-400">“</span>
+                    {item.quote}
+                    <span className="text-slate-400">”</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="pointer-events-none absolute -bottom-16 -right-16 h-40 w-40 rounded-full bg-rose-500/10 blur-2xl opacity-0 transition group-hover:opacity-100" />
             </div>
           ))}
         </div>
-
-        <div className={styles.startCtas}>
-          <Link href={withLang("/signup")} className={styles.primaryCtaWide}>
-            {t.startPrimaryCta}
-          </Link>
-          <Link href={withLang("/login")} className={styles.secondaryCtaWide}>
-            {t.startSecondaryCta}
-          </Link>
-        </div>
       </section>
 
-      {/* PRICING TEASER */}
-      <section id="pricing" className={styles.section}>
-        <div className={styles.pricingBox}>
-          <h2 className={styles.h2}>{t.pricingTitle}</h2>
-          <p className={styles.pCenter}>{t.pricingText}</p>
+      {/* PRICING TEASER (only one CTA: pricing) */}
+      <section id="pricing" className="mx-auto max-w-5xl px-4 pb-12">
+        <div
+          className="
+            rounded-3xl border border-slate-800/70
+            bg-gradient-to-b from-slate-950/75 via-slate-950 to-black/90
+            p-6 text-center shadow-xl shadow-black/30
+          "
+        >
+          <h2 className="text-lg font-semibold md:text-xl">{t.pricingTitle}</h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-slate-300">{t.pricingText}</p>
 
-          <div className={styles.pricingCtas}>
-            <Link href={withLang("/signup")} className={styles.primaryCtaWide}>
-              {locale === "fr" ? "Créer mon compte gratuit" : locale === "en" ? "Create my free account" : "Crear mi cuenta gratis"}
-            </Link>
-
-            <Link href={withLangPricingPublic()} className={styles.secondaryCtaWide}>
+          <div className="mt-5 flex flex-col items-center gap-2">
+            <Link
+              href={withLangPricingPublic()}
+              className="
+                inline-flex w-full max-w-sm items-center justify-center rounded-full
+                border border-slate-500/70 bg-transparent
+                px-6 py-3 text-[0.92rem] font-medium text-slate-100
+                transition hover:bg-slate-900/70
+              "
+            >
               {t.seePricingLabel}
             </Link>
 
-            <div className={styles.mutedCenter}>
+            <div className="text-[0.78rem] text-slate-400">
               {locale === "fr"
                 ? "Gratuit • Sans engagement • Annule quand tu veux"
                 : locale === "en"
@@ -525,14 +515,25 @@ export default function HomePage({ searchParams }: PageProps) {
       </section>
 
       {/* FOOTER */}
-      <footer className={styles.footer}>
-        <div className={styles.footerCopy}>{t.footerCopy}</div>
-        <div className={styles.footerLinks}>
-          <Link href={withLang("/legal")}>{t.footerLinks.legal}</Link>
-          <Link href={withLang("/legal/privacy")}>{t.footerLinks.privacy}</Link>
-          <Link href={withLang("/legal/terms")}>{t.footerLinks.terms}</Link>
-          <Link href={withLang("/contact")}>{t.footerLinks.contact}</Link>
-          <Link href={withLang("/about")}>{t.footerLinks.about}</Link>
+      <footer className="mx-auto max-w-5xl px-4 pb-4 text-center text-[0.78rem] text-slate-400">
+        <div className="mb-2">{t.footerCopy}</div>
+
+        <div className="flex flex-wrap justify-center gap-3">
+          <Link href={withLang("/legal")} className="hover:text-slate-100">
+            {t.footerLinks.legal}
+          </Link>
+          <Link href={withLang("/legal/privacy")} className="hover:text-slate-100">
+            {t.footerLinks.privacy}
+          </Link>
+          <Link href={withLang("/legal/terms")} className="hover:text-slate-100">
+            {t.footerLinks.terms}
+          </Link>
+          <Link href={withLang("/contact")} className="hover:text-slate-100">
+            {t.footerLinks.contact}
+          </Link>
+          <Link href={withLang("/about")} className="hover:text-slate-100">
+            {t.footerLinks.about}
+          </Link>
         </div>
       </footer>
     </main>
