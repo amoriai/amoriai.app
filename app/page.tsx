@@ -99,9 +99,9 @@ messages: [
 ],
 
     pricingTitle: "Quand tu te sens prêt",
-    pricingText:
-      "Commence gratuitement. Si tu en ressens le besoin, tu pourras débloquer plus d’échanges — et la voix pour parler, pas seulement écrire.",
-    seePricingLabel: "Voir les tarifs",
+pricingText:
+  "Commence gratuitement, à ton rythme. Si tu en ressens le besoin, tu pourras ensuite débloquer plus d’échanges — et la voix pour parler, pas seulement écrire.",
+seePricingLabel: "Voir les tarifs",
 
     videoCaption: "Disponible en français, anglais et espagnol.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -162,8 +162,9 @@ messages: [
 ],
 
     pricingTitle: "When you feel ready",
-    pricingText: "Start free. When you need more, unlock more messages — and voice to actually talk, not just type.",
-    seePricingLabel: "See pricing",
+pricingText:
+  "Start free, at your own pace. When you need more, you can unlock additional messages — and voice to talk, not just type.",
+seePricingLabel: "See pricing",
 
     videoCaption: "Available in French, English, and Spanish.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -224,9 +225,9 @@ usageBullets: [
     ],
 
     pricingTitle: "Cuando te sientas listo",
-    pricingText:
-      "Empieza gratis. Cuando lo necesites, desbloquea más mensajes — y la voz para hablar de verdad, no solo escribir.",
-    seePricingLabel: "Ver precios",
+pricingText:
+  "Empieza gratis, a tu propio ritmo. Cuando lo necesites, podrás desbloquear más mensajes — y la voz para hablar, no solo escribir.",
+seePricingLabel: "Ver precios",
 
     videoCaption: "Disponible en francés, inglés y español.",
     footerCopy: "© 2025 AmorIAI.app",
