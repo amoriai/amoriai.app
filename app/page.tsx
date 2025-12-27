@@ -62,12 +62,12 @@ const STRINGS: Record<Locale, Copy> = {
     heroSubtitle:
       "Ici, tu peux tout déposer, sans te sentir jugé. AmorIAI t’écoute, te répond avec douceur et t’aide à comprendre ce que tu ressens — à ton rythme.",
     heroPrimary: "Commencer gratuitement",
-    heroSupport: "Gratuit pour commencer • Sans engagement • Tu peux arrêter quand tu veux",
+    heroSupport: "Gratuit pour commencer • Sans engagement • Annule quand tu veux",
     langNote: "Choisis ta langue. Le reste, je m’en occupe.",
 
     personasTitle: "Choisis ton compagnon IA — et commence à écrire",
     personasSubtitle:
-      "Crée ton compte et commence maintenant. Tu peux écrire librement, comme dans un journal… avec une réponse en face. La voix est disponible avec l’abonnement.",
+      "Crée ton compte et commence maintenant. Tu peux écrire librement, comme dans un journal avec quelqu’un qui te répond. La voix est disponible avec l’abonnement.",
     personas: [
       {
         id: "lyra",
@@ -215,7 +215,7 @@ const STRINGS: Record<Locale, Copy> = {
     navLogin: "Iniciar sesión",
     navSignup: "Empezar",
 
-    heroKicker: "BIENVENIDx A AMORIAI.APP",
+    heroKicker: "BIENVENIDX A AMORIAI.APP",
     heroTitle: "Un espacio tranquilo. Para hablar, respirar… y ver claro.",
     heroSubtitle:
       "Aquí puedes soltarlo todo sin sentirte juzgadx. AmorIAI te escucha, responde con suavidad y te ayuda a entender lo que sientes — a tu ritmo.",
