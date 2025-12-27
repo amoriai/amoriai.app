@@ -492,28 +492,45 @@ export default function HomePage({ searchParams }: PageProps) {
           <p className="mx-auto mt-2 max-w-xl text-sm text-slate-300">{t.pricingText}</p>
 
           <div className="mt-5 flex flex-col items-center gap-2">
-            <Link
-              href={withLangPricingPublic()}
-              className="
-                inline-flex w-full max-w-sm items-center justify-center rounded-full
-                border border-slate-500/70 bg-transparent
-                px-6 py-3 text-[0.92rem] font-medium text-slate-100
-                transition hover:bg-slate-900/70
-              "
-            >
-              {t.seePricingLabel}
-            </Link>
+  {/* Bouton principal : création de compte */}
+  <Link
+    href={withLang("/signup")}
+    className="
+      inline-flex w-full max-w-sm items-center justify-center rounded-full
+      bg-gradient-to-tr from-fuchsia-500 to-rose-400
+      px-6 py-3 text-[0.92rem] font-medium text-white
+      shadow-lg shadow-rose-400/40
+      transition hover:brightness-110
+    "
+  >
+    {locale === "fr"
+      ? "Créer mon compte gratuit"
+      : locale === "en"
+      ? "Create my free account"
+      : "Crear mi cuenta gratis"}
+  </Link>
 
-            <div className="text-[0.78rem] text-slate-400">
-              {locale === "fr"
-                ? "Gratuit • Sans engagement • Annule quand tu veux"
-                : locale === "en"
-                ? "Free • No commitment • Cancel anytime"
-                : "Gratis • Sin compromiso • Cancela cuando quieras"}
-            </div>
-          </div>
-        </div>
-      </section>
+  {/* Bouton secondaire : voir les tarifs */}
+  <Link
+    href={withLangPricingPublic()}
+    className="
+      inline-flex w-full max-w-sm items-center justify-center rounded-full
+      border border-slate-500/70 bg-transparent
+      px-6 py-3 text-[0.92rem] font-medium text-slate-100
+      transition hover:bg-slate-900/70
+    "
+  >
+    {t.seePricingLabel}
+  </Link>
+
+  <div className="text-[0.78rem] text-slate-400">
+    {locale === "fr"
+      ? "Gratuit • Sans engagement • Annule quand tu veux"
+      : locale === "en"
+      ? "Free • No commitment • Cancel anytime"
+      : "Gratis • Sin compromiso • Cancela cuando quieras"}
+  </div>
+</div>
 
       {/* FOOTER */}
       <footer className="mx-auto max-w-5xl px-4 pb-4 text-center text-[0.78rem] text-slate-400">
