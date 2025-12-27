@@ -87,16 +87,16 @@ const STRINGS: Record<Locale, Copy> = {
       "Te sentir accompagné, sans pression ni jugement.",
     ],
 
-    messagesTitle: "Ce que des gens écrivent ici",
-    messagesSubtitle: "Des phrases simples, comme dans la vraie vie.",
-    messagesPrivacyNote: "Personne ne lit tes messages. Ils sont privés. Ils restent ici.",
-    messages: [
-      { quote: "Le soir, j’ai besoin de vider ma tête avant de dormir." },
-      { quote: "J’ai peur d’être jugé si j’en parle à quelqu’un." },
-      { quote: "Aide-moi à y voir clair, je suis mêlé." },
-      { quote: "Je suis en doute total. J’ai besoin de comprendre." },
-      { quote: "Je veux juste une réponse calme, sans pression." },
-    ],
+    messagesTitle: "Ce que les gens écrivent quand ils commencent",
+messagesSubtitle: "Des pensées simples. Sans mise en scène. Sans jugement.",
+messagesPrivacyNote: "Tes messages sont privés. Personne ne les lit.",
+messages: [
+  { quote: "J’ai juste besoin d’écrire un peu." },
+  { quote: "J’ai la tête pleine ce soir." },
+  { quote: "Je ne sais pas par où commencer." },
+  { quote: "Aide-moi à mettre de l’ordre dans mes pensées." },
+  { quote: "Je veux une réponse calme, rien de plus." },
+],
 
     pricingTitle: "Quand tu te sens prêt",
     pricingText:
@@ -150,16 +150,16 @@ const STRINGS: Record<Locale, Copy> = {
       "Feel supported, with no pressure and no judgement.",
     ],
 
-    messagesTitle: "What people write here",
-    messagesSubtitle: "Simple lines, like real life.",
-    messagesPrivacyNote: "No one reads your messages. They’re private. They stay here.",
-    messages: [
-      { quote: "At night, I need to empty my head before sleep." },
-      { quote: "I’m afraid of being judged if I talk to someone." },
-      { quote: "Help me see clearly — I’m confused." },
-      { quote: "I’m overthinking. I need clarity." },
-      { quote: "I just want a calm reply, no pressure." },
-    ],
+   messagesTitle: "What people write when they start",
+messagesSubtitle: "Simple thoughts. No performance. No judgment.",
+messagesPrivacyNote: "Your messages are private. No one reads them.",
+messages: [
+  { quote: "I just need to write for a moment." },
+  { quote: "My head feels full tonight." },
+  { quote: "I don’t know where to start." },
+  { quote: "Help me sort out my thoughts." },
+  { quote: "I want a calm reply. Nothing more." },
+],
 
     pricingTitle: "When you feel ready",
     pricingText: "Start free. When you need more, unlock more messages — and voice to actually talk, not just type.",
@@ -203,14 +203,14 @@ const STRINGS: Record<Locale, Copy> = {
     personaCtaHint: "Ejemplo de compañero de IA — crearás el tuyo después de registrarte.",
 
     usageTitle: "Cómo puede acompañarte AmorIAI cada día",
-    usageBullets: [
-      "Hablar cuando sientes que no tienes con quién desahogarte.",
-      "Escribir lo que sientes, como en un diario íntimo.",
-      "Relajarte por la noche y calmar la mente.",
-      "Pensar una decisión cuando dudas.",
-      "Volver cuando te sobrepasa, aunque sea dos minutos.",
-      "Sentirte acompañado, sin presión y sin juicios.",
-    ],
+usageBullets: [
+  "Hablar cuando sientes que no tienes con quién desahogarte.",
+  "Escribir lo que llevas dentro, como en un diario personal.",
+  "Tomarte un momento por la noche para calmar la mente.",
+  "Pensar con más claridad cuando dudas o te sientes bloqueadx.",
+  "Volver cuando todo se siente demasiado, aunque sea por dos minutos.",
+  "Sentirte acompañado, sin presión ni juicios.",
+],
 
     messagesTitle: "Lo que la gente escribe aquí",
     messagesSubtitle: "Frases simples, como en la vida real.",
