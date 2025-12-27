@@ -60,7 +60,7 @@ const STRINGS: Record<Locale, Copy> = {
     heroKicker: "BIENVENUE SUR AMORIAI.APP",
     heroTitle: "Un espace calme. Pour parler, respirer… et y voir clair.",
     heroSubtitle:
-      "Ici, tu peux tout déposer, sans te sentir jugé. AmorIAI t’écoute, te répond avec douceur et t’aide à comprendre ce que tu ressens — à ton rythme.",
+      "Ici, tu peux tout déposer, sans te sentir jugé. AmorIAI t’écoute, te répond avec douceur et t’aide à comprendre ce que tu ressens à ton rythme.",
     heroPrimary: "Commencer gratuitement",
     heroSupport: "Gratuit pour commencer • Sans engagement • Annule quand tu veux",
     langNote: "Choisis ta langue. Le reste, je m’en occupe.",
@@ -91,7 +91,7 @@ const STRINGS: Record<Locale, Copy> = {
       },
     ],
     personaCta: "Créer mon AmorIAI",
-    personaCtaHint: "Exemple de compagnon IA — tu crées le tien après l’inscription.",
+    personaCtaHint: "Exemple de compagnon IA - tu crées le tien après l’inscription.",
 
     usageTitle: "AmorIAI peut t’aider au quotidien",
     usageBullets: [
@@ -116,7 +116,7 @@ const STRINGS: Record<Locale, Copy> = {
 
     pricingTitle: "Quand tu te sens prêt",
     pricingText:
-      "Commence gratuitement, à ton rythme. Si tu en ressens le besoin, tu pourras ensuite débloquer plus d’échanges — et la voix pour parler, pas seulement écrire.",
+      "Commence gratuitement, à ton rythme. Si tu en ressens le besoin, tu pourras ensuite débloquer plus d’échanges et la voix pour parler, pas seulement écrire.",
     seePricingLabel: "Voir les tarifs",
 
     videoCaption: "Disponible en français, anglais et espagnol.",
@@ -144,7 +144,7 @@ const STRINGS: Record<Locale, Copy> = {
     heroSupport: "Free to start • No commitment • Cancel anytime",
     langNote: "Choose your language. I’ll take it from there.",
 
-    personasTitle: "Choose your AI companion — and start writing",
+    personasTitle: "Choose your AI companion - and start writing",
     personasSubtitle:
       "Create your account and begin right away. Write freely, like a private journal… with a reply on the other side. Voice is available with the subscription.",
     personas: [
@@ -170,7 +170,7 @@ const STRINGS: Record<Locale, Copy> = {
       },
     ],
     personaCta: "Create my AmorIAI",
-    personaCtaHint: "Example AI companion — you’ll create yours after signup.",
+    personaCtaHint: "Example AI companion - you’ll create yours after signup.",
 
     usageTitle: "How AmorIAI can support you day to day",
     usageBullets: [
@@ -223,7 +223,7 @@ const STRINGS: Record<Locale, Copy> = {
     heroSupport: "Gratis para empezar • Sin compromiso • Cancela cuando quieras",
     langNote: "Elige tu idioma. Yo me encargo del resto.",
 
-    personasTitle: "Elige tu compañero de IA — y empieza a escribir",
+    personasTitle: "Elige tu compañero de IA - y empieza a escribir",
     personasSubtitle:
       "Crea tu cuenta y empieza ahora. Escribe con libertad, como en un diario… con una respuesta al frente. La voz está disponible con suscripción.",
     personas: [
@@ -249,7 +249,7 @@ const STRINGS: Record<Locale, Copy> = {
       },
     ],
     personaCta: "Crear mi AmorIAI",
-    personaCtaHint: "Ejemplo de compañero de IA — crearás el tuyo después de registrarte.",
+    personaCtaHint: "Ejemplo de compañero de IA - crearás el tuyo después de registrarte.",
 
     usageTitle: "Cómo puede acompañarte AmorIAI cada día",
     usageBullets: [
