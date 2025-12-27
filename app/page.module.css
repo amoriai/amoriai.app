@@ -1,4 +1,9 @@
 /* app/page.module.css */
+
+/* =========================
+   PAGE + HEADER
+========================= */
+
 .page {
   min-height: 100vh;
   padding-bottom: 48px;
@@ -12,6 +17,7 @@
   z-index: 20;
   background: linear-gradient(to bottom, rgba(2, 6, 23, 0.95), rgba(2, 6, 23, 0.72), transparent);
   backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .headerInner {
@@ -34,6 +40,7 @@
   height: 36px;
   width: auto;
   user-select: none;
+  -webkit-user-drag: none;
 }
 
 .brandText {
@@ -79,6 +86,10 @@
   align-items: center;
   gap: 8px;
 }
+
+/* =========================
+   LANG SWITCHER + AUTH BTNS
+========================= */
 
 .langPill {
   display: flex;
@@ -130,7 +141,7 @@
   padding: 8px 14px;
   font-size: 12px;
   font-weight: 600;
-  color: white;
+  color: #fff;
   background: linear-gradient(135deg, #d946ef, #fb7185);
   box-shadow: 0 12px 28px rgba(251, 113, 133, 0.22);
   transition: 150ms ease;
@@ -139,6 +150,10 @@
 .signupBtn:hover {
   filter: brightness(1.08);
 }
+
+/* =========================
+   HERO
+========================= */
 
 .hero {
   max-width: 960px;
@@ -190,7 +205,7 @@
   justify-content: center;
   border-radius: 999px;
   padding: 12px 18px;
-  color: white;
+  color: #fff;
   text-decoration: none;
   font-weight: 650;
   background: linear-gradient(135deg, #d946ef, #fb7185);
@@ -275,6 +290,10 @@
   text-align: center;
 }
 
+/* =========================
+   SECTIONS
+========================= */
+
 .section {
   max-width: 960px;
   margin: 0 auto;
@@ -318,6 +337,10 @@
   line-height: 1.6;
   text-align: center;
 }
+
+/* =========================
+   PERSONAS (CARDS)
+========================= */
 
 .personaGrid {
   display: grid;
@@ -366,7 +389,7 @@
   align-items: center;
   border-radius: 999px;
   padding: 10px 12px;
-  color: white;
+  color: #fff;
   text-decoration: none;
   font-size: 13px;
   font-weight: 650;
@@ -385,6 +408,10 @@
   color: rgba(148, 163, 184, 0.9);
   line-height: 1.35;
 }
+
+/* =========================
+   BULLETS
+========================= */
 
 .bullets {
   margin-top: 14px;
@@ -405,6 +432,10 @@
 .bulletDot {
   color: rgba(251, 113, 133, 0.9);
 }
+
+/* =========================
+   PRIVACY PILL + CHIPS
+========================= */
 
 .privacyPill {
   margin-top: 12px;
@@ -468,6 +499,10 @@
   line-height: 1.5;
 }
 
+/* =========================
+   CTA BLOCKS
+========================= */
+
 .startCtas {
   margin-top: 16px;
   display: flex;
@@ -513,6 +548,10 @@
   align-items: center;
 }
 
+/* =========================
+   FOOTER
+========================= */
+
 .footer {
   max-width: 960px;
   margin: 0 auto;
@@ -543,7 +582,10 @@
   color: #f8fafc;
 }
 
-/* Responsive */
+/* =========================
+   RESPONSIVE
+========================= */
+
 @media (min-width: 640px) {
   .signupBtn {
     display: inline-flex;
