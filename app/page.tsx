@@ -69,10 +69,26 @@ const STRINGS: Record<Locale, Copy> = {
     personasSubtitle:
       "Crée ton compte et commence maintenant. Tu peux écrire librement, comme dans un journal… avec une réponse en face. La voix est disponible avec l’abonnement.",
     personas: [
-      { id: "lyra", title: "Lyra — Compagnon IA doux", description: "Douce et rassurante. Parfaite pour déposer ce que tu gardes pour toi." },
-      { id: "orion", title: "Orion — Compagnon IA stable", description: "Calme et structuré. Pour t’aider à clarifier et décider." },
-      { id: "kai", title: "Kai — Compagnon IA nuancé", description: "Subtil et ouvert. Pour parler sans cases, sans pression." },
-      { id: "maelis", title: "Maelis — Compagnon IA mature", description: "Bienveillant, réaliste et posé. Comme quelqu’un qui comprend." },
+      {
+        id: "lyra",
+        title: "Lyra — Compagnon IA doux",
+        description: "Douce et rassurante. Parfaite pour déposer ce que tu gardes pour toi.",
+      },
+      {
+        id: "orion",
+        title: "Orion — Compagnon IA stable",
+        description: "Calme et structuré. Pour t’aider à clarifier et décider.",
+      },
+      {
+        id: "kai",
+        title: "Kai — Compagnon IA nuancé",
+        description: "Subtil et ouvert. Pour parler sans cases, sans pression.",
+      },
+      {
+        id: "maelis",
+        title: "Maelis — Compagnon IA mature",
+        description: "Bienveillant, réaliste et posé. Comme quelqu’un qui comprend.",
+      },
     ],
     personaCta: "Créer mon AmorIAI",
     personaCtaHint: "Exemple de compagnon IA — tu crées le tien après l’inscription.",
@@ -88,20 +104,20 @@ const STRINGS: Record<Locale, Copy> = {
     ],
 
     messagesTitle: "Ce que les gens écrivent quand ils commencent",
-messagesSubtitle: "Des pensées simples. Sans mise en scène. Sans jugement.",
-messagesPrivacyNote: "Tes messages sont privés. Personne ne les lit.",
-messages: [
-  { quote: "J’ai juste besoin d’écrire un peu." },
-  { quote: "J’ai la tête pleine ce soir." },
-  { quote: "Je ne sais pas par où commencer." },
-  { quote: "Aide-moi à mettre de l’ordre dans mes pensées." },
-  { quote: "Je veux une réponse calme, rien de plus." },
-],
+    messagesSubtitle: "Des pensées simples. Sans mise en scène. Sans jugement.",
+    messagesPrivacyNote: "Tes messages sont privés. Personne ne les lit.",
+    messages: [
+      { quote: "J’ai juste besoin d’écrire un peu." },
+      { quote: "J’ai la tête pleine ce soir." },
+      { quote: "Je ne sais pas par où commencer." },
+      { quote: "Aide-moi à mettre de l’ordre dans mes pensées." },
+      { quote: "Je veux une réponse calme, rien de plus." },
+    ],
 
     pricingTitle: "Quand tu te sens prêt",
-pricingText:
-  "Commence gratuitement, à ton rythme. Si tu en ressens le besoin, tu pourras ensuite débloquer plus d’échanges — et la voix pour parler, pas seulement écrire.",
-seePricingLabel: "Voir les tarifs",
+    pricingText:
+      "Commence gratuitement, à ton rythme. Si tu en ressens le besoin, tu pourras ensuite débloquer plus d’échanges — et la voix pour parler, pas seulement écrire.",
+    seePricingLabel: "Voir les tarifs",
 
     videoCaption: "Disponible en français, anglais et espagnol.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -132,10 +148,26 @@ seePricingLabel: "Voir les tarifs",
     personasSubtitle:
       "Create your account and begin right away. Write freely, like a private journal… with a reply on the other side. Voice is available with the subscription.",
     personas: [
-      { id: "lyra", title: "Lyra — Gentle AI companion", description: "Soft and reassuring. Great for putting words on what you keep inside." },
-      { id: "orion", title: "Orion — Steady AI companion", description: "Calm and structured. Helps you think clearly and decide." },
-      { id: "kai", title: "Kai — Nuanced AI companion", description: "Open-minded and subtle. A space without labels or pressure." },
-      { id: "maelis", title: "Maelis — Mature AI companion", description: "Grounded, caring, realistic. Like someone who truly understands." },
+      {
+        id: "lyra",
+        title: "Lyra — Gentle AI companion",
+        description: "Soft and reassuring. Great for putting words on what you keep inside.",
+      },
+      {
+        id: "orion",
+        title: "Orion — Steady AI companion",
+        description: "Calm and structured. Helps you think clearly and decide.",
+      },
+      {
+        id: "kai",
+        title: "Kai — Nuanced AI companion",
+        description: "Open-minded and subtle. A space without labels or pressure.",
+      },
+      {
+        id: "maelis",
+        title: "Maelis — Mature AI companion",
+        description: "Grounded, caring, realistic. Like someone who truly understands.",
+      },
     ],
     personaCta: "Create my AmorIAI",
     personaCtaHint: "Example AI companion — you’ll create yours after signup.",
@@ -150,21 +182,21 @@ seePricingLabel: "Voir les tarifs",
       "Feel supported, with no pressure and no judgement.",
     ],
 
-   messagesTitle: "What people write when they start",
-messagesSubtitle: "Simple thoughts. No performance. No judgment.",
-messagesPrivacyNote: "Your messages are private. No one reads them.",
-messages: [
-  { quote: "I just need to write for a moment." },
-  { quote: "My head feels full tonight." },
-  { quote: "I don’t know where to start." },
-  { quote: "Help me sort out my thoughts." },
-  { quote: "I want a calm reply. Nothing more." },
-],
+    messagesTitle: "What people write when they start",
+    messagesSubtitle: "Simple thoughts. No performance. No judgment.",
+    messagesPrivacyNote: "Your messages are private. No one reads them.",
+    messages: [
+      { quote: "I just need to write for a moment." },
+      { quote: "My head feels full tonight." },
+      { quote: "I don’t know where to start." },
+      { quote: "Help me sort out my thoughts." },
+      { quote: "I want a calm reply. Nothing more." },
+    ],
 
     pricingTitle: "When you feel ready",
-pricingText:
-  "Start free, at your own pace. When you need more, you can unlock additional messages — and voice to talk, not just type.",
-seePricingLabel: "See pricing",
+    pricingText:
+      "Start free, at your own pace. When you need more, you can unlock additional messages — and voice to talk, not just type.",
+    seePricingLabel: "See pricing",
 
     videoCaption: "Available in French, English, and Spanish.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -195,23 +227,39 @@ seePricingLabel: "See pricing",
     personasSubtitle:
       "Crea tu cuenta y empieza ahora. Escribe con libertad, como en un diario… con una respuesta al frente. La voz está disponible con suscripción.",
     personas: [
-      { id: "lyra", title: "Lyra — Compañero de IA suave", description: "Dulce y tranquilizador. Ideal para decir lo que guardas dentro." },
-      { id: "orion", title: "Orion — Compañero de IA estable", description: "Calmo y estructurado. Para pensar con claridad y decidir." },
-      { id: "kai", title: "Kai — Compañero de IA con matices", description: "Sutil y abierto. Un espacio sin etiquetas ni presión." },
-      { id: "maelis", title: "Maelis — Compañero de IA maduro", description: "Realista, sereno y amable. Como alguien que comprende." },
+      {
+        id: "lyra",
+        title: "Lyra — Compañero de IA suave",
+        description: "Dulce y tranquilizador. Ideal para decir lo que guardas dentro.",
+      },
+      {
+        id: "orion",
+        title: "Orion — Compañero de IA estable",
+        description: "Calmo y estructurado. Para pensar con claridad y decidir.",
+      },
+      {
+        id: "kai",
+        title: "Kai — Compañero de IA con matices",
+        description: "Sutil y abierto. Un espacio sin etiquetas ni presión.",
+      },
+      {
+        id: "maelis",
+        title: "Maelis — Compañero de IA maduro",
+        description: "Realista, sereno y amable. Como alguien que comprende.",
+      },
     ],
     personaCta: "Crear mi AmorIAI",
     personaCtaHint: "Ejemplo de compañero de IA — crearás el tuyo después de registrarte.",
 
     usageTitle: "Cómo puede acompañarte AmorIAI cada día",
-usageBullets: [
-  "Hablar cuando sientes que no tienes con quién desahogarte.",
-  "Escribir lo que llevas dentro, como en un diario personal.",
-  "Tomarte un momento por la noche para calmar la mente.",
-  "Pensar con más claridad cuando dudas o te sientes bloqueadx.",
-  "Volver cuando todo se siente demasiado, aunque sea por dos minutos.",
-  "Sentirte acompañado, sin presión ni juicios.",
-],
+    usageBullets: [
+      "Hablar cuando sientes que no tienes con quién desahogarte.",
+      "Escribir lo que llevas dentro, como en un diario personal.",
+      "Tomarte un momento por la noche para calmar la mente.",
+      "Pensar con más claridad cuando dudas o te sientes bloqueadx.",
+      "Volver cuando todo se siente demasiado, aunque sea por dos minutos.",
+      "Sentirte acompañado, sin presión ni juicios.",
+    ],
 
     messagesTitle: "Lo que la gente escribe aquí",
     messagesSubtitle: "Frases simples, como en la vida real.",
@@ -225,9 +273,9 @@ usageBullets: [
     ],
 
     pricingTitle: "Cuando te sientas listo",
-pricingText:
-  "Empieza gratis, a tu propio ritmo. Cuando lo necesites, podrás desbloquear más mensajes — y la voz para hablar, no solo escribir.",
-seePricingLabel: "Ver precios",
+    pricingText:
+      "Empieza gratis, a tu propio ritmo. Cuando lo necesites, podrás desbloquear más mensajes — y la voz para hablar, no solo escribir.",
+    seePricingLabel: "Ver precios",
 
     videoCaption: "Disponible en francés, inglés y español.",
     footerCopy: "© 2025 AmorIAI.app",
@@ -293,7 +341,10 @@ export default function HomePage({ searchParams }: PageProps) {
 
           {/* Nav desktop */}
           <nav className="hidden items-center gap-5 text-xs text-slate-300 md:flex">
-            <a href="#hero" className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50">
+            <a
+              href="#hero"
+              className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
+            >
               {t.nav.home}
             </a>
             <Link
@@ -345,7 +396,10 @@ export default function HomePage({ searchParams }: PageProps) {
       </header>
 
       {/* HERO */}
-      <section id="hero" className="mx-auto grid max-w-5xl items-center gap-8 px-4 pb-10 pt-6 md:grid-cols-[1.3fr,1fr]">
+      <section
+        id="hero"
+        className="mx-auto grid max-w-5xl items-center gap-8 px-4 pb-10 pt-6 md:grid-cols-[1.3fr,1fr]"
+      >
         <div className="flex flex-col gap-3">
           <p className="text-[0.8rem] uppercase tracking-[0.18em] text-indigo-300">{t.heroKicker}</p>
           <h1 className="text-3xl font-bold leading-tight md:text-[2.3rem]">{t.heroTitle}</h1>
@@ -479,7 +533,7 @@ export default function HomePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      {/* PRICING TEASER (only one CTA: pricing) */}
+      {/* PRICING TEASER */}
       <section id="pricing" className="mx-auto max-w-5xl px-4 pb-12">
         <div
           className="
@@ -491,46 +545,49 @@ export default function HomePage({ searchParams }: PageProps) {
           <h2 className="text-lg font-semibold md:text-xl">{t.pricingTitle}</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm text-slate-300">{t.pricingText}</p>
 
+          {/* ✅ REMIS : 2 boutons (Signup + Pricing) */}
           <div className="mt-5 flex flex-col items-center gap-2">
-  {/* Bouton principal : création de compte */}
-  <Link
-    href={withLang("/signup")}
-    className="
-      inline-flex w-full max-w-sm items-center justify-center rounded-full
-      bg-gradient-to-tr from-fuchsia-500 to-rose-400
-      px-6 py-3 text-[0.92rem] font-medium text-white
-      shadow-lg shadow-rose-400/40
-      transition hover:brightness-110
-    "
-  >
-    {locale === "fr"
-      ? "Créer mon compte gratuit"
-      : locale === "en"
-      ? "Create my free account"
-      : "Crear mi cuenta gratis"}
-  </Link>
+            {/* Bouton principal : création de compte */}
+            <Link
+              href={withLang("/signup")}
+              className="
+                inline-flex w-full max-w-sm items-center justify-center rounded-full
+                bg-gradient-to-tr from-fuchsia-500 to-rose-400
+                px-6 py-3 text-[0.92rem] font-medium text-white
+                shadow-lg shadow-rose-400/40
+                transition hover:brightness-110
+              "
+            >
+              {locale === "fr"
+                ? "Créer mon compte gratuit"
+                : locale === "en"
+                ? "Create my free account"
+                : "Crear mi cuenta gratis"}
+            </Link>
 
-  {/* Bouton secondaire : voir les tarifs */}
-  <Link
-    href={withLangPricingPublic()}
-    className="
-      inline-flex w-full max-w-sm items-center justify-center rounded-full
-      border border-slate-500/70 bg-transparent
-      px-6 py-3 text-[0.92rem] font-medium text-slate-100
-      transition hover:bg-slate-900/70
-    "
-  >
-    {t.seePricingLabel}
-  </Link>
+            {/* Bouton secondaire : voir les tarifs */}
+            <Link
+              href={withLangPricingPublic()}
+              className="
+                inline-flex w-full max-w-sm items-center justify-center rounded-full
+                border border-slate-500/70 bg-transparent
+                px-6 py-3 text-[0.92rem] font-medium text-slate-100
+                transition hover:bg-slate-900/70
+              "
+            >
+              {t.seePricingLabel}
+            </Link>
 
-  <div className="text-[0.78rem] text-slate-400">
-    {locale === "fr"
-      ? "Gratuit • Sans engagement • Annule quand tu veux"
-      : locale === "en"
-      ? "Free • No commitment • Cancel anytime"
-      : "Gratis • Sin compromiso • Cancela cuando quieras"}
-  </div>
-</div>
+            <div className="text-[0.78rem] text-slate-400">
+              {locale === "fr"
+                ? "Gratuit • Sans engagement • Annule quand tu veux"
+                : locale === "en"
+                ? "Free • No commitment • Cancel anytime"
+                : "Gratis • Sin compromiso • Cancela cuando quieras"}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* FOOTER */}
       <footer className="mx-auto max-w-5xl px-4 pb-4 text-center text-[0.78rem] text-slate-400">
