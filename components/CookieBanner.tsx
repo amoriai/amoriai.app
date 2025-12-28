@@ -58,6 +58,12 @@ const TEXT: Record<Locale, Copy> = {
 // ✅ versionne la clé (si tu modifies le bandeau, ça peut re-s’afficher proprement)
 const CONSENT_KEY = "amoriai_cookie_consent_v1"; // values: "all" | "necessary"
 
+declare global {
+  interface Window {
+    gtag?: (...args: any[]) => void;
+  }
+}
+
 function readLocaleFromUrl(): Locale {
   if (typeof window === "undefined") return "fr";
   const params = new URLSearchParams(window.location.search);
@@ -84,26 +90,54 @@ function writeConsent(v: "all" | "necessary") {
   }
 }
 
+/**
+ * ✅ Consent Mode (Google Ads / Analytics via gtag)
+ * - allowAnalytics = true  => granted
+ * - allowAnalytics = false => denied
+ *
+ * (Ton layout doit avoir un "consent default" denied + gtag chargé)
+ */
+function pushGtagConsent(allowAnalytics: boolean) {
+  if (typeof window === "undefined") return;
+  if (typeof window.gtag !== "function") return;
+
+  window.gtag("consent", "update", {
+    ad_storage: allowAnalytics ? "granted" : "denied",
+    analytics_storage: allowAnalytics ? "granted" : "denied",
+    ad_user_data: allowAnalytics ? "granted" : "denied",
+    ad_personalization: allowAnalytics ? "granted" : "denied",
+  });
+}
+
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [analyticsAllowed, setAnalyticsAllowed] = useState(true);
   const [locale, setLocale] = useState<Locale>("fr");
 
-  // ✅ au montage : locale + consent
+  // ✅ au montage : locale + consent (et applique le consent si déjà enregistré)
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     setLocale(readLocaleFromUrl());
 
     const consent = readConsent();
+
     if (!consent) {
+      // Pas encore de choix => on affiche le bandeau
       setVisible(true);
-      setAnalyticsAllowed(true); // par défaut
-    } else {
-      setVisible(false);
-      setAnalyticsAllowed(consent === "all");
+
+      // Cette valeur ne "débloque" rien tant qu'ils n'ont pas cliqué.
+      // Le layout doit rester en default denied.
+      setAnalyticsAllowed(true);
+      return;
     }
+
+    // Choix déjà fait => on applique à Google et on ne montre pas le bandeau
+    const allow = consent === "all";
+    setAnalyticsAllowed(allow);
+    pushGtagConsent(allow);
+    setVisible(false);
   }, []);
 
   // ✅ met à jour la langue si l’URL change (?lang=)
@@ -138,6 +172,7 @@ export default function CookieBanner() {
   const acceptAll = () => {
     writeConsent("all");
     setAnalyticsAllowed(true);
+    pushGtagConsent(true);
     setShowSettings(false);
     setVisible(false);
   };
@@ -145,12 +180,15 @@ export default function CookieBanner() {
   const decline = () => {
     writeConsent("necessary");
     setAnalyticsAllowed(false);
+    pushGtagConsent(false);
     setShowSettings(false);
     setVisible(false);
   };
 
   const save = () => {
-    writeConsent(analyticsAllowed ? "all" : "necessary");
+    const allow = analyticsAllowed;
+    writeConsent(allow ? "all" : "necessary");
+    pushGtagConsent(allow);
     setShowSettings(false);
     setVisible(false);
   };
@@ -162,7 +200,7 @@ export default function CookieBanner() {
       style={{
         position: "fixed",
         inset: "auto 0 0 0",
-        zIndex: 2147483647, // ✅ maximum (pour être au-dessus de tout)
+        zIndex: 2147483647,
         padding: "14px 16px 18px",
         background: "rgba(2,6,23,0.98)",
         borderTop: "1px solid rgba(148,163,184,0.4)",
