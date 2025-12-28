@@ -94,8 +94,6 @@ function writeConsent(v: "all" | "necessary") {
  * ✅ Consent Mode (Google Ads / Analytics via gtag)
  * - allowAnalytics = true  => granted
  * - allowAnalytics = false => denied
- *
- * (Ton layout doit avoir un "consent default" denied + gtag chargé)
  */
 function pushGtagConsent(allowAnalytics: boolean) {
   if (typeof window === "undefined") return;
@@ -124,16 +122,11 @@ export default function CookieBanner() {
     const consent = readConsent();
 
     if (!consent) {
-      // Pas encore de choix => on affiche le bandeau
       setVisible(true);
-
-      // Cette valeur ne "débloque" rien tant qu'ils n'ont pas cliqué.
-      // Le layout doit rester en default denied.
-      setAnalyticsAllowed(true);
+      setAnalyticsAllowed(true); // juste pour cocher la case dans Settings
       return;
     }
 
-    // Choix déjà fait => on applique à Google et on ne montre pas le bandeau
     const allow = consent === "all";
     setAnalyticsAllowed(allow);
     pushGtagConsent(allow);
