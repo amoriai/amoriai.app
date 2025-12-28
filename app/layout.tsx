@@ -23,16 +23,29 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr">
       <head>
-        {/* Google Ads (gtag.js) */}
+        {/* Google tag (gtag.js) - Ads */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=AW-17835849508"
           strategy="afterInteractive"
         />
-        <Script id="google-ads" strategy="afterInteractive">
+
+        {/* Consent Mode v2: defaults = denied (avant toute mesure) */}
+        <Script id="gtag-consent-default" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
+
+            // Default consent = denied (Consent Mode v2)
+            gtag('consent', 'default', {
+              ad_storage: 'denied',
+              analytics_storage: 'denied',
+              ad_user_data: 'denied',
+              ad_personalization: 'denied',
+              wait_for_update: 500
+            });
+
+            // Google Ads config
             gtag('config', 'AW-17835849508');
           `}
         </Script>
