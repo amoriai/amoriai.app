@@ -18,6 +18,7 @@ type Copy = {
   heroSubtitle: string;
   heroPrimary: string;
   heroSupport: string;
+  mobileNote: string; // ✅ ajouté
   langNote: string;
 
   personasTitle: string;
@@ -63,6 +64,7 @@ const STRINGS: Record<Locale, Copy> = {
       "Ici, tu peux tout déposer, sans te sentir jugé. AmorIAI t’écoute, te répond avec douceur et t’aide à comprendre ce que tu ressens à ton rythme.",
     heroPrimary: "Commencer gratuitement",
     heroSupport: "Gratuit pour commencer • Sans engagement • Annule quand tu veux",
+    mobileNote: "Fonctionne parfaitement sur mobile — aucune application à télécharger.",
     langNote: "Choisis ta langue. Le reste, je m’en occupe.",
 
     personasTitle: "Choisis ton compagnon IA — et commence à écrire",
@@ -142,6 +144,7 @@ const STRINGS: Record<Locale, Copy> = {
       "Here, you can drop everything without feeling judged. AmorIAI listens, answers gently, and helps you understand what you feel — at your pace.",
     heroPrimary: "Start free",
     heroSupport: "Free to start • No commitment • Cancel anytime",
+    mobileNote: "Works perfectly on mobile — no app required.",
     langNote: "Choose your language. I’ll take it from there.",
 
     personasTitle: "Choose your AI companion - and start writing",
@@ -221,6 +224,7 @@ const STRINGS: Record<Locale, Copy> = {
       "Aquí puedes soltarlo todo sin sentirte juzgadx. AmorIAI te escucha, responde con suavidad y te ayuda a entender lo que sientes — a tu ritmo.",
     heroPrimary: "Empezar gratis",
     heroSupport: "Gratis para empezar • Sin compromiso • Cancela cuando quieras",
+    mobileNote: "Funciona perfecto en móvil — no necesitas app.",
     langNote: "Elige tu idioma. Yo me encargo del resto.",
 
     personasTitle: "Elige tu compañero de IA - y empieza a escribir",
@@ -422,6 +426,8 @@ export default function HomePage({ searchParams }: PageProps) {
           </div>
 
           <p className="mt-1 text-[0.82rem] text-slate-400">{t.heroSupport}</p>
+          {/* ✅ AJOUT: Mobile-friendly */}
+          <p className="text-[0.8rem] text-slate-300">{t.mobileNote}</p>
           <p className="text-[0.8rem] text-slate-200">{t.langNote}</p>
         </div>
 
@@ -545,9 +551,7 @@ export default function HomePage({ searchParams }: PageProps) {
           <h2 className="text-lg font-semibold md:text-xl">{t.pricingTitle}</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm text-slate-300">{t.pricingText}</p>
 
-          {/* ✅ REMIS : 2 boutons (Signup + Pricing) */}
           <div className="mt-5 flex flex-col items-center gap-2">
-            {/* Bouton principal : création de compte */}
             <Link
               href={withLang("/signup")}
               className="
@@ -565,7 +569,6 @@ export default function HomePage({ searchParams }: PageProps) {
                 : "Crear mi cuenta gratis"}
             </Link>
 
-            {/* Bouton secondaire : voir les tarifs */}
             <Link
               href={withLangPricingPublic()}
               className="
