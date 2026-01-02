@@ -2,13 +2,17 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 /* ===========================
-   QUOTAS (PAR MOIS)
+   QUOTAS
+   - Paid: par mois
+   - Free: 40 une seule fois (lifetime)
 =========================== */
 
 type PlanCode = "free" | "chat" | "plus" | "unlimited";
+type Lang = "fr" | "en" | "es";
 
-function quotaFor(plan: PlanCode) {
-  // Limites MENSUELLES chat (messages/mois)
+const FREE_LIFETIME_QUOTA = 40;
+
+function monthlyQuotaForPaid(plan: Exclude<PlanCode, "free">) {
   switch (plan) {
     case "chat":
       return 400;
@@ -16,8 +20,6 @@ function quotaFor(plan: PlanCode) {
       return 1000;
     case "unlimited":
       return 10000;
-    default:
-      return 200; // free
   }
 }
 
@@ -27,8 +29,6 @@ function normalizePlanCode(raw: unknown): PlanCode {
   return "free";
 }
 
-type Lang = "fr" | "en" | "es";
-
 function normalizeLang(raw: unknown): Lang {
   const v = String(raw ?? "").toLowerCase();
   if (v === "en" || v === "es" || v === "fr") return v;
@@ -36,10 +36,15 @@ function normalizeLang(raw: unknown): Lang {
 }
 
 const I18N = {
-  quotaExceeded: {
+  quotaExceededPaid: {
     fr: "Tu as atteint la limite de messages pour ce mois-ci. Réessaie le mois prochain ou upgrade ton forfait.",
     en: "You’ve reached your monthly message limit. Try again next month or upgrade your plan.",
     es: "Has alcanzado tu límite mensual de mensajes. Inténtalo el próximo mes o mejora tu plan.",
+  },
+  quotaExceededFree: {
+    fr: "Tu as atteint la limite gratuite (40 messages). Crée un abonnement pour continuer.",
+    en: "You’ve reached the free limit (40 messages). Subscribe to continue.",
+    es: "Has alcanzado el límite gratis (40 mensajes). Suscríbete para continuar.",
   },
   voiceQuotaExceeded: {
     fr: "Tu as atteint la limite de voix pour ce mois-ci. Le texte reste disponible.",
@@ -51,16 +56,8 @@ const I18N = {
     en: "I don’t know.",
     es: "No lo sé.",
   },
-  missingIaId: {
-    fr: "missing_iaId",
-    en: "missing_iaId",
-    es: "missing_iaId",
-  },
-  missingMessage: {
-    fr: "missing_message",
-    en: "missing_message",
-    es: "missing_message",
-  },
+  missingIaId: { fr: "missing_iaId", en: "missing_iaId", es: "missing_iaId" },
+  missingMessage: { fr: "missing_message", en: "missing_message", es: "missing_message" },
 } as const;
 
 function hasBearer(authHeader: string) {
@@ -124,7 +121,6 @@ export async function POST(req: Request) {
 
     /* ===========================
        2) Admin client (lecture des plans, vérif IA)
-       ⚠️ service role bypass RLS: on filtre strictement par user_id
     =========================== */
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
@@ -180,37 +176,73 @@ export async function POST(req: Request) {
       }
     }
 
-    // Historique PAYANT seulement (note: si tu veux l’imposer vraiment, ça doit aussi être dans RLS)
+    // Historique PAYANT seulement
     const canStoreHistory = planCode !== "free";
 
     /* ===========================
-       4) Quota MENSUEL CHAT (RPC avec JWT)
-       RPC attendu: consume_monthly_message(quota int)
-       Retour attendu: { ok: boolean, remaining: int, ... }
+       4) QUOTA CHAT
+       - Free: lifetime 40 -> RPC consume_free_message_once(quota)
+       - Paid: monthly -> RPC consume_monthly_message(quota)
     =========================== */
-    const chatQuota = quotaFor(planCode);
+    let chatQuotaLabel: "lifetime" | "monthly" = "monthly";
+    let chatQuota = 0;
 
-    const { data: chatUsage, error: chatUsageErr } = await supabaseAuth.rpc(
-      "consume_monthly_message",
-      { quota: chatQuota }
-    );
+    let chatUsage: any = null;
 
-    if (chatUsageErr) {
-      console.error("consume_monthly_message error:", chatUsageErr);
-      return NextResponse.json({ error: "quota_check_failed" }, { status: 500 });
-    }
+    if (planCode === "free") {
+      chatQuotaLabel = "lifetime";
+      chatQuota = FREE_LIFETIME_QUOTA;
 
-    if (!chatUsage?.ok) {
-      return NextResponse.json(
-        {
-          error: "quota_exceeded",
-          planName,
-          planCode,
-          details: chatUsage,
-          message: I18N.quotaExceeded[safeLang],
-        },
-        { status: 429 }
-      );
+      const { data, error } = await supabaseAuth.rpc("consume_free_message_once", {
+        quota: FREE_LIFETIME_QUOTA,
+      });
+
+      if (error) {
+        console.error("consume_free_message_once error:", error);
+        return NextResponse.json({ error: "quota_check_failed" }, { status: 500 });
+      }
+
+      chatUsage = data;
+
+      if (!chatUsage?.ok) {
+        return NextResponse.json(
+          {
+            error: "quota_exceeded",
+            planName,
+            planCode,
+            details: chatUsage,
+            message: I18N.quotaExceededFree[safeLang],
+          },
+          { status: 429 }
+        );
+      }
+    } else {
+      chatQuotaLabel = "monthly";
+      chatQuota = monthlyQuotaForPaid(planCode);
+
+      const { data, error } = await supabaseAuth.rpc("consume_monthly_message", {
+        quota: chatQuota,
+      });
+
+      if (error) {
+        console.error("consume_monthly_message error:", error);
+        return NextResponse.json({ error: "quota_check_failed" }, { status: 500 });
+      }
+
+      chatUsage = data;
+
+      if (!chatUsage?.ok) {
+        return NextResponse.json(
+          {
+            error: "quota_exceeded",
+            planName,
+            planCode,
+            details: chatUsage,
+            message: I18N.quotaExceededPaid[safeLang],
+          },
+          { status: 429 }
+        );
+      }
     }
 
     /* ===========================
@@ -276,8 +308,7 @@ export async function POST(req: Request) {
     }
 
     const chatData = await chatRes.json();
-    const text: string =
-      chatData?.choices?.[0]?.message?.content?.trim() || I18N.fallbackReply[safeLang];
+    const text: string = chatData?.choices?.[0]?.message?.content?.trim() || I18N.fallbackReply[safeLang];
 
     /* ===========================
        8) Sauver la réponse assistant (PAYANT seulement)
@@ -294,9 +325,8 @@ export async function POST(req: Request) {
     }
 
     /* ===========================
-       9) Voix optionnelle (selon plan) + QUOTA MENSUEL VOICE (RPC)
+       9) Voix optionnelle (selon plan) + QUOTA MENSUEL VOICE
        RPC attendu: consume_monthly_voice(quota int)
-       Retour attendu: { ok: boolean, remaining: int, ... }
     =========================== */
     const allowAudioRequested = !!withAudio;
     const allowAudioByPlan = hasVoiceFromPlan && voiceLimitFromPlan > 0;
@@ -309,23 +339,19 @@ export async function POST(req: Request) {
     let voiceBlockedReason: string | null = null;
 
     if (allowAudio) {
-      // 9.1) Consommer quota mensuel voice AVANT de générer l’audio
       const { data: vUsage, error: vErr } = await supabaseAuth.rpc("consume_monthly_voice", {
         quota: voiceLimitFromPlan,
       });
 
       if (vErr) {
         console.error("consume_monthly_voice error:", vErr);
-        // Ici je bloque l’audio mais je renvoie le texte
         voiceBlockedReason = "voice_quota_check_failed";
       } else if (!vUsage?.ok) {
-        // Quota voix dépassé: on renvoie texte sans audio
         voiceUsage = vUsage;
         voiceBlockedReason = "voice_quota_exceeded";
       } else {
         voiceUsage = vUsage;
 
-        // 9.2) Génération TTS
         try {
           const voice = iaRow.voice_id || "alloy";
 
@@ -381,10 +407,12 @@ export async function POST(req: Request) {
       iaId: iaRow.id,
       iaName: iaRow.name,
 
-      // quotas
-      chat_quota_per_month: chatQuota,
-      chat_remaining_this_month: chatUsage?.remaining ?? null,
+      // quotas (chat)
+      chat_quota_type: chatQuotaLabel, // "lifetime" (free) | "monthly" (paid)
+      chat_quota: chatQuota,
+      chat_remaining: chatUsage?.remaining ?? null,
 
+      // quotas (voice) - toujours mensuel
       voice_quota_per_month: allowAudioByPlan ? voiceLimitFromPlan : 0,
       voice_remaining_this_month: voiceUsage?.remaining ?? null,
       voice_warning: voiceWarning,
@@ -400,4 +428,4 @@ export async function POST(req: Request) {
     console.error("Server error in /api/chat:", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-}
+    }
