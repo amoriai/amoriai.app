@@ -1,14 +1,21 @@
 /* =========================================================
-   AmorIAI / Chat – CSS COMPLET
+   AmorIAI / Chat – CSS A8 (COMPLET + STABLE)
+   - Mobile safe (100dvh)
+   - Scroll ONLY inside chatBox
+   - Compatible Tailwind body classes
    ========================================================= */
 
+/* --- Base document --- */
 html {
   color-scheme: dark;
+  height: 100%;
 }
 
 body {
   margin: 0;
+  min-height: 100%;
   height: 100%;
+  /* IMPORTANT: on évite de bloquer tout le site si page pas montée */
   overflow: hidden;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
     Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
@@ -17,10 +24,12 @@ body {
 /* ================= PAGE ================= */
 
 .page {
+  /* Tokens */
   --bg0: #000;
   --bg1: #020617;
+
   --glass: rgba(2, 6, 23, 0.55);
-  --card: rgba(15, 23, 42, 0.78);
+  --card: rgba(15, 23, 42, 0.82);
   --line: rgba(148, 163, 184, 0.22);
   --text: rgba(226, 232, 240, 0.92);
 
@@ -32,8 +41,12 @@ body {
   --shadow: 0 26px 90px rgba(0, 0, 0, 0.75);
   --shadow2: 0 18px 50px rgba(15, 23, 42, 0.75);
 
-  height: 100vh;
+  /* Layout */
+  width: 100%;
+  min-height: 100dvh;   /* ✅ mobile safe */
+  height: 100vh;        /* fallback */
   overflow: hidden;
+
   padding: 18px 16px;
   display: flex;
   flex-direction: column;
@@ -55,7 +68,14 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
   margin-bottom: 12px;
+}
+
+.topbar__right {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .topbar__back,
@@ -68,7 +88,9 @@ body {
   color: var(--text);
   text-decoration: none;
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   transition: transform 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
 }
 
 .topbar__back:hover,
@@ -84,29 +106,30 @@ body {
   box-shadow: 0 14px 40px rgba(248, 113, 113, 0.35);
 }
 
-.topbar__right {
-  display: flex;
-  gap: 10px;
-}
-
 /* ================= CARD ================= */
 
 .card {
   width: 100%;
   max-width: 920px;
+
+  /* ✅ très important pour permettre au scroll interne de fonctionner */
   flex: 1;
   min-height: 0;
+
   border-radius: 26px;
   border: 1px solid rgba(148, 163, 184, 0.26);
   background:
     radial-gradient(900px 600px at 50% 0%, rgba(251, 55, 255, 0.16), transparent 60%),
     linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.78));
   box-shadow: var(--shadow);
+
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* ================= HERO ================= */
@@ -132,7 +155,7 @@ body {
 .avatarRing {
   width: 142px;
   height: 142px;
-  margin: auto;
+  margin: 6px auto 2px;
   border-radius: 999px;
   padding: 3px;
   background: conic-gradient(from 180deg, var(--g1), var(--g2), var(--g3), var(--g1));
@@ -146,23 +169,23 @@ body {
 }
 
 @keyframes pulse {
-  50% {
-    transform: scale(1.03);
-  }
+  50% { transform: scale(1.03); }
 }
 
 .avatarImg,
-.avatarVid {
-  width: 136px;
-  height: 136px;
-  border-radius: 999px;
-  object-fit: cover;
-}
-
+.avatarVid,
 .avatarFallback {
   width: 136px;
   height: 136px;
   border-radius: 999px;
+}
+
+.avatarImg,
+.avatarVid {
+  object-fit: cover;
+}
+
+.avatarFallback {
   display: grid;
   place-items: center;
   font-size: 2.6rem;
@@ -173,9 +196,13 @@ body {
 /* ================= CHAT ================= */
 
 .chatBox {
+  /* ✅ prend l’espace restant dans la card */
   flex: 1;
   min-height: 0;
+
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
   padding: 12px;
   border-radius: 18px;
   border: 1px solid rgba(148, 163, 184, 0.22);
@@ -191,19 +218,17 @@ body {
   margin: 0;
 }
 
-.row {
-  display: flex;
-}
-
-.row--user {
-  justify-content: flex-end;
-}
+.row { display: flex; }
+.row--user { justify-content: flex-end; }
 
 .bubble {
   max-width: 78%;
   padding: 10px 12px;
   border-radius: 18px;
   font-size: 0.92rem;
+  line-height: 1.35;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .bubble--user {
@@ -240,6 +265,12 @@ body {
   background: transparent;
   resize: none;
   color: var(--text);
+  line-height: 1.35;
+  padding: 10px 0;
+}
+
+.composer__input:focus {
+  outline: none;
 }
 
 .sendBtn {
@@ -250,6 +281,11 @@ body {
   background: linear-gradient(135deg, var(--g1), var(--g2), var(--g4));
   color: #fff;
   cursor: pointer;
+}
+
+.sendBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ================= PAYWALL / PROMO ================= */
@@ -269,4 +305,13 @@ body {
   padding: 6px 10px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   width: fit-content;
+}
+
+/* ================= MOBILE ================= */
+
+@media (max-width: 480px) {
+  .page { padding: 14px 12px; }
+  .card { padding: 12px; border-radius: 22px; }
+  .bubble { max-width: 90%; }
+  .topbar__back, .topbar__pill { padding: 9px 11px; }
 }
