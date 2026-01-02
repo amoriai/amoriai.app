@@ -12,7 +12,7 @@ type Lang = "fr" | "en" | "es";
 
 const FREE_LIFETIME_QUOTA = 40;
 
-function monthlyQuotaForPaid(plan: Exclude<PlanCode, "free">) {
+function monthlyQuotaForPaid(plan: PlanCode) {
   switch (plan) {
     case "chat":
       return 400;
@@ -20,6 +20,8 @@ function monthlyQuotaForPaid(plan: Exclude<PlanCode, "free">) {
       return 1000;
     case "unlimited":
       return 10000;
+    default:
+      return 0;
   }
 }
 
@@ -184,13 +186,12 @@ export async function POST(req: Request) {
        - Free: lifetime 40 -> RPC consume_free_message_once(quota)
        - Paid: monthly -> RPC consume_monthly_message(quota)
     =========================== */
-    let chatQuotaLabel: "lifetime" | "monthly" = "monthly";
+    let chatQuotaType: "lifetime" | "monthly" = "monthly";
     let chatQuota = 0;
-
     let chatUsage: any = null;
 
     if (planCode === "free") {
-      chatQuotaLabel = "lifetime";
+      chatQuotaType = "lifetime";
       chatQuota = FREE_LIFETIME_QUOTA;
 
       const { data, error } = await supabaseAuth.rpc("consume_free_message_once", {
@@ -217,7 +218,7 @@ export async function POST(req: Request) {
         );
       }
     } else {
-      chatQuotaLabel = "monthly";
+      chatQuotaType = "monthly";
       chatQuota = monthlyQuotaForPaid(planCode);
 
       const { data, error } = await supabaseAuth.rpc("consume_monthly_message", {
@@ -408,7 +409,7 @@ export async function POST(req: Request) {
       iaName: iaRow.name,
 
       // quotas (chat)
-      chat_quota_type: chatQuotaLabel, // "lifetime" (free) | "monthly" (paid)
+      chat_quota_type: chatQuotaType, // "lifetime" (free) | "monthly" (paid)
       chat_quota: chatQuota,
       chat_remaining: chatUsage?.remaining ?? null,
 
@@ -428,4 +429,4 @@ export async function POST(req: Request) {
     console.error("Server error in /api/chat:", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-    }
+}
