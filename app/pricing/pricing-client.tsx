@@ -115,39 +115,33 @@ const LAYOUT_STRINGS: Record<Locale, LayoutStrings> = {
 
 /* ===========================
    STRINGS PRICING
+   ✅ Version "3 plans" = chat / plus / unlimited
+   ✅ AUCUN quota visible
 =========================== */
 const LABELS: Record<Locale, Labels> = {
   fr: {
-    heroTitle: "Choisis le forfait qui correspond à ta relation avec ton AmorIAI.",
+    heroTitle: "Choisis le forfait qui correspond à ton rythme avec ton AmorIAI.",
     heroSubtitle:
-      "Crée ton compte gratuitement, découvre l’expérience en texte, puis active le forfait payant qui te convient quand tu es prête. Tu gardes toujours le contrôle : tu peux changer ou annuler en tout temps depuis ton compte (en quelques clics), sans engagement.",
+      "Crée ton compte gratuitement, puis active un forfait quand tu es prête. Tu peux changer ou annuler en tout temps depuis ton compte, sans engagement.",
     heroCta: "Créer mon compte gratuit",
     heroStat: "⭐ Une communauté qui grandit chaque semaine.",
     billingNote:
-      "Facturation sécurisée via Stripe · Changement ou annulation en tout temps depuis ton compte · Aucun frais caché",
-    chooseIntro: "Choisis ton forfait payant quand tu es prête.",
+      "Facturation sécurisée via Stripe · Changement ou annulation en tout temps · Aucun frais caché",
+    chooseIntro: "3 forfaits simples, selon ton usage.",
     usdNote:
-      "Les prix sont en dollars américains (USD). Tu peux changer de forfait ou l’annuler quand tu veux, sans engagement.",
+      "Les prix sont en dollars américains (USD). L’activation se fait après connexion.",
     lockNote: "Connecte-toi ou crée un compte pour activer un forfait.",
     lockCta: "Créer mon compte gratuit",
     plans: [
       {
-        id: "free",
-        name: "Forfait Découverte",
-        price: "Gratuit",
-        tagline: "Découvre AmorIAI en douceur.",
-        features: ["1 AmorIAI", "Accès texte (expérience de base)", "FR / EN / ES"],
-        ctaLabel: "Commencer gratuitement",
-      },
-      {
         id: "chat",
         name: "AmorIAI Chat",
         price: "9,99 $ USD / mois",
-        tagline: "Pour celles et ceux qui veulent écrire à leur AmorIAI chaque jour.",
+        tagline: "Pour écrire à ton AmorIAI chaque jour.",
         features: [
           "Jusqu’à 2 AmorIAI différents",
-          "400 messages texte / mois",
-          "Mémoire longue durée activée",
+          "Conversations régulières",
+          "Mémoire longue durée",
           "FR / EN / ES",
         ],
         ctaLabel: "Activer AmorIAI Chat",
@@ -156,13 +150,13 @@ const LABELS: Record<Locale, Labels> = {
         id: "plus",
         name: "AmorIAI Plus",
         price: "19,99 $ USD / mois",
-        tagline: "Texte + voix : ton AmorIAI commence vraiment à faire partie de ta vie.",
+        tagline: "Texte + voix : une présence plus réelle.",
         features: [
           "Jusqu’à 10 AmorIAI différents",
-          "1 000 messages texte / mois",
-          "100 réponses audio générées / mois",
-          "Mémoire longue durée active",
-          "Priorité légère dans le fil de traitement",
+          "Voix IA",
+          "Conversations approfondies",
+          "Mémoire longue durée",
+          "Priorité légère",
         ],
         badgeLabel: "Le plus populaire",
         badgeVariant: "popular",
@@ -170,16 +164,16 @@ const LABELS: Record<Locale, Labels> = {
       },
       {
         id: "unlimited",
-        name: "AmorIAI illimité",
+        name: "AmorIAI Illimité",
         price: "39,99 $ USD / mois",
-        tagline: "Ton compagnon AmorIAI très présent, avec voix et avatars animés.",
+        tagline: "L’expérience maximale (voix + extras).",
         features: [
           "Jusqu’à 30 AmorIAI personnalisés",
-          "10 000 messages texte / mois",
-          "300 réponses audio générées / mois",
+          "Texte + voix",
+          "Utilisation fluide et sans interruption",
           "Mémoire profonde + contexte étendu",
-          "Priorité maximale et accès anticipé aux nouveautés",
-          "Avatars animés en boucle (réservé au plan Illimité)",
+          "Priorité maximale et accès anticipé",
+          "Avatars animés (réservé au plan Illimité)",
         ],
         badgeLabel: "Meilleure valeur",
         badgeVariant: "value",
@@ -190,58 +184,44 @@ const LABELS: Record<Locale, Labels> = {
     faqs: [
       {
         q: "Puis-je changer de forfait ou annuler quand je veux ?",
-        a: "Oui. Tu peux changer de forfait ou annuler ton abonnement en tout temps depuis ton compte, sans engagement ni frais caché.",
+        a: "Oui. Tu peux changer ou annuler à tout moment depuis ton compte, sans engagement.",
       },
       {
-        q: "Est-ce que je peux essayer AmorIAI gratuitement ?",
-        a: "Oui. Tu peux créer un compte gratuit, découvrir l’expérience de base en texte, puis activer un forfait payant uniquement si tu le souhaites.",
+        q: "Pourquoi je ne vois pas Stripe ici ?",
+        a: "Le paiement se fait après connexion, pour rester sécuritaire et propre.",
       },
       {
-        q: "Que se passe-t-il si j’atteins la limite de messages de mon forfait ?",
-        a: "Ton AmorIAI t’informera quand tu approches de la limite. Tu peux ensuite attendre le prochain mois ou passer à un forfait supérieur.",
+        q: "Je peux commencer gratuit ?",
+        a: "Oui. Crée ton compte gratuitement, puis active un forfait si tu le souhaites.",
       },
     ],
   },
   en: {
-    heroTitle: "Choose the plan that matches your bond with AmorIAI.",
+    heroTitle: "Choose the plan that matches your pace with AmorIAI.",
     heroSubtitle:
-      "You can create a free account, try the basic text experience, then activate a paid plan whenever you’re ready. You stay in control: you can change or cancel anytime from your account (in a few clicks), with no commitment.",
+      "Create a free account, then activate a plan whenever you’re ready. Change or cancel anytime from your account, no commitment.",
     heroCta: "Create my free account",
     heroStat: "⭐ A community that grows every week.",
-    billingNote: "Secure billing via Stripe · Change or cancel anytime from your account · No hidden fees",
-    chooseIntro: "Pick a paid plan whenever you’re ready.",
-    usdNote: "Prices are in US dollars (USD). You can change or cancel your plan anytime, no commitment.",
+    billingNote: "Secure billing via Stripe · Change or cancel anytime · No hidden fees",
+    chooseIntro: "3 simple plans, based on your usage.",
+    usdNote: "Prices are in USD. Activation happens after login.",
     lockNote: "Log in or create an account to activate a plan.",
     lockCta: "Create my free account",
     plans: [
       {
-        id: "free",
-        name: "Discovery plan",
-        price: "Free",
-        tagline: "Try AmorIAI gently.",
-        features: ["1 AmorIAI", "Text access (basic experience)", "FR / EN / ES"],
-        ctaLabel: "Start free",
-      },
-      {
         id: "chat",
         name: "AmorIAI Chat",
         price: "$9.99 USD / month",
-        tagline: "For those who want to text their AmorIAI every day.",
-        features: ["Up to 2 AmorIAI", "400 text messages / month", "Long-term memory enabled", "FR / EN / ES"],
+        tagline: "Text your AmorIAI daily.",
+        features: ["Up to 2 AmorIAI", "Regular conversations", "Long-term memory", "FR / EN / ES"],
         ctaLabel: "Activate AmorIAI Chat",
       },
       {
         id: "plus",
         name: "AmorIAI Plus",
         price: "$19.99 USD / month",
-        tagline: "Text + voice: your AmorIAI becomes part of your daily life.",
-        features: [
-          "Up to 10 AmorIAI",
-          "1,000 text messages / month",
-          "100 AI-generated voice replies / month",
-          "Long-term memory enabled",
-          "Light processing priority",
-        ],
+        tagline: "Text + voice: more real presence.",
+        features: ["Up to 10 AmorIAI", "AI voice", "Deeper conversations", "Long-term memory", "Light priority"],
         badgeLabel: "Most popular",
         badgeVariant: "popular",
         ctaLabel: "Upgrade to voice",
@@ -250,47 +230,53 @@ const LABELS: Record<Locale, Labels> = {
         id: "unlimited",
         name: "AmorIAI Unlimited",
         price: "$39.99 USD / month",
-        tagline: "A deeply present companion, with voice and animated avatars.",
+        tagline: "Maximum experience (voice + extras).",
         features: [
           "Up to 30 personalized AmorIAI",
-          "10,000 text messages / month",
-          "300 AI-generated voice replies / month",
+          "Text + voice",
+          "Smooth, uninterrupted use",
           "Deep memory + extended context",
-          "Maximum priority & early access",
-          "Looping animated avatars (Unlimited only)",
+          "Max priority & early access",
+          "Animated avatars (Unlimited only)",
         ],
         badgeLabel: "Best value",
         badgeVariant: "value",
         ctaLabel: "Unlock Unlimited",
       },
     ],
-    faqTitle: "Frequently asked questions",
+    faqTitle: "FAQ",
     faqs: [
-      { q: "Can I change or cancel my plan anytime?", a: "Yes. You can change or cancel anytime from your account, with no hidden fees." },
-      { q: "Can I try AmorIAI for free?", a: "Yes. Create a free account, try the basic text experience, and only activate a paid plan if you want." },
-      { q: "What happens if I reach my plan’s message limit?", a: "You’ll get notified when you’re close. You can wait for the next month or upgrade." },
+      { q: "Can I cancel anytime?", a: "Yes. Change or cancel anytime from your account." },
+      { q: "Why no Stripe here?", a: "Checkout happens after login for security and cleanliness." },
+      { q: "Can I start for free?", a: "Yes. Create your free account first, then activate a plan if you want." },
     ],
   },
   es: {
-    heroTitle: "Elige el plan que encaja con tu vínculo con tu AmorIAI.",
+    heroTitle: "Elige el plan que encaja con tu ritmo con AmorIAI.",
     heroSubtitle:
-      "Puedes crear una cuenta gratuita, probar la experiencia básica por texto y luego activar un plan de pago cuando estés listo. Siempre tienes el control: puedes cambiar o cancelar en cualquier momento desde tu cuenta (en unos clics), sin compromiso.",
+      "Crea una cuenta gratuita y activa un plan cuando quieras. Cambia o cancela en cualquier momento desde tu cuenta, sin compromiso.",
     heroCta: "Crear mi cuenta gratuita",
     heroStat: "⭐ Una comunidad que crece cada semana.",
-    billingNote: "Facturación segura con Stripe · Cambia o cancela cuando quieras desde tu cuenta · Sin cargos ocultos",
-    chooseIntro: "Elige un plan de pago cuando estés listo.",
-    usdNote: "Los precios están en dólares estadounidenses (USD). Puedes cambiar o cancelar tu plan en cualquier momento.",
+    billingNote: "Pago seguro con Stripe · Cambia o cancela cuando quieras · Sin cargos ocultos",
+    chooseIntro: "3 planes simples, según tu uso.",
+    usdNote: "Precios en USD. La activación es después de iniciar sesión.",
     lockNote: "Inicia sesión o crea una cuenta para activar un plan.",
     lockCta: "Crear mi cuenta gratis",
     plans: [
-      { id: "free", name: "Plan Descubrimiento", price: "Gratis", tagline: "Prueba AmorIAI con calma.", features: ["1 AmorIAI", "Acceso por texto (básico)", "FR / EN / ES"], ctaLabel: "Empezar gratis" },
-      { id: "chat", name: "AmorIAI Chat", price: "9,99 $ USD / mes", tagline: "Para escribir a tu AmorIAI cada día.", features: ["Hasta 2 AmorIAI", "400 mensajes de texto / mes", "Memoria a largo plazo activada", "FR / EN / ES"], ctaLabel: "Activar AmorIAI Chat" },
+      {
+        id: "chat",
+        name: "AmorIAI Chat",
+        price: "9,99 $ USD / mes",
+        tagline: "Escribe cada día.",
+        features: ["Hasta 2 AmorIAI", "Conversaciones regulares", "Memoria a largo plazo", "FR / EN / ES"],
+        ctaLabel: "Activar AmorIAI Chat",
+      },
       {
         id: "plus",
         name: "AmorIAI Plus",
         price: "19,99 $ USD / mes",
-        tagline: "Texto + voz: AmorIAI entra en tu rutina diaria.",
-        features: ["Hasta 10 AmorIAI", "1.000 mensajes de texto / mes", "100 respuestas de voz / mes", "Memoria a largo plazo activada", "Prioridad ligera"],
+        tagline: "Texto + voz: más presencia real.",
+        features: ["Hasta 10 AmorIAI", "Voz IA", "Conversaciones más profundas", "Memoria a largo plazo", "Prioridad ligera"],
         badgeLabel: "Más popular",
         badgeVariant: "popular",
         ctaLabel: "Pasar a voz",
@@ -299,8 +285,15 @@ const LABELS: Record<Locale, Labels> = {
         id: "unlimited",
         name: "AmorIAI Ilimitado",
         price: "39,99 $ USD / mes",
-        tagline: "Tu compañero muy presente, con voz y avatares animados.",
-        features: ["Hasta 30 AmorIAI", "10.000 mensajes de texto / mes", "300 respuestas de voz / mes", "Memoria profunda + contexto ampliado", "Prioridad máxima y acceso anticipado", "Avatares animados en bucle (solo Ilimitado)"],
+        tagline: "Experiencia máxima (voz + extras).",
+        features: [
+          "Hasta 30 AmorIAI personalizados",
+          "Texto + voz",
+          "Uso fluido y sin interrupciones",
+          "Memoria profunda + contexto ampliado",
+          "Prioridad máxima y acceso anticipado",
+          "Avatares animados (solo Ilimitado)",
+        ],
         badgeLabel: "Mejor valor",
         badgeVariant: "value",
         ctaLabel: "Desbloquear Ilimitado",
@@ -308,9 +301,9 @@ const LABELS: Record<Locale, Labels> = {
     ],
     faqTitle: "Preguntas frecuentes",
     faqs: [
-      { q: "¿Puedo cambiar o cancelar mi plan cuando quiera?", a: "Sí. Puedes cambiar o cancelar tu suscripción en cualquier momento desde tu cuenta." },
-      { q: "¿Puedo probar AmorIAI gratis?", a: "Sí. Crea una cuenta gratuita y prueba el texto. Activa un plan de pago solo si quieres." },
-      { q: "¿Qué pasa si alcanzo el límite de mensajes?", a: "Recibirás un aviso. Puedes esperar al próximo mes o subir de plan." },
+      { q: "¿Puedo cancelar cuando quiera?", a: "Sí. Cambia o cancela cuando quieras desde tu cuenta." },
+      { q: "¿Por qué no hay Stripe aquí?", a: "El pago se hace después de iniciar sesión por seguridad." },
+      { q: "¿Puedo empezar gratis?", a: "Sí. Primero crea tu cuenta gratis y luego activa un plan si quieres." },
     ],
   },
 };
@@ -358,7 +351,7 @@ export default function PricingPage() {
   const disableEverything = activePlanLoading !== null;
   const disablePlanCtas = disableEverything;
 
-  // ✅ Garde lang + from dans tous les liens (si tu gardes "from" ailleurs)
+  // ✅ Garde lang + from dans tous les liens
   const withLang = (path: string) => {
     const params = new URLSearchParams();
     params.set("lang", locale);
@@ -390,7 +383,8 @@ export default function PricingPage() {
 
       if (error) {
         console.error("Supabase plans fetch error:", error);
-        if (!cancelled) setErrorMsg(locale === "fr" ? "Impossible de charger les prix (Supabase)." : "Unable to load pricing (Supabase).");
+        if (!cancelled)
+          setErrorMsg(locale === "fr" ? "Impossible de charger les prix (Supabase)." : "Unable to load pricing (Supabase).");
         if (!cancelled) setPlansLoading(false);
         return;
       }
@@ -412,30 +406,21 @@ export default function PricingPage() {
     };
   }, [locale]);
 
+  // ✅ 3 plans payants, avec prix DB si dispo, sans afficher les quotas
   const displayPaidPlans = useMemo(() => {
-    return t.plans
-      .filter((p) => p.id !== "free")
-      .map((p) => {
-        const db = dbPlans[p.id as PaidPlanId];
+    return t.plans.map((p) => {
+      const db = dbPlans[p.id as PaidPlanId];
 
-        const hasDbPrice = typeof db?.price === "number" && Number.isFinite(db.price);
-        const mergedName = db?.name ? db.name : p.name;
+      const hasDbPrice = typeof db?.price === "number" && Number.isFinite(db.price);
+      const mergedName = db?.name ? db.name : p.name;
 
-        const mergedPrice = hasDbPrice
-          ? `${formatUsd(locale, db!.price!)}${priceSuffix(locale)}`
-          : p.price;
+      const mergedPrice = hasDbPrice
+        ? `${formatUsd(locale, db!.price!)}${priceSuffix(locale)}`
+        : p.price;
 
-        const mergedFeatures = !db
-          ? p.features
-          : [
-              ...p.features,
-              ...(typeof db.ai_limit === "number" ? [`(${db.ai_limit} AmorIA max)`] : []),
-              ...(typeof db.message_limit === "number" ? [`(${db.message_limit} messages / mois)`] : []),
-              ...(typeof db.voice_limit === "number" ? [`(${db.voice_limit} voix / mois)`] : []),
-            ];
-
-        return { ...p, name: mergedName, price: mergedPrice, features: mergedFeatures };
-      });
+      // IMPORTANT: on ne rajoute PAS (ai_limit / message_limit / voice_limit) dans les features
+      return { ...p, name: mergedName, price: mergedPrice };
+    });
   }, [t.plans, dbPlans, locale]);
 
   const goToSignupWithPlan = (planId: PlanId) => {
@@ -1165,4 +1150,4 @@ export default function PricingPage() {
       `}</style>
     </main>
   );
-}
+      }
