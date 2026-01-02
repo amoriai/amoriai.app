@@ -55,6 +55,14 @@ const LAYOUT_STRINGS: Record<Locale, LayoutStrings> = {
   },
 };
 
+type Plan = {
+  name: string;
+  price: string;
+  tagline: string;
+  features: string[];
+  badge?: "popular" | "value";
+};
+
 type Copy = {
   title: string;
   subtitle: string;
@@ -63,13 +71,7 @@ type Copy = {
   lockNote: string;
   ctaSignup: string;
   ctaLogin: string;
-  plans: {
-    name: string;
-    price: string;
-    tagline: string;
-    features: string[];
-    badge?: "popular" | "value";
-  }[];
+  plans: Plan[];
   faqTitle: string;
   faqs: { q: string; a: string }[];
 };
@@ -78,7 +80,7 @@ const COPY: Record<Locale, Copy> = {
   fr: {
     title: "Choisis le forfait qui te convient",
     subtitle:
-      "Consulte les tarifs. Crée ton compte gratuitement, puis tu pourras activer un abonnement quand tu seras prête — depuis ton compte.",
+      "Cette page est publique et sert à te montrer les options. Crée ton compte gratuitement, puis tu pourras activer un abonnement quand tu seras prête — depuis ton compte.",
     billingNote: "Paiements sécurisés via Stripe (uniquement après connexion) · Annule ou change en tout temps",
     usdNote: "Les prix sont en dollars américains (USD).",
     lockNote: "Pour activer un forfait, connecte-toi ou crée un compte.",
@@ -95,20 +97,20 @@ const COPY: Record<Locale, Copy> = {
         name: "AmorIAI Chat",
         price: "9,99 $ USD / mois",
         tagline: "Pour écrire à ton AmorIAI chaque jour.",
-        features: ["Jusqu’à 2 AmorIAI", "400 messages / mois", "Mémoire longue durée", "FR / EN / ES"],
+        features: ["Jusqu’à 2 AmorIAI", "Conversations régulières", "Mémoire longue durée", "FR / EN / ES"],
       },
       {
         name: "AmorIAI Plus",
         price: "19,99 $ USD / mois",
         tagline: "Texte + voix, pour une présence plus réelle.",
-        features: ["Jusqu’à 10 AmorIAI", "1 000 messages / mois", "100 réponses audio / mois", "Priorité légère"],
+        features: ["Jusqu’à 10 AmorIAI", "Voix IA", "Conversations approfondies", "Priorité légère"],
         badge: "popular",
       },
       {
         name: "AmorIAI Illimité",
         price: "39,99 $ USD / mois",
         tagline: "Pour une expérience maximale (voix + extras).",
-        features: ["Jusqu’à 30 AmorIAI", "10 000 messages / mois", "300 réponses audio / mois", "Priorité maximale"],
+        features: ["Jusqu’à 30 AmorIAI", "Texte + voix", "Utilisation fluide et sans interruption", "Priorité maximale"],
         badge: "value",
       },
     ],
@@ -122,7 +124,7 @@ const COPY: Record<Locale, Copy> = {
   en: {
     title: "Choose the plan that fits you",
     subtitle:
-      "See pricing. Create a free account first, then activate a subscription whenever you’re ready — from your account.",
+      "This page is public and shows your options. Create a free account first, then activate a subscription whenever you’re ready — from your account.",
     billingNote: "Secure billing via Stripe (after login only) · Cancel or change anytime",
     usdNote: "Prices are in USD.",
     lockNote: "To activate a plan, log in or create an account.",
@@ -130,9 +132,26 @@ const COPY: Record<Locale, Copy> = {
     ctaLogin: "Log in",
     plans: [
       { name: "Discovery", price: "Free", tagline: "A gentle start.", features: ["1 AmorIAI", "Text (basic)", "FR / EN / ES"] },
-      { name: "AmorIAI Chat", price: "$9.99 USD / month", tagline: "Text your AmorIAI daily.", features: ["Up to 2 AmorIAI", "400 messages/month", "Long-term memory", "FR / EN / ES"] },
-      { name: "AmorIAI Plus", price: "$19.99 USD / month", tagline: "Text + voice.", features: ["Up to 10 AmorIAI", "1,000 messages/month", "100 voice/month", "Light priority"], badge: "popular" },
-      { name: "AmorIAI Unlimited", price: "$39.99 USD / month", tagline: "Maximum experience.", features: ["Up to 30 AmorIAI", "10,000 messages/month", "300 voice/month", "Max priority"], badge: "value" },
+      {
+        name: "AmorIAI Chat",
+        price: "$9.99 USD / month",
+        tagline: "Text your AmorIAI daily.",
+        features: ["Up to 2 AmorIAI", "Regular conversations", "Long-term memory", "FR / EN / ES"],
+      },
+      {
+        name: "AmorIAI Plus",
+        price: "$19.99 USD / month",
+        tagline: "Text + voice, more real presence.",
+        features: ["Up to 10 AmorIAI", "AI voice", "Deeper conversations", "Light priority"],
+        badge: "popular",
+      },
+      {
+        name: "AmorIAI Unlimited",
+        price: "$39.99 USD / month",
+        tagline: "Maximum experience (voice + extras).",
+        features: ["Up to 30 AmorIAI", "Text + voice", "Smooth, uninterrupted use", "Max priority"],
+        badge: "value",
+      },
     ],
     faqTitle: "FAQ",
     faqs: [
@@ -144,7 +163,7 @@ const COPY: Record<Locale, Copy> = {
   es: {
     title: "Elige el plan ideal",
     subtitle:
-      "Consulta los precios. Crea una cuenta gratis y activa la suscripción cuando quieras — desde tu cuenta.",
+      "Esta página es pública y muestra las opciones. Crea una cuenta gratis y activa la suscripción cuando quieras — desde tu cuenta.",
     billingNote: "Pago seguro con Stripe (solo después de iniciar sesión) · Cancela o cambia cuando quieras",
     usdNote: "Precios en USD.",
     lockNote: "Para activar un plan, inicia sesión o crea una cuenta.",
@@ -152,9 +171,26 @@ const COPY: Record<Locale, Copy> = {
     ctaLogin: "Iniciar sesión",
     plans: [
       { name: "Descubrimiento", price: "Gratis", tagline: "Empezar con calma.", features: ["1 AmorIAI", "Texto (básico)", "FR / EN / ES"] },
-      { name: "AmorIAI Chat", price: "9,99 $ USD / mes", tagline: "Escribe cada día.", features: ["Hasta 2 AmorIAI", "400 mensajes/mes", "Memoria", "FR / EN / ES"] },
-      { name: "AmorIAI Plus", price: "19,99 $ USD / mes", tagline: "Texto + voz.", features: ["Hasta 10 AmorIAI", "1.000 mensajes/mes", "100 voz/mes", "Prioridad ligera"], badge: "popular" },
-      { name: "AmorIAI Ilimitado", price: "39,99 $ USD / mes", tagline: "Experiencia máxima.", features: ["Hasta 30 AmorIAI", "10.000 mensajes/mes", "300 voz/mes", "Prioridad máxima"], badge: "value" },
+      {
+        name: "AmorIAI Chat",
+        price: "9,99 $ USD / mes",
+        tagline: "Escribe cada día.",
+        features: ["Hasta 2 AmorIAI", "Conversaciones regulares", "Memoria a largo plazo", "FR / EN / ES"],
+      },
+      {
+        name: "AmorIAI Plus",
+        price: "19,99 $ USD / mes",
+        tagline: "Texto + voz, más presencia real.",
+        features: ["Hasta 10 AmorIAI", "Voz IA", "Conversaciones más profundas", "Prioridad ligera"],
+        badge: "popular",
+      },
+      {
+        name: "AmorIAI Ilimitado",
+        price: "39,99 $ USD / mes",
+        tagline: "Experiencia máxima (voz + extras).",
+        features: ["Hasta 30 AmorIAI", "Texto + voz", "Uso fluido y sin interrupciones", "Prioridad máxima"],
+        badge: "value",
+      },
     ],
     faqTitle: "Preguntas frecuentes",
     faqs: [
@@ -165,6 +201,32 @@ const COPY: Record<Locale, Copy> = {
   },
 };
 
+function BadgeLabel({ lang, badge }: { lang: Locale; badge: "popular" | "value" }) {
+  const label =
+    badge === "popular"
+      ? lang === "fr"
+        ? "POPULAIRE"
+        : lang === "en"
+          ? "POPULAR"
+          : "POPULAR"
+      : lang === "fr"
+        ? "VALEUR"
+        : lang === "en"
+          ? "BEST VALUE"
+          : "MEJOR VALOR";
+
+  const cls =
+    badge === "popular"
+      ? "bg-gradient-to-tr from-fuchsia-500 to-rose-400 text-white shadow-pink-500/30"
+      : "bg-gradient-to-tr from-emerald-400 to-lime-300 text-emerald-950 shadow-emerald-400/20";
+
+  return (
+    <div className={`absolute right-4 top-4 rounded-full px-2.5 py-1 text-[0.68rem] font-semibold tracking-wide shadow ${cls}`}>
+      {label}
+    </div>
+  );
+}
+
 export default function PricingPage({ searchParams }: PageProps) {
   const lang = getLocale(searchParams);
   const ui = LAYOUT_STRINGS[lang];
@@ -173,14 +235,20 @@ export default function PricingPage({ searchParams }: PageProps) {
   const withLang = (path: string) => ({ pathname: path, query: { lang } });
 
   return (
-    <main className="min-h-screen pb-12 text-slate-100"
+    <main
+      className="min-h-screen pb-12 text-slate-100"
       style={{ background: "radial-gradient(circle at top left,#111827 0,#020617 55%,#000 100%)" }}
     >
-      {/* HEADER (pro, comme ton style) */}
+      {/* HEADER */}
       <header className="sticky top-0 z-20 bg-gradient-to-b from-slate-950/95 via-slate-950/80 to-transparent backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <img src="/AmorIA_logo_transparent.png" alt="Logo AmorIAI.app" className="h-9 w-auto select-none" draggable={false} />
+            <img
+              src="/AmorIA_logo_transparent.png"
+              alt="Logo AmorIAI.app"
+              className="h-9 w-auto select-none"
+              draggable={false}
+            />
             <div className="flex flex-col">
               <div className="text-sm font-semibold">AmorIAI.app</div>
               <div className="text-[0.72rem] text-slate-400">{ui.brandTagline}</div>
@@ -188,10 +256,16 @@ export default function PricingPage({ searchParams }: PageProps) {
           </div>
 
           <nav className="hidden items-center gap-5 text-xs text-slate-300 md:flex">
-            <Link href={withLang("/")} className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50">
+            <Link
+              href={withLang("/")}
+              className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
+            >
               {ui.nav.home}
             </Link>
-            <Link href={withLang("/features")} className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50">
+            <Link
+              href={withLang("/features")}
+              className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
+            >
               {ui.nav.features}
             </Link>
             <span className="border-b border-slate-100/90 pb-0.5 text-slate-50">{ui.nav.pricing}</span>
@@ -221,7 +295,7 @@ export default function PricingPage({ searchParams }: PageProps) {
 
             <Link
               href={withLang("/signup")}
-              className="items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3.5 py-1.5 text-[0.78rem] font-medium text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110 inline-flex"
+              className="inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3.5 py-1.5 text-[0.78rem] font-medium text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110"
             >
               {ui.navSignup}
             </Link>
@@ -266,20 +340,9 @@ export default function PricingPage({ searchParams }: PageProps) {
           {t.plans.map((p) => (
             <article
               key={p.name}
-              className={`relative overflow-hidden rounded-2xl border border-slate-700/70 bg-gradient-to-b from-slate-950/80 via-slate-950 to-black/90 p-5 shadow-lg shadow-black/30`}
+              className="relative overflow-hidden rounded-2xl border border-slate-700/70 bg-gradient-to-b from-slate-950/80 via-slate-950 to-black/90 p-5 shadow-lg shadow-black/30"
             >
-              {p.badge && (
-                <div
-                  className={`absolute right-4 top-4 rounded-full px-2.5 py-1 text-[0.68rem] font-semibold tracking-wide ${
-                    p.badge === "popular"
-                      ? "bg-gradient-to-tr from-fuchsia-500 to-rose-400 text-white"
-                      : "bg-gradient-to-tr from-emerald-400 to-lime-300 text-emerald-950"
-                  }`}
-                >
-                  {p.badge === "popular" ? (lang === "fr" ? "POPULAIRE" : lang === "en" ? "POPULAR" : "POPULAR")
-                    : (lang === "fr" ? "VALEUR" : lang === "en" ? "BEST VALUE" : "MEJOR VALOR")}
-                </div>
-              )}
+              {p.badge && <BadgeLabel lang={lang} badge={p.badge} />}
 
               <h3 className="text-sm font-semibold">{p.name}</h3>
               <div className="mt-2 text-xl font-semibold">{p.price}</div>
@@ -298,7 +361,7 @@ export default function PricingPage({ searchParams }: PageProps) {
               <div className="mt-5">
                 <Link
                   href={withLang("/signup")}
-                  className="inline-flex w-full items-center justify-center rounded-full bg-slate-800/60 px-4 py-2.5 text-[0.85rem] font-medium text-slate-100 hover:bg-slate-800/80"
+                  className="inline-flex w-full items-center justify-center rounded-full bg-slate-800/60 px-4 py-2.5 text-[0.85rem] font-medium text-slate-100 transition hover:bg-slate-800/80"
                 >
                   {lang === "fr" ? "Créer un compte" : lang === "en" ? "Create account" : "Crear cuenta"}
                 </Link>
@@ -325,13 +388,23 @@ export default function PricingPage({ searchParams }: PageProps) {
       <footer className="mx-auto max-w-5xl px-4 pb-4 text-center text-[0.78rem] text-slate-400">
         <div className="mb-2">{ui.footerCopy}</div>
         <div className="flex flex-wrap justify-center gap-3">
-          <Link href={withLang("/legal")} className="hover:text-slate-100">{ui.footerLinks.legal}</Link>
-          <Link href={withLang("/legal/privacy")} className="hover:text-slate-100">{ui.footerLinks.privacy}</Link>
-          <Link href={withLang("/legal/terms")} className="hover:text-slate-100">{ui.footerLinks.terms}</Link>
-          <Link href={withLang("/contact")} className="hover:text-slate-100">{ui.footerLinks.contact}</Link>
-          <Link href={withLang("/about")} className="hover:text-slate-100">{ui.footerLinks.about}</Link>
+          <Link href={withLang("/legal")} className="hover:text-slate-100">
+            {ui.footerLinks.legal}
+          </Link>
+          <Link href={withLang("/legal/privacy")} className="hover:text-slate-100">
+            {ui.footerLinks.privacy}
+          </Link>
+          <Link href={withLang("/legal/terms")} className="hover:text-slate-100">
+            {ui.footerLinks.terms}
+          </Link>
+          <Link href={withLang("/contact")} className="hover:text-slate-100">
+            {ui.footerLinks.contact}
+          </Link>
+          <Link href={withLang("/about")} className="hover:text-slate-100">
+            {ui.footerLinks.about}
+          </Link>
         </div>
       </footer>
     </main>
   );
-}
+            }
