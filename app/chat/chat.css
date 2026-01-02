@@ -43,7 +43,7 @@ body {
 
   width: 100%;
   min-height: 100dvh; /* ✅ mobile safe */
-  height: 100vh; /* fallback */
+  height: 100vh;      /* fallback */
   overflow: hidden;
 
   padding: 18px 16px;
@@ -77,6 +77,7 @@ body {
   align-items: center;
 }
 
+/* liens/pills */
 .topbar__back,
 .topbar__pill {
   font-size: 0.82rem;
@@ -88,8 +89,11 @@ body {
   text-decoration: none;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .topbar__back:hover,
@@ -103,6 +107,25 @@ body {
   background: linear-gradient(135deg, var(--g1), var(--g2), var(--g4));
   color: #fff;
   box-shadow: 0 14px 40px rgba(248, 113, 113, 0.35);
+}
+
+/* (Optionnel mais utile) Si LogoutButton rend un <button> sans classe */
+.topbar button {
+  font-size: 0.82rem;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(2, 6, 23, 0.35);
+  color: var(--text);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  white-space: nowrap;
+}
+.topbar button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(148, 163, 184, 0.35);
 }
 
 /* ================= CARD ================= */
@@ -161,6 +184,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* ✅ sécurité overflow (évite débordements) */
+  overflow: hidden;
 }
 
 .avatarRing--live {
@@ -177,24 +203,27 @@ body {
   position: relative;
   overflow: hidden;
 }
-.avatarRing--skeleton::after{
-  content:"";
-  position:absolute;
-  inset:-40%;
-  background: linear-gradient(90deg, transparent, rgba(226,232,240,.18), transparent);
+
+.avatarRing--skeleton::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(90deg, transparent, rgba(226, 232, 240, 0.18), transparent);
   transform: translateX(-40%);
   animation: shimmer 1.2s ease-in-out infinite;
 }
-@keyframes shimmer{
-  0%{ transform: translateX(-40%); }
-  100%{ transform: translateX(40%); }
+
+@keyframes shimmer {
+  0%   { transform: translateX(-40%); }
+  100% { transform: translateX(40%); }
 }
 
-.avatarRing--error{
+.avatarRing--error {
   background: rgba(251, 113, 133, 0.18);
   border: 1px solid rgba(251, 113, 133, 0.35);
 }
-.avatarRing__bang{
+
+.avatarRing__bang {
   font-weight: 900;
   font-size: 2rem;
   line-height: 1;
@@ -212,6 +241,7 @@ body {
 .avatarImg,
 .avatarVid {
   object-fit: cover;
+  display: block; /* ✅ évite baseline gaps */
 }
 
 .avatarFallback {
@@ -222,9 +252,12 @@ body {
   background: rgba(30, 41, 59, 0.92);
 }
 
+/* Sécurité: si un style global met les images en width:100% */
+.hero img { max-width: none; }
+
 /* ================= SKELETON LINES (hero) ================= */
 
-.skeletonLine{
+.skeletonLine {
   height: 12px;
   border-radius: 999px;
   background: rgba(148, 163, 184, 0.16);
@@ -232,20 +265,22 @@ body {
   position: relative;
   margin: 10px auto 0;
 }
-.skeletonLine::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background: linear-gradient(90deg, transparent, rgba(226,232,240,.16), transparent);
+
+.skeletonLine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(226, 232, 240, 0.16), transparent);
   transform: translateX(-40%);
   animation: shimmer 1.2s ease-in-out infinite;
 }
-.skeletonLine--title{ width: 180px; height: 14px; }
-.skeletonLine--sub{ width: 260px; height: 12px; opacity: .9; }
+
+.skeletonLine--title { width: 180px; height: 14px; }
+.skeletonLine--sub   { width: 260px; height: 12px; opacity: 0.9; }
 
 /* ================= VOICE TOGGLE ================= */
 
-.voiceToggle{
+.voiceToggle {
   margin-top: 10px;
   display: flex;
   justify-content: center;
@@ -277,7 +312,6 @@ body {
 
 .row { display: flex; }
 .row--user { justify-content: flex-end; }
-/* (row--assistant n’a pas besoin d’autre style) */
 
 .bubble {
   max-width: 78%;
@@ -289,7 +323,7 @@ body {
   overflow-wrap: anywhere;
 }
 
-.bubble__text{
+.bubble__text {
   white-space: pre-wrap; /* ✅ respecte retours ligne */
 }
 
@@ -306,14 +340,14 @@ body {
 }
 
 /* empty state */
-.empty{
+.empty {
   padding: 12px;
   color: rgba(148, 163, 184, 0.92);
   text-align: center;
 }
 
 /* error line */
-.error{
+.error {
   margin: 4px 2px 0;
   color: rgba(251, 113, 133, 0.95);
   font-size: 0.9rem;
@@ -347,14 +381,14 @@ body {
 
 .composer__input:focus { outline: none; }
 
-.composer__actions{
+.composer__actions {
   display: flex;
   gap: 10px;
   align-items: flex-end;
 }
 
 /* icon button (mic) */
-.iconBtn{
+.iconBtn {
   width: 46px;
   height: 46px;
   border-radius: 999px;
@@ -366,21 +400,19 @@ body {
   place-items: center;
 }
 
-.iconBtn:hover{
-  border-color: rgba(148, 163, 184, 0.35);
-}
+.iconBtn:hover { border-color: rgba(148, 163, 184, 0.35); }
 
-.iconBtn:disabled{
+.iconBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.iconBtn--active{
+.iconBtn--active {
   border-color: rgba(251, 55, 255, 0.55);
   box-shadow: 0 10px 30px rgba(251, 55, 255, 0.12);
 }
 
-.iconBtn__icon{
+.iconBtn__icon {
   font-size: 1.05rem;
   line-height: 1;
 }
@@ -402,7 +434,7 @@ body {
   cursor: not-allowed;
 }
 
-.sendBtn__icon{
+.sendBtn__icon {
   font-size: 1.05rem;
   line-height: 1;
   transform: translateX(1px);
@@ -410,16 +442,19 @@ body {
 
 /* ================= BUTTONS (pill) ================= */
 
-.pillBtn{
+.pillBtn {
   border: none;
   border-radius: 999px;
   padding: 10px 12px;
   cursor: pointer;
   font-size: 0.82rem;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.pillBtn--ghost{
+.pillBtn--ghost {
   border: 1px solid rgba(148, 163, 184, 0.22);
   background: rgba(2, 6, 23, 0.35);
   color: var(--text);
@@ -427,13 +462,13 @@ body {
   -webkit-backdrop-filter: blur(10px);
 }
 
-.pillBtn--primary{
+.pillBtn--primary {
   background: linear-gradient(135deg, var(--g1), var(--g2), var(--g4));
   color: #fff;
   box-shadow: 0 14px 40px rgba(248, 113, 113, 0.25);
 }
 
-.pillBtn:disabled{
+.pillBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -462,18 +497,20 @@ body {
 }
 
 /* promo */
-.promo__texts{ display: flex; flex-direction: column; gap: 2px; flex: 1; }
-.promo__title{ margin: 0; font-weight: 750; }
-.promo__text{ margin: 0; color: rgba(148, 163, 184, 0.92); font-size: 0.9rem; }
+.promo__texts { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.promo__title { margin: 0; font-weight: 750; }
+.promo__text  { margin: 0; color: rgba(148, 163, 184, 0.92); font-size: 0.9rem; }
 
 /* paywall */
-.paywall{
+.paywall {
   flex-direction: column;
   align-items: stretch;
 }
-.paywall__title{ margin: 0; font-weight: 800; }
-.paywall__text{ margin: 6px 0 0; color: rgba(148, 163, 184, 0.92); }
-.paywall__btn{
+
+.paywall__title { margin: 0; font-weight: 800; }
+.paywall__text  { margin: 6px 0 0; color: rgba(148, 163, 184, 0.92); }
+
+.paywall__btn {
   margin-top: 10px;
   width: 100%;
   display: flex;
@@ -481,19 +518,24 @@ body {
   align-items: center;
   padding: 12px 14px;
 }
-.paywall__link{
+
+.paywall__link {
   margin-top: 8px;
   display: inline-block;
   text-decoration: none;
   color: rgba(226, 232, 240, 0.92);
-  opacity: .9;
+  opacity: 0.9;
   font-size: 0.9rem;
 }
-.paywall__link:hover{ opacity: 1; text-decoration: underline; }
+
+.paywall__link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
 
 /* ================= NOTE ================= */
 
-.note{
+.note {
   margin: 6px 0 0;
   color: rgba(148, 163, 184, 0.85);
   font-size: 0.82rem;
@@ -507,10 +549,4 @@ body {
   .card { padding: 12px; border-radius: 22px; }
   .bubble { max-width: 90%; }
   .topbar__back, .topbar__pill { padding: 9px 11px; }
-                     }
-/* Sécurité: évite que des styles globaux/tailwind cassent l’avatar */
-.avatarRing { overflow: hidden; }
-.avatarImg, .avatarVid { display: block; }
-
-/* Sécurité: si un style global met les images en width:100% */
-.hero img { max-width: none; }
+}
