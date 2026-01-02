@@ -1136,4 +1136,4 @@ function ChatClient() {
       </section>
     </main>
   );
-          }
+}
