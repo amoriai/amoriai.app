@@ -2,6 +2,7 @@
    AmorIAI / Chat – CSS A8 (COMPLET + STABLE)
    - Mobile safe (100dvh)
    - Scroll ONLY inside chatBox
+   - Match 1:1 avec ton JSX (pillBtn / iconBtn / error / empty / paywall / promo / skeleton)
    - Compatible Tailwind body classes
    ========================================================= */
 
@@ -15,7 +16,6 @@ body {
   margin: 0;
   min-height: 100%;
   height: 100%;
-  /* IMPORTANT: on évite de bloquer tout le site si page pas montée */
   overflow: hidden;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
     Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
@@ -41,10 +41,9 @@ body {
   --shadow: 0 26px 90px rgba(0, 0, 0, 0.75);
   --shadow2: 0 18px 50px rgba(15, 23, 42, 0.75);
 
-  /* Layout */
   width: 100%;
-  min-height: 100dvh;   /* ✅ mobile safe */
-  height: 100vh;        /* fallback */
+  min-height: 100dvh; /* ✅ mobile safe */
+  height: 100vh; /* fallback */
   overflow: hidden;
 
   padding: 18px 16px;
@@ -112,7 +111,7 @@ body {
   width: 100%;
   max-width: 920px;
 
-  /* ✅ très important pour permettre au scroll interne de fonctionner */
+  /* ✅ crucial pour scroll interne */
   flex: 1;
   min-height: 0;
 
@@ -172,6 +171,36 @@ body {
   50% { transform: scale(1.03); }
 }
 
+/* ✅ états utilisés dans ton JSX */
+.avatarRing--skeleton {
+  background: rgba(148, 163, 184, 0.18);
+  position: relative;
+  overflow: hidden;
+}
+.avatarRing--skeleton::after{
+  content:"";
+  position:absolute;
+  inset:-40%;
+  background: linear-gradient(90deg, transparent, rgba(226,232,240,.18), transparent);
+  transform: translateX(-40%);
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+@keyframes shimmer{
+  0%{ transform: translateX(-40%); }
+  100%{ transform: translateX(40%); }
+}
+
+.avatarRing--error{
+  background: rgba(251, 113, 133, 0.18);
+  border: 1px solid rgba(251, 113, 133, 0.35);
+}
+.avatarRing__bang{
+  font-weight: 900;
+  font-size: 2rem;
+  line-height: 1;
+  color: rgba(251, 113, 133, 0.95);
+}
+
 .avatarImg,
 .avatarVid,
 .avatarFallback {
@@ -193,10 +222,38 @@ body {
   background: rgba(30, 41, 59, 0.92);
 }
 
+/* ================= SKELETON LINES (hero) ================= */
+
+.skeletonLine{
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+  overflow: hidden;
+  position: relative;
+  margin: 10px auto 0;
+}
+.skeletonLine::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: linear-gradient(90deg, transparent, rgba(226,232,240,.16), transparent);
+  transform: translateX(-40%);
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+.skeletonLine--title{ width: 180px; height: 14px; }
+.skeletonLine--sub{ width: 260px; height: 12px; opacity: .9; }
+
+/* ================= VOICE TOGGLE ================= */
+
+.voiceToggle{
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
 /* ================= CHAT ================= */
 
 .chatBox {
-  /* ✅ prend l’espace restant dans la card */
   flex: 1;
   min-height: 0;
 
@@ -220,6 +277,7 @@ body {
 
 .row { display: flex; }
 .row--user { justify-content: flex-end; }
+/* (row--assistant n’a pas besoin d’autre style) */
 
 .bubble {
   max-width: 78%;
@@ -229,6 +287,10 @@ body {
   line-height: 1.35;
   word-wrap: break-word;
   overflow-wrap: anywhere;
+}
+
+.bubble__text{
+  white-space: pre-wrap; /* ✅ respecte retours ligne */
 }
 
 .bubble--user {
@@ -241,6 +303,20 @@ body {
   background: rgba(2, 6, 23, 0.6);
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-bottom-left-radius: 6px;
+}
+
+/* empty state */
+.empty{
+  padding: 12px;
+  color: rgba(148, 163, 184, 0.92);
+  text-align: center;
+}
+
+/* error line */
+.error{
+  margin: 4px 2px 0;
+  color: rgba(251, 113, 133, 0.95);
+  font-size: 0.9rem;
 }
 
 /* ================= COMPOSER ================= */
@@ -269,8 +345,44 @@ body {
   padding: 10px 0;
 }
 
-.composer__input:focus {
-  outline: none;
+.composer__input:focus { outline: none; }
+
+.composer__actions{
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+/* icon button (mic) */
+.iconBtn{
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(2, 6, 23, 0.45);
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.iconBtn:hover{
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.iconBtn:disabled{
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.iconBtn--active{
+  border-color: rgba(251, 55, 255, 0.55);
+  box-shadow: 0 10px 30px rgba(251, 55, 255, 0.12);
+}
+
+.iconBtn__icon{
+  font-size: 1.05rem;
+  line-height: 1;
 }
 
 .sendBtn {
@@ -281,9 +393,47 @@ body {
   background: linear-gradient(135deg, var(--g1), var(--g2), var(--g4));
   color: #fff;
   cursor: pointer;
+  display: grid;
+  place-items: center;
 }
 
 .sendBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sendBtn__icon{
+  font-size: 1.05rem;
+  line-height: 1;
+  transform: translateX(1px);
+}
+
+/* ================= BUTTONS (pill) ================= */
+
+.pillBtn{
+  border: none;
+  border-radius: 999px;
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.pillBtn--ghost{
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(2, 6, 23, 0.35);
+  color: var(--text);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.pillBtn--primary{
+  background: linear-gradient(135deg, var(--g1), var(--g2), var(--g4));
+  color: #fff;
+  box-shadow: 0 14px 40px rgba(248, 113, 113, 0.25);
+}
+
+.pillBtn:disabled{
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -296,6 +446,9 @@ body {
   padding: 12px;
   border: 1px solid rgba(251, 113, 133, 0.35);
   background: rgba(2, 6, 23, 0.6);
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .badge {
@@ -305,6 +458,46 @@ body {
   padding: 6px 10px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   width: fit-content;
+  color: rgba(226, 232, 240, 0.92);
+}
+
+/* promo */
+.promo__texts{ display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.promo__title{ margin: 0; font-weight: 750; }
+.promo__text{ margin: 0; color: rgba(148, 163, 184, 0.92); font-size: 0.9rem; }
+
+/* paywall */
+.paywall{
+  flex-direction: column;
+  align-items: stretch;
+}
+.paywall__title{ margin: 0; font-weight: 800; }
+.paywall__text{ margin: 6px 0 0; color: rgba(148, 163, 184, 0.92); }
+.paywall__btn{
+  margin-top: 10px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+}
+.paywall__link{
+  margin-top: 8px;
+  display: inline-block;
+  text-decoration: none;
+  color: rgba(226, 232, 240, 0.92);
+  opacity: .9;
+  font-size: 0.9rem;
+}
+.paywall__link:hover{ opacity: 1; text-decoration: underline; }
+
+/* ================= NOTE ================= */
+
+.note{
+  margin: 6px 0 0;
+  color: rgba(148, 163, 184, 0.85);
+  font-size: 0.82rem;
+  text-align: center;
 }
 
 /* ================= MOBILE ================= */
@@ -314,4 +507,4 @@ body {
   .card { padding: 12px; border-radius: 22px; }
   .bubble { max-width: 90%; }
   .topbar__back, .topbar__pill { padding: 9px 11px; }
-}
+                     }
