@@ -508,3 +508,9 @@ body {
   .bubble { max-width: 90%; }
   .topbar__back, .topbar__pill { padding: 9px 11px; }
                      }
+/* Sécurité: évite que des styles globaux/tailwind cassent l’avatar */
+.avatarRing { overflow: hidden; }
+.avatarImg, .avatarVid { display: block; }
+
+/* Sécurité: si un style global met les images en width:100% */
+.hero img { max-width: none; }
