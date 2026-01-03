@@ -1,8 +1,6 @@
 // app/stripe/return/page.tsx
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -72,72 +70,89 @@ function StripeReturnInner() {
       router.replace(`${path}?${qs.toString()}`);
     };
 
-    const run = async () => {
-      // 1) attendre l'utilisateur connecté (session cookie)
-      let userId = "";
-
+    const ensureLoggedInUserId = async () => {
+      // attend la session côté client (cookie supabase)
       for (let i = 0; i < 25; i++) {
-        if (cancelled) return;
+        if (cancelled) return "";
 
         const { data, error } = await supabase.auth.getSession();
         if (error) console.error("[stripe/return] getSession error:", error);
 
         const user = data?.session?.user;
-        if (user?.id) {
-          userId = user.id;
-          break;
-        }
+        if (user?.id) return user.id;
 
         await sleep(250);
       }
+      return "";
+    };
 
-      if (!userId) {
-        go("/login");
-        return;
+    const callSync = async () => {
+      if (!sessionId) return;
+
+      try {
+        const res = await fetch("/api/stripe/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId }),
+        });
+
+        // pas bloquant: on continue même si ça échoue
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          console.error("[stripe/return] sync failed:", res.status, txt);
+        }
+      } catch (e) {
+        console.error("[stripe/return] sync exception:", e);
       }
+    };
 
-      // 2) attendre que le webhook remplisse user_subscriptions
-      for (let i = 0; i < 40; i++) {
-        if (cancelled) return;
+    const waitForSubActive = async (userId: string) => {
+      // on laisse quelques secondes à Supabase (sync + upsert) pour se refléter
+      for (let i = 0; i < 30; i++) {
+        if (cancelled) return false;
 
         const { data, error } = await supabase
           .from(SUBS_TABLE)
-          .select(
-            [
-              "stripe_status",
-              "current",
-              "pricing_plan_id",
-              "stripe_subscription_id",
-              "stripe_customer_id",
-              "current_period_end",
-              "canceled_at",
-              "stripe_checkout_session_id",
-              "stripe_price_id",
-            ].join(",")
-          )
+          .select("stripe_status,current,pricing_plan_id")
           .eq("user_id", userId)
           .maybeSingle();
 
         if (error) {
-          console.error("[stripe/return] user_subscriptions fetch error:", error);
+          console.error("[stripe/return] sub fetch error:", error);
         } else if (data) {
-          const stripeStatus = (data as any).stripe_status as string | null | undefined;
+          const stripeStatus = (data as any).stripe_status as
+            | string
+            | null
+            | undefined;
           const current = (data as any).current as boolean | null | undefined;
 
           const active =
             (typeof current === "boolean" && current === true) ||
             isActiveStripeStatus(stripeStatus);
 
-          if (active) {
-            go("/my-amoria");
-            return;
-          }
+          if (active) return true;
         }
 
-        await sleep(500);
+        await sleep(400);
+      }
+      return false;
+    };
+
+    const run = async () => {
+      // 1) user connecté ?
+      const userId = await ensureLoggedInUserId();
+      if (!userId) {
+        go("/login");
+        return;
       }
 
-      // 3) fallback: laisser entrer (ton app gère ensuite l'accès)
+      // 2) SYNC immédiat Stripe -> Supabase (ne dépend plus du webhook)
+      await callSync();
+
+      // 3) check rapide si l'abonnement est actif
+      await waitForSubActive(userId);
+
+      // 4) entrer dans l'app
       go("/my-amoria");
     };
 
