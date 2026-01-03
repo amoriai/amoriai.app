@@ -64,11 +64,13 @@ async function userIdFromStripeCustomerId(customerId: string) {
   return (data?.user_id as string | null) ?? null;
 }
 
+function unixToIso(ts: number | null | undefined) {
+  if (!ts) return null;
+  return new Date(ts * 1000).toISOString();
+}
+
 /**
  * Upsert subscription state into user_subscriptions
- * - resolves user_id by metadata.user_id OR by stripe_customer_id lookup
- * - updates plan via price_id mapping when possible
- * - sets current=true for active|trialing, false for canceled/deleted
  */
 async function upsertFromSubscription(sub: Stripe.Subscription, eventType: string) {
   const customerId = sub.customer ? String(sub.customer) : null;
@@ -92,18 +94,32 @@ async function upsertFromSubscription(sub: Stripe.Subscription, eventType: strin
   const priceId = sub.items?.data?.[0]?.price?.id ?? null;
   const pricing_plan_id = await planIdFromStripePriceId(priceId);
 
-  const status =
+  // ✅ ton champ DB s'appelle stripe_status (pas status)
+  const stripe_status =
     sub.status ||
     (eventType === "customer.subscription.deleted" ? "canceled" : "unknown");
 
-  const isCurrent = status === "active" || status === "trialing";
+  const isCurrent = stripe_status === "active" || stripe_status === "trialing";
   const current = eventType === "customer.subscription.deleted" ? false : isCurrent;
+
+  // ✅ dates Stripe
+  const current_period_end = unixToIso(sub.current_period_end);
+  const canceled_at =
+    eventType === "customer.subscription.deleted"
+      ? new Date().toISOString()
+      : unixToIso(sub.canceled_at);
 
   const payload: Record<string, any> = {
     user_id: userId,
     stripe_customer_id: customerId,
     stripe_subscription_id: sub.id,
-    status,
+
+    // ✅ nouvelles colonnes
+    stripe_price_id: priceId,
+    stripe_status,
+    current_period_end,
+    canceled_at,
+
     current,
     updated_at: new Date().toISOString(),
   };
@@ -121,7 +137,6 @@ async function upsertFromSubscription(sub: Stripe.Subscription, eventType: strin
 
 // ---------- Webhook handler ----------
 export async function POST(req: Request) {
-  // env checks
   if (!stripe || !STRIPE_WEBHOOK_SECRET || !supabaseAdmin) {
     return new NextResponse("Webhook not configured", { status: 500 });
   }
@@ -129,7 +144,6 @@ export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature");
   if (!sig) return new NextResponse("Missing Stripe signature", { status: 400 });
 
-  // IMPORTANT: raw body
   const rawBody = await req.text();
 
   let event: Stripe.Event;
@@ -142,12 +156,6 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
-      /**
-       * Use checkout.session.completed to:
-       * - ensure we store stripe_customer_id + stripe_subscription_id for the user
-       * - optionally store pricing_plan_id from session.metadata.plan
-       * Do NOT force status=active here; subscription events are source of truth.
-       */
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
 
@@ -159,12 +167,26 @@ export async function POST(req: Request) {
           break;
         }
 
+        // ✅ IMPORTANT: récupérer line_items + price via un retrieve expand
+        const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+          expand: ["line_items.data.price"],
+        });
+
+        const priceId =
+          (fullSession.line_items?.data?.[0]?.price as Stripe.Price | undefined)?.id ??
+          null;
+
         const pricing_plan_id = planCode ? await planIdFromCode(planCode) : null;
 
         const payload: Record<string, any> = {
           user_id: userId,
-          stripe_customer_id: session.customer ? String(session.customer) : null,
-          stripe_subscription_id: session.subscription ? String(session.subscription) : null,
+          stripe_customer_id: fullSession.customer ? String(fullSession.customer) : null,
+          stripe_subscription_id: fullSession.subscription ? String(fullSession.subscription) : null,
+
+          // ✅ nouvelles colonnes
+          stripe_checkout_session_id: fullSession.id,
+          stripe_price_id: priceId,
+
           updated_at: new Date().toISOString(),
         };
 
@@ -178,9 +200,6 @@ export async function POST(req: Request) {
         break;
       }
 
-      /**
-       * Source of truth for subscription state
-       */
       case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
@@ -190,14 +209,12 @@ export async function POST(req: Request) {
       }
 
       default:
-        // ignore
         break;
     }
 
     return new NextResponse("ok", { status: 200 });
   } catch (err: any) {
     console.error("❌ Webhook handler error:", err);
-    // 500 => Stripe retries, useful while debugging
     return new NextResponse("Webhook internal error", { status: 500 });
   }
 }
