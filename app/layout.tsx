@@ -1,6 +1,6 @@
 // app/layout.tsx
 import type { ReactNode } from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import "./globals.css";
 
@@ -19,9 +19,15 @@ export const metadata: Metadata = {
   themeColor: "#000000",
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="fr" suppressHydrationWarning>
       <head>
         {/* Google tag (gtag.js) - Ads */}
         <Script
@@ -36,7 +42,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
 
-            // Default consent = denied (Consent Mode v2)
             gtag('consent', 'default', {
               ad_storage: 'denied',
               analytics_storage: 'denied',
@@ -45,13 +50,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               wait_for_update: 500
             });
 
-            // Google Ads config
             gtag('config', 'AW-17835849508');
           `}
         </Script>
       </head>
 
-      <body className="min-h-screen bg-[#050816] text-white antialiased">
+      <body className="antialiased">
         {children}
 
         {/* PWA */}
