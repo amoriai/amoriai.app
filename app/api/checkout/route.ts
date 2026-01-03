@@ -53,8 +53,12 @@ export async function POST(req: Request) {
   try {
     // Sanity checks
     if (!stripe) return jsonError("Stripe non configuré: STRIPE_SECRET_KEY manquante.", 500);
-    if (!supabaseAdmin)
-      return jsonError("Supabase admin non configuré: NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquante.", 500);
+    if (!supabaseAdmin) {
+      return jsonError(
+        "Supabase admin non configuré: NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquante.",
+        500
+      );
+    }
     if (!SITE_URL) return jsonError("NEXT_PUBLIC_SITE_URL manquante.", 500);
 
     // Body
@@ -85,18 +89,14 @@ export async function POST(req: Request) {
       .eq("code", plan)
       .maybeSingle();
 
-    if (planErr) {
-      return jsonError(`Supabase pricing_plans: ${planErr.message}`, 500);
-    }
+    if (planErr) return jsonError(`Supabase pricing_plans: ${planErr.message}`, 500);
 
     const priceId = planRow?.stripe_price_id as string | null | undefined;
-    if (!priceId) {
-      return jsonError(`stripe_price_id manquant pour le plan "${plan}".`, 500);
-    }
+    if (!priceId) return jsonError(`stripe_price_id manquant pour le plan "${plan}".`, 500);
 
     const site = cleanUrl(SITE_URL);
 
-    // Stripe redirects
+    // Stripe redirects (ces routes doivent exister)
     const successUrl =
       `${site}/stripe/return?lang=${encodeURIComponent(lang)}` +
       `&session_id={CHECKOUT_SESSION_ID}`;
@@ -106,37 +106,41 @@ export async function POST(req: Request) {
       `&canceled=1`;
 
     // Create Checkout Session (subscription)
-   const session = await stripe.checkout.sessions.create({
-  mode: "subscription",
-  line_items: [{ price: priceId, quantity: 1 }],
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
 
-  success_url: successUrl,
-  cancel_url: cancelUrl,
+      // ✅ plus fiable: force la création d'un customer Stripe
+      customer_creation: "always",
 
-  // Useful linking user <-> Stripe
-  client_reference_id: user_id,
+      line_items: [{ price: priceId, quantity: 1 }],
 
-  // IMPORTANT: metadata to recover user_id in webhook
-  metadata: {
-    user_id,
-    plan,
-    lang,
-  },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
 
-  // ALSO put it on the subscription
-  subscription_data: {
-    trial_period_days: 3, // 👈 ESSAI GRATUIT (3 jours)
-    metadata: {
-      user_id,
-      plan,
-      lang,
-    },
-  },
-});
+      // Link user <-> Stripe
+      client_reference_id: user_id,
 
-    if (!session.url) {
-      return jsonError("Session Stripe créée, mais URL manquante.", 500);
-    }
+      metadata: {
+        user_id,
+        plan,
+        lang,
+      },
+
+      subscription_data: {
+        // ✅ essai gratuit 3 jours (pas de débit immédiat)
+        trial_period_days: 3,
+        metadata: {
+          user_id,
+          plan,
+          lang,
+        },
+      },
+
+      // (optionnel mais souvent utile)
+      payment_method_collection: "always",
+    });
+
+    if (!session.url) return jsonError("Session Stripe créée, mais URL manquante.", 500);
 
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (err: unknown) {
@@ -144,4 +148,4 @@ export async function POST(req: Request) {
     const msg = err instanceof Error ? err.message : "Erreur serveur checkout.";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
-}
+        }
