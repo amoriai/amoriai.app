@@ -106,32 +106,33 @@ export async function POST(req: Request) {
       `&canceled=1`;
 
     // Create Checkout Session (subscription)
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      line_items: [{ price: priceId, quantity: 1 }],
+   const session = await stripe.checkout.sessions.create({
+  mode: "subscription",
+  line_items: [{ price: priceId, quantity: 1 }],
 
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+  success_url: successUrl,
+  cancel_url: cancelUrl,
 
-      // Useful linking user <-> Stripe
-      client_reference_id: user_id,
+  // Useful linking user <-> Stripe
+  client_reference_id: user_id,
 
-      // IMPORTANT: metadata to recover user_id in webhook
-      metadata: {
-        user_id,
-        plan,
-        lang,
-      },
+  // IMPORTANT: metadata to recover user_id in webhook
+  metadata: {
+    user_id,
+    plan,
+    lang,
+  },
 
-      // ALSO put it on the subscription
-      subscription_data: {
-        metadata: {
-          user_id,
-          plan,
-          lang,
-        },
-      },
-    });
+  // ALSO put it on the subscription
+  subscription_data: {
+    trial_period_days: 3, // 👈 ESSAI GRATUIT (3 jours)
+    metadata: {
+      user_id,
+      plan,
+      lang,
+    },
+  },
+});
 
     if (!session.url) {
       return jsonError("Session Stripe créée, mais URL manquante.", 500);
