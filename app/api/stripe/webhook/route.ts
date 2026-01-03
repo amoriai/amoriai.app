@@ -12,8 +12,14 @@ const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET ?? "";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
-const stripe =
-  STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" }) : null;
+if (!STRIPE_SECRET_KEY) console.warn("⚠️ STRIPE_SECRET_KEY missing");
+if (!STRIPE_WEBHOOK_SECRET) console.warn("⚠️ STRIPE_WEBHOOK_SECRET missing");
+if (!SUPABASE_URL) console.warn("⚠️ NEXT_PUBLIC_SUPABASE_URL missing");
+if (!SUPABASE_SERVICE_ROLE_KEY) console.warn("⚠️ SUPABASE_SERVICE_ROLE_KEY missing");
+
+const stripe = STRIPE_SECRET_KEY
+  ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" })
+  : null;
 
 const supabaseAdmin =
   SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
@@ -22,6 +28,7 @@ const supabaseAdmin =
       })
     : null;
 
+// ---------- Helpers ----------
 async function planIdFromCode(planCode: PlanCode) {
   const { data, error } = await supabaseAdmin!
     .from("pricing_plans")
@@ -46,8 +53,75 @@ async function planIdFromStripePriceId(priceId: string | null | undefined) {
   return data.id as string;
 }
 
+async function userIdFromStripeCustomerId(customerId: string) {
+  const { data, error } = await supabaseAdmin!
+    .from("user_subscriptions")
+    .select("user_id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle();
+
+  if (error) return null;
+  return (data?.user_id as string | null) ?? null;
+}
+
+/**
+ * Upsert subscription state into user_subscriptions
+ * - resolves user_id by metadata.user_id OR by stripe_customer_id lookup
+ * - updates plan via price_id mapping when possible
+ * - sets current=true for active|trialing, false for canceled/deleted
+ */
+async function upsertFromSubscription(sub: Stripe.Subscription, eventType: string) {
+  const customerId = sub.customer ? String(sub.customer) : null;
+
+  let userId: string | null =
+    (sub.metadata?.user_id as string | undefined) ?? null;
+
+  if (!userId && customerId) {
+    userId = await userIdFromStripeCustomerId(customerId);
+  }
+
+  if (!userId) {
+    console.warn("Webhook: cannot resolve user_id for subscription", {
+      subId: sub.id,
+      customerId,
+      metadata: sub.metadata,
+    });
+    return;
+  }
+
+  const priceId = sub.items?.data?.[0]?.price?.id ?? null;
+  const pricing_plan_id = await planIdFromStripePriceId(priceId);
+
+  const status =
+    sub.status ||
+    (eventType === "customer.subscription.deleted" ? "canceled" : "unknown");
+
+  const isCurrent = status === "active" || status === "trialing";
+  const current = eventType === "customer.subscription.deleted" ? false : isCurrent;
+
+  const payload: Record<string, any> = {
+    user_id: userId,
+    stripe_customer_id: customerId,
+    stripe_subscription_id: sub.id,
+    status,
+    current,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (pricing_plan_id) payload.pricing_plan_id = pricing_plan_id;
+
+  const { error } = await supabaseAdmin!
+    .from("user_subscriptions")
+    .upsert(payload, { onConflict: "user_id" });
+
+  if (error) {
+    console.error("Webhook subscription upsert error:", error, payload);
+  }
+}
+
+// ---------- Webhook handler ----------
 export async function POST(req: Request) {
-  // Basic env checks (safe)
+  // env checks
   if (!stripe || !STRIPE_WEBHOOK_SECRET || !supabaseAdmin) {
     return new NextResponse("Webhook not configured", { status: 500 });
   }
@@ -55,6 +129,7 @@ export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature");
   if (!sig) return new NextResponse("Missing Stripe signature", { status: 400 });
 
+  // IMPORTANT: raw body
   const rawBody = await req.text();
 
   let event: Stripe.Event;
@@ -67,63 +142,29 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
+      /**
+       * Use checkout.session.completed to:
+       * - ensure we store stripe_customer_id + stripe_subscription_id for the user
+       * - optionally store pricing_plan_id from session.metadata.plan
+       * Do NOT force status=active here; subscription events are source of truth.
+       */
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        const userId = session.metadata?.user_id || null;
-        const planCode = (session.metadata?.plan as PlanCode | undefined) || undefined;
+        const userId = (session.metadata?.user_id as string | undefined) ?? null;
+        const planCode = (session.metadata?.plan as PlanCode | undefined) ?? null;
 
-        if (!userId || !planCode) {
-          console.warn("Webhook: missing session metadata", session.metadata);
-          return new NextResponse("Missing metadata", { status: 200 });
+        if (!userId) {
+          console.warn("Webhook: missing session.metadata.user_id", session.metadata);
+          break;
         }
 
-        const pricing_plan_id = await planIdFromCode(planCode);
-        if (!pricing_plan_id) {
-          console.error("Webhook: plan code not found in pricing_plans", planCode);
-          return new NextResponse("Plan not found", { status: 200 });
-        }
+        const pricing_plan_id = planCode ? await planIdFromCode(planCode) : null;
 
-        const payload = {
+        const payload: Record<string, any> = {
           user_id: userId,
-          pricing_plan_id,
           stripe_customer_id: session.customer ? String(session.customer) : null,
           stripe_subscription_id: session.subscription ? String(session.subscription) : null,
-          status: "active",
-          current: true,
-          updated_at: new Date().toISOString(),
-        };
-
-        const { error } = await supabaseAdmin
-          .from("user_subscriptions")
-          .upsert(payload, { onConflict: "user_id" });
-
-        if (error) console.error("Webhook upsert error:", error);
-        break;
-      }
-
-      case "customer.subscription.updated":
-      case "customer.subscription.deleted": {
-        const sub = event.data.object as Stripe.Subscription;
-
-        const userId = (sub.metadata?.user_id as string | undefined) || undefined;
-        if (!userId) {
-          console.warn("Webhook: missing subscription metadata.user_id", sub.metadata);
-          return new NextResponse("Missing user_id", { status: 200 });
-        }
-
-        const priceId = sub.items?.data?.[0]?.price?.id;
-        const pricing_plan_id = await planIdFromStripePriceId(priceId);
-
-        const status = sub.status || (event.type === "customer.subscription.deleted" ? "canceled" : "unknown");
-        const isCurrent = status === "active";
-
-        const payload: any = {
-          user_id: userId,
-          stripe_customer_id: sub.customer ? String(sub.customer) : null,
-          stripe_subscription_id: sub.id,
-          status,
-          current: event.type === "customer.subscription.deleted" ? false : isCurrent,
           updated_at: new Date().toISOString(),
         };
 
@@ -133,17 +174,30 @@ export async function POST(req: Request) {
           .from("user_subscriptions")
           .upsert(payload, { onConflict: "user_id" });
 
-        if (error) console.error("Webhook subscription upsert error:", error);
+        if (error) console.error("Webhook checkout upsert error:", error, payload);
+        break;
+      }
+
+      /**
+       * Source of truth for subscription state
+       */
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        await upsertFromSubscription(sub, event.type);
         break;
       }
 
       default:
+        // ignore
         break;
     }
 
     return new NextResponse("ok", { status: 200 });
   } catch (err: any) {
     console.error("❌ Webhook handler error:", err);
+    // 500 => Stripe retries, useful while debugging
     return new NextResponse("Webhook internal error", { status: 500 });
   }
 }
