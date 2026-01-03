@@ -137,21 +137,20 @@ export async function POST(req: Request) {
     // -----------------------------------------
     const site = cleanUrl(SITE_URL);
 
-    // IMPORTANT:
-    // - /stripe/return doit exister
-    // - /pricing doit exister
+    // ✅ IMPORTANT: on ne redirige PLUS vers /stripe/return (ça te donnait 404)
+    // On renvoie vers une page qui existe (my-amoria)
     const successUrl =
-      `${site}/stripe/return?lang=${encodeURIComponent(lang)}` +
-      `&session_id={CHECKOUT_SESSION_ID}`;
+      `${site}/my-amoria?lang=${encodeURIComponent(lang)}` +
+      `&session_id={CHECKOUT_SESSION_ID}&paid=1`;
 
-    const cancelUrl = `${site}/pricing?lang=${encodeURIComponent(lang)}&canceled=1`;
+    const cancelUrl =
+      `${site}/pricing?lang=${encodeURIComponent(lang)}&canceled=1`;
 
     // -----------------------------------------
     // Create Checkout Session (subscription)
     // -----------------------------------------
-    // ⚠️ NE PAS mettre customer_creation ici.
-    // Stripe refuse customer_creation en mode "subscription"
-    // (ça crée l'erreur: "customer_creation can only be used in payment mode.")
+    // ✅ customer_creation: NE PAS mettre en mode subscription
+    // sinon erreur: "customer_creation can only be used in payment mode."
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
 
@@ -172,7 +171,7 @@ export async function POST(req: Request) {
 
       // metadata sur la subscription + essai gratuit
       subscription_data: {
-        trial_period_days: 3, // ✅ essai gratuit 3 jours (pas de débit immédiat)
+        trial_period_days: 3, // ✅ essai gratuit 3 jours
         metadata: {
           user_id,
           plan,
@@ -180,7 +179,7 @@ export async function POST(req: Request) {
         },
       },
 
-      // optionnel mais souvent utile pour forcer méthode paiement
+      // optionnel
       payment_method_collection: "always",
     });
 
