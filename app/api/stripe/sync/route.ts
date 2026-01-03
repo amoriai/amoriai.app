@@ -8,6 +8,9 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// =====================
+// ENV
+// =====================
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY ?? "";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -23,6 +26,9 @@ const supabaseAdmin =
       })
     : null;
 
+// =====================
+// Helpers
+// =====================
 function jsonError(message: string, status = 500) {
   return NextResponse.json({ error: message }, { status });
 }
@@ -32,25 +38,26 @@ function isActiveStatus(status?: string | null) {
   return s === "active" || s === "trialing";
 }
 
-async function planIdFromStripePriceId(priceId: string | null) {
-  if (!priceId) return null;
-
+async function planIdFromStripePriceId(priceId: string) {
   const { data, error } = await supabaseAdmin!
     .from("pricing_plans")
     .select("id")
     .eq("stripe_price_id", priceId)
     .maybeSingle();
 
-  if (error || !data?.id) return null;
-  return data.id as string;
+  if (error) return null;
+  return (data?.id as string) ?? null;
 }
 
+// =====================
+// Route
+// =====================
 export async function POST(req: Request) {
   try {
     if (!stripe) return jsonError("STRIPE_SECRET_KEY manquante.", 500);
     if (!supabaseAdmin) return jsonError("Supabase admin non configuré.", 500);
 
-    // ✅ user connecté obligatoire (sécurité)
+    // ✅ User connecté obligatoire
     const supabaseAuth = createRouteHandlerClient({ cookies });
     const { data: userData, error: userErr } = await supabaseAuth.auth.getUser();
     if (userErr || !userData?.user) return jsonError("Non authentifié.", 401);
@@ -61,18 +68,30 @@ export async function POST(req: Request) {
     const session_id = (body.session_id ?? "").trim();
     if (!session_id) return jsonError("session_id manquant.", 400);
 
-    // Récupère session + line_items + subscription
+    // ✅ Récupère session + price + subscription (fiable pour price.id)
     const session = await stripe.checkout.sessions.retrieve(session_id, {
-      expand: ["line_items", "subscription"],
+      expand: ["line_items.data.price", "subscription"],
     });
+
+    // ✅ Option sécurité: vérifie que la session appartient bien à ce user
+    const metaUserId = (session.metadata?.user_id ?? "").trim();
+    if (metaUserId && metaUserId !== user_id) {
+      return jsonError("Ce checkout ne correspond pas à cet utilisateur.", 403);
+    }
 
     const customerId = session.customer ? String(session.customer) : null;
     const subscriptionId = session.subscription ? String(session.subscription) : null;
 
-    const li = (session.line_items?.data?.[0] as any) ?? null;
-    const price = li?.price as string | Stripe.Price | undefined;
-    const priceId = typeof price === "string" ? price : price?.id ?? null;
+    const li = session.line_items?.data?.[0] ?? null;
+    const priceObj = (li as any)?.price as Stripe.Price | string | null | undefined;
+    const priceId =
+      typeof priceObj === "string" ? priceObj : (priceObj?.id ?? null);
 
+    if (!priceId) {
+      return jsonError("Impossible de récupérer stripe_price_id (line_items.price).", 400);
+    }
+
+    // Subscription status
     let stripe_status: string | null = null;
     let current = false;
 
@@ -82,10 +101,18 @@ export async function POST(req: Request) {
       current = isActiveStatus(subObj.status);
     }
 
+    // ✅ Mapping price -> pricing_plan_id (OBLIGATOIRE sinon ton plan ne change jamais)
     const pricing_plan_id = await planIdFromStripePriceId(priceId);
+    if (!pricing_plan_id) {
+      return jsonError(
+        `Aucun pricing_plans trouvé pour stripe_price_id=${priceId}. Vérifie la table pricing_plans.`,
+        400
+      );
+    }
 
-    const payload: Record<string, any> = {
+    const payload = {
       user_id,
+      pricing_plan_id,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscriptionId,
       stripe_checkout_session_id: session.id,
@@ -95,15 +122,16 @@ export async function POST(req: Request) {
       updated_at: new Date().toISOString(),
     };
 
-    if (pricing_plan_id) payload.pricing_plan_id = pricing_plan_id;
-
     const { error } = await supabaseAdmin
       .from("user_subscriptions")
       .upsert(payload, { onConflict: "user_id" });
 
     if (error) return jsonError(`Supabase upsert error: ${error.message}`, 500);
 
-    return NextResponse.json({ ok: true, current, stripe_status, pricing_plan_id }, { status: 200 });
+    return NextResponse.json(
+      { ok: true, current, stripe_status, pricing_plan_id, priceId },
+      { status: 200 }
+    );
   } catch (err: any) {
     return NextResponse.json(
       { error: err?.message ?? "sync error" },
