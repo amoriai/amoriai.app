@@ -152,7 +152,6 @@ export default function MyAmoriaSelectClient() {
         return;
       }
 
-      // last used
       const last = safeGetLastId();
       if (!cancelled) setLastUsedId(last);
 
@@ -219,7 +218,7 @@ export default function MyAmoriaSelectClient() {
   if (loading) {
     return (
       <main className="select-shell">
-        <div className="loader">
+        <div className="loader" aria-hidden="true">
           <span className="dot" />
           <span className="dot" />
           <span className="dot" />
@@ -227,19 +226,8 @@ export default function MyAmoriaSelectClient() {
         <p className="loadingText">{t.loading}</p>
 
         <style jsx>{`
-          :global(html) {
-            height: 100%;
-            color-scheme: dark;
-          }
-          :global(body) {
-            margin: 0;
-            min-height: 100%;
-            height: 100%;
-            overflow: hidden; /* ✅ évite conflits */
-          }
-
           .select-shell {
-            height: 100dvh; /* ✅ mobile safe */
+            height: 100dvh;
             display: grid;
             place-items: center;
             gap: 14px;
@@ -249,8 +237,6 @@ export default function MyAmoriaSelectClient() {
               radial-gradient(900px 700px at 90% 10%, rgba(56, 189, 248, 0.18), transparent 55%),
               radial-gradient(950px 700px at 10% 25%, rgba(249, 115, 22, 0.12), transparent 60%),
               linear-gradient(180deg, #020617, #000);
-            font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
-              "Segoe UI Emoji";
             overflow: hidden;
           }
           .loader {
@@ -338,7 +324,7 @@ export default function MyAmoriaSelectClient() {
             </button>
           </div>
         ) : (
-          /* ✅ ZONE SCROLL INTERNE (mobile OK même si body overflow hidden) */
+          // ✅ scroll interne: ne dépend PAS du body
           <div className="listScroll">
             <div className="grid">
               {list.map((a) => {
@@ -388,24 +374,17 @@ export default function MyAmoriaSelectClient() {
 
       <style jsx>{`
         :global(html) {
-          height: 100%;
           color-scheme: dark;
         }
 
-        /* ✅ IMPORTANT: on ne dépend PAS du scroll du body */
-        :global(body) {
-          margin: 0;
-          height: 100%;
-          overflow: hidden; /* ✅ évite le “bloqué” Android */
-          background: #000;
-          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
-            "Segoe UI Emoji";
-        }
+        /* ✅ pas de :global(body){overflow:hidden} ici :
+           ça casse d’autres pages (pricing, chat, etc.)
+           On rend la page elle-même “fixe” et scroll interne. */
 
         .page {
           --bg0: #000;
           --bg1: #020617;
-          --glass: rgba(2, 6, 23, 0.55);
+
           --line: rgba(148, 163, 184, 0.22);
           --text: rgba(226, 232, 240, 0.92);
 
@@ -414,8 +393,10 @@ export default function MyAmoriaSelectClient() {
           --g3: #38bdf8;
           --g4: #f97316;
 
-          height: 100dvh; /* ✅ mobile safe */
+          height: 100dvh;
           overflow: hidden;
+
+          padding: 22px 16px 18px;
 
           color: var(--text);
           background: radial-gradient(1100px 700px at 50% -10%, rgba(251, 55, 255, 0.24), transparent 60%),
@@ -430,16 +411,13 @@ export default function MyAmoriaSelectClient() {
           max-width: 980px;
           margin: 0 auto;
 
-          padding: 22px 16px 18px;
-
           display: flex;
           flex-direction: column;
           gap: 14px;
 
-          min-height: 0; /* ✅ crucial */
+          min-height: 0; /* ✅ critical pour scroll interne */
         }
 
-        /* ✅ header visible et stable */
         .head {
           flex: 0 0 auto;
           display: flex;
@@ -453,7 +431,7 @@ export default function MyAmoriaSelectClient() {
           top: 0;
           z-index: 10;
 
-          background: linear-gradient(180deg, rgba(2, 6, 23, 0.82), rgba(2, 6, 23, 0));
+          background: linear-gradient(180deg, rgba(2, 6, 23, 0.84), rgba(2, 6, 23, 0));
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
         }
@@ -523,7 +501,7 @@ export default function MyAmoriaSelectClient() {
           filter: none !important;
         }
 
-        /* ✅ LA clé: scroll interne */
+        /* ✅ la clé: scroll interne */
         .listScroll {
           flex: 1;
           min-height: 0;
@@ -534,6 +512,8 @@ export default function MyAmoriaSelectClient() {
         }
 
         .empty {
+          flex: 1;
+          min-height: 0;
           border-radius: 26px;
           border: 1px solid rgba(148, 163, 184, 0.26);
           background: radial-gradient(900px 600px at 50% 0%, rgba(251, 55, 255, 0.12), transparent 60%),
@@ -679,7 +659,6 @@ export default function MyAmoriaSelectClient() {
         .meta {
           min-width: 0;
           flex: 1;
-          position: relative;
         }
 
         .nameRow {
@@ -737,4 +716,5 @@ export default function MyAmoriaSelectClient() {
       `}</style>
     </main>
   );
+}
 }
