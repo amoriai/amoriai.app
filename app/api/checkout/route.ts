@@ -12,6 +12,7 @@ type Locale = "fr" | "en" | "es";
 
 const PLANS_TABLE = "pricing_plans";
 
+// ---------- Helpers ----------
 function isPlan(v: unknown): v is PlanId {
   return v === "chat" || v === "plus" || v === "unlimited";
 }
@@ -24,16 +25,22 @@ function cleanUrl(url: string) {
   return url.endsWith("/") ? url.slice(0, -1) : url;
 }
 
-// ENV
+function jsonError(message: string, status = 500) {
+  return NextResponse.json({ error: message }, { status });
+}
+
+// ---------- ENV ----------
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY ?? "";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
+// Stripe client (server)
 const stripe = STRIPE_SECRET_KEY
   ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" })
   : null;
 
+// Supabase admin (service role)
 const supabaseAdmin =
   SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
     ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -41,28 +48,16 @@ const supabaseAdmin =
       })
     : null;
 
+// ---------- Route ----------
 export async function POST(req: Request) {
   try {
-    // --- sanity checks
-    if (!stripe) {
-      return NextResponse.json(
-        { error: "Stripe non configuré: STRIPE_SECRET_KEY manquante." },
-        { status: 500 }
-      );
-    }
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { error: "Supabase admin non configuré: URL / Service Role manquants." },
-        { status: 500 }
-      );
-    }
-    if (!SITE_URL) {
-      return NextResponse.json(
-        { error: "NEXT_PUBLIC_SITE_URL manquante." },
-        { status: 500 }
-      );
-    }
+    // Sanity checks
+    if (!stripe) return jsonError("Stripe non configuré: STRIPE_SECRET_KEY manquante.", 500);
+    if (!supabaseAdmin)
+      return jsonError("Supabase admin non configuré: NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY manquante.", 500);
+    if (!SITE_URL) return jsonError("NEXT_PUBLIC_SITE_URL manquante.", 500);
 
+    // Body
     const body = (await req.json().catch(() => ({}))) as {
       plan?: unknown;
       lang?: unknown;
@@ -71,24 +66,19 @@ export async function POST(req: Request) {
     const plan = body.plan;
     const lang: Locale = isLocale(body.lang) ? body.lang : "fr";
 
-    if (!isPlan(plan)) {
-      return NextResponse.json({ error: "Plan invalide." }, { status: 400 });
-    }
+    if (!isPlan(plan)) return jsonError("Plan invalide.", 400);
 
-    // --- Auth via cookies (utilisateur connecté)
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    // Auth via cookies (user must be logged in)
+    const supabaseAuth = createRouteHandlerClient({ cookies });
+    const { data: userData, error: userErr } = await supabaseAuth.auth.getUser();
 
     if (userErr || !userData?.user) {
-      return NextResponse.json(
-        { error: "Utilisateur non authentifié." },
-        { status: 401 }
-      );
+      return jsonError("Utilisateur non authentifié.", 401);
     }
 
     const user_id = userData.user.id;
 
-    // --- get Stripe price id for plan
+    // Get Stripe price for this plan from DB
     const { data: planRow, error: planErr } = await supabaseAdmin
       .from(PLANS_TABLE)
       .select("stripe_price_id")
@@ -96,47 +86,44 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     if (planErr) {
-      return NextResponse.json(
-        { error: `Supabase pricing_plans: ${planErr.message}` },
-        { status: 500 }
-      );
+      return jsonError(`Supabase pricing_plans: ${planErr.message}`, 500);
     }
 
-    const priceId = planRow?.stripe_price_id;
+    const priceId = planRow?.stripe_price_id as string | null | undefined;
     if (!priceId) {
-      return NextResponse.json(
-        { error: `stripe_price_id manquant pour le plan "${plan}".` },
-        { status: 500 }
-      );
+      return jsonError(`stripe_price_id manquant pour le plan "${plan}".`, 500);
     }
 
     const site = cleanUrl(SITE_URL);
 
-    // ✅ Stripe va renvoyer EXACTEMENT ici
-    const successUrl = `${site}/stripe/return?lang=${encodeURIComponent(
-      lang
-    )}&session_id={CHECKOUT_SESSION_ID}`;
+    // Stripe redirects
+    const successUrl =
+      `${site}/stripe/return?lang=${encodeURIComponent(lang)}` +
+      `&session_id={CHECKOUT_SESSION_ID}`;
 
-    // ✅ cancel_url doit être une page qui existe (sinon 404)
-    // Option A (recommandé): pricing
-    const cancelUrl = `${site}/pricing?lang=${encodeURIComponent(lang)}&canceled=1`;
+    const cancelUrl =
+      `${site}/pricing?lang=${encodeURIComponent(lang)}` +
+      `&canceled=1`;
 
-    // --- Create Checkout session
+    // Create Checkout Session (subscription)
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      payment_method_types: ["card"],
 
       success_url: successUrl,
       cancel_url: cancelUrl,
 
+      // Useful linking user <-> Stripe
       client_reference_id: user_id,
 
+      // IMPORTANT: metadata to recover user_id in webhook
       metadata: {
         user_id,
         plan,
         lang,
       },
+
+      // ALSO put it on the subscription
       subscription_data: {
         metadata: {
           user_id,
@@ -147,10 +134,7 @@ export async function POST(req: Request) {
     });
 
     if (!session.url) {
-      return NextResponse.json(
-        { error: "Session Stripe créée, mais URL manquante." },
-        { status: 500 }
-      );
+      return jsonError("Session Stripe créée, mais URL manquante.", 500);
     }
 
     return NextResponse.json({ url: session.url }, { status: 200 });
