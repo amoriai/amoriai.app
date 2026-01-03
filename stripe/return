@@ -1,3 +1,4 @@
+// app/stripe/return/page.tsx
 "use client";
 
 import { useEffect } from "react";
@@ -5,14 +6,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 const SUBS_TABLE = "user_subscriptions";
-
 const ACTIVE_STATUSES = new Set(["active", "trialing"]);
 
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-function isStripeActive(status?: string | null) {
+function isActiveStripeStatus(status?: string | null) {
   if (!status) return false;
   return ACTIVE_STATUSES.has(String(status).toLowerCase());
 }
@@ -24,10 +22,18 @@ export default function StripeReturnPage() {
   useEffect(() => {
     let cancelled = false;
 
-    const goLogin = (lang: string) =>
-      router.replace(`/login?lang=${encodeURIComponent(lang)}`);
+    const lang = searchParams.get("lang") || "fr";
+    const sessionId = searchParams.get("session_id") || "";
 
-    const goApp = (lang: string, sessionId?: string) => {
+    const goLogin = () => {
+      const qs = new URLSearchParams();
+      qs.set("lang", lang);
+      if (sessionId) qs.set("session_id", sessionId);
+      // (optionnel) tu peux aussi ajouter redirectTo si tu veux
+      router.replace(`/login?${qs.toString()}`);
+    };
+
+    const goApp = () => {
       const qs = new URLSearchParams();
       qs.set("lang", lang);
       if (sessionId) qs.set("session_id", sessionId);
@@ -35,33 +41,28 @@ export default function StripeReturnPage() {
     };
 
     const run = async () => {
-      const lang = searchParams.get("lang") || "fr";
-      const sessionId = searchParams.get("session_id") || "";
-
-      // 1) Attendre l’utilisateur connecté
+      // 1) attendre l'utilisateur connecté
       let userId = "";
       for (let i = 0; i < 25; i++) {
         if (cancelled) return;
 
         const { data, error } = await supabase.auth.getSession();
-        if (error) console.error("supabase.auth.getSession error:", error);
+        if (error) console.error("getSession error:", error);
 
         const user = data?.session?.user;
         if (user?.id) {
           userId = user.id;
           break;
         }
-
         await sleep(250);
       }
 
       if (!userId) {
-        goLogin(lang);
+        goLogin();
         return;
       }
 
-      // 2) Attendre que la ligne user_subscriptions soit à jour
-      // IMPORTANT: dans ta table, tu as "stripe_status" (pas "status").
+      // 2) attendre que user_subscriptions soit rempli par le webhook
       for (let i = 0; i < 40; i++) {
         if (cancelled) return;
 
@@ -83,19 +84,19 @@ export default function StripeReturnPage() {
           .eq("user_id", userId)
           .maybeSingle();
 
-        // Si tu as une erreur ici, c’est souvent une policy RLS qui bloque le SELECT.
         if (error) {
+          // souvent RLS (ou colonne manquante) -> on réessaie, puis fallback
           console.error("user_subscriptions fetch error:", error);
-          // On réessaie un peu, puis fallback.
         } else {
           const stripeStatus = (data as any)?.stripe_status as string | null | undefined;
-          const cur = (data as any)?.current as boolean | null | undefined;
+          const current = (data as any)?.current as boolean | null | undefined;
 
           const active =
-            (typeof cur === "boolean" && cur === true) || isStripeActive(stripeStatus);
+            (typeof current === "boolean" && current === true) ||
+            isActiveStripeStatus(stripeStatus);
 
           if (active) {
-            goApp(lang, sessionId);
+            goApp();
             return;
           }
         }
@@ -103,12 +104,11 @@ export default function StripeReturnPage() {
         await sleep(500);
       }
 
-      // 3) Fallback: si webhook lent ou RLS bloque, on laisse passer vers l’app
-      goApp(lang, sessionId);
+      // 3) fallback (webhook lent / RLS) -> on laisse entrer
+      goApp();
     };
 
     run();
-
     return () => {
       cancelled = true;
     };
@@ -125,9 +125,10 @@ export default function StripeReturnPage() {
         color: "#e5e7eb",
         fontFamily:
           "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        padding: 24,
       }}
     >
-      <div style={{ textAlign: "center", padding: 24, maxWidth: 520 }}>
+      <div style={{ textAlign: "center", maxWidth: 520 }}>
         <div
           style={{
             width: 48,
