@@ -1,13 +1,12 @@
 // app/stripe/return/page.tsx
 "use client";
 
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 const SUBS_TABLE = "user_subscriptions";
 const ACTIVE_STATUSES = new Set(["active", "trialing"]);
-
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function isActiveStripeStatus(status?: string | null) {
@@ -15,7 +14,7 @@ function isActiveStripeStatus(status?: string | null) {
   return ACTIVE_STATUSES.has(String(status).toLowerCase());
 }
 
-export default function StripeReturnPage() {
+function StripeReturnInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -29,7 +28,6 @@ export default function StripeReturnPage() {
       const qs = new URLSearchParams();
       qs.set("lang", lang);
       if (sessionId) qs.set("session_id", sessionId);
-      // (optionnel) tu peux aussi ajouter redirectTo si tu veux
       router.replace(`/login?${qs.toString()}`);
     };
 
@@ -85,10 +83,12 @@ export default function StripeReturnPage() {
           .maybeSingle();
 
         if (error) {
-          // souvent RLS (ou colonne manquante) -> on réessaie, puis fallback
           console.error("user_subscriptions fetch error:", error);
         } else {
-          const stripeStatus = (data as any)?.stripe_status as string | null | undefined;
+          const stripeStatus = (data as any)?.stripe_status as
+            | string
+            | null
+            | undefined;
           const current = (data as any)?.current as boolean | null | undefined;
 
           const active =
@@ -104,7 +104,7 @@ export default function StripeReturnPage() {
         await sleep(500);
       }
 
-      // 3) fallback (webhook lent / RLS) -> on laisse entrer
+      // 3) fallback -> on laisse entrer
       goApp();
     };
 
@@ -148,5 +148,31 @@ export default function StripeReturnPage() {
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     </main>
+  );
+}
+
+export default function StripeReturnPage() {
+  return (
+    <Suspense
+      fallback={
+        <main
+          style={{
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "#020617",
+            color: "#e5e7eb",
+            fontFamily:
+              "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            padding: 24,
+          }}
+        >
+          Chargement…
+        </main>
+      }
+    >
+      <StripeReturnInner />
+    </Suspense>
   );
 }
