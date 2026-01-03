@@ -1,0 +1,23 @@
+/* my-amoria.css */
+
+/* Page entière bloquée */
+.myAmoriaPage {
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header fixe */
+.myAmoriaHeader {
+  flex-shrink: 0;
+}
+
+/* ✅ LISTE SCROLLABLE */
+.myAmoriaList {
+  flex: 1;
+  min-height: 0; /* 🔥 CRUCIAL */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 16px;
+}
