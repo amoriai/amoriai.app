@@ -6,8 +6,15 @@ import { supabase } from "@/lib/supabaseClient";
 
 const SUBS_TABLE = "user_subscriptions";
 
+const ACTIVE_STATUSES = new Set(["active", "trialing"]);
+
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+function isStripeActive(status?: string | null) {
+  if (!status) return false;
+  return ACTIVE_STATUSES.has(String(status).toLowerCase());
 }
 
 export default function StripeReturnPage() {
@@ -17,17 +24,27 @@ export default function StripeReturnPage() {
   useEffect(() => {
     let cancelled = false;
 
+    const goLogin = (lang: string) =>
+      router.replace(`/login?lang=${encodeURIComponent(lang)}`);
+
+    const goApp = (lang: string, sessionId?: string) => {
+      const qs = new URLSearchParams();
+      qs.set("lang", lang);
+      if (sessionId) qs.set("session_id", sessionId);
+      router.replace(`/my-amoria?${qs.toString()}`);
+    };
+
     const run = async () => {
       const lang = searchParams.get("lang") || "fr";
       const sessionId = searchParams.get("session_id") || "";
 
-      // 1) Attendre la session Supabase (user connecté)
+      // 1) Attendre l’utilisateur connecté
       let userId = "";
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 25; i++) {
         if (cancelled) return;
 
         const { data, error } = await supabase.auth.getSession();
-        if (error) console.error("getSession error:", error);
+        if (error) console.error("supabase.auth.getSession error:", error);
 
         const user = data?.session?.user;
         if (user?.id) {
@@ -35,80 +52,63 @@ export default function StripeReturnPage() {
           break;
         }
 
-        await sleep(300);
+        await sleep(250);
       }
 
       if (!userId) {
-        router.replace(`/login?lang=${encodeURIComponent(lang)}`);
+        goLogin(lang);
         return;
       }
 
-      // 2) Attendre que le webhook écrive l’abonnement
-      // ✅ Nouveau modèle: status ("active" / "trialing")
-      // (si ton ancien modèle "current" existe encore, on le vérifie aussi)
-      for (let i = 0; i < 30; i++) {
+      // 2) Attendre que la ligne user_subscriptions soit à jour
+      // IMPORTANT: dans ta table, tu as "stripe_status" (pas "status").
+      for (let i = 0; i < 40; i++) {
         if (cancelled) return;
 
         const { data, error } = await supabase
           .from(SUBS_TABLE)
-          .select("status, current, pricing_plan_id, stripe_subscription_id")
+          .select(
+            [
+              "stripe_status",
+              "current",
+              "pricing_plan_id",
+              "stripe_subscription_id",
+              "stripe_customer_id",
+              "current_period_end",
+              "canceled_at",
+              "stripe_checkout_session_id",
+              "stripe_price_id",
+            ].join(",")
+          )
           .eq("user_id", userId)
           .maybeSingle();
 
+        // Si tu as une erreur ici, c’est souvent une policy RLS qui bloque le SELECT.
         if (error) {
-          // Si la colonne "current" n'existe pas, Supabase peut retourner une erreur.
-          // Dans ce cas, on refait une requête sans "current".
-          const msg = String((error as any)?.message || "");
-          if (msg.toLowerCase().includes("current")) {
-            const retry = await supabase
-              .from(SUBS_TABLE)
-              .select("status, pricing_plan_id, stripe_subscription_id")
-              .eq("user_id", userId)
-              .maybeSingle();
+          console.error("user_subscriptions fetch error:", error);
+          // On réessaie un peu, puis fallback.
+        } else {
+          const stripeStatus = (data as any)?.stripe_status as string | null | undefined;
+          const cur = (data as any)?.current as boolean | null | undefined;
 
-            if (retry.error) console.error("subscription fetch error:", retry.error);
+          const active =
+            (typeof cur === "boolean" && cur === true) || isStripeActive(stripeStatus);
 
-            const st = (retry.data as any)?.status;
-            const isActive = st === "active" || st === "trialing";
-
-            if (isActive) {
-              const qs = new URLSearchParams();
-              qs.set("lang", lang);
-              if (sessionId) qs.set("session_id", sessionId);
-              router.replace(`/my-amoria?${qs.toString()}`);
-              return;
-            }
-
-            await sleep(500);
-            continue;
+          if (active) {
+            goApp(lang, sessionId);
+            return;
           }
-
-          console.error("subscription fetch error:", error);
-        }
-
-        const cur = (data as any)?.current;
-        const st = (data as any)?.status;
-
-        const isActive =
-          (typeof cur === "boolean" && cur === true) ||
-          (typeof st === "string" && (st === "active" || st === "trialing"));
-
-        if (isActive) {
-          const qs = new URLSearchParams();
-          qs.set("lang", lang);
-          if (sessionId) qs.set("session_id", sessionId);
-          router.replace(`/my-amoria?${qs.toString()}`);
-          return;
         }
 
         await sleep(500);
       }
 
-      // 3) Fallback : webhook lent / souci -> on continue quand même
-      router.replace(`/my-amoria?lang=${encodeURIComponent(lang)}`);
+      // 3) Fallback: si webhook lent ou RLS bloque, on laisse passer vers l’app
+      goApp(lang, sessionId);
     };
 
     run();
+
     return () => {
       cancelled = true;
     };
@@ -127,7 +127,7 @@ export default function StripeReturnPage() {
           "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}
     >
-      <div style={{ textAlign: "center" }}>
+      <div style={{ textAlign: "center", padding: 24, maxWidth: 520 }}>
         <div
           style={{
             width: 48,
@@ -139,9 +139,9 @@ export default function StripeReturnPage() {
             animation: "spin 1s linear infinite",
           }}
         />
-        <p>Finalisation de ton paiement…</p>
-        <p style={{ opacity: 0.7, fontSize: 13 }}>
-          On active ton forfait et on te redirige automatiquement.
+        <p style={{ margin: 0, fontSize: 18 }}>Finalisation de ton paiement…</p>
+        <p style={{ opacity: 0.75, fontSize: 13, marginTop: 8 }}>
+          On confirme ton abonnement et on te redirige automatiquement.
         </p>
 
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
