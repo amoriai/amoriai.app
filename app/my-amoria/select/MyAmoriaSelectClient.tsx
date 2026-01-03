@@ -35,7 +35,6 @@ type Ui = {
   lastUsed: string;
   continue: string;
 
-  // micro-copy optionnel (si tu veux)
   hint: string;
 };
 
@@ -228,8 +227,19 @@ export default function MyAmoriaSelectClient() {
         <p className="loadingText">{t.loading}</p>
 
         <style jsx>{`
+          :global(html) {
+            height: 100%;
+            color-scheme: dark;
+          }
+          :global(body) {
+            margin: 0;
+            min-height: 100%;
+            height: 100%;
+            overflow: hidden; /* ✅ évite conflits */
+          }
+
           .select-shell {
-            min-height: 100vh;
+            height: 100dvh; /* ✅ mobile safe */
             display: grid;
             place-items: center;
             gap: 14px;
@@ -241,6 +251,7 @@ export default function MyAmoriaSelectClient() {
               linear-gradient(180deg, #020617, #000);
             font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
               "Segoe UI Emoji";
+            overflow: hidden;
           }
           .loader {
             display: inline-flex;
@@ -327,57 +338,65 @@ export default function MyAmoriaSelectClient() {
             </button>
           </div>
         ) : (
-          <div className="grid">
-            {list.map((a) => {
-              const name = (a.name && a.name.trim()) || "AmorIAI";
-              const isLast = !!lastUsedId && a.id === lastUsedId;
+          /* ✅ ZONE SCROLL INTERNE (mobile OK même si body overflow hidden) */
+          <div className="listScroll">
+            <div className="grid">
+              {list.map((a) => {
+                const name = (a.name && a.name.trim()) || "AmorIAI";
+                const isLast = !!lastUsedId && a.id === lastUsedId;
 
-              return (
-                <button
-                  key={a.id}
-                  type="button"
-                  className={isLast ? "card card--last" : "card"}
-                  onClick={() => goChat(a.id)}
-                >
-                  {isLast && <div className="cardGlow" aria-hidden="true" />}
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    className={isLast ? "card card--last" : "card"}
+                    onClick={() => goChat(a.id)}
+                  >
+                    {isLast && <div className="cardGlow" aria-hidden="true" />}
 
-                  <div className="cardTop">
-                    <div className="avatarRing">
-                      <div className="avatar">
-                        {a.avatar_image_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={a.avatar_image_url} alt="" className="avatarImg" />
-                        ) : (
-                          <div className="avatarFallback">{name.charAt(0).toUpperCase()}</div>
-                        )}
+                    <div className="cardTop">
+                      <div className="avatarRing">
+                        <div className="avatar">
+                          {a.avatar_image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={a.avatar_image_url} alt="" className="avatarImg" />
+                          ) : (
+                            <div className="avatarFallback">{name.charAt(0).toUpperCase()}</div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="meta">
+                        <div className="nameRow">
+                          <div className="name">{name}</div>
+                          {isLast && <span className="badge">{t.lastUsed}</span>}
+                        </div>
+                        <div className="type">{a.persona_type || "—"}</div>
                       </div>
                     </div>
 
-                    <div className="meta">
-                      <div className="nameRow">
-                        <div className="name">{name}</div>
-                        {isLast && <span className="badge">{t.lastUsed}</span>}
-                      </div>
-                      <div className="type">{a.persona_type || "—"}</div>
+                    <div className="ctaRow">
+                      <span className="cta">{t.continue}</span>
                     </div>
-                  </div>
-
-                  <div className="ctaRow">
-                    <span className="cta">{t.continue}</span>
-                  </div>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </section>
 
       <style jsx>{`
         :global(html) {
+          height: 100%;
           color-scheme: dark;
         }
+
+        /* ✅ IMPORTANT: on ne dépend PAS du scroll du body */
         :global(body) {
           margin: 0;
+          height: 100%;
+          overflow: hidden; /* ✅ évite le “bloqué” Android */
           background: #000;
           font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
             "Segoe UI Emoji";
@@ -395,8 +414,8 @@ export default function MyAmoriaSelectClient() {
           --g3: #38bdf8;
           --g4: #f97316;
 
-          min-height: 100vh;
-          padding: 22px 16px 28px;
+          height: 100dvh; /* ✅ mobile safe */
+          overflow: hidden;
 
           color: var(--text);
           background: radial-gradient(1100px 700px at 50% -10%, rgba(251, 55, 255, 0.24), transparent 60%),
@@ -406,21 +425,37 @@ export default function MyAmoriaSelectClient() {
         }
 
         .wrap {
+          height: 100%;
           width: 100%;
           max-width: 980px;
           margin: 0 auto;
+
+          padding: 22px 16px 18px;
+
           display: flex;
           flex-direction: column;
           gap: 14px;
+
+          min-height: 0; /* ✅ crucial */
         }
 
+        /* ✅ header visible et stable */
         .head {
+          flex: 0 0 auto;
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
           gap: 14px;
           flex-wrap: wrap;
           padding: 8px 4px;
+
+          position: sticky;
+          top: 0;
+          z-index: 10;
+
+          background: linear-gradient(180deg, rgba(2, 6, 23, 0.82), rgba(2, 6, 23, 0));
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
         }
 
         .headLeft {
@@ -486,6 +521,16 @@ export default function MyAmoriaSelectClient() {
           cursor: not-allowed;
           transform: none !important;
           filter: none !important;
+        }
+
+        /* ✅ LA clé: scroll interne */
+        .listScroll {
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          overscroll-behavior: contain;
+          padding-bottom: 8px;
         }
 
         .empty {
@@ -574,7 +619,6 @@ export default function MyAmoriaSelectClient() {
           box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(56, 189, 248, 0.35);
         }
 
-        /* Dernier utilisé : glow très léger */
         .card--last {
           border-color: rgba(251, 55, 255, 0.38);
         }
@@ -693,4 +737,4 @@ export default function MyAmoriaSelectClient() {
       `}</style>
     </main>
   );
-                                   }
+}
