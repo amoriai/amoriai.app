@@ -307,6 +307,9 @@ function ChatClient() {
   const locale = normalizeLocale(searchParams.get("lang"));
   const t = STRINGS[locale];
 
+  // ✅ petit avatar à côté des bulles (assistant seulement)
+  const SHOW_BUBBLE_AVATAR = true;
+
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [aiLoading, setAiLoading] = useState(true);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -314,6 +317,7 @@ function ChatClient() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false); // ✅ anti double send (instant)
   const [sendError, setSendError] = useState<string | null>(null);
 
   // plan + quota
@@ -827,11 +831,16 @@ function ChatClient() {
     ]
   );
 
-  // 6) Send message
+  // 6) Send message (avec anti-double-send dur)
   const sendMessage = useCallback(async () => {
     setSendError(null);
 
+    if (sendingRef.current) return; // ✅ bloque instant
     if (!newMessage.trim() || !iaId || isBlocked) return;
+
+    sendingRef.current = true;
+    setSending(true);
+
     if (isRecording) stopRecording();
 
     const content = newMessage.trim();
@@ -846,7 +855,6 @@ function ChatClient() {
 
     setMessages((prev) => [...prev, userMessage]);
     setNewMessage("");
-    setSending(true);
 
     const ac = new AbortController();
 
@@ -907,6 +915,7 @@ function ChatClient() {
       setSendError(t.chatNetworkError);
     } finally {
       ac.abort();
+      sendingRef.current = false;
       setSending(false);
     }
   }, [
@@ -940,11 +949,11 @@ function ChatClient() {
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key !== "Enter") return;
       if (e.shiftKey) return;
-      e.preventDefault();
-      if (sending) return;
+      e.preventDefault(); // ✅ empêche le submit natif
+      if (sendingRef.current) return;
       void sendMessage();
     },
-    [sendMessage, sending]
+    [sendMessage]
   );
 
   const avatarRingClass = canPulseAvatar ? "avatarRing avatarRing--live" : "avatarRing";
@@ -961,14 +970,12 @@ function ChatClient() {
         </a>
 
         <div className="topbar__right">
-          {/* ✅ FREE: on cache “Mes AmorIAI” */}
           {!isFreePlan && (
             <Link href={myAmoriaUrl} className="topbar__pill">
               {t.myAmoria}
             </Link>
           )}
 
-          {/* canCreate est déjà false en FREE */}
           {canCreate && (
             <Link href={createAmoriaUrl} className="topbar__pill topbar__pill--primary">
               {t.createAmoria}
@@ -1051,13 +1058,31 @@ function ChatClient() {
             <div className="empty">{t.emptyState(displayName)}</div>
           ) : (
             <ul className="list">
-              {messages.map((m) => (
-                <li key={m.id} className={m.role === "user" ? "row row--user" : "row row--assistant"}>
-                  <div className={m.role === "user" ? "bubble bubble--user" : "bubble bubble--assistant"}>
-                    <div className="bubble__text">{m.content}</div>
-                  </div>
-                </li>
-              ))}
+              {messages.map((m) => {
+                const isUser = m.role === "user";
+                const showTinyAvatar = SHOW_BUBBLE_AVATAR && !isUser && !!avatarImageUrl;
+
+                return (
+                  <li key={m.id} className={isUser ? "row row--user" : "row row--assistant"}>
+                    {!isUser && (
+                      <div className="row__left">
+                        {showTinyAvatar ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img className="msgAvatar" src={avatarImageUrl!} alt="" aria-hidden="true" />
+                        ) : (
+                          <span className="msgAvatar msgAvatar--fallback" aria-hidden="true">
+                            {displayName.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    <div className={isUser ? "bubble bubble--user" : "bubble bubble--assistant"}>
+                      <div className="bubble__text">{m.content}</div>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -1133,6 +1158,39 @@ function ChatClient() {
         </form>
 
         <p className="note">{t.notePrivate}</p>
+
+        {/* ✅ CSS minimal pour le petit avatar (si ton CSS global ne l’a pas déjà) */}
+        <style jsx>{`
+          .row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+          }
+          .row--user {
+            justify-content: flex-end;
+          }
+          .row__left {
+            width: 28px;
+            flex: 0 0 28px;
+            display: grid;
+            place-items: center;
+          }
+          .msgAvatar {
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            object-fit: cover;
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            background: rgba(2, 6, 23, 0.6);
+          }
+          .msgAvatar--fallback {
+            display: grid;
+            place-items: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: rgba(226, 232, 240, 0.9);
+          }
+        `}</style>
       </section>
     </main>
   );
