@@ -127,16 +127,6 @@ export async function POST(req: Request) {
         lang,
       },
 
-      // Subscription metadata + trial
-      subscription_data: {
-        trial_period_days: 3,
-        metadata: {
-          user_id,
-          plan,
-          lang,
-        },
-      },
-
       // Optionnel: garde le comportement standard
       payment_method_collection: "always",
     });
