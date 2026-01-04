@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -43,7 +44,6 @@ type Labels = {
   plans: Plan[];
   faqTitle: string;
   faqs: FaqItem[];
-
   lockNote: string;
   lockCta: string;
 };
@@ -128,8 +128,7 @@ const LABELS: Record<Locale, Labels> = {
     billingNote:
       "Facturation sécurisée via Stripe · Changement ou annulation en tout temps · Aucun frais caché",
     chooseIntro: "3 forfaits simples, selon ton usage.",
-    usdNote:
-      "Les prix sont en dollars américains (USD). L’activation se fait après connexion.",
+    usdNote: "Les prix sont en dollars américains (USD). L’activation se fait après connexion.",
     lockNote: "Connecte-toi ou crée un compte pour activer un forfait.",
     lockCta: "Créer mon compte gratuit",
     plans: [
@@ -138,12 +137,7 @@ const LABELS: Record<Locale, Labels> = {
         name: "AmorIAI Chat",
         price: "9,99 $ USD / mois",
         tagline: "Pour écrire à ton AmorIAI chaque jour.",
-        features: [
-          "Jusqu’à 2 AmorIAI différents",
-          "Conversations régulières",
-          "Mémoire longue durée",
-          "FR / EN / ES",
-        ],
+        features: ["Jusqu’à 2 AmorIAI différents", "Conversations régulières", "Mémoire longue durée", "FR / EN / ES"],
         ctaLabel: "Activer AmorIAI Chat",
       },
       {
@@ -151,13 +145,7 @@ const LABELS: Record<Locale, Labels> = {
         name: "AmorIAI Plus",
         price: "19,99 $ USD / mois",
         tagline: "Texte + voix : une présence plus réelle.",
-        features: [
-          "Jusqu’à 10 AmorIAI différents",
-          "Voix IA",
-          "Conversations approfondies",
-          "Mémoire longue durée",
-          "Priorité légère",
-        ],
+        features: ["Jusqu’à 10 AmorIAI différents", "Voix IA", "Conversations approfondies", "Mémoire longue durée", "Priorité légère"],
         badgeLabel: "Le plus populaire",
         badgeVariant: "popular",
         ctaLabel: "Passer à la voix",
@@ -182,18 +170,9 @@ const LABELS: Record<Locale, Labels> = {
     ],
     faqTitle: "Questions fréquentes",
     faqs: [
-      {
-        q: "Puis-je changer de forfait ou annuler quand je veux ?",
-        a: "Oui. Tu peux changer ou annuler à tout moment depuis ton compte, sans engagement.",
-      },
-      {
-        q: "Pourquoi je ne vois pas Stripe ici ?",
-        a: "Le paiement se fait après connexion, pour rester sécuritaire et propre.",
-      },
-      {
-        q: "Je peux commencer gratuit ?",
-        a: "Oui. Crée ton compte gratuitement, puis active un forfait si tu le souhaites.",
-      },
+      { q: "Puis-je changer de forfait ou annuler quand je veux ?", a: "Oui. Tu peux changer ou annuler à tout moment depuis ton compte, sans engagement." },
+      { q: "Pourquoi je ne vois pas Stripe ici ?", a: "Le paiement se fait après connexion, pour rester sécuritaire et propre." },
+      { q: "Je peux commencer gratuit ?", a: "Oui. Crée ton compte gratuitement, puis active un forfait si tu le souhaites." },
     ],
   },
   en: {
@@ -208,37 +187,14 @@ const LABELS: Record<Locale, Labels> = {
     lockNote: "Log in or create an account to activate a plan.",
     lockCta: "Create my free account",
     plans: [
-      {
-        id: "chat",
-        name: "AmorIAI Chat",
-        price: "$9.99 USD / month",
-        tagline: "Text your AmorIAI daily.",
-        features: ["Up to 2 AmorIAI", "Regular conversations", "Long-term memory", "FR / EN / ES"],
-        ctaLabel: "Activate AmorIAI Chat",
-      },
-      {
-        id: "plus",
-        name: "AmorIAI Plus",
-        price: "$19.99 USD / month",
-        tagline: "Text + voice: more real presence.",
-        features: ["Up to 10 AmorIAI", "AI voice", "Deeper conversations", "Long-term memory", "Light priority"],
-        badgeLabel: "Most popular",
-        badgeVariant: "popular",
-        ctaLabel: "Upgrade to voice",
-      },
+      { id: "chat", name: "AmorIAI Chat", price: "$9.99 USD / month", tagline: "Text your AmorIAI daily.", features: ["Up to 2 AmorIAI", "Regular conversations", "Long-term memory", "FR / EN / ES"], ctaLabel: "Activate AmorIAI Chat" },
+      { id: "plus", name: "AmorIAI Plus", price: "$19.99 USD / month", tagline: "Text + voice: more real presence.", features: ["Up to 10 AmorIAI", "AI voice", "Deeper conversations", "Long-term memory", "Light priority"], badgeLabel: "Most popular", badgeVariant: "popular", ctaLabel: "Upgrade to voice" },
       {
         id: "unlimited",
         name: "AmorIAI Unlimited",
         price: "$39.99 USD / month",
         tagline: "Maximum experience (voice + extras).",
-        features: [
-          "Up to 30 personalized AmorIAI",
-          "Text + voice",
-          "Smooth, uninterrupted use",
-          "Deep memory + extended context",
-          "Max priority & early access",
-          "Animated avatars (Unlimited only)",
-        ],
+        features: ["Up to 30 personalized AmorIAI", "Text + voice", "Smooth, uninterrupted use", "Deep memory + extended context", "Max priority & early access", "Animated avatars (Unlimited only)"],
         badgeLabel: "Best value",
         badgeVariant: "value",
         ctaLabel: "Unlock Unlimited",
@@ -263,37 +219,14 @@ const LABELS: Record<Locale, Labels> = {
     lockNote: "Inicia sesión o crea una cuenta para activar un plan.",
     lockCta: "Crear mi cuenta gratis",
     plans: [
-      {
-        id: "chat",
-        name: "AmorIAI Chat",
-        price: "9,99 $ USD / mes",
-        tagline: "Escribe cada día.",
-        features: ["Hasta 2 AmorIAI", "Conversaciones regulares", "Memoria a largo plazo", "FR / EN / ES"],
-        ctaLabel: "Activar AmorIAI Chat",
-      },
-      {
-        id: "plus",
-        name: "AmorIAI Plus",
-        price: "19,99 $ USD / mes",
-        tagline: "Texto + voz: más presencia real.",
-        features: ["Hasta 10 AmorIAI", "Voz IA", "Conversaciones más profundas", "Memoria a largo plazo", "Prioridad ligera"],
-        badgeLabel: "Más popular",
-        badgeVariant: "popular",
-        ctaLabel: "Pasar a voz",
-      },
+      { id: "chat", name: "AmorIAI Chat", price: "9,99 $ USD / mes", tagline: "Escribe cada día.", features: ["Hasta 2 AmorIAI", "Conversaciones regulares", "Memoria a largo plazo", "FR / EN / ES"], ctaLabel: "Activar AmorIAI Chat" },
+      { id: "plus", name: "AmorIAI Plus", price: "19,99 $ USD / mes", tagline: "Texto + voz: más presencia real.", features: ["Hasta 10 AmorIAI", "Voz IA", "Conversaciones más profundas", "Memoria a largo plazo", "Prioridad ligera"], badgeLabel: "Más popular", badgeVariant: "popular", ctaLabel: "Pasar a voz" },
       {
         id: "unlimited",
         name: "AmorIAI Ilimitado",
         price: "39,99 $ USD / mes",
         tagline: "Experiencia máxima (voz + extras).",
-        features: [
-          "Hasta 30 AmorIAI personalizados",
-          "Texto + voz",
-          "Uso fluido y sin interrupciones",
-          "Memoria profunda + contexto ampliado",
-          "Prioridad máxima y acceso anticipado",
-          "Avatares animados (solo Ilimitado)",
-        ],
+        features: ["Hasta 30 AmorIAI personalizados", "Texto + voz", "Uso fluido y sin interrupciones", "Memoria profunda + contexto ampliado", "Prioridad máxima y acceso anticipado", "Avatares animados (solo Ilimitado)"],
         badgeLabel: "Mejor valor",
         badgeVariant: "value",
         ctaLabel: "Desbloquear Ilimitado",
@@ -383,9 +316,10 @@ export default function PricingPage() {
 
       if (error) {
         console.error("Supabase plans fetch error:", error);
-        if (!cancelled)
+        if (!cancelled) {
           setErrorMsg(locale === "fr" ? "Impossible de charger les prix (Supabase)." : "Unable to load pricing (Supabase).");
-        if (!cancelled) setPlansLoading(false);
+          setPlansLoading(false);
+        }
         return;
       }
 
@@ -410,15 +344,11 @@ export default function PricingPage() {
   const displayPaidPlans = useMemo(() => {
     return t.plans.map((p) => {
       const db = dbPlans[p.id as PaidPlanId];
-
       const hasDbPrice = typeof db?.price === "number" && Number.isFinite(db.price);
+
       const mergedName = db?.name ? db.name : p.name;
+      const mergedPrice = hasDbPrice ? `${formatUsd(locale, db!.price!)}${priceSuffix(locale)}` : p.price;
 
-      const mergedPrice = hasDbPrice
-        ? `${formatUsd(locale, db!.price!)}${priceSuffix(locale)}`
-        : p.price;
-
-      // IMPORTANT: on ne rajoute PAS (ai_limit / message_limit / voice_limit) dans les features
       return { ...p, name: mergedName, price: mergedPrice };
     });
   }, [t.plans, dbPlans, locale]);
@@ -650,8 +580,7 @@ export default function PricingPage() {
         body {
           margin: 0;
           padding: 0;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial,
-            sans-serif;
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
           background: radial-gradient(circle at top, #020617 0, #020617 40%, #000 100%);
           color: var(--amoria-text-main);
         }
@@ -864,35 +793,47 @@ export default function PricingPage() {
           margin: 0 0 1.1rem;
         }
 
+        /* ✅ GRID COMPACT (fini le gros espace) */
         .amoria-pricing-grid {
           width: 100%;
+          max-width: 1120px;
+          margin: 0 auto;
           display: grid;
           grid-template-columns: 1fr;
-          gap: 1.2rem;
-          justify-content: center;
+          gap: 1.25rem;
           align-items: stretch;
         }
 
-        @media (min-width: 900px) {
+        @media (min-width: 820px) {
           .amoria-pricing-grid {
-            grid-template-columns: repeat(3, minmax(320px, 1fr));
-            gap: 1.6rem;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 1.25rem;
           }
         }
 
+        @media (min-width: 1120px) {
+          .amoria-pricing-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1.35rem;
+          }
+        }
+
+        /* ✅ CARD: prend toute la cellule (plus de vide) */
         .amoria-pricing-card {
           position: relative;
           border-radius: 1.6rem;
-          padding: 2.2rem 1.25rem 1.35rem;
+          padding: 2.1rem 1.25rem 1.35rem;
           background: radial-gradient(circle at top, #020617 0, #020617 45%, #020617 100%);
           border: 1px solid rgba(148, 163, 184, 0.45);
           display: flex;
           flex-direction: column;
           justify-content: space-between;
           min-height: 520px;
-          max-width: 440px;
-          margin-left: auto;
-          margin-right: auto;
+
+          width: 100%;
+          max-width: none;
+          margin: 0;
+
           box-shadow: 0 18px 45px rgba(15, 23, 42, 0.8);
         }
 
@@ -1150,4 +1091,4 @@ export default function PricingPage() {
       `}</style>
     </main>
   );
-      }
+    }
