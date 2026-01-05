@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import React, { FormEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -76,6 +74,10 @@ type UiCopy = {
 
   myAmoria: string;
   createAmoria: string;
+
+  // NEW
+  tooLong: (max: number) => string;
+  charsLeft: (left: number, max: number) => string;
 };
 
 const STRINGS: Record<Locale, UiCopy> = {
@@ -122,6 +124,9 @@ const STRINGS: Record<Locale, UiCopy> = {
 
     myAmoria: "Mes AmorIAI",
     createAmoria: "Créer",
+
+    tooLong: (max) => `Ton message est trop long (max ${max} caractères pour ton forfait).`,
+    charsLeft: (left, max) => `${left} / ${max}`,
   },
   en: {
     backHome: "← Home",
@@ -166,6 +171,9 @@ const STRINGS: Record<Locale, UiCopy> = {
 
     myAmoria: "My AmorIAI",
     createAmoria: "Create",
+
+    tooLong: (max) => `Your message is too long (max ${max} chars for your plan).`,
+    charsLeft: (left, max) => `${left} / ${max}`,
   },
   es: {
     backHome: "← Inicio",
@@ -210,6 +218,9 @@ const STRINGS: Record<Locale, UiCopy> = {
 
     myAmoria: "Mis AmorIAI",
     createAmoria: "Crear",
+
+    tooLong: (max) => `Tu mensaje es demasiado largo (máx. ${max} caracteres para tu plan).`,
+    charsLeft: (left, max) => `${left} / ${max}`,
   },
 };
 
@@ -218,6 +229,27 @@ function normalizeLocale(raw: string | null): Locale {
 }
 function normalizePlan(raw: string | null): PlanId {
   return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
+}
+
+/** ✅ Limites de longueur par plan (AJUSTE ICI) */
+function maxCharsForPlan(plan: PlanId): number {
+  switch (plan) {
+    case "free":
+      return 800; // essai: court mais utile
+    case "chat":
+      return 1500;
+    case "plus":
+      return 2200;
+    case "unlimited":
+      return 3500;
+    default:
+      return 800;
+  }
+}
+
+function clampText(s: string, max: number): string {
+  if (!s) return "";
+  return s.length > max ? s.slice(0, max) : s;
 }
 
 export default function ChatPage() {
@@ -307,7 +339,6 @@ function ChatClient() {
   const locale = normalizeLocale(searchParams.get("lang"));
   const t = STRINGS[locale];
 
-  // ✅ petit avatar à côté des bulles (assistant seulement)
   const SHOW_BUBBLE_AVATAR = true;
 
   const [ai, setAi] = useState<AmoriaRow | null>(null);
@@ -317,10 +348,9 @@ function ChatClient() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
-  const sendingRef = useRef(false); // ✅ anti double send (instant)
+  const sendingRef = useRef(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
-  // plan + quota
   const [planCode, setPlanCode] = useState<string | null>(null);
   const [activeAmoriaCount, setActiveAmoriaCount] = useState<number>(0);
 
@@ -355,6 +385,10 @@ function ChatClient() {
   const isFreePlan = planId === "free";
   const isPaidPlan = !isFreePlan;
 
+  const MAX_CHARS = useMemo(() => maxCharsForPlan(planId), [planId]);
+  const charsLeft = useMemo(() => Math.max(0, MAX_CHARS - newMessage.length), [MAX_CHARS, newMessage.length]);
+  const isTooLong = useMemo(() => newMessage.length > MAX_CHARS, [newMessage.length, MAX_CHARS]);
+
   const canCreate = useMemo(() => {
     if (planId === "free") return false;
     return activeAmoriaCount < maxAllowed;
@@ -375,12 +409,10 @@ function ChatClient() {
   const createAmoriaUrl = useMemo(() => `/create-amoria?lang=${locale}`, [locale]);
   const pricingUrl = useMemo(() => `/pricing?lang=${locale}`, [locale]);
 
-  // ✅ IMPORTANT: si /chat sans iaId -> back /my-amoria
   useEffect(() => {
     if (!iaId) router.replace(myAmoriaUrl);
   }, [iaId, router, myAmoriaUrl]);
 
-  // ✅ Save last IA used
   useEffect(() => {
     if (!iaId) return;
     try {
@@ -471,7 +503,6 @@ function ChatClient() {
           return;
         }
 
-        // plan depuis user_subscriptions -> pricing_plans.code
         let sub: any = null;
 
         const q1 = await supabase
@@ -539,7 +570,6 @@ function ChatClient() {
 
         if (code !== "unlimited") setAvatarPlaying(false);
 
-        // quota IA
         const countRes = await supabase
           .from("user_amoria")
           .select("id", { count: "exact", head: true })
@@ -602,7 +632,7 @@ function ChatClient() {
         else interim += transcript;
       }
       const merged = (newMessage ? newMessage + " " : "") + finalText + interim;
-      setNewMessage(merged.trimStart());
+      setNewMessage(clampText(merged.trimStart(), MAX_CHARS));
     };
 
     recognition.onerror = () => {
@@ -617,7 +647,7 @@ function ChatClient() {
 
     setIsRecording(true);
     recognition.start();
-  }, [canUseVoice, isBlocked, locale, newMessage]);
+  }, [canUseVoice, isBlocked, locale, newMessage, MAX_CHARS]);
 
   const stopRecording = useCallback(() => {
     const r = recognitionRef.current;
@@ -818,32 +848,29 @@ function ChatClient() {
         voiceBusyRef.current = false;
       }
     },
-    [
-      canUseVoice,
-      isBlocked,
-      voiceEnabled,
-      audioUnlocked,
-      iaId,
-      t.notAuthenticated,
-      t.voiceLimitReached,
-      t.voiceServerError,
-      t.voiceNetworkError,
-    ]
+    [canUseVoice, isBlocked, voiceEnabled, audioUnlocked, iaId, t.notAuthenticated, t.voiceLimitReached, t.voiceServerError, t.voiceNetworkError]
   );
 
-  // 6) Send message (avec anti-double-send dur)
+  // 6) Send message
   const sendMessage = useCallback(async () => {
     setSendError(null);
 
-    if (sendingRef.current) return; // ✅ bloque instant
+    if (sendingRef.current) return;
     if (!newMessage.trim() || !iaId || isBlocked) return;
+
+    // ✅ blocage si trop long (sécurité UI)
+    const trimmed = newMessage.trim();
+    if (trimmed.length > MAX_CHARS) {
+      setSendError(t.tooLong(MAX_CHARS));
+      return;
+    }
 
     sendingRef.current = true;
     setSending(true);
 
     if (isRecording) stopRecording();
 
-    const content = newMessage.trim();
+    const content = trimmed;
     const baseId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
     const userMessage: ChatMessage = {
@@ -922,11 +949,13 @@ function ChatClient() {
     newMessage,
     iaId,
     isBlocked,
+    MAX_CHARS,
+    t,
     isRecording,
     stopRecording,
-    t.notAuthenticated,
     locale,
     isFreePlan,
+    t.notAuthenticated,
     t.profileNotFound,
     t.chatServerErrorPrefix,
     t.chatNetworkError,
@@ -949,7 +978,7 @@ function ChatClient() {
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key !== "Enter") return;
       if (e.shiftKey) return;
-      e.preventDefault(); // ✅ empêche le submit natif
+      e.preventDefault();
       if (sendingRef.current) return;
       void sendMessage();
     },
@@ -959,7 +988,6 @@ function ChatClient() {
   const avatarRingClass = canPulseAvatar ? "avatarRing avatarRing--live" : "avatarRing";
   const showVideoNow = !!avatarImageUrl && canPlayAvatarVideo && !!avatarVideoUrl && avatarPlaying;
 
-  // Tant que iaId est absent, on laisse le router.replace faire sa job
   if (!iaId) return <ChatSkeleton />;
 
   return (
@@ -1124,11 +1152,20 @@ function ChatClient() {
               className="composer__input"
               placeholder={t.inputPlaceholder(displayName)}
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={(e) => {
+                // ✅ maxLength fait déjà le gros du travail, mais on clamp quand même
+                const next = clampText(e.target.value, MAX_CHARS);
+                setNewMessage(next);
+                if (sendError) setSendError(null);
+              }}
               onKeyDown={handleComposerKeyDown}
               rows={1}
+              maxLength={MAX_CHARS}
               disabled={isBlocked && isFreePlan}
             />
+            <div className={"charCounter" + (charsLeft <= 30 ? " charCounter--warn" : "")}>
+              {t.charsLeft(charsLeft, MAX_CHARS)}
+            </div>
           </div>
 
           <div className="composer__actions">
@@ -1148,7 +1185,7 @@ function ChatClient() {
             <button
               type="submit"
               className="sendBtn"
-              disabled={sending || !newMessage.trim() || (isBlocked && isFreePlan)}
+              disabled={sending || !newMessage.trim() || isTooLong || (isBlocked && isFreePlan)}
               aria-label={t.send}
               title={sending ? t.sending : t.send}
             >
@@ -1159,7 +1196,6 @@ function ChatClient() {
 
         <p className="note">{t.notePrivate}</p>
 
-        {/* ✅ CSS minimal pour le petit avatar (si ton CSS global ne l’a pas déjà) */}
         <style jsx>{`
           .row {
             display: flex;
@@ -1190,8 +1226,24 @@ function ChatClient() {
             font-weight: 700;
             color: rgba(226, 232, 240, 0.9);
           }
+          .composer__field {
+            position: relative;
+          }
+          .charCounter {
+            position: absolute;
+            right: 10px;
+            bottom: 8px;
+            font-size: 12px;
+            opacity: 0.85;
+            color: rgba(148, 163, 184, 0.95);
+            user-select: none;
+          }
+          .charCounter--warn {
+            color: rgba(251, 113, 133, 0.95);
+            font-weight: 700;
+          }
         `}</style>
       </section>
     </main>
   );
-}
+    }
