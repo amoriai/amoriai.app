@@ -1,6 +1,14 @@
 "use client";
 
-import React, { FormEvent, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  FormEvent,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
@@ -78,7 +86,6 @@ type UiCopy = {
   tooLong: (max: number) => string;
   charsLeft: (left: number, max: number) => string;
 
-  // ✅ NEW: nudge quota
   freeRemainingLabel: (n: number) => string;
   freeNudgeTitle3: string;
   freeNudgeText3: string;
@@ -100,9 +107,12 @@ const STRINGS: Record<Locale, UiCopy> = {
     loading: "Ouverture du chat…",
 
     aiNotFoundTitle: "AmorIA introuvable",
-    genericError: "Impossible d’ouvrir cette conversation pour le moment. Réessaie dans quelques secondes.",
-    notAuthenticated: "Session introuvable. Actualise la page ou reconnecte-toi, puis réessaie.",
-    profileNotFound: "Aucune AmorIA trouvée. Va dans « Mes AmorIAI » pour en créer une, puis reviens ici.",
+    genericError:
+      "Impossible d’ouvrir cette conversation pour le moment. Réessaie dans quelques secondes.",
+    notAuthenticated:
+      "Session introuvable. Actualise la page ou reconnecte-toi, puis réessaie.",
+    profileNotFound:
+      "Aucune AmorIA trouvée. Va dans « Mes AmorIAI » pour en créer une, puis reviens ici.",
 
     paywallTitle: "🔒 Limite atteinte pour ton accès gratuit.",
     paywallText: "Pour continuer (et débloquer la voix), passe à AmorIAI Plus.",
@@ -132,16 +142,21 @@ const STRINGS: Record<Locale, UiCopy> = {
     myAmoria: "Mes AmorIAI",
     createAmoria: "Créer",
 
-    tooLong: (max) => `Ton message est trop long (max ${max} caractères pour ton forfait).`,
+    tooLong: (max) =>
+      `Ton message est trop long (max ${max} caractères pour ton forfait).`,
     charsLeft: (left, max) => `${left} / ${max}`,
 
-    freeRemainingLabel: (n) => `Il te reste ${n} message${n > 1 ? "s" : ""} gratuit${n > 1 ? "s" : ""}.`,
+    freeRemainingLabel: (n) =>
+      `Il te reste ${n} message${n > 1 ? "s" : ""} gratuit${n > 1 ? "s" : ""}.`,
     freeNudgeTitle3: "On est bien partis 🙂",
-    freeNudgeText3: "Il te reste peu de messages gratuits. Si tu veux qu’on garde le fil et qu’on approfondisse, Plus est idéal.",
+    freeNudgeText3:
+      "Il te reste peu de messages gratuits. Si tu veux qu’on garde le fil et qu’on approfondisse, Plus est idéal.",
     freeNudgeTitle1: "Dernier message gratuit…",
-    freeNudgeText1: "Si tu veux continuer juste après, passe à Plus pour garder la continuité (et activer la voix).",
+    freeNudgeText1:
+      "Si tu veux continuer juste après, passe à Plus pour garder la continuité (et activer la voix).",
     freeNudgeCta: "Continuer avec Plus",
   },
+
   en: {
     backHome: "← Home",
     title: (name) => `Chat with ${name}`,
@@ -156,7 +171,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     aiNotFoundTitle: "Companion not found",
     genericError: "We couldn’t open this conversation. Please try again.",
     notAuthenticated: "Session missing. Refresh or log in again, then retry.",
-    profileNotFound: "No AmorIA found. Go to “My AmorIAI” to create one, then come back.",
+    profileNotFound:
+      "No AmorIA found. Go to “My AmorIAI” to create one, then come back.",
 
     paywallTitle: "🔒 You’ve reached your free limit.",
     paywallText: "To continue (and unlock voice), upgrade to AmorIAI Plus.",
@@ -191,11 +207,14 @@ const STRINGS: Record<Locale, UiCopy> = {
 
     freeRemainingLabel: (n) => `${n} free message${n > 1 ? "s" : ""} left.`,
     freeNudgeTitle3: "We’re on a good track 🙂",
-    freeNudgeText3: "You’re close to the free limit. If you want continuity and deeper chat, Plus is best.",
+    freeNudgeText3:
+      "You’re close to the free limit. If you want continuity and deeper chat, Plus is best.",
     freeNudgeTitle1: "Last free message…",
-    freeNudgeText1: "If you want to continue right after, upgrade to Plus for continuity (and voice).",
+    freeNudgeText1:
+      "If you want to continue right after, upgrade to Plus for continuity (and voice).",
     freeNudgeCta: "Continue with Plus",
   },
+
   es: {
     backHome: "← Inicio",
     title: (name) => `Chat con ${name}`,
@@ -210,7 +229,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     aiNotFoundTitle: "Compañero no encontrado",
     genericError: "No pudimos abrir la conversación. Intenta de nuevo.",
     notAuthenticated: "Sesión no encontrada. Actualiza o vuelve a iniciar sesión.",
-    profileNotFound: "No se encontró ninguna AmorIA. Ve a “Mis AmorIAI” para crear una y vuelve aquí.",
+    profileNotFound:
+      "No se encontró ninguna AmorIA. Ve a “Mis AmorIAI” para crear una y vuelve aquí.",
 
     paywallTitle: "🔒 Has alcanzado tu límite gratuito.",
     paywallText: "Para continuar (y desbloquear la voz), pásate a AmorIAI Plus.",
@@ -240,14 +260,17 @@ const STRINGS: Record<Locale, UiCopy> = {
     myAmoria: "Mis AmorIAI",
     createAmoria: "Crear",
 
-    tooLong: (max) => `Tu mensaje es demasiado largo (máx. ${max} caracteres para tu plan).`,
+    tooLong: (max) =>
+      `Tu mensaje es demasiado largo (máx. ${max} caracteres para tu plan).`,
     charsLeft: (left, max) => `${left} / ${max}`,
 
     freeRemainingLabel: (n) => `Te quedan ${n} mensaje${n > 1 ? "s" : ""} gratis.`,
     freeNudgeTitle3: "Vamos bien 🙂",
-    freeNudgeText3: "Estás cerca del límite gratis. Si quieres continuidad y más profundidad, Plus es ideal.",
+    freeNudgeText3:
+      "Estás cerca del límite gratis. Si quieres continuidad y más profundidad, Plus es ideal.",
     freeNudgeTitle1: "Último mensaje gratis…",
-    freeNudgeText1: "Si quieres seguir justo después, pásate a Plus para mantener la continuidad (y voz).",
+    freeNudgeText1:
+      "Si quieres seguir justo después, pásate a Plus para mantener la continuidad (y voz).",
     freeNudgeCta: "Seguir con Plus",
   },
 };
@@ -255,11 +278,14 @@ const STRINGS: Record<Locale, UiCopy> = {
 function normalizeLocale(raw: string | null): Locale {
   return raw === "fr" || raw === "en" || raw === "es" ? raw : "fr";
 }
+
 function normalizePlan(raw: string | null): PlanId {
-  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited" ? raw : "free";
+  return raw === "free" || raw === "chat" || raw === "plus" || raw === "unlimited"
+    ? raw
+    : "free";
 }
 
-/** ✅ Limites de longueur par plan (AJUSTE ICI) */
+/** Limites de longueur par plan (UI) */
 function maxCharsForPlan(plan: PlanId): number {
   switch (plan) {
     case "free":
@@ -288,73 +314,16 @@ export default function ChatPage() {
   );
 }
 
+/** Skeleton sans CSS inline (tu as ton CSS à part) */
 function ChatSkeleton() {
   return (
     <main className="chat-shell">
-      <div className="chat-shell__loader">
+      <div className="chat-shell__loader" aria-label="Loading">
         <span className="chat-shell__dot" />
         <span className="chat-shell__dot" />
         <span className="chat-shell__dot" />
       </div>
       <p className="chat-shell__text">Chargement…</p>
-
-      <style jsx>{`
-        .chat-shell {
-          min-height: 100vh;
-          display: grid;
-          place-items: center;
-          padding: 24px 16px;
-          color: rgba(226, 232, 240, 0.92);
-          background: radial-gradient(1200px 800px at 50% -10%, rgba(251, 55, 255, 0.25), transparent 60%),
-            radial-gradient(900px 700px at 90% 10%, rgba(56, 189, 248, 0.22), transparent 55%),
-            radial-gradient(1000px 900px at 10% 25%, rgba(249, 115, 22, 0.14), transparent 60%),
-            linear-gradient(180deg, #020617, #000);
-          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
-            "Segoe UI Emoji";
-        }
-        .chat-shell__loader {
-          display: inline-flex;
-          gap: 10px;
-          align-items: center;
-          justify-content: center;
-          padding: 14px 18px;
-          border-radius: 999px;
-          border: 1px solid rgba(148, 163, 184, 0.22);
-          background: rgba(2, 6, 23, 0.55);
-          box-shadow: 0 16px 60px rgba(15, 23, 42, 0.9);
-          backdrop-filter: blur(10px);
-        }
-        .chat-shell__dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 999px;
-          background: rgba(226, 232, 240, 0.85);
-          animation: chatDot 900ms ease-in-out infinite;
-        }
-        .chat-shell__dot:nth-child(2) {
-          animation-delay: 120ms;
-        }
-        .chat-shell__dot:nth-child(3) {
-          animation-delay: 240ms;
-        }
-        .chat-shell__text {
-          margin-top: 14px;
-          font-size: 0.9rem;
-          color: rgba(148, 163, 184, 0.9);
-          text-align: center;
-        }
-        @keyframes chatDot {
-          0%,
-          100% {
-            transform: translateY(0);
-            opacity: 0.45;
-          }
-          50% {
-            transform: translateY(-6px);
-            opacity: 1;
-          }
-        }
-      `}</style>
     </main>
   );
 }
@@ -395,7 +364,7 @@ function ChatClient() {
 
   const [isBlocked, setIsBlocked] = useState(false);
 
-  // ✅ NEW: remaining quota (free)
+  // remaining quota (free)
   const [freeRemaining, setFreeRemaining] = useState<number | null>(null);
   const lastNudgeRef = useRef<"none" | "n3" | "n1">("none");
 
@@ -418,9 +387,11 @@ function ChatClient() {
   const isPaidPlan = !isFreePlan;
 
   const MAX_CHARS = useMemo(() => maxCharsForPlan(planId), [planId]);
-  const charsLeft = useMemo(() => Math.max(0, MAX_CHARS - newMessage.length), [MAX_CHARS, newMessage.length]);
+  const charsLeft = useMemo(
+    () => Math.max(0, MAX_CHARS - newMessage.length),
+    [MAX_CHARS, newMessage.length]
+  );
 
-  // Avec maxLength + clamp, ça ne dépassera pas, mais on garde la sécurité.
   const isTooLong = useMemo(() => newMessage.length > MAX_CHARS, [newMessage.length, MAX_CHARS]);
 
   const canCreate = useMemo(() => {
@@ -430,6 +401,7 @@ function ChatClient() {
 
   const displayName = useMemo(() => (ai?.name?.trim() || "AmorIAI").trim(), [ai?.name]);
   const displayNameUpper = useMemo(() => displayName.toUpperCase(), [displayName]);
+
   const avatarImageUrl = ai?.avatar_image_url ?? null;
 
   const avatarVideoUrl = useMemo(() => {
@@ -516,7 +488,7 @@ function ChatClient() {
     autoGrow();
   }, [newMessage, autoGrow]);
 
-  // 1) plan + quota IA
+  // 1) Plan + quota + init remaining (free)
   useEffect(() => {
     let cancelled = false;
 
@@ -605,6 +577,30 @@ function ChatClient() {
 
         if (code !== "unlimited") setAvatarPlaying(false);
 
+        // ✅ Init remaining (free) : appelle /api/chat/quota si tu l’as
+        // (si l’endpoint n’existe pas, ça fail silencieux et ta logique /api/chat continuera à setRemaining)
+        if (!code || code === "free") {
+          try {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const accessToken = sessionData?.session?.access_token;
+            if (accessToken) {
+              const r = await fetch("/api/chat/quota", {
+                headers: { Authorization: `Bearer ${accessToken}` },
+              });
+              if (r.ok) {
+                const q = await r.json().catch(() => ({}));
+                if (typeof q?.chat_remaining === "number") {
+                  setFreeRemaining(Math.max(0, Math.floor(q.chat_remaining)));
+                }
+              }
+            }
+          } catch {
+            // silence
+          }
+        } else {
+          setFreeRemaining(null);
+        }
+
         const countRes = await supabase
           .from("user_amoria")
           .select("id", { count: "exact", head: true })
@@ -640,7 +636,8 @@ function ChatClient() {
       return;
     }
     if (typeof window === "undefined") return;
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     setSttSupported(!!SpeechRecognition);
   }, [canUseVoice]);
 
@@ -648,7 +645,8 @@ function ChatClient() {
     if (!canUseVoice || isBlocked) return;
     if (typeof window === "undefined") return;
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
@@ -712,7 +710,12 @@ function ChatClient() {
       }
 
       try {
-        const { data, error } = await supabase.from("user_amoria").select("*").eq("id", iaId).maybeSingle();
+        const { data, error } = await supabase
+          .from("user_amoria")
+          .select("*")
+          .eq("id", iaId)
+          .maybeSingle();
+
         if (cancelled) return;
         if (error || !data) setAiError(t.genericError);
         else setAi(data as AmoriaRow);
@@ -826,7 +829,10 @@ function ChatClient() {
 
         const res = await fetch("/api/voice", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
           body: JSON.stringify({ iaId, text }),
           signal: ac.signal,
         });
@@ -884,10 +890,20 @@ function ChatClient() {
         voiceBusyRef.current = false;
       }
     },
-    [canUseVoice, isBlocked, voiceEnabled, audioUnlocked, iaId, t.notAuthenticated, t.voiceLimitReached, t.voiceServerError, t.voiceNetworkError]
+    [
+      canUseVoice,
+      isBlocked,
+      voiceEnabled,
+      audioUnlocked,
+      iaId,
+      t.notAuthenticated,
+      t.voiceLimitReached,
+      t.voiceServerError,
+      t.voiceNetworkError,
+    ]
   );
 
-  // ✅ NEW: afficher nudge selon remaining
+  // Nudge UI selon remaining
   const nudge = useMemo(() => {
     if (!isFreePlan) return null;
     if (isBlocked) return null;
@@ -901,7 +917,15 @@ function ChatClient() {
       return { kind: "n3" as const, title: t.freeNudgeTitle3, text: t.freeNudgeText3 };
     }
     return null;
-  }, [isFreePlan, isBlocked, freeRemaining, t.freeNudgeTitle1, t.freeNudgeText1, t.freeNudgeTitle3, t.freeNudgeText3]);
+  }, [
+    isFreePlan,
+    isBlocked,
+    freeRemaining,
+    t.freeNudgeTitle1,
+    t.freeNudgeText1,
+    t.freeNudgeTitle3,
+    t.freeNudgeText3,
+  ]);
 
   // 6) Send message
   const sendMessage = useCallback(async () => {
@@ -947,7 +971,10 @@ function ChatClient() {
 
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({ iaId, message: content, lang: locale }),
         signal: ac.signal,
       });
@@ -957,7 +984,6 @@ function ChatClient() {
         data = await res.json();
       } catch {}
 
-      // ✅ Bloquer proprement si quota atteint (status 429 ou erreur quota)
       const quotaHit =
         res.status === 429 ||
         data?.error === "quota_exceeded" ||
@@ -974,15 +1000,16 @@ function ChatClient() {
         if (data?.error === "not_authenticated") return setSendError(t.notAuthenticated);
         if (data?.error === "profile_not_found") return setSendError(t.profileNotFound);
         if (data?.message) return setSendError(data.message);
-        return setSendError(t.chatServerErrorPrefix + (data?.error ?? "Unable to send message."));
+        return setSendError(
+          t.chatServerErrorPrefix + (data?.error ?? "Unable to send message.")
+        );
       }
 
-      // ✅ mettre à jour remaining si fourni par l’API
+      // Update remaining si fourni par /api/chat
       if (isFreePlan && typeof data?.chat_remaining === "number") {
         const r = Math.max(0, Math.floor(data.chat_remaining));
         setFreeRemaining(r);
 
-        // éviter de “spam” le nudge : on le montre une fois par seuil
         if (r === 1 && lastNudgeRef.current !== "n1") lastNudgeRef.current = "n1";
         else if (r <= 3 && lastNudgeRef.current === "none") lastNudgeRef.current = "n3";
       }
@@ -1019,16 +1046,11 @@ function ChatClient() {
     stopRecording,
     locale,
     isFreePlan,
-    t.notAuthenticated,
-    t.profileNotFound,
-    t.chatServerErrorPrefix,
-    t.chatNetworkError,
     triggerAvatarAnimation,
     canUseVoice,
     voiceEnabled,
     audioUnlocked,
     playAssistantVoice,
-    isFreePlan,
   ]);
 
   const handleSubmit = useCallback(
@@ -1051,7 +1073,8 @@ function ChatClient() {
   );
 
   const avatarRingClass = canPulseAvatar ? "avatarRing avatarRing--live" : "avatarRing";
-  const showVideoNow = !!avatarImageUrl && canPlayAvatarVideo && !!avatarVideoUrl && avatarPlaying;
+  const showVideoNow =
+    !!avatarImageUrl && canPlayAvatarVideo && !!avatarVideoUrl && avatarPlaying;
 
   if (!iaId) return <ChatSkeleton />;
 
@@ -1113,7 +1136,11 @@ function ChatClient() {
                     />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={avatarImageUrl} alt={`Avatar de ${displayName}`} className="avatarImg" />
+                    <img
+                      src={avatarImageUrl}
+                      alt={`Avatar de ${displayName}`}
+                      className="avatarImg"
+                    />
                   )
                 ) : (
                   <div className="avatarFallback">{displayName.charAt(0).toUpperCase()}</div>
@@ -1126,7 +1153,11 @@ function ChatClient() {
               {canUseVoice && !isBlocked && (
                 <div className="voiceToggle">
                   {!audioUnlocked ? (
-                    <button type="button" className="pillBtn pillBtn--ghost" onClick={() => void unlockAudio()}>
+                    <button
+                      type="button"
+                      className="pillBtn pillBtn--ghost"
+                      onClick={() => void unlockAudio()}
+                    >
                       {t.voiceUnlock}
                     </button>
                   ) : (
@@ -1146,7 +1177,7 @@ function ChatClient() {
           )}
         </div>
 
-        {/* ✅ NEW: petite barre “remaining” (soft) */}
+        {/* Remaining bar (free) */}
         {!isBlocked && isFreePlan && typeof freeRemaining === "number" && freeRemaining > 0 && (
           <div className={"remainBar" + (freeRemaining <= 3 ? " remainBar--hot" : "")}>
             <span className="remainBar__dot" aria-hidden="true" />
@@ -1193,7 +1224,7 @@ function ChatClient() {
 
         {sendError && <p className="error">{sendError}</p>}
 
-        {/* ✅ NEW: NUDGE UI “Replika-like” quand <= 3 */}
+        {/* Nudge quand <= 3 */}
         {!isBlocked && isFreePlan && nudge && (
           <div className="nudge">
             <div className="nudge__left">
@@ -1206,7 +1237,7 @@ function ChatClient() {
           </div>
         )}
 
-        {/* Promo standard (quand free mais pas encore “hot”) */}
+        {/* Promo standard */}
         {!isBlocked && isFreePlan && (!nudge || freeRemaining == null || freeRemaining > 3) && (
           <div className="promo">
             <div className="badge">PLUS</div>
@@ -1220,6 +1251,7 @@ function ChatClient() {
           </div>
         )}
 
+        {/* Paywall */}
         {isBlocked && isFreePlan && (
           <div className="paywall">
             <div className="badge">PLUS</div>
@@ -1252,7 +1284,10 @@ function ChatClient() {
               maxLength={MAX_CHARS}
               disabled={isBlocked && isFreePlan}
             />
-            <div className={"charCounter" + (charsLeft <= 30 ? " charCounter--warn" : "")}>{t.charsLeft(charsLeft, MAX_CHARS)}</div>
+
+            <div className={"charCounter" + (charsLeft <= 30 ? " charCounter--warn" : "")}>
+              {t.charsLeft(charsLeft, MAX_CHARS)}
+            </div>
           </div>
 
           <div className="composer__actions">
@@ -1282,124 +1317,7 @@ function ChatClient() {
         </form>
 
         <p className="note">{t.notePrivate}</p>
-
-        <style jsx>{`
-          .row {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
-          }
-          .row--user {
-            justify-content: flex-end;
-          }
-          .row__left {
-            width: 28px;
-            flex: 0 0 28px;
-            display: grid;
-            place-items: center;
-          }
-          .msgAvatar {
-            width: 26px;
-            height: 26px;
-            border-radius: 999px;
-            object-fit: cover;
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            background: rgba(2, 6, 23, 0.6);
-          }
-          .msgAvatar--fallback {
-            display: grid;
-            place-items: center;
-            font-size: 12px;
-            font-weight: 700;
-            color: rgba(226, 232, 240, 0.9);
-          }
-          .composer__field {
-            position: relative;
-          }
-          .charCounter {
-            position: absolute;
-            right: 10px;
-            bottom: 8px;
-            font-size: 12px;
-            opacity: 0.85;
-            color: rgba(148, 163, 184, 0.95);
-            user-select: none;
-          }
-          .charCounter--warn {
-            color: rgba(251, 113, 133, 0.95);
-            font-weight: 700;
-          }
-
-          /* ✅ NEW: remaining bar */
-          .remainBar {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 10px 0 12px;
-            padding: 10px 12px;
-            border-radius: 14px;
-            border: 1px solid rgba(148, 163, 184, 0.22);
-            background: rgba(2, 6, 23, 0.55);
-            backdrop-filter: blur(10px);
-          }
-          .remainBar--hot {
-            border-color: rgba(251, 113, 133, 0.35);
-            box-shadow: 0 12px 40px rgba(15, 23, 42, 0.55);
-          }
-          .remainBar__dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 999px;
-            background: rgba(226, 232, 240, 0.9);
-            opacity: 0.8;
-          }
-          .remainBar__text {
-            flex: 1;
-            font-size: 0.9rem;
-            color: rgba(226, 232, 240, 0.92);
-          }
-          .remainBar__cta {
-            border: 1px solid rgba(148, 163, 184, 0.22);
-            background: rgba(30, 41, 59, 0.45);
-            color: rgba(226, 232, 240, 0.95);
-            padding: 8px 10px;
-            border-radius: 999px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            cursor: pointer;
-          }
-
-          /* ✅ NEW: nudge */
-          .nudge {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-top: 10px;
-            padding: 12px 12px;
-            border-radius: 16px;
-            border: 1px solid rgba(251, 113, 133, 0.28);
-            background: rgba(2, 6, 23, 0.62);
-            box-shadow: 0 18px 60px rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(10px);
-          }
-          .nudge__left {
-            flex: 1;
-            min-width: 0;
-          }
-          .nudge__title {
-            margin: 0 0 4px;
-            font-weight: 900;
-            letter-spacing: 0.2px;
-            color: rgba(226, 232, 240, 0.96);
-          }
-          .nudge__text {
-            margin: 0;
-            color: rgba(148, 163, 184, 0.98);
-            font-size: 0.92rem;
-            line-height: 1.25rem;
-          }
-        `}</style>
       </section>
     </main>
   );
-                                 }
+                                         }
