@@ -1,3 +1,4 @@
+// app/api/chat/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -8,6 +9,9 @@ import { createClient } from "@supabase/supabase-js";
    IMPORTANT: on consomme le quota SEULEMENT après succès OpenAI
    + On avertit AVANT la fin (ex: 5/3/1 messages restants)
 =========================== */
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 type PlanCode = "free" | "chat" | "plus" | "unlimited";
 type Lang = "fr" | "en" | "es";
@@ -91,7 +95,7 @@ const I18N = {
 } as const;
 
 function hasBearer(authHeader: string) {
-  return /^Bearer\s+.+$/i.test(authHeader.trim());
+  return /^Bearer\s+.+$/i.test((authHeader ?? "").trim());
 }
 
 function jsonError(_safeLang: Lang, status: number, payload: Record<string, any>) {
@@ -99,7 +103,7 @@ function jsonError(_safeLang: Lang, status: number, payload: Record<string, any>
 }
 
 // Petit helper timeout fetch
-async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, timeoutMs: number) {
+async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: number) {
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), timeoutMs);
   try {
@@ -116,7 +120,7 @@ export async function POST(req: Request) {
       iaId?: string;
       message?: string;
       lang?: Lang;
-      withAudio?: boolean;
+      withAudio?: boolean; // optionnel (si tu veux renvoyer audio direct). Sinon /api/voice séparé.
     };
 
     const safeLang = normalizeLang(lang);
@@ -125,10 +129,7 @@ export async function POST(req: Request) {
 
     const rawMessage = typeof message === "string" ? message : "";
     const trimmedMessage = rawMessage.trim();
-
-    if (!trimmedMessage) {
-      return jsonError(safeLang, 400, { error: I18N.missingMessage[safeLang] });
-    }
+    if (!trimmedMessage) return jsonError(safeLang, 400, { error: I18N.missingMessage[safeLang] });
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -154,6 +155,7 @@ export async function POST(req: Request) {
 
     const supabaseAuth = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false },
     });
 
     const {
@@ -171,7 +173,9 @@ export async function POST(req: Request) {
     /* ===========================
        2) Admin client (lecture des plans, vérif IA)
     =========================== */
-    const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false },
+    });
 
     const { data: iaRow, error: iaError } = await supabaseAdmin
       .from("user_amoria")
@@ -194,10 +198,9 @@ export async function POST(req: Request) {
     =========================== */
     let planCode: PlanCode = "free";
     let planName = "Free";
+
     let hasVoiceFromPlan = false;
     let voiceLimitFromPlan = 0;
-
-    // quota messages mensuel vient de Supabase pricing_plans.message_limit
     let messageLimitFromPlan = 0;
 
     const { data: subscription, error: subErr } = await supabaseAdmin
@@ -221,7 +224,6 @@ export async function POST(req: Request) {
         planName = (plan as any).name ?? planName;
 
         messageLimitFromPlan = Number((plan as any).message_limit ?? 0);
-
         hasVoiceFromPlan = !!(plan as any).has_voice;
         voiceLimitFromPlan = Number((plan as any).voice_limit ?? 0);
       } else {
@@ -288,6 +290,7 @@ export async function POST(req: Request) {
             { role: "system", content: languageLock },
             { role: "user", content: trimmedMessage },
           ],
+          temperature: 0.8,
         }),
       },
       25_000
@@ -405,9 +408,9 @@ export async function POST(req: Request) {
     }
 
     /* ===========================
-       8) Voix optionnelle (selon plan) + QUOTA MENSUEL VOICE
-       RPC attendu: consume_monthly_voice(quota int)
-       IMPORTANT: texte est toujours renvoyé, audio est un bonus
+       8) Audio optionnel (si tu l’utilises)
+       IMPORTANT: ton front actuel utilise /api/voice séparé,
+       donc withAudio sera généralement false.
     =========================== */
     const allowAudioRequested = !!withAudio;
     const allowAudioByPlan = hasVoiceFromPlan && voiceLimitFromPlan > 0;
@@ -479,7 +482,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       reply: text,
 
-      // audio
+      // audio (optionnel)
       audioBase64,
       audioMimeType,
 
@@ -492,7 +495,7 @@ export async function POST(req: Request) {
       iaName: iaRow.name,
 
       // quotas (chat)
-      chat_quota_type: planCode === "free" ? "lifetime" : "monthly",
+      chat_quota_type: chatQuotaType,
       chat_quota: planCode === "free" ? FREE_LIFETIME_QUOTA : chatQuota,
       chat_remaining: chatUsage?.remaining ?? null,
 
@@ -515,4 +518,4 @@ export async function POST(req: Request) {
     console.error("Server error in /api/chat:", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-         }
+           }
