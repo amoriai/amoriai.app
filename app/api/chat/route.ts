@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 /* ===========================
    QUOTAS
-   - Paid: par mois
+   - Paid: par mois (message_limit dans pricing_plans)
    - Free: 40 une seule fois (lifetime)
    IMPORTANT: on consomme le quota SEULEMENT après succès OpenAI
 =========================== */
@@ -20,19 +20,6 @@ const MAX_CHARS_BY_PLAN: Record<PlanCode, number> = {
   plus: 2200,
   unlimited: 3500,
 };
-
-function monthlyQuotaForPaid(plan: PlanCode) {
-  switch (plan) {
-    case "chat":
-      return 400;
-    case "plus":
-      return 1000;
-    case "unlimited":
-      return 10000;
-    default:
-      return 0;
-  }
-}
 
 function normalizePlanCode(raw: unknown): PlanCode {
   const v = String(raw ?? "").toLowerCase();
@@ -80,11 +67,7 @@ function hasBearer(authHeader: string) {
   return /^Bearer\s+.+$/i.test(authHeader.trim());
 }
 
-function jsonError(
-  safeLang: Lang,
-  status: number,
-  payload: Record<string, any>
-) {
+function jsonError(safeLang: Lang, status: number, payload: Record<string, any>) {
   return NextResponse.json(payload, { status });
 }
 
@@ -93,8 +76,7 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit, tim
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), timeoutMs);
   try {
-    const res = await fetch(input, { ...init, signal: ac.signal });
-    return res;
+    return await fetch(input, { ...init, signal: ac.signal });
   } finally {
     clearTimeout(t);
   }
@@ -188,6 +170,9 @@ export async function POST(req: Request) {
     let hasVoiceFromPlan = false;
     let voiceLimitFromPlan = 0;
 
+    // ✅ nouveau: quota messages mensuel vient de Supabase pricing_plans.message_limit
+    let messageLimitFromPlan = 0;
+
     const { data: subscription, error: subErr } = await supabaseAdmin
       .from("user_subscriptions")
       .select("pricing_plan_id, status")
@@ -200,19 +185,25 @@ export async function POST(req: Request) {
     if (subscription?.pricing_plan_id) {
       const { data: plan, error: planError } = await supabaseAdmin
         .from("pricing_plans")
-        .select("code, name, has_voice, voice_limit")
+        .select("code, name, message_limit, has_voice, voice_limit")
         .eq("id", subscription.pricing_plan_id)
         .single();
 
       if (!planError && plan) {
-        planCode = normalizePlanCode(plan.code);
-        planName = plan.name ?? planName;
-        hasVoiceFromPlan = !!plan.has_voice;
-        voiceLimitFromPlan = Number(plan.voice_limit ?? 0);
+        planCode = normalizePlanCode((plan as any).code);
+        planName = (plan as any).name ?? planName;
+
+        messageLimitFromPlan = Number((plan as any).message_limit ?? 0);
+
+        hasVoiceFromPlan = !!(plan as any).has_voice;
+        voiceLimitFromPlan = Number((plan as any).voice_limit ?? 0);
       } else {
         if (planError) console.error("planError:", planError);
         planCode = "free";
         planName = "Free";
+        messageLimitFromPlan = 0;
+        hasVoiceFromPlan = false;
+        voiceLimitFromPlan = 0;
       }
     }
 
@@ -287,7 +278,7 @@ export async function POST(req: Request) {
     /* ===========================
        6) QUOTA CHAT (consommer APRÈS succès OpenAI)
        - Free: lifetime 40 -> RPC consume_free_message_once(quota)
-       - Paid: monthly -> RPC consume_monthly_message(quota)
+       - Paid: monthly -> RPC consume_monthly_message(quota = pricing_plans.message_limit)
     =========================== */
     let chatQuotaType: "lifetime" | "monthly" = "monthly";
     let chatQuota = 0;
@@ -322,7 +313,7 @@ export async function POST(req: Request) {
       }
     } else {
       chatQuotaType = "monthly";
-      chatQuota = monthlyQuotaForPaid(planCode);
+      chatQuota = Math.max(0, messageLimitFromPlan);
 
       const { data, error } = await supabaseAuth.rpc("consume_monthly_message", {
         quota: chatQuota,
@@ -460,7 +451,7 @@ export async function POST(req: Request) {
 
       // quotas (chat)
       chat_quota_type: planCode === "free" ? "lifetime" : "monthly",
-      chat_quota: planCode === "free" ? FREE_LIFETIME_QUOTA : monthlyQuotaForPaid(planCode),
+      chat_quota: planCode === "free" ? FREE_LIFETIME_QUOTA : chatQuota,
       chat_remaining: chatUsage?.remaining ?? null,
 
       // quotas (voice)
