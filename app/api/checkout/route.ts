@@ -13,6 +13,9 @@ type Locale = "fr" | "en" | "es";
 
 const PLANS_TABLE = "pricing_plans";
 
+// ✅ Trial
+const TRIAL_DAYS = 3;
+
 // =======================================================
 // Helpers
 // =======================================================
@@ -85,6 +88,26 @@ export async function POST(req: Request) {
     const user_id = userData.user.id;
     const user_email = userData.user.email ?? null;
 
+    // ✅ Optionnel mais utile : éviter de recréer une subscription si déjà active/trialing
+    // (Assure-toi que cette table existe et a ces colonnes)
+    try {
+      const { data: existingSub, error: existingErr } = await supabaseAdmin
+        .from("user_subscriptions")
+        .select("status, pricing_plan_id")
+        .eq("user_id", user_id)
+        .in("status", ["active", "trialing"])
+        .maybeSingle();
+
+      if (!existingErr && existingSub?.status) {
+        // On le renvoie vers "My AmorIA" (ou pricing) plutôt que créer un nouveau checkout
+        const site = cleanUrl(SITE_URL);
+        const alreadyUrl = `${site}/my-amoria?lang=${encodeURIComponent(lang)}&already_subscribed=1`;
+        return NextResponse.json({ url: alreadyUrl, session_id: null }, { status: 200 });
+      }
+    } catch {
+      // Si la table n'existe pas, on ignore et on continue
+    }
+
     // Get Stripe price from DB
     const { data: planRow, error: planErr } = await supabaseAdmin
       .from(PLANS_TABLE)
@@ -106,7 +129,7 @@ export async function POST(req: Request) {
 
     const cancelUrl = `${site}/pricing?lang=${encodeURIComponent(lang)}&canceled=1`;
 
-    // Create Stripe Checkout Session (subscription)
+    // ✅ Create Stripe Checkout Session (subscription) + TRIAL 3 jours
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
@@ -127,6 +150,16 @@ export async function POST(req: Request) {
         lang,
       },
 
+      // ✅ Trial 3 jours directement sur la subscription
+      subscription_data: {
+        trial_period_days: TRIAL_DAYS,
+        metadata: {
+          user_id,
+          plan,
+          lang,
+        },
+      },
+
       // Optionnel: garde le comportement standard
       payment_method_collection: "always",
     });
@@ -134,13 +167,10 @@ export async function POST(req: Request) {
     if (!session.url) return jsonError("Session Stripe créée, mais URL manquante.", 500);
 
     // Retourne url + session_id (pratique pour sync/debug)
-    return NextResponse.json(
-      { url: session.url, session_id: session.id },
-      { status: 200 }
-    );
+    return NextResponse.json({ url: session.url, session_id: session.id }, { status: 200 });
   } catch (err: unknown) {
     console.error("[checkout] ERROR:", err);
     const msg = err instanceof Error ? err.message : "Erreur serveur checkout.";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
-      }
+}
