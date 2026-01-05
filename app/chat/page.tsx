@@ -99,7 +99,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     backHome: "← Accueil",
     title: (name) => `Chat avec ${name}`,
     subtitle: (name) => `${name} est là. Tu peux parler librement, à ton rythme.`,
-    emptyState: (name) => `Aucun message pour l’instant. Dis simplement “salut” à ${name} 💬`,
+    emptyState: (name) => `Je suis là. Prends ton temps, je t'écoute.💬`,
     inputPlaceholder: (name) => `Écris à ${name}…`,
 
     send: "Envoyer",
@@ -161,7 +161,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     backHome: "← Home",
     title: (name) => `Chat with ${name}`,
     subtitle: (name) => `${name} is here. Take your time.`,
-    emptyState: (name) => `No messages yet. Say “hi” to ${name} 💬`,
+    emptyState: (name) => `I'm here. Take your time, I'm listening.💬`,
     inputPlaceholder: (name) => `Write to ${name}…`,
 
     send: "Send",
@@ -219,7 +219,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     backHome: "← Inicio",
     title: (name) => `Chat con ${name}`,
     subtitle: (name) => `${name} está aquí. Tómate tu tiempo.`,
-    emptyState: (name) => `Aún no hay mensajes. Di “hola” a ${name} 💬`,
+    emptyState: (name) => `Estoy aquí. Tómate tu tiempo, te escucho.💬`,
     inputPlaceholder: (name) => `Escribe a ${name}…`,
 
     send: "Enviar",
