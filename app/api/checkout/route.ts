@@ -13,9 +13,6 @@ type Locale = "fr" | "en" | "es";
 
 const PLANS_TABLE = "pricing_plans";
 
-// ✅ Trial
-const TRIAL_DAYS = 3;
-
 // =======================================================
 // Helpers
 // =======================================================
@@ -88,24 +85,23 @@ export async function POST(req: Request) {
     const user_id = userData.user.id;
     const user_email = userData.user.email ?? null;
 
-    // ✅ Optionnel mais utile : éviter de recréer une subscription si déjà active/trialing
-    // (Assure-toi que cette table existe et a ces colonnes)
+    // ✅ Anti-doublon : si déjà active/trialing, on évite de recréer un checkout
+    // (d’après ta capture, la colonne est "stripe_status")
     try {
       const { data: existingSub, error: existingErr } = await supabaseAdmin
         .from("user_subscriptions")
-        .select("status, pricing_plan_id")
+        .select("stripe_status, stripe_price_id")
         .eq("user_id", user_id)
-        .in("status", ["active", "trialing"])
+        .in("stripe_status", ["active", "trialing"])
         .maybeSingle();
 
-      if (!existingErr && existingSub?.status) {
-        // On le renvoie vers "My AmorIA" (ou pricing) plutôt que créer un nouveau checkout
+      if (!existingErr && existingSub?.stripe_status) {
         const site = cleanUrl(SITE_URL);
         const alreadyUrl = `${site}/my-amoria?lang=${encodeURIComponent(lang)}&already_subscribed=1`;
         return NextResponse.json({ url: alreadyUrl, session_id: null }, { status: 200 });
       }
     } catch {
-      // Si la table n'existe pas, on ignore et on continue
+      // Si table/colonnes différentes, on ignore et on continue
     }
 
     // Get Stripe price from DB
@@ -122,14 +118,12 @@ export async function POST(req: Request) {
 
     // URLs
     const site = cleanUrl(SITE_URL);
-
     const successUrl =
       `${site}/my-amoria?lang=${encodeURIComponent(lang)}` +
       `&session_id={CHECKOUT_SESSION_ID}&paid=1`;
-
     const cancelUrl = `${site}/pricing?lang=${encodeURIComponent(lang)}&canceled=1`;
 
-    // ✅ Create Stripe Checkout Session (subscription) + TRIAL 3 jours
+    // ✅ Create Stripe Checkout Session (subscription) — SANS TRIAL (test enlevé)
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
@@ -150,9 +144,8 @@ export async function POST(req: Request) {
         lang,
       },
 
-      // ✅ Trial 3 jours directement sur la subscription
+      // Metadata aussi sur la subscription (utile pour webhook invoice/subscription)
       subscription_data: {
-        trial_period_days: TRIAL_DAYS,
         metadata: {
           user_id,
           plan,
@@ -160,17 +153,16 @@ export async function POST(req: Request) {
         },
       },
 
-      // Optionnel: garde le comportement standard
+      // Comportement standard
       payment_method_collection: "always",
     });
 
     if (!session.url) return jsonError("Session Stripe créée, mais URL manquante.", 500);
 
-    // Retourne url + session_id (pratique pour sync/debug)
     return NextResponse.json({ url: session.url, session_id: session.id }, { status: 200 });
   } catch (err: unknown) {
     console.error("[checkout] ERROR:", err);
     const msg = err instanceof Error ? err.message : "Erreur serveur checkout.";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
-}
+    }
