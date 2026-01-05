@@ -1,17 +1,28 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const FREE_LIFETIME_QUOTA = 40;
+
+type PlanCode = "free" | "chat" | "plus" | "unlimited";
 
 function hasBearer(authHeader: string) {
   return /^Bearer\s+.+$/i.test((authHeader || "").trim());
 }
 
+function normalizePlanCode(raw: unknown): PlanCode {
+  const v = String(raw ?? "").toLowerCase();
+  if (v === "chat" || v === "plus" || v === "unlimited") return v;
+  return "free";
+}
+
 export async function GET(req: Request) {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
     if (!supabaseUrl || !anonKey || !serviceKey) {
       return NextResponse.json({ error: "supabase_env_missing" }, { status: 500 });
@@ -22,65 +33,87 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "missing_or_invalid_authorization" }, { status: 401 });
     }
 
-    // user via JWT
+    // 1) Resolve user via JWT (anon key + Authorization header)
     const supabaseAuth = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false },
     });
 
     const { data: userData, error: userError } = await supabaseAuth.auth.getUser();
-    if (userError || !userData?.user) {
+    const user = userData?.user;
+
+    if (userError || !user) {
       return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
     }
 
-    const userId = userData.user.id;
+    const userId = user.id;
 
-    // admin to read plan
-    const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+    // 2) Admin client (service role) to read subscription/plan
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false },
+    });
 
-    const { data: sub } = await supabaseAdmin
+    // Prefer "current=true" if you use it; fallback to status=active
+    const { data: subCurrent } = await supabaseAdmin
       .from("user_subscriptions")
-      .select("pricing_plan_id, status")
+      .select("pricing_plan_id, status, current")
       .eq("user_id", userId)
-      .eq("status", "active")
+      .eq("current", true)
       .maybeSingle();
 
-    let planCode: "free" | "chat" | "plus" | "unlimited" = "free";
+    const { data: subActive } = !subCurrent
+      ? await supabaseAdmin
+          .from("user_subscriptions")
+          .select("pricing_plan_id, status")
+          .eq("user_id", userId)
+          .eq("status", "active")
+          .maybeSingle()
+      : { data: null as any };
+
+    const sub = subCurrent ?? subActive;
+
+    let planCode: PlanCode = "free";
 
     if (sub?.pricing_plan_id) {
-      const { data: plan } = await supabaseAdmin
+      const { data: planRow } = await supabaseAdmin
         .from("pricing_plans")
         .select("code")
         .eq("id", sub.pricing_plan_id)
         .maybeSingle();
 
-      const code = String(plan?.code ?? "").toLowerCase();
-      if (code === "chat" || code === "plus" || code === "unlimited") planCode = code as any;
+      planCode = normalizePlanCode(planRow?.code);
     }
 
-    // ✅ pour le moment on renvoie remaining seulement si free
+    // 3) If paid: no remaining/quota needed (UI uses unlimited by plan)
     if (planCode !== "free") {
-      return NextResponse.json({ planCode, chat_remaining: null, chat_quota: null });
+      return NextResponse.json({
+        planCode,
+        chat_quota: null,
+        chat_remaining: null,
+      });
     }
 
-    // IMPORTANT: suppose que tu as une table/state qui conserve "used" lifetime
-    // Ici, on appelle une RPC NON destructive qui ne consomme rien.
-    // 👉 Je te donne 2 options :
-    // A) Tu as déjà une RPC "get_free_remaining()"
-    // B) Sinon on lit une table "user_quotas" / "profiles" etc.
-
-    // Option A (recommandé) : RPC get_free_remaining()
-    const { data: remainingData, error: remErr } = await supabaseAuth.rpc("get_free_remaining", {
+    // 4) Free: read remaining without consuming anything
+    // Option A: RPC (recommended)
+    // RPC should return either:
+    // - { remaining: number }  OR a plain number
+    const { data: rpcData, error: rpcErr } = await supabaseAuth.rpc("get_free_remaining", {
       quota: FREE_LIFETIME_QUOTA,
     });
 
-    if (remErr) {
+    if (rpcErr) {
       return NextResponse.json({ error: "quota_read_failed" }, { status: 500 });
     }
 
+    const remainingRaw =
+      typeof rpcData === "number"
+        ? rpcData
+        : typeof rpcData?.remaining === "number"
+          ? rpcData.remaining
+          : null;
+
     const remaining =
-      typeof remainingData?.remaining === "number"
-        ? Math.max(0, Math.floor(remainingData.remaining))
-        : null;
+      typeof remainingRaw === "number" ? Math.max(0, Math.floor(remainingRaw)) : null;
 
     return NextResponse.json({
       planCode,
