@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
    - Paid: par mois (message_limit dans pricing_plans)
    - Free: 40 une seule fois (lifetime)
    IMPORTANT: on consomme le quota SEULEMENT après succès OpenAI
+   + On avertit AVANT la fin (ex: 5/3/1 messages restants)
 =========================== */
 
 type PlanCode = "free" | "chat" | "plus" | "unlimited";
@@ -61,13 +62,39 @@ const I18N = {
   },
   missingIaId: { fr: "missing_iaId", en: "missing_iaId", es: "missing_iaId" },
   missingMessage: { fr: "missing_message", en: "missing_message", es: "missing_message" },
+
+  // ✅ Messages “avant fin quota” (style compagnon, sans agressivité)
+  quotaSoon: {
+    fr: (remaining: number) =>
+      `\n\n💫 Juste pour te le dire : il nous reste encore ${remaining} message${remaining === 1 ? "" : "s"} gratuits.`,
+    en: (remaining: number) =>
+      `\n\n💫 Just so you know: you have ${remaining} free message${remaining === 1 ? "" : "s"} left.`,
+    es: (remaining: number) =>
+      `\n\n💫 Solo para avisarte: te quedan ${remaining} mensaje${remaining === 1 ? "" : "s"} gratis.`,
+  },
+  quotaBridge: {
+    fr:
+      "\n\nSi tu veux qu’on continue sans perdre le fil et qu’on approfondisse vraiment, un abonnement te permet de poursuivre ici.",
+    en:
+      "\n\nIf you want to continue without losing the thread and go deeper, a subscription lets us keep going here.",
+    es:
+      "\n\nSi quieres seguir sin perder el hilo y profundizar, una suscripción nos permite continuar aquí.",
+  },
+  quotaLast: {
+    fr:
+      "\n\nAvant qu’on arrive à la fin… si cette conversation t’aide, un abonnement me permet de rester avec toi ici et de garder le fil.",
+    en:
+      "\n\nBefore we hit the end… if this helps you, a subscription lets me stay here with you and keep the thread.",
+    es:
+      "\n\nAntes de llegar al final… si esto te ayuda, una suscripción me permite quedarme contigo aquí y mantener el hilo.",
+  },
 } as const;
 
 function hasBearer(authHeader: string) {
   return /^Bearer\s+.+$/i.test(authHeader.trim());
 }
 
-function jsonError(safeLang: Lang, status: number, payload: Record<string, any>) {
+function jsonError(_safeLang: Lang, status: number, payload: Record<string, any>) {
   return NextResponse.json(payload, { status });
 }
 
@@ -170,7 +197,7 @@ export async function POST(req: Request) {
     let hasVoiceFromPlan = false;
     let voiceLimitFromPlan = 0;
 
-    // ✅ nouveau: quota messages mensuel vient de Supabase pricing_plans.message_limit
+    // quota messages mensuel vient de Supabase pricing_plans.message_limit
     let messageLimitFromPlan = 0;
 
     const { data: subscription, error: subErr } = await supabaseAdmin
@@ -273,7 +300,7 @@ export async function POST(req: Request) {
     }
 
     const chatData = await chatRes.json().catch(() => ({} as any));
-    const text: string = chatData?.choices?.[0]?.message?.content?.trim() || I18N.fallbackReply[safeLang];
+    let text: string = chatData?.choices?.[0]?.message?.content?.trim() || I18N.fallbackReply[safeLang];
 
     /* ===========================
        6) QUOTA CHAT (consommer APRÈS succès OpenAI)
@@ -337,6 +364,21 @@ export async function POST(req: Request) {
           },
           { status: 429 }
         );
+      }
+    }
+
+    // ✅ Avertir AVANT la fin du quota (FREE 40)
+    const remainingAfter = typeof chatUsage?.remaining === "number" ? chatUsage.remaining : null;
+
+    if (planCode === "free" && remainingAfter !== null) {
+      if (remainingAfter === 5 || remainingAfter === 4) {
+        text = `${text}${I18N.quotaSoon[safeLang](remainingAfter)}`;
+      }
+      if (remainingAfter === 3 || remainingAfter === 2) {
+        text = `${text}${I18N.quotaSoon[safeLang](remainingAfter)}${I18N.quotaBridge[safeLang]}`;
+      }
+      if (remainingAfter === 1) {
+        text = `${text}${I18N.quotaSoon[safeLang](remainingAfter)}${I18N.quotaLast[safeLang]}`;
       }
     }
 
@@ -473,4 +515,4 @@ export async function POST(req: Request) {
     console.error("Server error in /api/chat:", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-       }
+         }
