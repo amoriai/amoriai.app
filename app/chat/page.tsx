@@ -1284,10 +1284,6 @@ function ChatClient() {
               maxLength={MAX_CHARS}
               disabled={isBlocked && isFreePlan}
             />
-
-            <div className={"charCounter" + (charsLeft <= 30 ? " charCounter--warn" : "")}>
-              {t.charsLeft(charsLeft, MAX_CHARS)}
-            </div>
           </div>
 
           <div className="composer__actions">
