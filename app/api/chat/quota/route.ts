@@ -1,3 +1,4 @@
+
 // app/api/chat/quota/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -50,7 +51,7 @@ export async function GET(req: Request) {
 
     const userId = user.id;
 
-    // 2) Admin client (service role) to read subscription/plan
+    // 2) Admin client (service role) to read subscription/plan + usage
     const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false },
     });
@@ -95,15 +96,13 @@ export async function GET(req: Request) {
       });
     }
 
-    // 4) Free: read remaining from table (NO RPC)
-    // Table: public.user_free_message_usage (user_id, used, updated_at)
-    const { data: usageRow, error: usageErr } = await supabaseAuth
+    // 4) Free: read remaining from table with ADMIN (no RLS)
+    const { data: usageRow, error: usageErr } = await supabaseAdmin
       .from("user_free_message_usage")
       .select("used")
       .eq("user_id", userId)
       .maybeSingle();
 
-    // Si RLS bloque, tu vas voir une erreur ici (souvent status 400/401)
     if (usageErr) {
       return NextResponse.json(
         { error: "quota_read_failed", details: usageErr },
