@@ -5,7 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 /* ===========================
    QUOTAS
    - Paid: par mois (message_limit dans pricing_plans)
-   - Free: 40 une seule fois (lifetime)
+   - Free: 15 une seule fois (lifetime)
    IMPORTANT: on consomme le quota SEULEMENT après succès OpenAI
    + On avertit AVANT la fin (ex: 5/3/1 messages restants)
 =========================== */
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 type PlanCode = "free" | "chat" | "plus" | "unlimited";
 type Lang = "fr" | "en" | "es";
 
-const FREE_LIFETIME_QUOTA = 40;
+const FREE_LIFETIME_QUOTA = 15;
 
 // ✅ Limite de longueur par plan (AJUSTE ICI)
 const MAX_CHARS_BY_PLAN: Record<PlanCode, number> = {
