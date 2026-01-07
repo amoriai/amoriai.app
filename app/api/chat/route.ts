@@ -117,7 +117,6 @@ function buildLanguageLock(lang: Lang) {
 }
 
 function buildQuotaBanner(lang: Lang, remaining: number) {
-  // Banner UI court (pas dans reply)
   if (lang === "fr") {
     if (remaining <= 0) return null;
     if (remaining === 1) return "Il te reste 1 message gratuit.";
@@ -209,7 +208,6 @@ export async function POST(req: Request) {
       return jsonError(403, { error: "ia_archived" });
     }
 
-    // Subscription + plan
     let planCode: PlanCode = "free";
     let planName = "Free";
 
@@ -245,7 +243,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // message length gate
     const maxChars = MAX_CHARS_BY_PLAN[planCode] ?? 800;
     if (trimmedMessage.length > maxChars) {
       return NextResponse.json(
@@ -262,7 +259,6 @@ export async function POST(req: Request) {
 
     const canStoreHistory = planCode !== "free";
 
-    // SYSTEM PROMPT
     const defaultSystemPromptFr =
       "Tu es une IA de compagnie bienveillante et chaleureuse. Tu réponds avec un ton naturel, doux et empathique.";
     const defaultSystemPromptEn =
@@ -277,7 +273,6 @@ export async function POST(req: Request) {
     const languageLock = buildLanguageLock(safeLang);
     const styleGuide = buildStyleGuide(safeLang);
 
-    // 1) OpenAI first (no quota consumed yet)
     const chatRes = await fetchWithTimeout(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -309,7 +304,6 @@ export async function POST(req: Request) {
     const chatData = await chatRes.json().catch(() => ({} as any));
     const replyText: string = chatData?.choices?.[0]?.message?.content?.trim() || I18N.fallbackReply[safeLang];
 
-    // 2) Consume quota after OpenAI success
     let chatQuotaType: "lifetime" | "monthly" = "monthly";
     let chatQuota = 0;
     let chatUsage: any = null;
@@ -372,7 +366,6 @@ export async function POST(req: Request) {
 
     const remainingAfter = typeof chatUsage?.remaining === "number" ? chatUsage.remaining : null;
 
-    // Save history (paid only)
     if (canStoreHistory) {
       const { error: saveUserMsgErr } = await supabaseAuth.from("chat_messages").insert({
         user_id: userId,
@@ -391,7 +384,6 @@ export async function POST(req: Request) {
       if (saveAsstMsgErr) console.error("save assistant message error:", saveAsstMsgErr);
     }
 
-    // Audio (optional)
     const allowAudioRequested = !!withAudio;
     const allowAudioByPlan = hasVoiceFromPlan && voiceLimitFromPlan > 0;
     const allowAudio = allowAudioRequested && allowAudioByPlan;
@@ -456,51 +448,40 @@ export async function POST(req: Request) {
 
     const voiceWarning = voiceBlockedReason === "voice_quota_exceeded" ? I18N.voiceQuotaExceeded[safeLang] : null;
 
-    // UI banner (seulement si free et remaining <= 3)
     const quotaBanner =
       planCode === "free" && typeof remainingAfter === "number" ? buildQuotaBanner(safeLang, remainingAfter) : null;
 
     return NextResponse.json({
       reply: replyText,
 
-      // UI (important: pas collé au reply)
       quota_banner: quotaBanner,
       show_paywall_hint: planCode === "free" && typeof remainingAfter === "number" && remainingAfter <= 1,
 
-      // audio (optionnel)
       audioBase64,
       audioMimeType,
 
-      // meta plan
       planName,
       planCode,
 
-      // ia
       iaId: iaRow.id,
       iaName: iaRow.name,
 
-      // quotas (chat)
       chat_quota_type: chatQuotaType,
       chat_quota: planCode === "free" ? FREE_LIFETIME_QUOTA : chatQuota,
       chat_remaining: remainingAfter,
 
-      // quotas (voice)
       voice_quota_per_month: allowAudioByPlan ? voiceLimitFromPlan : 0,
       voice_remaining_this_month: voiceUsage?.remaining ?? null,
       voice_warning: voiceWarning,
       voice_blocked_reason: voiceBlockedReason,
 
-      // history
       history_enabled: canStoreHistory,
-
-      // lang
       lang: safeLang,
 
-      // debug utile
       max_chars: maxChars,
     });
   } catch (e) {
     console.error("Server error in /api/chat:", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-    }
+      }
