@@ -92,6 +92,9 @@ type UiCopy = {
   freeNudgeTitle1: string;
   freeNudgeText1: string;
   freeNudgeCta: string;
+
+  // NEW: micro-copy plus “attachant”, sans être agressif
+  gentleHook: string;
 };
 
 const STRINGS: Record<Locale, UiCopy> = {
@@ -119,8 +122,9 @@ const STRINGS: Record<Locale, UiCopy> = {
     paywallCta: "Passer à AmorIAI Plus",
     paywallSeePlans: "Voir les forfaits →",
 
-    promoTitle: "Tu veux plus de messages ?",
-    promoText: "AmorIAI Plus te donne plus de messages et la voix de ton compagnon.",
+    promoTitle: "Tu veux continuer ?",
+    promoText:
+      "Avec Plus, tu gardes le fil, tu as plus de messages et la voix de ton compagnon.",
     promoCta: "Découvrir AmorIAI Plus",
 
     voiceUnlock: "🔓 Activer l’audio",
@@ -155,6 +159,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     freeNudgeText1:
       "Si tu veux continuer juste après, passe à Plus pour garder la continuité (et activer la voix).",
     freeNudgeCta: "Continuer avec Plus",
+
+    gentleHook: "Je suis là, vraiment. Dis-moi ce qui te pèse le plus là, maintenant.",
   },
 
   en: {
@@ -179,8 +185,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     paywallCta: "Upgrade to AmorIAI Plus",
     paywallSeePlans: "See plans →",
 
-    promoTitle: "Want more messages?",
-    promoText: "AmorIAI Plus gives you more messages and voice.",
+    promoTitle: "Want to continue?",
+    promoText: "Plus keeps the thread, gives you more messages, and unlocks voice.",
     promoCta: "Discover AmorIAI Plus",
 
     voiceUnlock: "🔓 Enable audio",
@@ -213,6 +219,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     freeNudgeText1:
       "If you want to continue right after, upgrade to Plus for continuity (and voice).",
     freeNudgeCta: "Continue with Plus",
+
+    gentleHook: "I’m here with you. What’s the one thing you wish someone understood today?",
   },
 
   es: {
@@ -237,8 +245,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     paywallCta: "Pasar a AmorIAI Plus",
     paywallSeePlans: "Ver planes →",
 
-    promoTitle: "¿Quieres más mensajes?",
-    promoText: "AmorIAI Plus te da más mensajes y voz.",
+    promoTitle: "¿Quieres continuar?",
+    promoText: "Plus mantiene el hilo, te da más mensajes y desbloquea la voz.",
     promoCta: "Descubrir AmorIAI Plus",
 
     voiceUnlock: "🔓 Activar audio",
@@ -272,6 +280,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     freeNudgeText1:
       "Si quieres seguir justo después, pásate a Plus para mantener la continuidad (y voz).",
     freeNudgeCta: "Seguir con Plus",
+
+    gentleHook: "Estoy contigo. ¿Qué te gustaría soltar hoy, aunque sea un poquito?",
   },
 };
 
@@ -362,11 +372,10 @@ function ChatClient() {
 
   const [isBlocked, setIsBlocked] = useState(false);
 
+  // IMPORTANT:
+  // - On n’affiche JAMAIS un nombre plus haut que ce qu’on a déjà vu,
+  //   pour éviter le “7 → 13” quand on revient d’une autre page.
   const [freeRemaining, setFreeRemaining] = useState<number | null>(null);
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioUrlRef = useRef<string | null>(null);
-  const voiceBusyRef = useRef(false);
 
   const windowRef = useRef<HTMLDivElement | null>(null);
   const shouldAutoScrollRef = useRef(true);
@@ -383,8 +392,10 @@ function ChatClient() {
   const isPaidPlan = !isFreePlan;
 
   const MAX_CHARS = useMemo(() => maxCharsForPlan(planId), [planId]);
-
-  const isTooLong = useMemo(() => newMessage.length > MAX_CHARS, [newMessage.length, MAX_CHARS]);
+  const isTooLong = useMemo(
+    () => newMessage.length > MAX_CHARS,
+    [newMessage.length, MAX_CHARS]
+  );
 
   const canCreate = useMemo(() => {
     if (planId === "free") return false;
@@ -479,7 +490,32 @@ function ChatClient() {
     autoGrow();
   }, [newMessage, autoGrow]);
 
-  // ---- PLAN + QUOTA ----
+  // ---------- QUOTA helper (FREE): fetch + anti “jump up” ----------
+  const refreshFreeQuota = useCallback(async () => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) return;
+
+      const r = await fetch("/api/chat/quota", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!r.ok) return;
+
+      const q = await r.json().catch(() => ({}));
+      if (typeof q?.chat_remaining !== "number") return;
+
+      const next = Math.max(0, Math.floor(q.chat_remaining));
+
+      // ✅ important: ne jamais remonter l’affichage (évite 7 → 13)
+      setFreeRemaining((prev) => {
+        if (prev == null) return next;
+        return Math.min(prev, next);
+      });
+    } catch {}
+  }, []);
+
+  // ---------- PLAN + QUOTA ----------
   useEffect(() => {
     let cancelled = false;
 
@@ -498,6 +534,7 @@ function ChatClient() {
           setCanPlayAvatarVideo(false);
           setSttSupported(false);
           setFreeRemaining(null);
+          setIsBlocked(false);
           return;
         }
 
@@ -568,25 +605,12 @@ function ChatClient() {
 
         if (code !== "unlimited") setAvatarPlaying(false);
 
-        // Init remaining (free) via /api/chat/quota (si présent)
+        // Init remaining (free)
         if (!code || code === "free") {
-          try {
-            const { data: sessionData } = await supabase.auth.getSession();
-            const accessToken = sessionData?.session?.access_token;
-            if (accessToken) {
-              const r = await fetch("/api/chat/quota", {
-                headers: { Authorization: `Bearer ${accessToken}` },
-              });
-              if (r.ok) {
-                const q = await r.json().catch(() => ({}));
-                if (typeof q?.chat_remaining === "number") {
-                  setFreeRemaining(Math.max(0, Math.floor(q.chat_remaining)));
-                }
-              }
-            }
-          } catch {}
+          await refreshFreeQuota();
         } else {
           setFreeRemaining(null);
+          setIsBlocked(false);
         }
 
         const countRes = await supabase
@@ -606,6 +630,7 @@ function ChatClient() {
         setCanPlayAvatarVideo(false);
         setSttSupported(false);
         setFreeRemaining(null);
+        setIsBlocked(false);
       }
     };
 
@@ -613,9 +638,28 @@ function ChatClient() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshFreeQuota]);
 
-  // ---- STT support ----
+  // ✅ Refresh quota when user comes back to tab / window (FREE only)
+  useEffect(() => {
+    if (!isFreePlan) return;
+    if (isBlocked) return;
+
+    const onFocus = () => void refreshFreeQuota();
+    const onVis = () => {
+      if (document.visibilityState === "visible") void refreshFreeQuota();
+    };
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [isFreePlan, isBlocked, refreshFreeQuota]);
+
+  // ---------- STT support ----------
   useEffect(() => {
     if (!canUseVoice) {
       setSttSupported(false);
@@ -679,9 +723,17 @@ function ChatClient() {
     if (!canUseVoice || !sttSupported || sending || isBlocked) return;
     if (isRecording) stopRecording();
     else startRecording();
-  }, [canUseVoice, sttSupported, sending, isBlocked, isRecording, stopRecording, startRecording]);
+  }, [
+    canUseVoice,
+    sttSupported,
+    sending,
+    isBlocked,
+    isRecording,
+    stopRecording,
+    startRecording,
+  ]);
 
-  // ---- Load AI ----
+  // ---------- Load AI ----------
   useEffect(() => {
     let cancelled = false;
 
@@ -719,7 +771,7 @@ function ChatClient() {
     };
   }, [iaId, t.genericError]);
 
-  // ---- History (paid only) ----
+  // ---------- History (paid only) ----------
   useEffect(() => {
     if (!iaId) return;
     if (!isPaidPlan) return;
@@ -766,16 +818,6 @@ function ChatClient() {
           recognitionRef.current.stop();
         } catch {}
       }
-      if (audioRef.current) {
-        try {
-          audioRef.current.pause();
-        } catch {}
-      }
-      if (audioUrlRef.current) {
-        try {
-          URL.revokeObjectURL(audioUrlRef.current);
-        } catch {}
-      }
       if (avatarTimerRef.current) {
         try {
           window.clearTimeout(avatarTimerRef.current);
@@ -785,7 +827,7 @@ function ChatClient() {
     };
   }, []);
 
-  // ---- NUDGE (free only) ----
+  // ---------- NUDGE (free only) ----------
   const nudge = useMemo(() => {
     if (!isFreePlan) return null;
     if (isBlocked) return null;
@@ -801,18 +843,21 @@ function ChatClient() {
     return null;
   }, [isFreePlan, isBlocked, freeRemaining, t]);
 
-  // ✅ NEW: remain bar only when no nudge (avoid duplicates)
+  // Remaining bar only when no nudge (avoid duplicates)
   const showRemainBar = useMemo(() => {
-    return (
-      !isBlocked &&
-      isFreePlan &&
-      typeof freeRemaining === "number" &&
-      freeRemaining > 0 &&
-      !nudge
-    );
+    return !isBlocked && isFreePlan && typeof freeRemaining === "number" && freeRemaining > 0 && !nudge;
   }, [isBlocked, isFreePlan, freeRemaining, nudge]);
 
-  // ---- Send message (version courte, sans voice ici) ----
+  // Promo: plus discret → seulement après 1er message OU si freeRemaining connu
+  const showPromo = useMemo(() => {
+    if (isBlocked) return false;
+    if (!isFreePlan) return false;
+    if (nudge) return false;
+    if (typeof freeRemaining === "number" && freeRemaining <= 3) return false;
+    return messages.length > 0 || freeRemaining != null;
+  }, [isBlocked, isFreePlan, nudge, freeRemaining, messages.length]);
+
+  // ---------- Send message ----------
   const sendMessage = useCallback(async () => {
     setSendError(null);
 
@@ -878,6 +923,8 @@ function ChatClient() {
       if (!res.ok && isFreePlan && quotaHit) {
         setIsBlocked(true);
         setSendError(null);
+        // Sync quota to 0 just in case
+        setFreeRemaining((prev) => (prev == null ? 0 : Math.min(prev, 0)));
         return;
       }
 
@@ -888,8 +935,10 @@ function ChatClient() {
         return setSendError(t.chatServerErrorPrefix + (data?.error ?? "Unable to send message."));
       }
 
+      // ✅ single source of truth for remaining: server response
       if (isFreePlan && typeof data?.chat_remaining === "number") {
-        setFreeRemaining(Math.max(0, Math.floor(data.chat_remaining)));
+        const next = Math.max(0, Math.floor(data.chat_remaining));
+        setFreeRemaining((prev) => (prev == null ? next : Math.min(prev, next)));
       }
 
       const assistantMessage: ChatMessage = {
@@ -909,7 +958,18 @@ function ChatClient() {
       sendingRef.current = false;
       setSending(false);
     }
-  }, [newMessage, iaId, isBlocked, MAX_CHARS, t, isRecording, stopRecording, locale, isFreePlan, triggerAvatarAnimation]);
+  }, [
+    newMessage,
+    iaId,
+    isBlocked,
+    MAX_CHARS,
+    t,
+    isRecording,
+    stopRecording,
+    locale,
+    isFreePlan,
+    triggerAvatarAnimation,
+  ]);
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
@@ -994,11 +1054,7 @@ function ChatClient() {
                     />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={avatarImageUrl}
-                      alt={`Avatar de ${displayName}`}
-                      className="avatarImg"
-                    />
+                    <img src={avatarImageUrl} alt={`Avatar de ${displayName}`} className="avatarImg" />
                   )
                 ) : (
                   <div className="avatarFallback">{displayName.charAt(0).toUpperCase()}</div>
@@ -1035,18 +1091,22 @@ function ChatClient() {
           )}
         </div>
 
-        {/* ✅ Remaining bar (free) - only when no nudge */}
+        {/* Remaining bar (free) - only when no nudge */}
         {showRemainBar && (
           <div className={"remainBar" + (freeRemaining! <= 3 ? " remainBar--hot" : "")}>
             <span className="remainBar__dot" aria-hidden="true" />
             <span className="remainBar__text">{t.freeRemainingLabel(freeRemaining!)}</span>
-            {/* pas de CTA ici */}
           </div>
         )}
 
         <div className="chatBox" ref={windowRef} onScroll={handleWindowScroll}>
           {messages.length === 0 ? (
-            <div className="empty">{t.emptyState(displayName)}</div>
+            <div className="empty">
+              {t.emptyState(displayName)}
+              <div className="empty__hint" style={{ marginTop: 10, opacity: 0.85 }}>
+                {t.gentleHook}
+              </div>
+            </div>
           ) : (
             <ul className="list">
               {messages.map((m) => {
@@ -1093,8 +1153,8 @@ function ChatClient() {
           </div>
         )}
 
-        {/* Promo standard */}
-        {!isBlocked && isFreePlan && (!nudge || freeRemaining == null || freeRemaining > 3) && (
+        {/* Promo standard (moins envahissant) */}
+        {showPromo && (
           <div className="promo">
             <div className="badge">PLUS</div>
             <div className="promo__texts">
@@ -1148,7 +1208,7 @@ function ChatClient() {
                 type="button"
                 className={isRecording ? "iconBtn iconBtn--active" : "iconBtn"}
                 onClick={handleToggleRecording}
-                disabled={!sttSupported || sending}
+                disabled={!sttSupported || sending || !voiceEnabled}
                 aria-label={t.sttStart}
                 title={!sttSupported ? "STT not supported" : isRecording ? t.sttStop : t.sttStart}
               >
@@ -1172,4 +1232,4 @@ function ChatClient() {
       </section>
     </main>
   );
-        }
+    }
