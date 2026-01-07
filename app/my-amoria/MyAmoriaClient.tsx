@@ -86,8 +86,7 @@ export default function MyAmoriaClient() {
         }
 
         const rawPlans: any = sub?.pricing_plans;
-        const code =
-          Array.isArray(rawPlans) ? (rawPlans[0]?.code as unknown) : (rawPlans?.code as unknown);
+        const code = Array.isArray(rawPlans) ? rawPlans[0]?.code : rawPlans?.code;
 
         plan = normalizePlan(code);
       } catch {
@@ -97,7 +96,6 @@ export default function MyAmoriaClient() {
       if (cancelledRef.current) return;
 
       // (optionnel) maxAllowed si tu l’utilises ailleurs
-      // Ici on le garde pour cohérence et futur guard.
       const maxAllowed = maxAmoriaForPlan(plan);
       void maxAllowed;
 
@@ -110,10 +108,20 @@ export default function MyAmoriaClient() {
 
       if (cancelledRef.current) return;
 
+      if (countRes.error) {
+        console.error("user_amoria count error:", countRes.error);
+        // en cas d'erreur, on envoie vers create (meilleur UX que rester bloqué)
+        safeReplace(`/create-amoria?lang=${encodeURIComponent(lang)}`);
+        return;
+      }
+
       const aiCount = typeof countRes.count === "number" ? countRes.count : 0;
 
-      // 0 IA -> rester sur /my-amoria (page.tsx affichera l'écran create)
-      if (aiCount === 0) return;
+      // ✅ FIX: 0 IA => redirection DIRECTE vers /create-amoria
+      if (aiCount === 0) {
+        safeReplace(`/create-amoria?lang=${encodeURIComponent(lang)}`);
+        return;
+      }
 
       const toChat = (iaId: string) =>
         safeReplace(`/chat?iaId=${encodeURIComponent(iaId)}&lang=${encodeURIComponent(lang)}`);
@@ -165,28 +173,25 @@ export default function MyAmoriaClient() {
       }
 
       // 5) Plan free: on ne montre jamais /select.
-// -> S'il existe au moins 1 IA, on ouvre toujours la première (ou la plus récente si tu préfères).
-if (plan === "free") {
-  const { data: first } = await supabase
-    .from("user_amoria")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("is_archived", false)
-    .order("created_at", { ascending: true }) // première IA créée
-    .limit(1)
-    .maybeSingle();
+      // S'il existe au moins 1 IA, on ouvre toujours la première (ou la plus récente si tu préfères).
+      const { data: first } = await supabase
+        .from("user_amoria")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_archived", false)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
 
-  if (cancelledRef.current) return;
+      if (cancelledRef.current) return;
 
-  if (first?.id) {
-    toChat(first.id);
-    return;
-  }
+      if (first?.id) {
+        toChat(first.id);
+        return;
+      }
 
-  // fallback: s'il y a un count > 0 mais rien ne revient (rare)
-  return;
-}
-
+      // fallback rare
+      safeReplace(`/create-amoria?lang=${encodeURIComponent(lang)}`);
     };
 
     void run();
@@ -222,12 +227,16 @@ if (plan === "free") {
           place-items: center;
           padding: 24px 16px;
           color: rgba(226, 232, 240, 0.92);
-          background: radial-gradient(1100px 700px at 50% -10%, rgba(251, 55, 255, 0.22), transparent 60%),
+          background: radial-gradient(
+              1100px 700px at 50% -10%,
+              rgba(251, 55, 255, 0.22),
+              transparent 60%
+            ),
             radial-gradient(900px 700px at 90% 10%, rgba(56, 189, 248, 0.16), transparent 55%),
             radial-gradient(950px 700px at 10% 25%, rgba(249, 115, 22, 0.12), transparent 60%),
             linear-gradient(180deg, #020617, #000);
-          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
-            "Segoe UI Emoji";
+          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+            "Apple Color Emoji", "Segoe UI Emoji";
         }
 
         .boot__box {
@@ -288,4 +297,4 @@ if (plan === "free") {
       `}</style>
     </main>
   );
-            }
+}
