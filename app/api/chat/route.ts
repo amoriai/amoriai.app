@@ -45,9 +45,9 @@ const I18N = {
     es: "Has alcanzado tu límite mensual de mensajes. Inténtalo el próximo mes o mejora tu plan.",
   },
   quotaExceededFree: {
-    fr: "Tu as atteint la limite gratuite (40 messages). Crée un abonnement pour continuer.",
-    en: "You’ve reached the free limit (40 messages). Subscribe to continue.",
-    es: "Has alcanzado el límite gratis (40 mensajes). Suscríbete para continuar.",
+    fr: `Tu as atteint la limite gratuite (${FREE_LIFETIME_QUOTA} messages). Crée un abonnement pour continuer.`,
+    en: `You’ve reached the free limit (${FREE_LIFETIME_QUOTA} messages). Subscribe to continue.`,
+    es: `Has alcanzado el límite gratis (${FREE_LIFETIME_QUOTA} mensajes). Suscríbete para continuar.`,
   },
   voiceQuotaExceeded: {
     fr: "Tu as atteint la limite de voix pour ce mois-ci. Le texte reste disponible.",
@@ -307,7 +307,7 @@ export async function POST(req: Request) {
 
     /* ===========================
        6) QUOTA CHAT (consommer APRÈS succès OpenAI)
-       - Free: lifetime 40 -> RPC consume_free_message_once(quota)
+       - Free: lifetime -> RPC consume_free_message_once(quota)
        - Paid: monthly -> RPC consume_monthly_message(quota = pricing_plans.message_limit)
     =========================== */
     let chatQuotaType: "lifetime" | "monthly" = "monthly";
@@ -370,7 +370,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // ✅ Avertir AVANT la fin du quota (FREE 40)
+    // ✅ Avertir AVANT la fin du quota (FREE)
     const remainingAfter = typeof chatUsage?.remaining === "number" ? chatUsage.remaining : null;
 
     if (planCode === "free" && remainingAfter !== null) {
@@ -387,7 +387,6 @@ export async function POST(req: Request) {
 
     /* ===========================
        7) Sauver messages (PAYANT seulement)
-       NOTE: on enregistre après quota OK
     =========================== */
     if (canStoreHistory) {
       const { error: saveUserMsgErr } = await supabaseAuth.from("chat_messages").insert({
@@ -408,8 +407,8 @@ export async function POST(req: Request) {
     }
 
     /* ===========================
-       8) Audio optionnel (si tu l’utilises)
-       IMPORTANT: ton front actuel utilise /api/voice séparé,
+       8) Audio optionnel
+       IMPORTANT: ton front utilise /api/voice séparé,
        donc withAudio sera généralement false.
     =========================== */
     const allowAudioRequested = !!withAudio;
@@ -518,4 +517,4 @@ export async function POST(req: Request) {
     console.error("Server error in /api/chat:", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-           }
+}
