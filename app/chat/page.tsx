@@ -93,7 +93,6 @@ type UiCopy = {
   freeNudgeText1: string;
   freeNudgeCta: string;
 
-  // NEW: micro-copy plus “attachant”, sans être agressif
   gentleHook: string;
 };
 
@@ -372,9 +371,7 @@ function ChatClient() {
 
   const [isBlocked, setIsBlocked] = useState(false);
 
-  // IMPORTANT:
-  // - On n’affiche JAMAIS un nombre plus haut que ce qu’on a déjà vu,
-  //   pour éviter le “7 → 13” quand on revient d’une autre page.
+  // Ne jamais remonter l’affichage (évite 7 → 13)
   const [freeRemaining, setFreeRemaining] = useState<number | null>(null);
 
   const windowRef = useRef<HTMLDivElement | null>(null);
@@ -490,7 +487,7 @@ function ChatClient() {
     autoGrow();
   }, [newMessage, autoGrow]);
 
-  // ---------- QUOTA helper (FREE): fetch + anti “jump up” ----------
+  // ---------- QUOTA helper (FREE) ----------
   const refreshFreeQuota = useCallback(async () => {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -498,7 +495,9 @@ function ChatClient() {
       if (!accessToken) return;
 
       const r = await fetch("/api/chat/quota", {
+        method: "GET",
         headers: { Authorization: `Bearer ${accessToken}` },
+        cache: "no-store",
       });
       if (!r.ok) return;
 
@@ -507,7 +506,7 @@ function ChatClient() {
 
       const next = Math.max(0, Math.floor(q.chat_remaining));
 
-      // ✅ important: ne jamais remonter l’affichage (évite 7 → 13)
+      // ne jamais remonter l’affichage
       setFreeRemaining((prev) => {
         if (prev == null) return next;
         return Math.min(prev, next);
@@ -640,7 +639,7 @@ function ChatClient() {
     };
   }, [refreshFreeQuota]);
 
-  // ✅ Refresh quota when user comes back to tab / window (FREE only)
+  // refresh quota quand on revient sur l’onglet (free only)
   useEffect(() => {
     if (!isFreePlan) return;
     if (isBlocked) return;
@@ -723,15 +722,7 @@ function ChatClient() {
     if (!canUseVoice || !sttSupported || sending || isBlocked) return;
     if (isRecording) stopRecording();
     else startRecording();
-  }, [
-    canUseVoice,
-    sttSupported,
-    sending,
-    isBlocked,
-    isRecording,
-    stopRecording,
-    startRecording,
-  ]);
+  }, [canUseVoice, sttSupported, sending, isBlocked, isRecording, stopRecording, startRecording]);
 
   // ---------- Load AI ----------
   useEffect(() => {
@@ -787,6 +778,7 @@ function ChatClient() {
         const res = await fetch(`/api/chat/history?iaId=${encodeURIComponent(iaId)}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
           signal: ac.signal,
+          cache: "no-store",
         });
 
         if (!res.ok) return;
@@ -843,12 +835,16 @@ function ChatClient() {
     return null;
   }, [isFreePlan, isBlocked, freeRemaining, t]);
 
-  // Remaining bar only when no nudge (avoid duplicates)
   const showRemainBar = useMemo(() => {
-    return !isBlocked && isFreePlan && typeof freeRemaining === "number" && freeRemaining > 0 && !nudge;
+    return (
+      !isBlocked &&
+      isFreePlan &&
+      typeof freeRemaining === "number" &&
+      freeRemaining > 0 &&
+      !nudge
+    );
   }, [isBlocked, isFreePlan, freeRemaining, nudge]);
 
-  // Promo: plus discret → seulement après 1er message OU si freeRemaining connu
   const showPromo = useMemo(() => {
     if (isBlocked) return false;
     if (!isFreePlan) return false;
@@ -907,6 +903,7 @@ function ChatClient() {
         },
         body: JSON.stringify({ iaId, message: content, lang: locale }),
         signal: ac.signal,
+        cache: "no-store",
       });
 
       let data: any = null;
@@ -923,7 +920,6 @@ function ChatClient() {
       if (!res.ok && isFreePlan && quotaHit) {
         setIsBlocked(true);
         setSendError(null);
-        // Sync quota to 0 just in case
         setFreeRemaining((prev) => (prev == null ? 0 : Math.min(prev, 0)));
         return;
       }
@@ -935,10 +931,13 @@ function ChatClient() {
         return setSendError(t.chatServerErrorPrefix + (data?.error ?? "Unable to send message."));
       }
 
-      // ✅ single source of truth for remaining: server response
+      // source of truth: API response
       if (isFreePlan && typeof data?.chat_remaining === "number") {
         const next = Math.max(0, Math.floor(data.chat_remaining));
         setFreeRemaining((prev) => (prev == null ? next : Math.min(prev, next)));
+      } else if (isFreePlan) {
+        // si /api/chat ne renvoie pas chat_remaining, on refresh via /api/chat/quota
+        void refreshFreeQuota();
       }
 
       const assistantMessage: ChatMessage = {
@@ -969,6 +968,7 @@ function ChatClient() {
     locale,
     isFreePlan,
     triggerAvatarAnimation,
+    refreshFreeQuota,
   ]);
 
   const handleSubmit = useCallback(
@@ -1054,7 +1054,11 @@ function ChatClient() {
                     />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={avatarImageUrl} alt={`Avatar de ${displayName}`} className="avatarImg" />
+                    <img
+                      src={avatarImageUrl}
+                      alt={`Avatar de ${displayName}`}
+                      className="avatarImg"
+                    />
                   )
                 ) : (
                   <div className="avatarFallback">{displayName.charAt(0).toUpperCase()}</div>
@@ -1091,7 +1095,6 @@ function ChatClient() {
           )}
         </div>
 
-        {/* Remaining bar (free) - only when no nudge */}
         {showRemainBar && (
           <div className={"remainBar" + (freeRemaining! <= 3 ? " remainBar--hot" : "")}>
             <span className="remainBar__dot" aria-hidden="true" />
@@ -1119,7 +1122,12 @@ function ChatClient() {
                       <div className="row__left">
                         {showTinyAvatar ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img className="msgAvatar" src={avatarImageUrl!} alt="" aria-hidden="true" />
+                          <img
+                            className="msgAvatar"
+                            src={avatarImageUrl!}
+                            alt=""
+                            aria-hidden="true"
+                          />
                         ) : (
                           <span className="msgAvatar msgAvatar--fallback" aria-hidden="true">
                             {displayName.charAt(0).toUpperCase()}
@@ -1140,7 +1148,6 @@ function ChatClient() {
 
         {sendError && <p className="error">{sendError}</p>}
 
-        {/* Nudge quand <= 3 */}
         {!isBlocked && isFreePlan && nudge && (
           <div className="nudge">
             <div className="nudge__left">
@@ -1153,7 +1160,6 @@ function ChatClient() {
           </div>
         )}
 
-        {/* Promo standard (moins envahissant) */}
         {showPromo && (
           <div className="promo">
             <div className="badge">PLUS</div>
@@ -1167,7 +1173,6 @@ function ChatClient() {
           </div>
         )}
 
-        {/* Paywall */}
         {isBlocked && isFreePlan && (
           <div className="paywall">
             <div className="badge">PLUS</div>
@@ -1232,4 +1237,4 @@ function ChatClient() {
       </section>
     </main>
   );
-    }
+        }
