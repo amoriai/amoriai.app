@@ -2,14 +2,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-/* ===========================
-   QUOTAS
-   - Paid: par mois (message_limit dans pricing_plans)
-   - Free: 15 une seule fois (lifetime)
-   IMPORTANT: on consomme le quota SEULEMENT après succès OpenAI
-   + On avertit AVANT la fin (ex: 5/3/1 messages restants)
-=========================== */
-
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -18,7 +10,6 @@ type Lang = "fr" | "en" | "es";
 
 const FREE_LIFETIME_QUOTA = 15;
 
-// ✅ Limite de longueur par plan (AJUSTE ICI)
 const MAX_CHARS_BY_PLAN: Record<PlanCode, number> = {
   free: 800,
   chat: 1500,
@@ -66,43 +57,16 @@ const I18N = {
   },
   missingIaId: { fr: "missing_iaId", en: "missing_iaId", es: "missing_iaId" },
   missingMessage: { fr: "missing_message", en: "missing_message", es: "missing_message" },
-
-  // ✅ Messages “avant fin quota” (style compagnon, sans agressivité)
-  quotaSoon: {
-    fr: (remaining: number) =>
-      `\n\n💫 Juste pour te le dire : il nous reste encore ${remaining} message${remaining === 1 ? "" : "s"} gratuits.`,
-    en: (remaining: number) =>
-      `\n\n💫 Just so you know: you have ${remaining} free message${remaining === 1 ? "" : "s"} left.`,
-    es: (remaining: number) =>
-      `\n\n💫 Solo para avisarte: te quedan ${remaining} mensaje${remaining === 1 ? "" : "s"} gratis.`,
-  },
-  quotaBridge: {
-    fr:
-      "\n\nSi tu veux qu’on continue sans perdre le fil et qu’on approfondisse vraiment, un abonnement te permet de poursuivre ici.",
-    en:
-      "\n\nIf you want to continue without losing the thread and go deeper, a subscription lets us keep going here.",
-    es:
-      "\n\nSi quieres seguir sin perder el hilo y profundizar, una suscripción nos permite continuar aquí.",
-  },
-  quotaLast: {
-    fr:
-      "\n\nAvant qu’on arrive à la fin… si cette conversation t’aide, un abonnement me permet de rester avec toi ici et de garder le fil.",
-    en:
-      "\n\nBefore we hit the end… if this helps you, a subscription lets me stay here with you and keep the thread.",
-    es:
-      "\n\nAntes de llegar al final… si esto te ayuda, una suscripción me permite quedarme contigo aquí y mantener el hilo.",
-  },
 } as const;
 
 function hasBearer(authHeader: string) {
   return /^Bearer\s+.+$/i.test((authHeader ?? "").trim());
 }
 
-function jsonError(_safeLang: Lang, status: number, payload: Record<string, any>) {
+function jsonError(status: number, payload: Record<string, any>) {
   return NextResponse.json(payload, { status });
 }
 
-// Petit helper timeout fetch
 async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: number) {
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), timeoutMs);
@@ -113,6 +77,65 @@ async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: num
   }
 }
 
+function buildStyleGuide(lang: Lang) {
+  if (lang === "fr") {
+    return [
+      "Style: naturel, chaleureux, intime, sans être thérapeute.",
+      "Réponses courtes (2–6 phrases).",
+      "1 question à la fois.",
+      "Reformule une phrase importante du message de l’utilisateur.",
+      "Évite les listes longues et les avertissements inutiles.",
+      "Pas de mention du quota ni d’abonnement dans la réponse.",
+    ].join(" ");
+  }
+  if (lang === "en") {
+    return [
+      "Style: natural, warm, intimate (not clinical).",
+      "Short replies (2–6 sentences).",
+      "Ask one question at a time.",
+      "Mirror one important user sentence.",
+      "Avoid long lists and unnecessary warnings.",
+      "Never mention quota/subscription inside the reply.",
+    ].join(" ");
+  }
+  return [
+    "Estilo: natural, cálido, íntimo (no clínico).",
+    "Respuestas cortas (2–6 frases).",
+    "Una pregunta a la vez.",
+    "Refleja una frase importante del usuario.",
+    "Evita listas largas y avisos innecesarios.",
+    "Nunca menciones cuota/suscripción dentro de la respuesta.",
+  ].join(" ");
+}
+
+function buildLanguageLock(lang: Lang) {
+  if (lang === "fr")
+    return "RÈGLE ABSOLUE : réponds UNIQUEMENT en français. Ne change jamais de langue, même si l’utilisateur écrit en anglais ou en espagnol.";
+  if (lang === "en")
+    return "ABSOLUTE RULE: reply ONLY in English. Never switch language, even if the user writes in French or Spanish.";
+  return "REGLA ABSOLUTA: responde SOLO en español. No cambies de idioma, incluso si el usuario escribe en francés o en inglés.";
+}
+
+function buildQuotaBanner(lang: Lang, remaining: number) {
+  // Banner UI court (pas dans reply)
+  if (lang === "fr") {
+    if (remaining <= 0) return null;
+    if (remaining === 1) return "Il te reste 1 message gratuit.";
+    if (remaining <= 3) return `Il te reste ${remaining} messages gratuits.`;
+    return null;
+  }
+  if (lang === "en") {
+    if (remaining <= 0) return null;
+    if (remaining === 1) return "You have 1 free message left.";
+    if (remaining <= 3) return `You have ${remaining} free messages left.`;
+    return null;
+  }
+  if (remaining <= 0) return null;
+  if (remaining === 1) return "Te queda 1 mensaje gratis.";
+  if (remaining <= 3) return `Te quedan ${remaining} mensajes gratis.`;
+  return null;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
@@ -120,16 +143,16 @@ export async function POST(req: Request) {
       iaId?: string;
       message?: string;
       lang?: Lang;
-      withAudio?: boolean; // optionnel (si tu veux renvoyer audio direct). Sinon /api/voice séparé.
+      withAudio?: boolean;
     };
 
     const safeLang = normalizeLang(lang);
 
-    if (!iaId) return jsonError(safeLang, 400, { error: I18N.missingIaId[safeLang] });
+    if (!iaId) return jsonError(400, { error: I18N.missingIaId[safeLang] });
 
     const rawMessage = typeof message === "string" ? message : "";
     const trimmedMessage = rawMessage.trim();
-    if (!trimmedMessage) return jsonError(safeLang, 400, { error: I18N.missingMessage[safeLang] });
+    if (!trimmedMessage) return jsonError(400, { error: I18N.missingMessage[safeLang] });
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -138,19 +161,16 @@ export async function POST(req: Request) {
 
     if (!supabaseUrl || !anonKey || !serviceKey) {
       console.error("Missing Supabase env vars");
-      return NextResponse.json({ error: "supabase_env_missing" }, { status: 500 });
+      return jsonError(500, { error: "supabase_env_missing" });
     }
     if (!apiKey) {
       console.error("Missing OPENAI_API_KEY");
-      return NextResponse.json({ error: "missing_openai_key" }, { status: 500 });
+      return jsonError(500, { error: "missing_openai_key" });
     }
 
-    /* ===========================
-       1) Auth user via JWT du front
-    =========================== */
     const authHeader = req.headers.get("authorization") ?? "";
     if (!hasBearer(authHeader)) {
-      return NextResponse.json({ error: "missing_or_invalid_authorization" }, { status: 401 });
+      return jsonError(401, { error: "missing_or_invalid_authorization" });
     }
 
     const supabaseAuth = createClient(supabaseUrl, anonKey, {
@@ -165,14 +185,11 @@ export async function POST(req: Request) {
 
     if (userError || !user) {
       console.error("auth.getUser error:", userError);
-      return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+      return jsonError(401, { error: "not_authenticated" });
     }
 
     const userId = user.id;
 
-    /* ===========================
-       2) Admin client (lecture des plans, vérif IA)
-    =========================== */
     const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false },
     });
@@ -186,16 +203,13 @@ export async function POST(req: Request) {
 
     if (iaError || !iaRow) {
       console.error("IA row error:", iaError);
-      return NextResponse.json({ error: "ia_not_found" }, { status: 404 });
+      return jsonError(404, { error: "ia_not_found" });
     }
-
     if (iaRow.is_archived === true) {
-      return NextResponse.json({ error: "ia_archived" }, { status: 403 });
+      return jsonError(403, { error: "ia_archived" });
     }
 
-    /* ===========================
-       3) Lire abonnement & plan (active sinon free)
-    =========================== */
+    // Subscription + plan
     let planCode: PlanCode = "free";
     let planName = "Free";
 
@@ -228,29 +242,27 @@ export async function POST(req: Request) {
         voiceLimitFromPlan = Number((plan as any).voice_limit ?? 0);
       } else {
         if (planError) console.error("planError:", planError);
-        planCode = "free";
-        planName = "Free";
-        messageLimitFromPlan = 0;
-        hasVoiceFromPlan = false;
-        voiceLimitFromPlan = 0;
       }
     }
 
-    // ✅ longueur max selon plan
+    // message length gate
     const maxChars = MAX_CHARS_BY_PLAN[planCode] ?? 800;
     if (trimmedMessage.length > maxChars) {
       return NextResponse.json(
-        { error: "message_too_long", maxChars, message: I18N.tooLong[safeLang](maxChars), planCode, planName },
+        {
+          error: "message_too_long",
+          maxChars,
+          message: I18N.tooLong[safeLang](maxChars),
+          planCode,
+          planName,
+        },
         { status: 413 }
       );
     }
 
-    // Historique PAYANT seulement
     const canStoreHistory = planCode !== "free";
 
-    /* ===========================
-       4) SYSTEM PROMPT + verrou langue
-    =========================== */
+    // SYSTEM PROMPT
     const defaultSystemPromptFr =
       "Tu es une IA de compagnie bienveillante et chaleureuse. Tu réponds avec un ton naturel, doux et empathique.";
     const defaultSystemPromptEn =
@@ -258,23 +270,14 @@ export async function POST(req: Request) {
     const defaultSystemPromptEs =
       "Eres una IA compañera cálida y cariñosa. Responde con un tono natural y empático.";
 
-    let defaultSystemPrompt = defaultSystemPromptFr;
-    if (safeLang === "en") defaultSystemPrompt = defaultSystemPromptEn;
-    if (safeLang === "es") defaultSystemPrompt = defaultSystemPromptEs;
+    const defaultSystemPrompt =
+      safeLang === "en" ? defaultSystemPromptEn : safeLang === "es" ? defaultSystemPromptEs : defaultSystemPromptFr;
 
     const personaPrompt = (iaRow.system_prompt?.trim() || defaultSystemPrompt).trim();
+    const languageLock = buildLanguageLock(safeLang);
+    const styleGuide = buildStyleGuide(safeLang);
 
-    const languageLock =
-      safeLang === "fr"
-        ? "RÈGLE ABSOLUE : réponds UNIQUEMENT en français. Ne change jamais de langue, même si l’utilisateur écrit en anglais ou en espagnol."
-        : safeLang === "en"
-        ? "ABSOLUTE RULE: reply ONLY in English. Never switch language, even if the user writes in French or Spanish."
-        : "REGLA ABSOLUTA: responde SOLO en español. No cambies de idioma, incluso si el usuario escribe en francés o en inglés.";
-
-    /* ===========================
-       5) Appel OpenAI – texte (timeout)
-       IMPORTANT: on ne consomme le quota qu'après succès
-    =========================== */
+    // 1) OpenAI first (no quota consumed yet)
     const chatRes = await fetchWithTimeout(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -288,9 +291,10 @@ export async function POST(req: Request) {
           messages: [
             { role: "system", content: personaPrompt },
             { role: "system", content: languageLock },
+            { role: "system", content: styleGuide },
             { role: "user", content: trimmedMessage },
           ],
-          temperature: 0.8,
+          temperature: 0.85,
         }),
       },
       25_000
@@ -299,17 +303,13 @@ export async function POST(req: Request) {
     if (!chatRes.ok) {
       const errText = await chatRes.text().catch(() => "");
       console.error("OpenAI chat error:", errText);
-      return NextResponse.json({ error: "openai_api_error" }, { status: 500 });
+      return jsonError(500, { error: "openai_api_error" });
     }
 
     const chatData = await chatRes.json().catch(() => ({} as any));
-    let text: string = chatData?.choices?.[0]?.message?.content?.trim() || I18N.fallbackReply[safeLang];
+    const replyText: string = chatData?.choices?.[0]?.message?.content?.trim() || I18N.fallbackReply[safeLang];
 
-    /* ===========================
-       6) QUOTA CHAT (consommer APRÈS succès OpenAI)
-       - Free: lifetime -> RPC consume_free_message_once(quota)
-       - Paid: monthly -> RPC consume_monthly_message(quota = pricing_plans.message_limit)
-    =========================== */
+    // 2) Consume quota after OpenAI success
     let chatQuotaType: "lifetime" | "monthly" = "monthly";
     let chatQuota = 0;
     let chatUsage: any = null;
@@ -324,7 +324,7 @@ export async function POST(req: Request) {
 
       if (error) {
         console.error("consume_free_message_once error:", error);
-        return NextResponse.json({ error: "quota_check_failed" }, { status: 500 });
+        return jsonError(500, { error: "quota_check_failed" });
       }
 
       chatUsage = data;
@@ -351,7 +351,7 @@ export async function POST(req: Request) {
 
       if (error) {
         console.error("consume_monthly_message error:", error);
-        return NextResponse.json({ error: "quota_check_failed" }, { status: 500 });
+        return jsonError(500, { error: "quota_check_failed" });
       }
 
       chatUsage = data;
@@ -370,24 +370,9 @@ export async function POST(req: Request) {
       }
     }
 
-    // ✅ Avertir AVANT la fin du quota (FREE)
     const remainingAfter = typeof chatUsage?.remaining === "number" ? chatUsage.remaining : null;
 
-    if (planCode === "free" && remainingAfter !== null) {
-      if (remainingAfter === 5 || remainingAfter === 4) {
-        text = `${text}${I18N.quotaSoon[safeLang](remainingAfter)}`;
-      }
-      if (remainingAfter === 3 || remainingAfter === 2) {
-        text = `${text}${I18N.quotaSoon[safeLang](remainingAfter)}${I18N.quotaBridge[safeLang]}`;
-      }
-      if (remainingAfter === 1) {
-        text = `${text}${I18N.quotaSoon[safeLang](remainingAfter)}${I18N.quotaLast[safeLang]}`;
-      }
-    }
-
-    /* ===========================
-       7) Sauver messages (PAYANT seulement)
-    =========================== */
+    // Save history (paid only)
     if (canStoreHistory) {
       const { error: saveUserMsgErr } = await supabaseAuth.from("chat_messages").insert({
         user_id: userId,
@@ -401,16 +386,12 @@ export async function POST(req: Request) {
         user_id: userId,
         amoria_id: iaRow.id,
         role: "assistant",
-        content: text,
+        content: replyText,
       });
       if (saveAsstMsgErr) console.error("save assistant message error:", saveAsstMsgErr);
     }
 
-    /* ===========================
-       8) Audio optionnel
-       IMPORTANT: ton front utilise /api/voice séparé,
-       donc withAudio sera généralement false.
-    =========================== */
+    // Audio (optional)
     const allowAudioRequested = !!withAudio;
     const allowAudioByPlan = hasVoiceFromPlan && voiceLimitFromPlan > 0;
     const allowAudio = allowAudioRequested && allowAudioByPlan;
@@ -449,7 +430,7 @@ export async function POST(req: Request) {
               body: JSON.stringify({
                 model: "tts-1",
                 voice,
-                input: text,
+                input: replyText,
                 format: "mp3",
               }),
             },
@@ -462,7 +443,7 @@ export async function POST(req: Request) {
             voiceBlockedReason = "openai_tts_error";
           } else {
             const audioBuffer = await ttsRes.arrayBuffer();
-            // @ts-ignore Buffer dispo en runtime Node
+            // @ts-ignore
             audioBase64 = Buffer.from(audioBuffer).toString("base64");
             audioMimeType = "audio/mpeg";
           }
@@ -475,11 +456,16 @@ export async function POST(req: Request) {
 
     const voiceWarning = voiceBlockedReason === "voice_quota_exceeded" ? I18N.voiceQuotaExceeded[safeLang] : null;
 
-    /* ===========================
-       9) Réponse
-    =========================== */
+    // UI banner (seulement si free et remaining <= 3)
+    const quotaBanner =
+      planCode === "free" && typeof remainingAfter === "number" ? buildQuotaBanner(safeLang, remainingAfter) : null;
+
     return NextResponse.json({
-      reply: text,
+      reply: replyText,
+
+      // UI (important: pas collé au reply)
+      quota_banner: quotaBanner,
+      show_paywall_hint: planCode === "free" && typeof remainingAfter === "number" && remainingAfter <= 1,
 
       // audio (optionnel)
       audioBase64,
@@ -496,7 +482,7 @@ export async function POST(req: Request) {
       // quotas (chat)
       chat_quota_type: chatQuotaType,
       chat_quota: planCode === "free" ? FREE_LIFETIME_QUOTA : chatQuota,
-      chat_remaining: chatUsage?.remaining ?? null,
+      chat_remaining: remainingAfter,
 
       // quotas (voice)
       voice_quota_per_month: allowAudioByPlan ? voiceLimitFromPlan : 0,
@@ -517,4 +503,4 @@ export async function POST(req: Request) {
     console.error("Server error in /api/chat:", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-}
+    }
