@@ -99,7 +99,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     backHome: "← Accueil",
     title: (name) => `Chat avec ${name}`,
     subtitle: (name) => `${name} est là. Tu peux parler librement, à ton rythme.`,
-    emptyState: (name) => `Je suis là. Prends ton temps, je t'écoute.💬`,
+    emptyState: () => `Je suis là. Prends ton temps, je t'écoute.💬`,
     inputPlaceholder: (name) => `Écris à ${name}…`,
 
     send: "Envoyer",
@@ -161,7 +161,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     backHome: "← Home",
     title: (name) => `Chat with ${name}`,
     subtitle: (name) => `${name} is here. Take your time.`,
-    emptyState: (name) => `I'm here. Take your time, I'm listening.💬`,
+    emptyState: () => `I'm here. Take your time, I'm listening.💬`,
     inputPlaceholder: (name) => `Write to ${name}…`,
 
     send: "Send",
@@ -219,7 +219,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     backHome: "← Inicio",
     title: (name) => `Chat con ${name}`,
     subtitle: (name) => `${name} está aquí. Tómate tu tiempo.`,
-    emptyState: (name) => `Estoy aquí. Tómate tu tiempo, te escucho.💬`,
+    emptyState: () => `Estoy aquí. Tómate tu tiempo, te escucho.💬`,
     inputPlaceholder: (name) => `Escribe a ${name}…`,
 
     send: "Enviar",
@@ -285,7 +285,6 @@ function normalizePlan(raw: string | null): PlanId {
     : "free";
 }
 
-/** Limites de longueur par plan (UI) */
 function maxCharsForPlan(plan: PlanId): number {
   switch (plan) {
     case "free":
@@ -314,7 +313,6 @@ export default function ChatPage() {
   );
 }
 
-/** Skeleton sans CSS inline (tu as ton CSS à part) */
 function ChatSkeleton() {
   return (
     <main className="chat-shell">
@@ -364,9 +362,7 @@ function ChatClient() {
 
   const [isBlocked, setIsBlocked] = useState(false);
 
-  // remaining quota (free)
   const [freeRemaining, setFreeRemaining] = useState<number | null>(null);
-  const lastNudgeRef = useRef<"none" | "n3" | "n1">("none");
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioUrlRef = useRef<string | null>(null);
@@ -387,10 +383,6 @@ function ChatClient() {
   const isPaidPlan = !isFreePlan;
 
   const MAX_CHARS = useMemo(() => maxCharsForPlan(planId), [planId]);
-  const charsLeft = useMemo(
-    () => Math.max(0, MAX_CHARS - newMessage.length),
-    [MAX_CHARS, newMessage.length]
-  );
 
   const isTooLong = useMemo(() => newMessage.length > MAX_CHARS, [newMessage.length, MAX_CHARS]);
 
@@ -476,7 +468,6 @@ function ChatClient() {
     }, 10_000);
   }, [canPlayAvatarVideo, avatarVideoUrl]);
 
-  // Auto-grow textarea
   const autoGrow = useCallback(() => {
     const el = composerRef.current;
     if (!el) return;
@@ -488,7 +479,7 @@ function ChatClient() {
     autoGrow();
   }, [newMessage, autoGrow]);
 
-  // 1) Plan + quota + init remaining (free)
+  // ---- PLAN + QUOTA ----
   useEffect(() => {
     let cancelled = false;
 
@@ -577,8 +568,7 @@ function ChatClient() {
 
         if (code !== "unlimited") setAvatarPlaying(false);
 
-        // ✅ Init remaining (free) : appelle /api/chat/quota si tu l’as
-        // (si l’endpoint n’existe pas, ça fail silencieux et ta logique /api/chat continuera à setRemaining)
+        // Init remaining (free) via /api/chat/quota (si présent)
         if (!code || code === "free") {
           try {
             const { data: sessionData } = await supabase.auth.getSession();
@@ -594,9 +584,7 @@ function ChatClient() {
                 }
               }
             }
-          } catch {
-            // silence
-          }
+          } catch {}
         } else {
           setFreeRemaining(null);
         }
@@ -609,8 +597,7 @@ function ChatClient() {
 
         if (cancelled) return;
         setActiveAmoriaCount(countRes.count ?? 0);
-      } catch (err) {
-        console.error("Erreur loadSubscription:", err);
+      } catch {
         if (cancelled) return;
         setPlanCode(null);
         setActiveAmoriaCount(0);
@@ -623,13 +610,12 @@ function ChatClient() {
     };
 
     loadSubscriptionAndQuota();
-
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // 2) STT support
+  // ---- STT support ----
   useEffect(() => {
     if (!canUseVoice) {
       setSttSupported(false);
@@ -695,7 +681,7 @@ function ChatClient() {
     else startRecording();
   }, [canUseVoice, sttSupported, sending, isBlocked, isRecording, stopRecording, startRecording]);
 
-  // 3) Charger AI
+  // ---- Load AI ----
   useEffect(() => {
     let cancelled = false;
 
@@ -728,13 +714,12 @@ function ChatClient() {
     };
 
     loadAI();
-
     return () => {
       cancelled = true;
     };
   }, [iaId, t.genericError]);
 
-  // 4) Historique (paid)
+  // ---- History (paid only) ----
   useEffect(() => {
     if (!iaId) return;
     if (!isPaidPlan) return;
@@ -762,16 +747,11 @@ function ChatClient() {
             .map((m) => ({ ...m, createdAt: m.createdAt ?? new Date().toISOString() }))
             .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
         );
-      } catch {
-        // silence
-      }
+      } catch {}
     };
 
     loadHistory();
-
-    return () => {
-      ac.abort();
-    };
+    return () => ac.abort();
   }, [iaId, isPaidPlan]);
 
   useEffect(() => {
@@ -805,105 +785,7 @@ function ChatClient() {
     };
   }, []);
 
-  // 5) Voice (TTS)
-  const playAssistantVoice = useCallback(
-    async (text: string) => {
-      if (!canUseVoice || isBlocked) return;
-      if (!voiceEnabled) return;
-      if (!audioUnlocked) return;
-      if (!iaId || !text?.trim()) return;
-      if (voiceBusyRef.current) return;
-
-      voiceBusyRef.current = true;
-      setSendError(null);
-
-      const ac = new AbortController();
-
-      try {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData?.session?.access_token;
-        if (!accessToken) {
-          setSendError(t.notAuthenticated);
-          return;
-        }
-
-        const res = await fetch("/api/voice", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ iaId, text }),
-          signal: ac.signal,
-        });
-
-        const contentType = res.headers.get("Content-Type") || "";
-
-        if (!res.ok) {
-          if (contentType.includes("application/json")) {
-            const data = await res.json().catch(() => ({}));
-            if (data?.error === "audio_limit_reached") setSendError(t.voiceLimitReached);
-            else if (data?.error) setSendError(`Voice error: ${data.error}`);
-            else setSendError(t.voiceServerError);
-          } else {
-            setSendError(t.voiceServerError);
-          }
-          return;
-        }
-
-        const audioBlob = await res.blob();
-
-        if (audioRef.current) {
-          try {
-            audioRef.current.pause();
-          } catch {}
-          audioRef.current = null;
-        }
-        if (audioUrlRef.current) {
-          try {
-            URL.revokeObjectURL(audioUrlRef.current);
-          } catch {}
-          audioUrlRef.current = null;
-        }
-
-        const url = URL.createObjectURL(audioBlob);
-        audioUrlRef.current = url;
-
-        const audio = new Audio(url);
-        audioRef.current = audio;
-        audio.volume = 1;
-
-        audio.onended = () => {
-          if (audioUrlRef.current) {
-            URL.revokeObjectURL(audioUrlRef.current);
-            audioUrlRef.current = null;
-          }
-          audioRef.current = null;
-        };
-
-        await audio.play();
-      } catch (err) {
-        console.error("Erreur /api/voice:", err);
-        setSendError(t.voiceNetworkError);
-      } finally {
-        ac.abort();
-        voiceBusyRef.current = false;
-      }
-    },
-    [
-      canUseVoice,
-      isBlocked,
-      voiceEnabled,
-      audioUnlocked,
-      iaId,
-      t.notAuthenticated,
-      t.voiceLimitReached,
-      t.voiceServerError,
-      t.voiceNetworkError,
-    ]
-  );
-
-  // Nudge UI selon remaining
+  // ---- NUDGE (free only) ----
   const nudge = useMemo(() => {
     if (!isFreePlan) return null;
     if (isBlocked) return null;
@@ -917,17 +799,20 @@ function ChatClient() {
       return { kind: "n3" as const, title: t.freeNudgeTitle3, text: t.freeNudgeText3 };
     }
     return null;
-  }, [
-    isFreePlan,
-    isBlocked,
-    freeRemaining,
-    t.freeNudgeTitle1,
-    t.freeNudgeText1,
-    t.freeNudgeTitle3,
-    t.freeNudgeText3,
-  ]);
+  }, [isFreePlan, isBlocked, freeRemaining, t]);
 
-  // 6) Send message
+  // ✅ NEW: remain bar only when no nudge (avoid duplicates)
+  const showRemainBar = useMemo(() => {
+    return (
+      !isBlocked &&
+      isFreePlan &&
+      typeof freeRemaining === "number" &&
+      freeRemaining > 0 &&
+      !nudge
+    );
+  }, [isBlocked, isFreePlan, freeRemaining, nudge]);
+
+  // ---- Send message (version courte, sans voice ici) ----
   const sendMessage = useCallback(async () => {
     setSendError(null);
 
@@ -1000,18 +885,11 @@ function ChatClient() {
         if (data?.error === "not_authenticated") return setSendError(t.notAuthenticated);
         if (data?.error === "profile_not_found") return setSendError(t.profileNotFound);
         if (data?.message) return setSendError(data.message);
-        return setSendError(
-          t.chatServerErrorPrefix + (data?.error ?? "Unable to send message.")
-        );
+        return setSendError(t.chatServerErrorPrefix + (data?.error ?? "Unable to send message."));
       }
 
-      // Update remaining si fourni par /api/chat
       if (isFreePlan && typeof data?.chat_remaining === "number") {
-        const r = Math.max(0, Math.floor(data.chat_remaining));
-        setFreeRemaining(r);
-
-        if (r === 1 && lastNudgeRef.current !== "n1") lastNudgeRef.current = "n1";
-        else if (r <= 3 && lastNudgeRef.current === "none") lastNudgeRef.current = "n3";
+        setFreeRemaining(Math.max(0, Math.floor(data.chat_remaining)));
       }
 
       const assistantMessage: ChatMessage = {
@@ -1024,34 +902,14 @@ function ChatClient() {
       setMessages((prev) => [...prev, assistantMessage]);
 
       if (assistantMessage.content && !isBlocked) triggerAvatarAnimation();
-
-      if (assistantMessage.content && canUseVoice && voiceEnabled && audioUnlocked && !isBlocked) {
-        window.setTimeout(() => void playAssistantVoice(assistantMessage.content), 80);
-      }
-    } catch (err) {
-      console.error("Erreur réseau /api/chat:", err);
+    } catch {
       setSendError(t.chatNetworkError);
     } finally {
       ac.abort();
       sendingRef.current = false;
       setSending(false);
     }
-  }, [
-    newMessage,
-    iaId,
-    isBlocked,
-    MAX_CHARS,
-    t,
-    isRecording,
-    stopRecording,
-    locale,
-    isFreePlan,
-    triggerAvatarAnimation,
-    canUseVoice,
-    voiceEnabled,
-    audioUnlocked,
-    playAssistantVoice,
-  ]);
+  }, [newMessage, iaId, isBlocked, MAX_CHARS, t, isRecording, stopRecording, locale, isFreePlan, triggerAvatarAnimation]);
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
@@ -1177,14 +1035,12 @@ function ChatClient() {
           )}
         </div>
 
-        {/* Remaining bar (free) */}
-        {!isBlocked && isFreePlan && typeof freeRemaining === "number" && freeRemaining > 0 && (
-          <div className={"remainBar" + (freeRemaining <= 3 ? " remainBar--hot" : "")}>
+        {/* ✅ Remaining bar (free) - only when no nudge */}
+        {showRemainBar && (
+          <div className={"remainBar" + (freeRemaining! <= 3 ? " remainBar--hot" : "")}>
             <span className="remainBar__dot" aria-hidden="true" />
-            <span className="remainBar__text">{t.freeRemainingLabel(freeRemaining)}</span>
-            <button type="button" className="remainBar__cta" onClick={handleUpgradeClick}>
-              {t.freeNudgeCta}
-            </button>
+            <span className="remainBar__text">{t.freeRemainingLabel(freeRemaining!)}</span>
+            {/* pas de CTA ici */}
           </div>
         )}
 
@@ -1257,7 +1113,11 @@ function ChatClient() {
             <div className="badge">PLUS</div>
             <p className="paywall__title">{t.paywallTitle}</p>
             <p className="paywall__text">{t.paywallText}</p>
-            <button type="button" className="pillBtn pillBtn--primary paywall__btn" onClick={handleUpgradeClick}>
+            <button
+              type="button"
+              className="pillBtn pillBtn--primary paywall__btn"
+              onClick={handleUpgradeClick}
+            >
               <span>{t.paywallCta}</span>
               <span aria-hidden="true">➜</span>
             </button>
@@ -1274,11 +1134,7 @@ function ChatClient() {
               className="composer__input"
               placeholder={t.inputPlaceholder(displayName)}
               value={newMessage}
-              onChange={(e) => {
-                const next = clampText(e.target.value, MAX_CHARS);
-                setNewMessage(next);
-                if (sendError) setSendError(null);
-              }}
+              onChange={(e) => setNewMessage(clampText(e.target.value, MAX_CHARS))}
               onKeyDown={handleComposerKeyDown}
               rows={1}
               maxLength={MAX_CHARS}
@@ -1316,4 +1172,4 @@ function ChatClient() {
       </section>
     </main>
   );
-                                         }
+        }
