@@ -108,9 +108,9 @@ export default function MyAmoriaClient() {
 
       if (cancelledRef.current) return;
 
+      // ✅ En cas d’erreur, on envoie vers create (meilleure UX que rester bloqué)
       if (countRes.error) {
         console.error("user_amoria count error:", countRes.error);
-        // en cas d'erreur, on envoie vers create (meilleur UX que rester bloqué)
         safeReplace(`/create-amoria?lang=${encodeURIComponent(lang)}`);
         return;
       }
@@ -173,13 +173,13 @@ export default function MyAmoriaClient() {
       }
 
       // 5) Plan free: on ne montre jamais /select.
-      // S'il existe au moins 1 IA, on ouvre toujours la première (ou la plus récente si tu préfères).
+      // S'il existe au moins 1 IA, on ouvre toujours la première.
       const { data: first } = await supabase
         .from("user_amoria")
         .select("id")
         .eq("user_id", user.id)
         .eq("is_archived", false)
-        .order("created_at", { ascending: true })
+        .order("created_at", { ascending: true }) // première IA créée
         .limit(1)
         .maybeSingle();
 
