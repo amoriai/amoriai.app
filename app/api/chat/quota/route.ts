@@ -1,15 +1,17 @@
+// app/api/chat/quota/route.ts
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const FREE_LIFETIME_QUOTA = 40;
+// IMPORTANT: mets la même valeur que dans /api/chat/route.ts
+const FREE_LIFETIME_QUOTA = 15;
 
 type PlanCode = "free" | "chat" | "plus" | "unlimited";
 
 function hasBearer(authHeader: string) {
-  return /^Bearer\s+.+$/i.test((authHeader || "").trim());
+  return /^Bearer\s+.+$/i.test((authHeader ?? "").trim());
 }
 
 function normalizePlanCode(raw: unknown): PlanCode {
@@ -40,7 +42,7 @@ export async function GET(req: Request) {
     });
 
     const { data: userData, error: userError } = await supabaseAuth.auth.getUser();
-    const user = userData?.user;
+    const user = userData?.user ?? null;
 
     if (userError || !user) {
       return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
@@ -53,7 +55,7 @@ export async function GET(req: Request) {
       auth: { persistSession: false },
     });
 
-    // Prefer "current=true" if you use it; fallback to status=active
+    // Prefer current=true if you use it; fallback to status=active
     const { data: subCurrent } = await supabaseAdmin
       .from("user_subscriptions")
       .select("pricing_plan_id, status, current")
@@ -84,7 +86,7 @@ export async function GET(req: Request) {
       planCode = normalizePlanCode(planRow?.code);
     }
 
-    // 3) If paid: no remaining/quota needed (UI uses unlimited by plan)
+    // 3) Paid: UI doesn't need remaining
     if (planCode !== "free") {
       return NextResponse.json({
         planCode,
@@ -93,32 +95,30 @@ export async function GET(req: Request) {
       });
     }
 
-    // 4) Free: read remaining without consuming anything
-    // Option A: RPC (recommended)
-    // RPC should return either:
-    // - { remaining: number }  OR a plain number
-    const { data: rpcData, error: rpcErr } = await supabaseAuth.rpc("get_free_remaining", {
-      quota: FREE_LIFETIME_QUOTA,
-    });
+    // 4) Free: read remaining from table (NO RPC)
+    // Table: public.user_free_message_usage (user_id, used, updated_at)
+    const { data: usageRow, error: usageErr } = await supabaseAuth
+      .from("user_free_message_usage")
+      .select("used")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-    if (rpcErr) {
-      return NextResponse.json({ error: "quota_read_failed" }, { status: 500 });
+    // Si RLS bloque, tu vas voir une erreur ici (souvent status 400/401)
+    if (usageErr) {
+      return NextResponse.json(
+        { error: "quota_read_failed", details: usageErr },
+        { status: 400 }
+      );
     }
 
-    const remainingRaw =
-      typeof rpcData === "number"
-        ? rpcData
-        : typeof rpcData?.remaining === "number"
-          ? rpcData.remaining
-          : null;
-
-    const remaining =
-      typeof remainingRaw === "number" ? Math.max(0, Math.floor(remainingRaw)) : null;
+    const used = Number(usageRow?.used ?? 0);
+    const remaining = Math.max(0, FREE_LIFETIME_QUOTA - used);
 
     return NextResponse.json({
       planCode,
       chat_quota: FREE_LIFETIME_QUOTA,
       chat_remaining: remaining,
+      used,
     });
   } catch (e) {
     console.error("Server error in /api/chat/quota:", e);
