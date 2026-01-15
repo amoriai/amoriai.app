@@ -15,7 +15,7 @@ export async function GET() {
   const data = await resend.emails.send({
     from: "onboarding@resend.dev",
     to,
-    subject: "Test AmorIAI",
+    subject: "contactamoriai@gmail.com",
     html: "<p>Resend fonctionne ✅</p>",
   });
 
