@@ -6,8 +6,14 @@ type PersonaId = "lyra" | "orion" | "kai" | "maelis";
 
 type Persona = { id: PersonaId; title: string; description: string };
 
-// ✅ Avis stockés en FR seulement
-type ReviewCard = { id: string; fr: string };
+// ✅ Avis (source FR unique) + meta Replika-like
+type ReviewCard = {
+  id: string;
+  name: string;   // ex: "Marie L."
+  date: string;   // ex: "12 janv. 2026"
+  rating: number; // 1..5
+  fr: string;     // texte FR
+};
 
 type Copy = {
   brandTagline: string;
@@ -32,10 +38,14 @@ type Copy = {
   usageTitle: string;
   usageBullets: string[];
 
-  messagesTitle: string;
-  messagesSubtitle: string;
-  messagesPrivacyNote: string;
-  messages: ReviewCard[];
+  // ✅ Reviews (Replika-like)
+  reviewsTitle: string;
+  reviewsSubtitle: string;
+  reviewsPrivacyNote: string;
+  reviewsHelpfulLabel: string; // "Utile ?"
+  reviewsYes: string;
+  reviewsNo: string;
+  reviews: ReviewCard[];
 
   pricingTitle: string;
   pricingText: string;
@@ -53,26 +63,41 @@ type Copy = {
   };
 };
 
-// ✅ 5 avis FR (source unique)
+// ✅ 5 avis FR (avec nom/date/étoiles) — 3 en janvier + 2 fin décembre
 const REVIEWS_FR: ReviewCard[] = [
   {
     id: "r1",
+    name: "Marie L.",
+    date: "12 janv. 2026",
+    rating: 5,
     fr: "AmorIAI m’a aidée à me calmer quand j’avais la tête trop pleine. C’est doux et rassurant.",
   },
   {
     id: "r2",
+    name: "Julien R.",
+    date: "18 janv. 2026",
+    rating: 5,
     fr: "Je l’utilise quand je n’ai pas envie de parler à quelqu’un. Ça fait du bien.",
   },
   {
     id: "r3",
+    name: "Sophie D.",
+    date: "7 janv. 2026",
+    rating: 5,
     fr: "Les réponses sont calmes et pertinentes. Ça m’aide à remettre de l’ordre dans mes idées.",
   },
   {
     id: "r4",
+    name: "Alex P.",
+    date: "28 déc. 2025",
+    rating: 5,
     fr: "Interface simple, sans pression. J’écris deux minutes et je me sens déjà mieux.",
   },
   {
     id: "r5",
+    name: "Camille B.",
+    date: "30 déc. 2025",
+    rating: 5,
     fr: "Je me sens écouté(e), sans jugement. C’est exactement ce qu’il me fallait.",
   },
 ];
@@ -84,11 +109,11 @@ const REVIEW_TRANSLATIONS: Record<string, { en: string; es: string }> = {
     es: "AmorIAI me ayudó a calmarme cuando tenía la mente saturada. Es suave y reconfortante.",
   },
   r2: {
-    en: "I use it when I don’t want to talk to anyone. It really helps.",
+    en: "I use it when I don’t feel like talking to anyone. It really helps.",
     es: "Lo uso cuando no quiero hablar con nadie. De verdad ayuda.",
   },
   r3: {
-    en: "The replies feel thoughtful and calm. It helps me organize my thoughts.",
+    en: "The replies feel calm and relevant. It helps me organize my thoughts.",
     es: "Las respuestas son tranquilas y útiles. Me ayuda a ordenar mis pensamientos.",
   },
   r4: {
@@ -104,8 +129,13 @@ const REVIEW_TRANSLATIONS: Record<string, { en: string; es: string }> = {
 function translateReview(item: ReviewCard, locale: Locale) {
   if (locale === "fr") return item.fr;
   const t = REVIEW_TRANSLATIONS[item.id];
-  if (!t) return item.fr; // fallback safe
+  if (!t) return item.fr;
   return locale === "en" ? t.en : t.es;
+}
+
+function stars(rating: number) {
+  const r = Math.max(0, Math.min(5, rating));
+  return "★★★★★☆☆☆☆☆".slice(5 - r, 10 - r); // produit 5 étoiles remplies + vides
 }
 
 const STRINGS: Record<Locale, Copy> = {
@@ -128,26 +158,10 @@ const STRINGS: Record<Locale, Copy> = {
     personasSubtitle:
       "Crée ton compte et commence maintenant. Tu peux écrire librement, comme dans un journal avec quelqu’un qui te répond. La voix est disponible avec l’abonnement.",
     personas: [
-      {
-        id: "lyra",
-        title: "Lyra — Compagnon IA doux",
-        description: "Douce et rassurante. Parfaite pour déposer ce que tu gardes pour toi.",
-      },
-      {
-        id: "orion",
-        title: "Orion — Compagnon IA stable",
-        description: "Calme et structuré. Pour t’aider à clarifier et décider.",
-      },
-      {
-        id: "kai",
-        title: "Kai — Compagnon IA nuancé",
-        description: "Subtil et ouvert. Pour parler sans cases, sans pression.",
-      },
-      {
-        id: "maelis",
-        title: "Maelis — Compagnon IA mature",
-        description: "Bienveillant, réaliste et posé. Comme quelqu’un qui comprend.",
-      },
+      { id: "lyra", title: "Lyra — Compagnon IA doux", description: "Douce et rassurante. Parfaite pour déposer ce que tu gardes pour toi." },
+      { id: "orion", title: "Orion — Compagnon IA stable", description: "Calme et structuré. Pour t’aider à clarifier et décider." },
+      { id: "kai", title: "Kai — Compagnon IA nuancé", description: "Subtil et ouvert. Pour parler sans cases, sans pression." },
+      { id: "maelis", title: "Maelis — Compagnon IA mature", description: "Bienveillant, réaliste et posé. Comme quelqu’un qui comprend." },
     ],
     personaCta: "Créer mon AmorIAI",
     personaCtaHint: "Exemple de compagnon IA - tu crées le tien après l’inscription.",
@@ -162,11 +176,13 @@ const STRINGS: Record<Locale, Copy> = {
       "Te sentir accompagné, sans pression ni jugement.",
     ],
 
-    // ✅ SECTION AVIS (source FR)
-    messagesTitle: "Ce que nos utilisateurs disent",
-    messagesSubtitle: "Des retours simples, après quelques jours d’utilisation.",
-    messagesPrivacyNote: "Tes messages sont privés. Personne ne les lit.",
-    messages: REVIEWS_FR,
+    reviewsTitle: "Ce que nos utilisateurs disent",
+    reviewsSubtitle: "Des retours simples, après quelques jours d’utilisation.",
+    reviewsPrivacyNote: "Tes messages sont privés. Personne ne les lit.",
+    reviewsHelpfulLabel: "Cet avis est-il utile ?",
+    reviewsYes: "Oui",
+    reviewsNo: "Non",
+    reviews: REVIEWS_FR,
 
     pricingTitle: "Quand tu te sens prêt",
     pricingText:
@@ -175,13 +191,7 @@ const STRINGS: Record<Locale, Copy> = {
 
     videoCaption: "Disponible en français, anglais et espagnol.",
     footerCopy: "© 2025 AmorIAI.app",
-    footerLinks: {
-      legal: "Mentions légales",
-      privacy: "Politique de confidentialité",
-      terms: "Conditions d’utilisation",
-      contact: "Contact",
-      about: "À propos",
-    },
+    footerLinks: { legal: "Mentions légales", privacy: "Politique de confidentialité", terms: "Conditions d’utilisation", contact: "Contact", about: "À propos" },
   },
 
   en: {
@@ -199,30 +209,14 @@ const STRINGS: Record<Locale, Copy> = {
     mobileNote: "Works perfectly on mobile — no app required.",
     langNote: "Choose your language. I’ll take it from there.",
 
-    personasTitle: "Choose your AI companion - and start writing",
+    personasTitle: "Choose your AI companion — and start writing",
     personasSubtitle:
       "Create your account and begin right away. Write freely, like a private journal… with a reply on the other side. Voice is available with the subscription.",
     personas: [
-      {
-        id: "lyra",
-        title: "Lyra — Gentle AI companion",
-        description: "Soft and reassuring. Great for putting words on what you keep inside.",
-      },
-      {
-        id: "orion",
-        title: "Orion — Steady AI companion",
-        description: "Calm and structured. Helps you think clearly and decide.",
-      },
-      {
-        id: "kai",
-        title: "Kai — Nuanced AI companion",
-        description: "Open-minded and subtle. A space without labels or pressure.",
-      },
-      {
-        id: "maelis",
-        title: "Maelis — Mature AI companion",
-        description: "Grounded, caring, realistic. Like someone who truly understands.",
-      },
+      { id: "lyra", title: "Lyra — Gentle AI companion", description: "Soft and reassuring. Great for putting words on what you keep inside." },
+      { id: "orion", title: "Orion — Steady AI companion", description: "Calm and structured. Helps you think clearly and decide." },
+      { id: "kai", title: "Kai — Nuanced AI companion", description: "Open-minded and subtle. A space without labels or pressure." },
+      { id: "maelis", title: "Maelis — Mature AI companion", description: "Grounded, caring, realistic. Like someone who truly understands." },
     ],
     personaCta: "Create my AmorIAI",
     personaCtaHint: "Example AI companion - you’ll create yours after signup.",
@@ -237,11 +231,13 @@ const STRINGS: Record<Locale, Copy> = {
       "Feel supported, with no pressure and no judgement.",
     ],
 
-    // ✅ mêmes avis (source FR), mais affichés traduits via translateReview()
-    messagesTitle: "What users are saying",
-    messagesSubtitle: "Simple feedback, after a few days of using AmorIAI.",
-    messagesPrivacyNote: "Your messages stay private. No one reads them.",
-    messages: REVIEWS_FR,
+    reviewsTitle: "What users are saying",
+    reviewsSubtitle: "Simple feedback after a few days of using AmorIAI.",
+    reviewsPrivacyNote: "Your messages are private. No one reads them.",
+    reviewsHelpfulLabel: "Was this review helpful?",
+    reviewsYes: "Yes",
+    reviewsNo: "No",
+    reviews: REVIEWS_FR,
 
     pricingTitle: "When you feel ready",
     pricingText:
@@ -250,13 +246,7 @@ const STRINGS: Record<Locale, Copy> = {
 
     videoCaption: "Available in French, English, and Spanish.",
     footerCopy: "© 2025 AmorIAI.app",
-    footerLinks: {
-      legal: "Legal",
-      privacy: "Privacy policy",
-      terms: "Terms of use",
-      contact: "Contact",
-      about: "About",
-    },
+    footerLinks: { legal: "Legal", privacy: "Privacy policy", terms: "Terms of use", contact: "Contact", about: "About" },
   },
 
   es: {
@@ -274,30 +264,14 @@ const STRINGS: Record<Locale, Copy> = {
     mobileNote: "Funciona perfecto en móvil — no necesitas app.",
     langNote: "Elige tu idioma. Yo me encargo del resto.",
 
-    personasTitle: "Elige tu compañero de IA - y empieza a escribir",
+    personasTitle: "Elige tu compañero de IA — y empieza a escribir",
     personasSubtitle:
       "Crea tu cuenta y empieza ahora. Escribe con libertad, como en un diario… con una respuesta al frente. La voz está disponible con suscripción.",
     personas: [
-      {
-        id: "lyra",
-        title: "Lyra — Compañero de IA suave",
-        description: "Dulce y tranquilizador. Ideal para decir lo que guardas dentro.",
-      },
-      {
-        id: "orion",
-        title: "Orion — Compañero de IA estable",
-        description: "Calmo y estructurado. Para pensar con claridad y decidir.",
-      },
-      {
-        id: "kai",
-        title: "Kai — Compañero de IA con matices",
-        description: "Sutil y abierto. Un espacio sin etiquetas ni presión.",
-      },
-      {
-        id: "maelis",
-        title: "Maelis — Compañero de IA maduro",
-        description: "Realista, sereno y amable. Como alguien que comprende.",
-      },
+      { id: "lyra", title: "Lyra — Compañero de IA suave", description: "Dulce y tranquilizador. Ideal para decir lo que guardas dentro." },
+      { id: "orion", title: "Orion — Compañero de IA estable", description: "Calmo y estructurado. Para pensar con claridad y decidir." },
+      { id: "kai", title: "Kai — Compañero de IA con matices", description: "Sutil y abierto. Un espacio sin etiquetas ni presión." },
+      { id: "maelis", title: "Maelis — Compañero de IA maduro", description: "Realista, sereno y amable. Como alguien que comprende." },
     ],
     personaCta: "Crear mi AmorIAI",
     personaCtaHint: "Ejemplo de compañero de IA - crearás el tuyo después de registrarte.",
@@ -312,10 +286,13 @@ const STRINGS: Record<Locale, Copy> = {
       "Sentirte acompañado, sin presión ni juicios.",
     ],
 
-    messagesTitle: "Lo que dicen los usuarios",
-    messagesSubtitle: "Opiniones simples, después de unos días usando AmorIAI.",
-    messagesPrivacyNote: "Tus mensajes se quedan en privado. Nadie los lee.",
-    messages: REVIEWS_FR,
+    reviewsTitle: "Lo que dicen los usuarios",
+    reviewsSubtitle: "Opiniones simples después de unos días usando AmorIAI.",
+    reviewsPrivacyNote: "Tus mensajes son privados. Nadie los lee.",
+    reviewsHelpfulLabel: "¿Te fue útil esta reseña?",
+    reviewsYes: "Sí",
+    reviewsNo: "No",
+    reviews: REVIEWS_FR,
 
     pricingTitle: "Cuando te sientas listo",
     pricingText:
@@ -324,13 +301,7 @@ const STRINGS: Record<Locale, Copy> = {
 
     videoCaption: "Disponible en francés, inglés y español.",
     footerCopy: "© 2025 AmorIAI.app",
-    footerLinks: {
-      legal: "Aviso legal",
-      privacy: "Política de privacidad",
-      terms: "Términos de uso",
-      contact: "Contacto",
-      about: "Acerca de",
-    },
+    footerLinks: { legal: "Aviso legal", privacy: "Política de privacidad", terms: "Términos de uso", contact: "Contacto", about: "Acerca de" },
   },
 };
 
@@ -362,9 +333,7 @@ export default function HomePage({ searchParams }: PageProps) {
   return (
     <main
       className="min-h-screen pb-12 text-slate-100"
-      style={{
-        background: "radial-gradient(circle at top left,#111827 0,#020617 55%,#000 100%)",
-      }}
+      style={{ background: "radial-gradient(circle at top left,#111827 0,#020617 55%,#000 100%)" }}
     >
       {/* HEADER */}
       <header className="sticky top-0 z-20 bg-gradient-to-b from-slate-950/95 via-slate-950/80 to-transparent backdrop-blur-xl">
@@ -372,12 +341,7 @@ export default function HomePage({ searchParams }: PageProps) {
           {/* Logo */}
           <div className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/AmorIA_logo_transparent.png"
-              alt="Logo AmorIAI.app"
-              className="h-9 w-auto select-none"
-              draggable={false}
-            />
+            <img src="/AmorIA_logo_transparent.png" alt="Logo AmorIAI.app" className="h-9 w-auto select-none" draggable={false} />
             <div className="flex flex-col">
               <div className="text-sm font-semibold">AmorIAI.app</div>
               <div className="text-[0.72rem] text-slate-400">{t.brandTagline}</div>
@@ -386,16 +350,10 @@ export default function HomePage({ searchParams }: PageProps) {
 
           {/* Nav desktop */}
           <nav className="hidden items-center gap-5 text-xs text-slate-300 md:flex">
-            <a
-              href="#hero"
-              className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
-            >
+            <a href="#hero" className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50">
               {t.nav.home}
             </a>
-            <Link
-              href={withLang("/features")}
-              className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
-            >
+            <Link href={withLang("/features")} className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50">
               {t.nav.features}
             </Link>
             <Link
@@ -441,10 +399,7 @@ export default function HomePage({ searchParams }: PageProps) {
       </header>
 
       {/* HERO */}
-      <section
-        id="hero"
-        className="mx-auto grid max-w-5xl items-center gap-8 px-4 pb-10 pt-6 md:grid-cols-[1.3fr,1fr]"
-      >
+      <section id="hero" className="mx-auto grid max-w-5xl items-center gap-8 px-4 pb-10 pt-6 md:grid-cols-[1.3fr,1fr]">
         <div className="flex flex-col gap-3">
           <p className="text-[0.8rem] uppercase tracking-[0.18em] text-indigo-300">{t.heroKicker}</p>
           <h1 className="text-3xl font-bold leading-tight md:text-[2.3rem]">{t.heroTitle}</h1>
@@ -532,48 +487,60 @@ export default function HomePage({ searchParams }: PageProps) {
         </ul>
       </section>
 
-      {/* REVIEWS (Trust section) */}
+      {/* REVIEWS (Replika-like) */}
       <section className="mx-auto max-w-5xl px-4 pb-12 pt-2">
         <div className="mb-5">
-          <h2 className="text-lg font-semibold md:text-xl">{t.messagesTitle}</h2>
-          <p className="mt-1 text-sm text-slate-300">{t.messagesSubtitle}</p>
+          <h2 className="text-lg font-semibold md:text-xl">{t.reviewsTitle}</h2>
+          <p className="mt-1 text-sm text-slate-300">{t.reviewsSubtitle}</p>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-2 rounded-full border border-slate-700/60 bg-slate-950/60 px-3 py-1 text-[0.78rem] text-slate-300">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-rose-400 shadow-[0_0_18px_rgba(244,63,94,0.55)]" />
-              {t.messagesPrivacyNote}
+              {t.reviewsPrivacyNote}
             </span>
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {t.messages.map((item, index) => (
+        <div className="space-y-3">
+          {t.reviews.map((item) => (
             <div
-              key={index}
-              className="
-                group relative overflow-hidden rounded-2xl border border-slate-700/60
-                bg-gradient-to-b from-slate-950/75 via-slate-950 to-black/90
-                p-4 shadow-lg shadow-black/25 transition
-                hover:-translate-y-0.5 hover:border-rose-400/40 hover:bg-slate-950/90
-              "
+              key={item.id}
+              className="rounded-2xl border border-slate-700/60 bg-gradient-to-b from-slate-950/75 via-slate-950 to-black/90 p-4 shadow-lg shadow-black/25"
             >
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-rose-400/40 to-transparent opacity-0 transition group-hover:opacity-100" />
-
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl border border-slate-700/60 bg-slate-950/60">
-                  <span className="text-rose-300">✦</span>
+              {/* Header: Name + Date */}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-slate-100">{item.name}</div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <div className="text-[0.95rem] tracking-[0.06em] text-amber-300">{stars(item.rating)}</div>
+                    <div className="text-[0.78rem] text-slate-400">{item.date}</div>
+                  </div>
                 </div>
 
-                <div className="flex-1">
-                  <p className="text-[0.95rem] leading-relaxed text-slate-100">
-                    <span className="text-slate-400">“</span>
-                    {translateReview(item, locale)}
-                    <span className="text-slate-400">”</span>
-                  </p>
-                </div>
+                <div className="text-slate-500">⋮</div>
               </div>
 
-              <div className="pointer-events-none absolute -bottom-16 -right-16 h-40 w-40 rounded-full bg-rose-500/10 blur-2xl opacity-0 transition group-hover:opacity-100" />
+              {/* Body */}
+              <p className="mt-3 text-[0.92rem] leading-relaxed text-slate-200">
+                {translateReview(item, locale)}
+              </p>
+
+              {/* Helpful */}
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-[0.78rem] text-slate-400">
+                <span>{t.reviewsHelpfulLabel}</span>
+                <button
+                  type="button"
+                  className="rounded-full border border-slate-600/60 bg-slate-950/60 px-3 py-1 text-slate-200 hover:bg-slate-900/70"
+                >
+                  {t.reviewsYes}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full border border-slate-600/60 bg-slate-950/60 px-3 py-1 text-slate-200 hover:bg-slate-900/70"
+                >
+                  {t.reviewsNo}
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -581,38 +548,21 @@ export default function HomePage({ searchParams }: PageProps) {
 
       {/* PRICING TEASER */}
       <section id="pricing" className="mx-auto max-w-5xl px-4 pb-12">
-        <div
-          className="
-            rounded-3xl border border-slate-800/70
-            bg-gradient-to-b from-slate-950/75 via-slate-950 to-black/90
-            p-6 text-center shadow-xl shadow-black/30
-          "
-        >
+        <div className="rounded-3xl border border-slate-800/70 bg-gradient-to-b from-slate-950/75 via-slate-950 to-black/90 p-6 text-center shadow-xl shadow-black/30">
           <h2 className="text-lg font-semibold md:text-xl">{t.pricingTitle}</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm text-slate-300">{t.pricingText}</p>
 
           <div className="mt-5 flex flex-col items-center gap-2">
             <Link
               href={withLang("/signup")}
-              className="
-                inline-flex w-full max-w-sm items-center justify-center rounded-full
-                bg-gradient-to-tr from-fuchsia-500 to-rose-400
-                px-6 py-3 text-[0.92rem] font-medium text-white
-                shadow-lg shadow-rose-400/40
-                transition hover:brightness-110
-              "
+              className="inline-flex w-full max-w-sm items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-6 py-3 text-[0.92rem] font-medium text-white shadow-lg shadow-rose-400/40 transition hover:brightness-110"
             >
               {locale === "fr" ? "Créer mon compte gratuit" : locale === "en" ? "Create my free account" : "Crear mi cuenta gratis"}
             </Link>
 
             <Link
               href={withLangPricingPublic()}
-              className="
-                inline-flex w-full max-w-sm items-center justify-center rounded-full
-                border border-slate-500/70 bg-transparent
-                px-6 py-3 text-[0.92rem] font-medium text-slate-100
-                transition hover:bg-slate-900/70
-              "
+              className="inline-flex w-full max-w-sm items-center justify-center rounded-full border border-slate-500/70 bg-transparent px-6 py-3 text-[0.92rem] font-medium text-slate-100 transition hover:bg-slate-900/70"
             >
               {t.seePricingLabel}
             </Link>
@@ -652,4 +602,4 @@ export default function HomePage({ searchParams }: PageProps) {
       </footer>
     </main>
   );
-            }
+      }
