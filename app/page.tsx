@@ -5,7 +5,9 @@ type Locale = "fr" | "en" | "es";
 type PersonaId = "lyra" | "orion" | "kai" | "maelis";
 
 type Persona = { id: PersonaId; title: string; description: string };
-type QuoteCard = { quote: string };
+
+// ✅ Avis stockés en FR seulement
+type ReviewCard = { id: string; fr: string };
 
 type Copy = {
   brandTagline: string;
@@ -18,7 +20,7 @@ type Copy = {
   heroSubtitle: string;
   heroPrimary: string;
   heroSupport: string;
-  mobileNote: string; // ✅ ajouté
+  mobileNote: string;
   langNote: string;
 
   personasTitle: string;
@@ -33,7 +35,7 @@ type Copy = {
   messagesTitle: string;
   messagesSubtitle: string;
   messagesPrivacyNote: string;
-  messages: QuoteCard[];
+  messages: ReviewCard[];
 
   pricingTitle: string;
   pricingText: string;
@@ -50,6 +52,61 @@ type Copy = {
     about: string;
   };
 };
+
+// ✅ 5 avis FR (source unique)
+const REVIEWS_FR: ReviewCard[] = [
+  {
+    id: "r1",
+    fr: "AmorIAI m’a aidée à me calmer quand j’avais la tête trop pleine. C’est doux et rassurant.",
+  },
+  {
+    id: "r2",
+    fr: "Je l’utilise quand je n’ai pas envie de parler à quelqu’un. Ça fait du bien.",
+  },
+  {
+    id: "r3",
+    fr: "Les réponses sont calmes et pertinentes. Ça m’aide à remettre de l’ordre dans mes idées.",
+  },
+  {
+    id: "r4",
+    fr: "Interface simple, sans pression. J’écris deux minutes et je me sens déjà mieux.",
+  },
+  {
+    id: "r5",
+    fr: "Je me sens écouté(e), sans jugement. C’est exactement ce qu’il me fallait.",
+  },
+];
+
+// ✅ Traductions associées par id (affichage auto selon la langue)
+const REVIEW_TRANSLATIONS: Record<string, { en: string; es: string }> = {
+  r1: {
+    en: "AmorIAI helped me calm down when my mind felt overwhelmed. It’s gentle and comforting.",
+    es: "AmorIAI me ayudó a calmarme cuando tenía la mente saturada. Es suave y reconfortante.",
+  },
+  r2: {
+    en: "I use it when I don’t want to talk to anyone. It really helps.",
+    es: "Lo uso cuando no quiero hablar con nadie. De verdad ayuda.",
+  },
+  r3: {
+    en: "The replies feel thoughtful and calm. It helps me organize my thoughts.",
+    es: "Las respuestas son tranquilas y útiles. Me ayuda a ordenar mis pensamientos.",
+  },
+  r4: {
+    en: "Clean interface, no pressure. I write for two minutes and I already feel better.",
+    es: "Interfaz simple, sin presión. Escribo dos minutos y ya me siento mejor.",
+  },
+  r5: {
+    en: "I feel listened to, with no judgment. Exactly what I needed.",
+    es: "Me siento escuchado/a, sin juicios. Era justo lo que necesitaba.",
+  },
+};
+
+function translateReview(item: ReviewCard, locale: Locale) {
+  if (locale === "fr") return item.fr;
+  const t = REVIEW_TRANSLATIONS[item.id];
+  if (!t) return item.fr; // fallback safe
+  return locale === "en" ? t.en : t.es;
+}
 
 const STRINGS: Record<Locale, Copy> = {
   fr: {
@@ -105,16 +162,11 @@ const STRINGS: Record<Locale, Copy> = {
       "Te sentir accompagné, sans pression ni jugement.",
     ],
 
-    messagesTitle: "Ce que les gens écrivent quand ils commencent",
-    messagesSubtitle: "Des pensées simples. Sans mise en scène. Sans jugement.",
+    // ✅ SECTION AVIS (source FR)
+    messagesTitle: "Ce que nos utilisateurs disent",
+    messagesSubtitle: "Des retours simples, après quelques jours d’utilisation.",
     messagesPrivacyNote: "Tes messages sont privés. Personne ne les lit.",
-    messages: [
-      { quote: "J’ai juste besoin d’écrire un peu." },
-      { quote: "J’ai la tête pleine ce soir." },
-      { quote: "Je ne sais pas par où commencer." },
-      { quote: "Aide-moi à mettre de l’ordre dans mes pensées." },
-      { quote: "Je veux une réponse calme, rien de plus." },
-    ],
+    messages: REVIEWS_FR,
 
     pricingTitle: "Quand tu te sens prêt",
     pricingText:
@@ -185,16 +237,11 @@ const STRINGS: Record<Locale, Copy> = {
       "Feel supported, with no pressure and no judgement.",
     ],
 
-    messagesTitle: "What people write when they start",
-    messagesSubtitle: "Simple thoughts. No performance. No judgment.",
-    messagesPrivacyNote: "Your messages are private. No one reads them.",
-    messages: [
-      { quote: "I just need to write for a moment." },
-      { quote: "My head feels full tonight." },
-      { quote: "I don’t know where to start." },
-      { quote: "Help me sort out my thoughts." },
-      { quote: "I want a calm reply. Nothing more." },
-    ],
+    // ✅ mêmes avis (source FR), mais affichés traduits via translateReview()
+    messagesTitle: "What users are saying",
+    messagesSubtitle: "Simple feedback, after a few days of using AmorIAI.",
+    messagesPrivacyNote: "Your messages stay private. No one reads them.",
+    messages: REVIEWS_FR,
 
     pricingTitle: "When you feel ready",
     pricingText:
@@ -265,16 +312,10 @@ const STRINGS: Record<Locale, Copy> = {
       "Sentirte acompañado, sin presión ni juicios.",
     ],
 
-    messagesTitle: "Lo que la gente escribe aquí",
-    messagesSubtitle: "Frases simples, como en la vida real.",
-    messagesPrivacyNote: "Nadie lee tus mensajes. Son privados. Se quedan aquí.",
-    messages: [
-      { quote: "Por la noche necesito vaciar la cabeza antes de dormir." },
-      { quote: "Me da miedo que me juzguen si lo hablo con alguien." },
-      { quote: "Ayúdame a verlo claro — estoy confundido." },
-      { quote: "Le doy demasiadas vueltas. Necesito claridad." },
-      { quote: "Solo quiero una respuesta calmada, sin presión." },
-    ],
+    messagesTitle: "Lo que dicen los usuarios",
+    messagesSubtitle: "Opiniones simples, después de unos días usando AmorIAI.",
+    messagesPrivacyNote: "Tus mensajes se quedan en privado. Nadie los lee.",
+    messages: REVIEWS_FR,
 
     pricingTitle: "Cuando te sientas listo",
     pricingText:
@@ -426,7 +467,6 @@ export default function HomePage({ searchParams }: PageProps) {
           </div>
 
           <p className="mt-1 text-[0.82rem] text-slate-400">{t.heroSupport}</p>
-          {/* ✅ AJOUT: Mobile-friendly */}
           <p className="text-[0.8rem] text-slate-300">{t.mobileNote}</p>
           <p className="text-[0.8rem] text-slate-200">{t.langNote}</p>
         </div>
@@ -492,7 +532,7 @@ export default function HomePage({ searchParams }: PageProps) {
         </ul>
       </section>
 
-      {/* MESSAGES (Trust section) */}
+      {/* REVIEWS (Trust section) */}
       <section className="mx-auto max-w-5xl px-4 pb-12 pt-2">
         <div className="mb-5">
           <h2 className="text-lg font-semibold md:text-xl">{t.messagesTitle}</h2>
@@ -527,7 +567,7 @@ export default function HomePage({ searchParams }: PageProps) {
                 <div className="flex-1">
                   <p className="text-[0.95rem] leading-relaxed text-slate-100">
                     <span className="text-slate-400">“</span>
-                    {item.quote}
+                    {translateReview(item, locale)}
                     <span className="text-slate-400">”</span>
                   </p>
                 </div>
@@ -562,11 +602,7 @@ export default function HomePage({ searchParams }: PageProps) {
                 transition hover:brightness-110
               "
             >
-              {locale === "fr"
-                ? "Créer mon compte gratuit"
-                : locale === "en"
-                ? "Create my free account"
-                : "Crear mi cuenta gratis"}
+              {locale === "fr" ? "Créer mon compte gratuit" : locale === "en" ? "Create my free account" : "Crear mi cuenta gratis"}
             </Link>
 
             <Link
@@ -616,4 +652,4 @@ export default function HomePage({ searchParams }: PageProps) {
       </footer>
     </main>
   );
-}
+            }
