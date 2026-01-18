@@ -2,7 +2,7 @@ name: AmorIAI — Reminders Cron
 
 on:
   schedule:
-    - cron: "0 */6 * * *" # toutes les 6 heures
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 jobs:
