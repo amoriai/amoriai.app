@@ -77,12 +77,29 @@ async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: num
   }
 }
 
+/**
+ * IP extraction (safe)
+ * - Works with Vercel/Edge proxies
+ * - Cleans "ip:port"
+ * - Ignores "unknown"/invalid values
+ */
 function getIp(req: Request): string | null {
   const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-  const rip = req.headers.get("x-real-ip");
-  if (rip) return rip.trim();
-  return null;
+  let ip = xff ? xff.split(",")[0].trim() : (req.headers.get("x-real-ip") || "").trim();
+
+  if (!ip) return null;
+
+  // Strip port if present on IPv4: "1.2.3.4:1234"
+  if (ip.includes(".") && ip.includes(":")) {
+    ip = ip.split(":")[0];
+  }
+
+  const bad = ["unknown", "null", "undefined", "localhost"];
+  if (bad.includes(ip.toLowerCase())) return null;
+
+  if (ip.length > 80) return null;
+
+  return ip;
 }
 
 function buildStyleGuide(lang: Lang) {
@@ -327,7 +344,12 @@ export async function POST(req: Request) {
       chatQuotaType = "lifetime";
       chatQuota = FREE_LIFETIME_QUOTA;
 
-      // ✅ Anti-abuse: 1 free usage / IP / 24h
+      /**
+       * ✅ Anti-abuse: 1 free usage / IP / 24h
+       * IMPORTANT:
+       * - If the IP check fails (bad header / inet cast / etc.), DO NOT BLOCK.
+       *   We log it and still allow the message (better for ads + conversions).
+       */
       const ip = getIp(req);
       if (ip) {
         const { data: okIp, error: ipErr } = await supabaseAdmin.rpc("claim_free_ip", {
@@ -335,11 +357,9 @@ export async function POST(req: Request) {
         });
 
         if (ipErr) {
-          console.error("claim_free_ip error:", ipErr);
-          return jsonError(500, { error: "ip_check_failed" });
-        }
-
-        if (okIp === false) {
+          console.error("claim_free_ip error (ignored):", { ip, ipErr });
+          // do not block
+        } else if (okIp === false) {
           return NextResponse.json(
             {
               error: "free_ip_limit",
@@ -534,4 +554,4 @@ export async function POST(req: Request) {
     console.error("Server error in /api/chat:", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-}
+              }
