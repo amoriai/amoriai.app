@@ -1,5 +1,6 @@
 // app/page.tsx
 import Link from "next/link";
+import ReviewsSection from "./ReviewsSection";
 
 type Locale = "fr" | "en" | "es";
 type PersonaId = "lyra" | "orion" | "kai" | "maelis";
@@ -9,10 +10,10 @@ type Persona = { id: PersonaId; title: string; description: string };
 // ✅ Avis (source FR unique) + meta Replika-like
 type ReviewCard = {
   id: string;
-  name: string;   // ex: "Marie L."
-  date: string;   // ex: "12 janv. 2026"
+  name: string; // ex: "Marie L."
+  date: string; // ex: "12 janv. 2026"
   rating: number; // 1..5
-  fr: string;     // texte FR
+  fr: string; // texte FR
 };
 
 type Copy = {
@@ -133,11 +134,6 @@ function translateReview(item: ReviewCard, locale: Locale) {
   return locale === "en" ? t.en : t.es;
 }
 
-function stars(rating: number) {
-  const r = Math.max(0, Math.min(5, rating));
-  return "★★★★★☆☆☆☆☆".slice(5 - r, 10 - r); // produit 5 étoiles remplies + vides
-}
-
 const STRINGS: Record<Locale, Copy> = {
   fr: {
     brandTagline: "Un espace calme • FR / EN / ES",
@@ -191,7 +187,13 @@ const STRINGS: Record<Locale, Copy> = {
 
     videoCaption: "Disponible en français, anglais et espagnol.",
     footerCopy: "© 2025 AmorIAI.app",
-    footerLinks: { legal: "Mentions légales", privacy: "Politique de confidentialité", terms: "Conditions d’utilisation", contact: "Contact", about: "À propos" },
+    footerLinks: {
+      legal: "Mentions légales",
+      privacy: "Politique de confidentialité",
+      terms: "Conditions d’utilisation",
+      contact: "Contact",
+      about: "À propos",
+    },
   },
 
   en: {
@@ -330,6 +332,23 @@ export default function HomePage({ searchParams }: PageProps) {
     locale === "fr" ? "Déjà un compte ?" : locale === "en" ? "Already have an account?" : "¿Ya tienes una cuenta?";
   const loginInlineLabel = locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión";
 
+  // ✅ ReviewsSection attend `text` déjà traduit
+  const mappedReviews = t.reviews.map((r) => ({
+    id: r.id,
+    name: r.name,
+    date: r.date,
+    rating: r.rating,
+    text: translateReview(r, locale),
+  }));
+
+  const thanksTitle = locale === "fr" ? "Merci !" : locale === "en" ? "Thanks!" : "¡Gracias!";
+  const thanksHint =
+    locale === "fr"
+      ? "Ton vote a été enregistré."
+      : locale === "en"
+      ? "Your vote has been saved."
+      : "Tu voto se ha guardado.";
+
   return (
     <main
       className="min-h-screen pb-12 text-slate-100"
@@ -341,7 +360,12 @@ export default function HomePage({ searchParams }: PageProps) {
           {/* Logo */}
           <div className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/AmorIA_logo_transparent.png" alt="Logo AmorIAI.app" className="h-9 w-auto select-none" draggable={false} />
+            <img
+              src="/AmorIA_logo_transparent.png"
+              alt="Logo AmorIAI.app"
+              className="h-9 w-auto select-none"
+              draggable={false}
+            />
             <div className="flex flex-col">
               <div className="text-sm font-semibold">AmorIAI.app</div>
               <div className="text-[0.72rem] text-slate-400">{t.brandTagline}</div>
@@ -487,64 +511,19 @@ export default function HomePage({ searchParams }: PageProps) {
         </ul>
       </section>
 
-      {/* REVIEWS (Replika-like) */}
-      <section className="mx-auto max-w-5xl px-4 pb-12 pt-2">
-        <div className="mb-5">
-          <h2 className="text-lg font-semibold md:text-xl">{t.reviewsTitle}</h2>
-          <p className="mt-1 text-sm text-slate-300">{t.reviewsSubtitle}</p>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-2 rounded-full border border-slate-700/60 bg-slate-950/60 px-3 py-1 text-[0.78rem] text-slate-300">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-rose-400 shadow-[0_0_18px_rgba(244,63,94,0.55)]" />
-              {t.reviewsPrivacyNote}
-            </span>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          {t.reviews.map((item) => (
-            <div
-              key={item.id}
-              className="rounded-2xl border border-slate-700/60 bg-gradient-to-b from-slate-950/75 via-slate-950 to-black/90 p-4 shadow-lg shadow-black/25"
-            >
-              {/* Header: Name + Date */}
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-sm font-semibold text-slate-100">{item.name}</div>
-                  <div className="mt-1 flex items-center gap-2">
-                    <div className="text-[0.95rem] tracking-[0.06em] text-amber-300">{stars(item.rating)}</div>
-                    <div className="text-[0.78rem] text-slate-400">{item.date}</div>
-                  </div>
-                </div>
-
-                <div className="text-slate-500">⋮</div>
-              </div>
-
-              {/* Body */}
-              <p className="mt-3 text-[0.92rem] leading-relaxed text-slate-200">
-                {translateReview(item, locale)}
-              </p>
-
-              {/* Helpful */}
-              <div className="mt-4 flex flex-wrap items-center gap-2 text-[0.78rem] text-slate-400">
-                <span>{t.reviewsHelpfulLabel}</span>
-                <button
-                  type="button"
-                  className="rounded-full border border-slate-600/60 bg-slate-950/60 px-3 py-1 text-slate-200 hover:bg-slate-900/70"
-                >
-                  {t.reviewsYes}
-                </button>
-                <button
-                  type="button"
-                  className="rounded-full border border-slate-600/60 bg-slate-950/60 px-3 py-1 text-slate-200 hover:bg-slate-900/70"
-                >
-                  {t.reviewsNo}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* ✅ REVIEWS (via ReviewsSection.tsx) */}
+      <ReviewsSection
+        locale={locale}
+        title={t.reviewsTitle}
+        subtitle={t.reviewsSubtitle}
+        privacyNote={t.reviewsPrivacyNote}
+        helpfulLabel={t.reviewsHelpfulLabel}
+        yesLabel={t.reviewsYes}
+        noLabel={t.reviewsNo}
+        thanksTitle={thanksTitle}
+        thanksHint={thanksHint}
+        reviews={mappedReviews}
+      />
 
       {/* PRICING TEASER */}
       <section id="pricing" className="mx-auto max-w-5xl px-4 pb-12">
@@ -602,4 +581,4 @@ export default function HomePage({ searchParams }: PageProps) {
       </footer>
     </main>
   );
-      }
+                  }
