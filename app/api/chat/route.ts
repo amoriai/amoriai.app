@@ -77,6 +77,14 @@ async function fetchWithTimeout(input: string, init: RequestInit, timeoutMs: num
   }
 }
 
+function getIp(req: Request): string | null {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  const rip = req.headers.get("x-real-ip");
+  if (rip) return rip.trim();
+  return null;
+}
+
 function buildStyleGuide(lang: Lang) {
   if (lang === "fr") {
     return [
@@ -267,12 +275,17 @@ export async function POST(req: Request) {
       "Eres una IA compañera cálida y cariñosa. Responde con un tono natural y empático.";
 
     const defaultSystemPrompt =
-      safeLang === "en" ? defaultSystemPromptEn : safeLang === "es" ? defaultSystemPromptEs : defaultSystemPromptFr;
+      safeLang === "en"
+        ? defaultSystemPromptEn
+        : safeLang === "es"
+        ? defaultSystemPromptEs
+        : defaultSystemPromptFr;
 
     const personaPrompt = (iaRow.system_prompt?.trim() || defaultSystemPrompt).trim();
     const languageLock = buildLanguageLock(safeLang);
     const styleGuide = buildStyleGuide(safeLang);
 
+    // ---- OpenAI chat ----
     const chatRes = await fetchWithTimeout(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -302,8 +315,10 @@ export async function POST(req: Request) {
     }
 
     const chatData = await chatRes.json().catch(() => ({} as any));
-    const replyText: string = chatData?.choices?.[0]?.message?.content?.trim() || I18N.fallbackReply[safeLang];
+    const replyText: string =
+      chatData?.choices?.[0]?.message?.content?.trim() || I18N.fallbackReply[safeLang];
 
+    // ---- QUOTA ----
     let chatQuotaType: "lifetime" | "monthly" = "monthly";
     let chatQuota = 0;
     let chatUsage: any = null;
@@ -311,6 +326,36 @@ export async function POST(req: Request) {
     if (planCode === "free") {
       chatQuotaType = "lifetime";
       chatQuota = FREE_LIFETIME_QUOTA;
+
+      // ✅ Anti-abuse: 1 free usage / IP / 24h
+      const ip = getIp(req);
+      if (ip) {
+        const { data: okIp, error: ipErr } = await supabaseAdmin.rpc("claim_free_ip", {
+          p_ip: ip,
+        });
+
+        if (ipErr) {
+          console.error("claim_free_ip error:", ipErr);
+          return jsonError(500, { error: "ip_check_failed" });
+        }
+
+        if (okIp === false) {
+          return NextResponse.json(
+            {
+              error: "free_ip_limit",
+              planName,
+              planCode,
+              message:
+                safeLang === "fr"
+                  ? "Limite gratuite atteinte pour ce réseau. Réessaie plus tard ou passe à Plus."
+                  : safeLang === "es"
+                  ? "Límite gratuito alcanzado para esta red. Inténtalo más tarde o pásate a Plus."
+                  : "Free limit reached for this network. Try later or upgrade to Plus.",
+            },
+            { status: 429 }
+          );
+        }
+      }
 
       const { data, error } = await supabaseAuth.rpc("consume_free_message_once", {
         quota: FREE_LIFETIME_QUOTA,
@@ -366,6 +411,7 @@ export async function POST(req: Request) {
 
     const remainingAfter = typeof chatUsage?.remaining === "number" ? chatUsage.remaining : null;
 
+    // ---- HISTORY (paid only) ----
     if (canStoreHistory) {
       const { error: saveUserMsgErr } = await supabaseAuth.from("chat_messages").insert({
         user_id: userId,
@@ -384,6 +430,7 @@ export async function POST(req: Request) {
       if (saveAsstMsgErr) console.error("save assistant message error:", saveAsstMsgErr);
     }
 
+    // ---- AUDIO ----
     const allowAudioRequested = !!withAudio;
     const allowAudioByPlan = hasVoiceFromPlan && voiceLimitFromPlan > 0;
     const allowAudio = allowAudioRequested && allowAudioByPlan;
@@ -446,10 +493,13 @@ export async function POST(req: Request) {
       }
     }
 
-    const voiceWarning = voiceBlockedReason === "voice_quota_exceeded" ? I18N.voiceQuotaExceeded[safeLang] : null;
+    const voiceWarning =
+      voiceBlockedReason === "voice_quota_exceeded" ? I18N.voiceQuotaExceeded[safeLang] : null;
 
     const quotaBanner =
-      planCode === "free" && typeof remainingAfter === "number" ? buildQuotaBanner(safeLang, remainingAfter) : null;
+      planCode === "free" && typeof remainingAfter === "number"
+        ? buildQuotaBanner(safeLang, remainingAfter)
+        : null;
 
     return NextResponse.json({
       reply: replyText,
@@ -484,4 +534,4 @@ export async function POST(req: Request) {
     console.error("Server error in /api/chat:", e);
     return NextResponse.json({ error: "server_error" }, { status: 500 });
   }
-      }
+}
