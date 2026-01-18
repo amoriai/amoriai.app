@@ -94,6 +94,9 @@ type UiCopy = {
   freeNudgeCta: string;
 
   gentleHook: string;
+
+  // ✅ (optionnel) message IP limit
+  freeIpLimit: string;
 };
 
 const STRINGS: Record<Locale, UiCopy> = {
@@ -145,8 +148,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     myAmoria: "Mes AmorIAI",
     createAmoria: "Créer",
 
-    tooLong: (max) =>
-      `Ton message est trop long (max ${max} caractères pour ton forfait).`,
+    tooLong: (max) => `Ton message est trop long (max ${max} caractères pour ton forfait).`,
     charsLeft: (left, max) => `${left} / ${max}`,
 
     freeRemainingLabel: (n) =>
@@ -160,6 +162,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     freeNudgeCta: "Continuer avec Plus",
 
     gentleHook: "Je suis là, vraiment. Dis-moi ce qui te pèse le plus là, maintenant.",
+
+    freeIpLimit: "Limite gratuite atteinte pour ce réseau. Réessaie plus tard ou passe à Plus.",
   },
 
   en: {
@@ -220,6 +224,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     freeNudgeCta: "Continue with Plus",
 
     gentleHook: "I’m here with you. What’s the one thing you wish someone understood today?",
+
+    freeIpLimit: "Free limit reached for this network. Try later or upgrade to Plus.",
   },
 
   es: {
@@ -267,8 +273,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     myAmoria: "Mis AmorIAI",
     createAmoria: "Crear",
 
-    tooLong: (max) =>
-      `Tu mensaje es demasiado largo (máx. ${max} caracteres para tu plan).`,
+    tooLong: (max) => `Tu mensaje es demasiado largo (máx. ${max} caracteres para tu plan).`,
     charsLeft: (left, max) => `${left} / ${max}`,
 
     freeRemainingLabel: (n) => `Te quedan ${n} mensaje${n > 1 ? "s" : ""} gratis.`,
@@ -281,6 +286,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     freeNudgeCta: "Seguir con Plus",
 
     gentleHook: "Estoy contigo. ¿Qué te gustaría soltar hoy, aunque sea un poquito?",
+
+    freeIpLimit: "Límite gratuito alcanzado para esta red. Inténtalo más tarde o pásate a Plus.",
   },
 };
 
@@ -389,10 +396,7 @@ function ChatClient() {
   const isPaidPlan = !isFreePlan;
 
   const MAX_CHARS = useMemo(() => maxCharsForPlan(planId), [planId]);
-  const isTooLong = useMemo(
-    () => newMessage.length > MAX_CHARS,
-    [newMessage.length, MAX_CHARS]
-  );
+  const isTooLong = useMemo(() => newMessage.length > MAX_CHARS, [newMessage.length, MAX_CHARS]);
 
   const canCreate = useMemo(() => {
     if (planId === "free") return false;
@@ -739,11 +743,7 @@ function ChatClient() {
       }
 
       try {
-        const { data, error } = await supabase
-          .from("user_amoria")
-          .select("*")
-          .eq("id", iaId)
-          .maybeSingle();
+        const { data, error } = await supabase.from("user_amoria").select("*").eq("id", iaId).maybeSingle();
 
         if (cancelled) return;
         if (error || !data) setAiError(t.genericError);
@@ -836,13 +836,7 @@ function ChatClient() {
   }, [isFreePlan, isBlocked, freeRemaining, t]);
 
   const showRemainBar = useMemo(() => {
-    return (
-      !isBlocked &&
-      isFreePlan &&
-      typeof freeRemaining === "number" &&
-      freeRemaining > 0 &&
-      !nudge
-    );
+    return !isBlocked && isFreePlan && typeof freeRemaining === "number" && freeRemaining > 0 && !nudge;
   }, [isBlocked, isFreePlan, freeRemaining, nudge]);
 
   const showPromo = useMemo(() => {
@@ -911,15 +905,20 @@ function ChatClient() {
         data = await res.json();
       } catch {}
 
+      // ✅ FIX: inclure free_ip_limit
       const quotaHit =
         res.status === 429 ||
         data?.error === "quota_exceeded" ||
         data?.error === "text_quota_reached" ||
-        data?.error === "free_limit_reached";
+        data?.error === "free_limit_reached" ||
+        data?.error === "free_ip_limit";
 
       if (!res.ok && isFreePlan && quotaHit) {
+        // ✅ UX: si IP bloquée, on affiche le message spécifique (sinon paywall normal)
+        if (data?.error === "free_ip_limit") setSendError(t.freeIpLimit);
+        else setSendError(null);
+
         setIsBlocked(true);
-        setSendError(null);
         setFreeRemaining((prev) => (prev == null ? 0 : Math.min(prev, 0)));
         return;
       }
@@ -991,8 +990,7 @@ function ChatClient() {
   );
 
   const avatarRingClass = canPulseAvatar ? "avatarRing avatarRing--live" : "avatarRing";
-  const showVideoNow =
-    !!avatarImageUrl && canPlayAvatarVideo && !!avatarVideoUrl && avatarPlaying;
+  const showVideoNow = !!avatarImageUrl && canPlayAvatarVideo && !!avatarVideoUrl && avatarPlaying;
 
   if (!iaId) return <ChatSkeleton />;
 
@@ -1054,11 +1052,7 @@ function ChatClient() {
                     />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={avatarImageUrl}
-                      alt={`Avatar de ${displayName}`}
-                      className="avatarImg"
-                    />
+                    <img src={avatarImageUrl} alt={`Avatar de ${displayName}`} className="avatarImg" />
                   )
                 ) : (
                   <div className="avatarFallback">{displayName.charAt(0).toUpperCase()}</div>
@@ -1071,11 +1065,7 @@ function ChatClient() {
               {canUseVoice && !isBlocked && (
                 <div className="voiceToggle">
                   {!audioUnlocked ? (
-                    <button
-                      type="button"
-                      className="pillBtn pillBtn--ghost"
-                      onClick={() => void unlockAudio()}
-                    >
+                    <button type="button" className="pillBtn pillBtn--ghost" onClick={() => void unlockAudio()}>
                       {t.voiceUnlock}
                     </button>
                   ) : (
@@ -1122,12 +1112,7 @@ function ChatClient() {
                       <div className="row__left">
                         {showTinyAvatar ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            className="msgAvatar"
-                            src={avatarImageUrl!}
-                            alt=""
-                            aria-hidden="true"
-                          />
+                          <img className="msgAvatar" src={avatarImageUrl!} alt="" aria-hidden="true" />
                         ) : (
                           <span className="msgAvatar msgAvatar--fallback" aria-hidden="true">
                             {displayName.charAt(0).toUpperCase()}
@@ -1237,4 +1222,4 @@ function ChatClient() {
       </section>
     </main>
   );
-        }
+}
