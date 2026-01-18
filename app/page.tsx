@@ -186,7 +186,7 @@ const STRINGS: Record<Locale, Copy> = {
     seePricingLabel: "Voir les tarifs",
 
     videoCaption: "Disponible en français, anglais et espagnol.",
-    footerCopy: "© 2025 AmorIAI.app",
+    footerCopy: `© ${new Date().getFullYear()} AmorIAI.app`,
     footerLinks: {
       legal: "Mentions légales",
       privacy: "Politique de confidentialité",
