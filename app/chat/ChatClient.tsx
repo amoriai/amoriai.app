@@ -920,15 +920,16 @@ export default function ChatClient() {
   const showVideoNow = !!avatarImageUrl && canPlayAvatarVideo && !!avatarVideoUrl && avatarPlaying;
 
   if (!iaId) {
-    // si pas d’iaId, l’effet plus haut redirige; on évite de flasher du contenu
-    return null;
-  }
-  return (
-    <main className="page">
-      <header className="topbar">
-        <a href={homeUrl} className="topbar__back">
-          {t.backHome}
-        </a>
+  // si pas d’iaId, l’effet plus haut redirige; on évite de flasher du contenu
+  return null;
+}
+
+return (
+  <main className="page">
+    <header className="topbar">
+      <a href={homeUrl} className="topbar__back">
+        {t.backHome}
+      </a>
 
         <div className="topbar__right">
           {!isFreePlan && (
