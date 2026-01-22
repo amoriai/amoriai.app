@@ -595,11 +595,45 @@ function ChatClient() {
         )}
 
         {/* ✅ composer (garde ton JSX existant ici, inchangé) */}
-        <form className="composer" onSubmit={(e) => e.preventDefault()}>
-          {/* ton textarea + boutons */}
-          {/* IMPORTANT: garde ton handleSubmit / sendMessage comme avant */}
-        </form>
-      </section>
-    </main>
-  );
-}
+        <form className="composer" onSubmit={handleSubmit}>
+  <textarea
+    ref={composerRef}
+    className="composer__input"
+    placeholder={t.inputPlaceholder(displayName)}
+    value={newMessage}
+    onChange={(e) => setNewMessage(e.target.value)}
+    onKeyDown={handleComposerKeyDown}
+    aria-label="Message"
+  />
+
+  <div className="composer__actions">
+    {canUseVoice && sttSupported && !(isBlocked && !daypassActive) && (
+      <button
+        type="button"
+        className="pillBtn pillBtn--ghost"
+        onClick={handleToggleRecording}
+        disabled={sending}
+      >
+        {isRecording ? t.sttStop : t.sttStart}
+      </button>
+    )}
+
+    <button
+      type="submit"
+      className="pillBtn pillBtn--primary"
+      disabled={sending || !newMessage.trim() || isTooLong || (isBlocked && !daypassActive)}
+    >
+      {sending ? t.sending : t.send}
+    </button>
+  </div>
+
+  <div className="composer__meta">
+    <span className={isTooLong ? "meta meta--err" : "meta"}>
+      {t.charsLeft(Math.min(newMessage.length, MAX_CHARS), MAX_CHARS)}
+    </span>
+    <span className="meta meta--muted">{t.notePrivate}</span>
+  </div>
+
+  {sendError && <div className="errorLine">{sendError}</div>}
+</form>
+
