@@ -905,17 +905,21 @@ export default function ChatClient() {
     [sendMessage]
   );
 
-  const handleComposerKeyDown = useCallback(
+   const handleComposerKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key !== "Enter") return;
       if (e.shiftKey) return;
       e.preventDefault();
       if (sendingRef.current) return;
       void sendMessage();
-      
-     }, [sendMessage]);
+    },
+    [sendMessage]
+  );
 
-  const avatarRingClass = canPulseAvatar ? "avatarRing avatarRing--live" : "avatarRing";
+  const avatarRingClass = canPulseAvatar
+    ? "avatarRing avatarRing--live"
+    : "avatarRing";
+
   const showVideoNow =
     !!avatarImageUrl && canPlayAvatarVideo && !!avatarVideoUrl && avatarPlaying;
 
@@ -939,7 +943,10 @@ export default function ChatClient() {
           )}
 
           {canCreate && (
-            <Link href={createAmoriaUrl} className="topbar__pill topbar__pill--primary">
+            <Link
+              href={createAmoriaUrl}
+              className="topbar__pill topbar__pill--primary"
+            >
               {t.createAmoria}
             </Link>
           )}
@@ -989,7 +996,9 @@ export default function ChatClient() {
                     />
                   )
                 ) : (
-                  <div className="avatarFallback">{displayName.charAt(0).toUpperCase()}</div>
+                  <div className="avatarFallback">
+                    {displayName.charAt(0).toUpperCase()}
+                  </div>
                 )}
               </div>
 
@@ -1024,9 +1033,15 @@ export default function ChatClient() {
         </div>
 
         {showRemainBar && (
-          <div className={"remainBar" + (freeRemaining! <= 3 ? " remainBar--hot" : "")}>
+          <div
+            className={
+              "remainBar" + (freeRemaining! <= 3 ? " remainBar--hot" : "")
+            }
+          >
             <span className="remainBar__dot" aria-hidden="true" />
-            <span className="remainBar__text">{t.freeRemainingLabel(freeRemaining!)}</span>
+            <span className="remainBar__text">
+              {t.freeRemainingLabel(freeRemaining!)}
+            </span>
           </div>
         )}
 
@@ -1034,7 +1049,10 @@ export default function ChatClient() {
           {messages.length === 0 ? (
             <div className="empty">
               {t.emptyState(displayName)}
-              <div className="empty__hint" style={{ marginTop: 10, opacity: 0.85 }}>
+              <div
+                className="empty__hint"
+                style={{ marginTop: 10, opacity: 0.85 }}
+              >
                 {t.gentleHook}
               </div>
             </div>
@@ -1042,192 +1060,170 @@ export default function ChatClient() {
             <ul className="list">
               {messages.map((m) => {
                 const isUser = m.role === "user";
-                const showTinyAvatar = SHOW_BUBBLE_AVATAR && !isUser && !!avatarImageUrl;
+                const showTinyAvatar = SHOW_BUBBLE_AVATAR && !isUser;
 
                 return (
-                  <li key={m.id} className={isUser ? "row row--user" : "row row--assistant"}>
-                    {!isUser
-<div
-  className="chatBox"
-  ref={windowRef}
-  onScroll={handleWindowScroll}
->
-  {messages.length === 0 ? (
-    <div className="empty">
-      {t.emptyState(displayName)}
-
-      <div
-        className="empty__hint"
-        style={{ marginTop: 10, opacity: 0.85 }}
-      >
-        {t.gentleHook}
-      </div>
-    </div>
-  ) : (
-    <ul className="list">
-      {messages.map((m) => {
-        const isUser = m.role === "user";
-        const showTinyAvatar =
-          SHOW_BUBBLE_AVATAR && !isUser && !!avatarImageUrl;
-
-        return (
-          <li
-            key={m.id}
-            className={isUser ? "row row--user" : "row row--assistant"}
-          >
-            {!isUser && (
-              <div className="row__left">
-                {showTinyAvatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    className="msgAvatar"
-                    src={avatarImageUrl!}
-                    alt=""
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <span
-                    className="msgAvatar msgAvatar--fallback"
-                    aria-hidden="true"
+                  <li
+                    key={m.id}
+                    className={isUser ? "row row--user" : "row row--assistant"}
                   >
-                    {displayName.charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
+                    {!isUser && (
+                      <div className="row__left">
+                        {showTinyAvatar ? (
+                          avatarImageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              className="msgAvatar"
+                              src={avatarImageUrl}
+                              alt=""
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <span
+                              className="msgAvatar msgAvatar--fallback"
+                              aria-hidden="true"
+                            >
+                              {displayName.charAt(0).toUpperCase()}
+                            </span>
+                          )
+                        ) : null}
+                      </div>
+                    )}
+
+                    <div
+                      className={
+                        isUser
+                          ? "bubble bubble--user"
+                          : "bubble bubble--assistant"
+                      }
+                    >
+                      <div className="bubble__text">{m.content}</div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        {sendError && <p className="error">{sendError}</p>}
+
+        {!isBlocked && isFreePlan && nudge && (
+          <div className="nudge">
+            <div className="nudge__left">
+              <p className="nudge__title">{nudge.title}</p>
+              <p className="nudge__text">{nudge.text}</p>
+            </div>
+
+            <button
+              type="button"
+              className="pillBtn pillBtn--primary"
+              onClick={handleUpgradeClick}
+            >
+              {t.freeNudgeCta}
+            </button>
+          </div>
+        )}
+
+        {showPromo && (
+          <div className="promo">
+            <div className="badge">PLUS</div>
+
+            <div className="promo__texts">
+              <p className="promo__title">{t.promoTitle}</p>
+              <p className="promo__text">{t.promoText}</p>
+            </div>
+
+            <button
+              type="button"
+              className="pillBtn pillBtn--primary"
+              onClick={handleUpgradeClick}
+            >
+              {t.promoCta}
+            </button>
+          </div>
+        )}
+
+        {isBlocked && isFreePlan && (
+          <div className="paywall">
+            <div className="badge">PLUS</div>
+
+            <p className="paywall__title">{t.paywallTitle}</p>
+            <p className="paywall__text">{t.paywallText}</p>
+
+            <button
+              type="button"
+              className="pillBtn pillBtn--primary paywall__btn"
+              onClick={handleUpgradeClick}
+            >
+              <span>{t.paywallCta}</span>
+              <span aria-hidden="true">➜</span>
+            </button>
+
+            <a href={pricingUrl} className="paywall__link">
+              {t.paywallSeePlans}
+            </a>
+          </div>
+        )}
+
+        <form className="composer" onSubmit={handleSubmit}>
+          <div className="composer__field">
+            <textarea
+              ref={composerRef}
+              className="composer__input"
+              placeholder={t.inputPlaceholder(displayName)}
+              value={newMessage}
+              onChange={(e) =>
+                setNewMessage(clampText(e.target.value, MAX_CHARS))
+              }
+              onKeyDown={handleComposerKeyDown}
+              rows={1}
+              maxLength={MAX_CHARS}
+              disabled={isBlocked && isFreePlan}
+            />
+          </div>
+
+          <div className="composer__actions">
+            {canUseVoice && !isBlocked && (
+              <button
+                type="button"
+                className={isRecording ? "iconBtn iconBtn--active" : "iconBtn"}
+                onClick={handleToggleRecording}
+                disabled={!sttSupported || sending || !voiceEnabled}
+                aria-label={t.sttStart}
+                title={
+                  !sttSupported
+                    ? "STT not supported"
+                    : isRecording
+                    ? t.sttStop
+                    : t.sttStart
+                }
+              >
+                <span className="iconBtn__icon">
+                  {isRecording ? "■" : "🎤"}
+                </span>
+              </button>
             )}
 
-            <div
-              className={
-                isUser ? "bubble bubble--user" : "bubble bubble--assistant"
+            <button
+              type="submit"
+              className="sendBtn"
+              disabled={
+                sending ||
+                !newMessage.trim() ||
+                isTooLong ||
+                (isBlocked && isFreePlan)
               }
+              aria-label={t.send}
+              title={sending ? t.sending : t.send}
             >
-              <div className="bubble__text">{m.content}</div>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
-  )}
-</div>
+              <span className="sendBtn__icon">➤</span>
+            </button>
+          </div>
+        </form>
 
-{sendError && <p className="error">{sendError}</p>}
-
-{!isBlocked && isFreePlan && nudge && (
-  <div className="nudge">
-    <div className="nudge__left">
-      <p className="nudge__title">{nudge.title}</p>
-      <p className="nudge__text">{nudge.text}</p>
-    </div>
-
-    <button
-      type="button"
-      className="pillBtn pillBtn--primary"
-      onClick={handleUpgradeClick}
-    >
-      {t.freeNudgeCta}
-    </button>
-  </div>
-)}
-
-{showPromo && (
-  <div className="promo">
-    <div className="badge">PLUS</div>
-
-    <div className="promo__texts">
-      <p className="promo__title">{t.promoTitle}</p>
-      <p className="promo__text">{t.promoText}</p>
-    </div>
-
-    <button
-      type="button"
-      className="pillBtn pillBtn--primary"
-      onClick={handleUpgradeClick}
-    >
-      {t.promoCta}
-    </button>
-  </div>
-)}
-
-{isBlocked && isFreePlan && (
-  <div className="paywall">
-    <div className="badge">PLUS</div>
-
-    <p className="paywall__title">{t.paywallTitle}</p>
-    <p className="paywall__text">{t.paywallText}</p>
-
-    <button
-      type="button"
-      className="pillBtn pillBtn--primary paywall__btn"
-      onClick={handleUpgradeClick}
-    >
-      <span>{t.paywallCta}</span>
-      <span aria-hidden="true">➜</span>
-    </button>
-
-    <a href={pricingUrl} className="paywall__link">
-      {t.paywallSeePlans}
-    </a>
-  </div>
-)}
-
-<form className="composer" onSubmit={handleSubmit}>
-  <div className="composer__field">
-    <textarea
-      ref={composerRef}
-      className="composer__input"
-      placeholder={t.inputPlaceholder(displayName)}
-      value={newMessage}
-      onChange={(e) =>
-        setNewMessage(clampText(e.target.value, MAX_CHARS))
-      }
-      onKeyDown={handleComposerKeyDown}
-      rows={1}
-      maxLength={MAX_CHARS}
-      disabled={isBlocked && isFreePlan}
-    />
-  </div>
-
-  <div className="composer__actions">
-    {canUseVoice && !isBlocked && (
-      <button
-        type="button"
-        className={isRecording ? "iconBtn iconBtn--active" : "iconBtn"}
-        onClick={handleToggleRecording}
-        disabled={!sttSupported || sending || !voiceEnabled}
-        aria-label={t.sttStart}
-        title={
-          !sttSupported
-            ? "STT not supported"
-            : isRecording
-            ? t.sttStop
-            : t.sttStart
-        }
-      >
-        <span className="iconBtn__icon">
-          {isRecording ? "■" : "🎤"}
-        </span>
-      </button>
-    )}
-
-    <button
-      type="submit"
-      className="sendBtn"
-      disabled={
-        sending ||
-        !newMessage.trim() ||
-        isTooLong ||
-        (isBlocked && isFreePlan)
-      }
-      aria-label={t.send}
-      title={sending ? t.sending : t.send}
-    >
-      <span className="sendBtn__icon">➤</span>
-    </button>
-  </div>
-</form>
-
-<p className="note">{t.notePrivate}</p>
-</section>
-</main>
-);
+        <p className="note">{t.notePrivate}</p>
+      </section>
+    </main>
+  );
 }
