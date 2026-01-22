@@ -60,6 +60,13 @@ type UiCopy = {
   paywallCta: string;
   paywallSeePlans: string;
 
+  // ✅ Daypass 24h
+  daypassTitle: string;
+  daypassText: string;
+  daypassCta: string;
+  daypassAltCta: string;
+  daypassLoading: string;
+
   promoTitle: string;
   promoText: string;
   promoCta: string;
@@ -123,6 +130,12 @@ const STRINGS: Record<Locale, UiCopy> = {
     paywallText: "Pour continuer (et débloquer la voix), passe à AmorIAI Plus.",
     paywallCta: "Passer à AmorIAI Plus",
     paywallSeePlans: "Voir les forfaits →",
+
+    daypassTitle: "⏱️ Continuer maintenant",
+    daypassText: "Débloque le chat pendant 24h (paiement unique).",
+    daypassCta: "1,99$ — Pass 24h illimité",
+    daypassAltCta: "Ou passer à Plus",
+    daypassLoading: "Redirection vers paiement…",
 
     promoTitle: "Tu veux continuer ?",
     promoText:
@@ -188,6 +201,12 @@ const STRINGS: Record<Locale, UiCopy> = {
     paywallCta: "Upgrade to AmorIAI Plus",
     paywallSeePlans: "See plans →",
 
+    daypassTitle: "⏱️ Continue now",
+    daypassText: "Unlock chat for 24 hours (one-time payment).",
+    daypassCta: "$1.99 — 24h Unlimited Pass",
+    daypassAltCta: "Or upgrade to Plus",
+    daypassLoading: "Redirecting to payment…",
+
     promoTitle: "Want to continue?",
     promoText: "Plus keeps the thread, gives you more messages, and unlocks voice.",
     promoCta: "Discover AmorIAI Plus",
@@ -249,6 +268,12 @@ const STRINGS: Record<Locale, UiCopy> = {
     paywallText: "Para continuar (y desbloquear la voz), pásate a AmorIAI Plus.",
     paywallCta: "Pasar a AmorIAI Plus",
     paywallSeePlans: "Ver planes →",
+
+    daypassTitle: "⏱️ Continuar ahora",
+    daypassText: "Desbloquea el chat por 24 horas (pago único).",
+    daypassCta: "$1.99 — Pase ilimitado 24h",
+    daypassAltCta: "O pasar a Plus",
+    daypassLoading: "Redirigiendo al pago…",
 
     promoTitle: "¿Quieres continuar?",
     promoText: "Plus mantiene el hilo, te da más mensajes y desbloquea la voz.",
@@ -378,6 +403,10 @@ function ChatClient() {
 
   const [isBlocked, setIsBlocked] = useState(false);
 
+  // ✅ Daypass state
+  const [daypassActive, setDaypassActive] = useState(false);
+  const [daypassLoading, setDaypassLoading] = useState(false);
+
   // Ne jamais remonter l’affichage (évite 7 → 13)
   const [freeRemaining, setFreeRemaining] = useState<number | null>(null);
 
@@ -436,6 +465,31 @@ function ChatClient() {
     params.set("plan", "plus");
     window.location.href = `/pricing?${params.toString()}`;
   }, [locale]);
+
+  const startDaypassCheckout = useCallback(async () => {
+    try {
+      setSendError(null);
+      setDaypassLoading(true);
+
+      const r = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: "daypass24h", lang: locale }),
+      });
+
+      const data = await r.json().catch(() => ({} as any));
+      if (!r.ok || !data?.url) {
+        setDaypassLoading(false);
+        setSendError(data?.error ?? "Erreur paiement.");
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch {
+      setDaypassLoading(false);
+      setSendError(t.chatNetworkError);
+    }
+  }, [locale, t.chatNetworkError]);
 
   const unlockAudio = useCallback(async () => {
     try {
@@ -538,6 +592,8 @@ function ChatClient() {
           setSttSupported(false);
           setFreeRemaining(null);
           setIsBlocked(false);
+          setDaypassActive(false);
+          setDaypassLoading(false);
           return;
         }
 
@@ -547,6 +603,7 @@ function ChatClient() {
           .from("user_subscriptions")
           .select(
             `
+            unlimited_until,
             pricing_plans (
               code,
               has_voice,
@@ -565,6 +622,7 @@ function ChatClient() {
             .from("user_subscriptions")
             .select(
               `
+              unlimited_until,
               pricing_plans (
                 code,
                 has_voice,
@@ -578,6 +636,14 @@ function ChatClient() {
 
           if (!q2.error && q2.data) sub = q2.data;
         }
+
+        // ✅ daypass active?
+        const untilMs =
+          sub?.unlimited_until ? new Date(sub.unlimited_until as string).getTime() : 0;
+        const isDaypass = Number.isFinite(untilMs) && untilMs > Date.now();
+
+        if (cancelled) return;
+        setDaypassActive(isDaypass);
 
         const rawPlans: any = sub?.pricing_plans;
 
@@ -599,7 +665,7 @@ function ChatClient() {
         setPlanCode(code);
 
         const paid = !!code && code !== "free";
-        setCanPulseAvatar(paid);
+        setCanPulseAvatar(paid || isDaypass);
         setCanPlayAvatarVideo(code === "unlimited");
 
         const voiceOk = hasVoice && voiceLimit > 0;
@@ -608,12 +674,18 @@ function ChatClient() {
 
         if (code !== "unlimited") setAvatarPlaying(false);
 
-        // Init remaining (free)
-        if (!code || code === "free") {
-          await refreshFreeQuota();
-        } else {
-          setFreeRemaining(null);
+        // ✅ si daypass actif: ne pas bloquer + pas besoin quota
+        if (isDaypass) {
           setIsBlocked(false);
+          setFreeRemaining(null);
+        } else {
+          // Init remaining (free)
+          if (!code || code === "free") {
+            await refreshFreeQuota();
+          } else {
+            setFreeRemaining(null);
+            setIsBlocked(false);
+          }
         }
 
         const countRes = await supabase
@@ -634,6 +706,8 @@ function ChatClient() {
         setSttSupported(false);
         setFreeRemaining(null);
         setIsBlocked(false);
+        setDaypassActive(false);
+        setDaypassLoading(false);
       }
     };
 
@@ -647,6 +721,7 @@ function ChatClient() {
   useEffect(() => {
     if (!isFreePlan) return;
     if (isBlocked) return;
+    if (daypassActive) return;
 
     const onFocus = () => void refreshFreeQuota();
     const onVis = () => {
@@ -660,7 +735,7 @@ function ChatClient() {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [isFreePlan, isBlocked, refreshFreeQuota]);
+  }, [isFreePlan, isBlocked, daypassActive, refreshFreeQuota]);
 
   // ---------- STT support ----------
   useEffect(() => {
@@ -675,7 +750,8 @@ function ChatClient() {
   }, [canUseVoice]);
 
   const startRecording = useCallback(() => {
-    if (!canUseVoice || isBlocked) return;
+    if (!canUseVoice) return;
+    if (isBlocked && !daypassActive) return;
     if (typeof window === "undefined") return;
 
     const SpeechRecognition =
@@ -714,7 +790,7 @@ function ChatClient() {
 
     setIsRecording(true);
     recognition.start();
-  }, [canUseVoice, isBlocked, locale, newMessage, MAX_CHARS]);
+  }, [canUseVoice, isBlocked, daypassActive, locale, newMessage, MAX_CHARS]);
 
   const stopRecording = useCallback(() => {
     const r = recognitionRef.current;
@@ -723,10 +799,11 @@ function ChatClient() {
   }, []);
 
   const handleToggleRecording = useCallback(() => {
-    if (!canUseVoice || !sttSupported || sending || isBlocked) return;
+    if (!canUseVoice || !sttSupported || sending) return;
+    if (isBlocked && !daypassActive) return;
     if (isRecording) stopRecording();
     else startRecording();
-  }, [canUseVoice, sttSupported, sending, isBlocked, isRecording, stopRecording, startRecording]);
+  }, [canUseVoice, sttSupported, sending, isBlocked, daypassActive, isRecording, stopRecording, startRecording]);
 
   // ---------- Load AI ----------
   useEffect(() => {
@@ -743,7 +820,11 @@ function ChatClient() {
       }
 
       try {
-        const { data, error } = await supabase.from("user_amoria").select("*").eq("id", iaId).maybeSingle();
+        const { data, error } = await supabase
+          .from("user_amoria")
+          .select("*")
+          .eq("id", iaId)
+          .maybeSingle();
 
         if (cancelled) return;
         if (error || !data) setAiError(t.genericError);
@@ -823,6 +904,7 @@ function ChatClient() {
   const nudge = useMemo(() => {
     if (!isFreePlan) return null;
     if (isBlocked) return null;
+    if (daypassActive) return null;
     if (freeRemaining == null) return null;
     if (freeRemaining <= 0) return null;
 
@@ -833,26 +915,35 @@ function ChatClient() {
       return { kind: "n3" as const, title: t.freeNudgeTitle3, text: t.freeNudgeText3 };
     }
     return null;
-  }, [isFreePlan, isBlocked, freeRemaining, t]);
+  }, [isFreePlan, isBlocked, daypassActive, freeRemaining, t]);
 
   const showRemainBar = useMemo(() => {
-    return !isBlocked && isFreePlan && typeof freeRemaining === "number" && freeRemaining > 0 && !nudge;
-  }, [isBlocked, isFreePlan, freeRemaining, nudge]);
+    return (
+      !isBlocked &&
+      !daypassActive &&
+      isFreePlan &&
+      typeof freeRemaining === "number" &&
+      freeRemaining > 0 &&
+      !nudge
+    );
+  }, [isBlocked, daypassActive, isFreePlan, freeRemaining, nudge]);
 
   const showPromo = useMemo(() => {
     if (isBlocked) return false;
     if (!isFreePlan) return false;
+    if (daypassActive) return false;
     if (nudge) return false;
     if (typeof freeRemaining === "number" && freeRemaining <= 3) return false;
     return messages.length > 0 || freeRemaining != null;
-  }, [isBlocked, isFreePlan, nudge, freeRemaining, messages.length]);
+  }, [isBlocked, isFreePlan, daypassActive, nudge, freeRemaining, messages.length]);
 
   // ---------- Send message ----------
   const sendMessage = useCallback(async () => {
     setSendError(null);
 
     if (sendingRef.current) return;
-    if (!newMessage.trim() || !iaId || isBlocked) return;
+    if (!newMessage.trim() || !iaId) return;
+    if (isBlocked && !daypassActive) return;
 
     const trimmed = newMessage.trim();
     if (trimmed.length > MAX_CHARS) {
@@ -905,7 +996,6 @@ function ChatClient() {
         data = await res.json();
       } catch {}
 
-      // ✅ FIX: inclure free_ip_limit
       const quotaHit =
         res.status === 429 ||
         data?.error === "quota_exceeded" ||
@@ -913,8 +1003,8 @@ function ChatClient() {
         data?.error === "free_limit_reached" ||
         data?.error === "free_ip_limit";
 
-      if (!res.ok && isFreePlan && quotaHit) {
-        // ✅ UX: si IP bloquée, on affiche le message spécifique (sinon paywall normal)
+      // ✅ si daypass actif mais serveur renvoie quota => on force paywall quand même (ça indique backend pas patché)
+      if (!res.ok && isFreePlan && quotaHit && !daypassActive) {
         if (data?.error === "free_ip_limit") setSendError(t.freeIpLimit);
         else setSendError(null);
 
@@ -931,11 +1021,10 @@ function ChatClient() {
       }
 
       // source of truth: API response
-      if (isFreePlan && typeof data?.chat_remaining === "number") {
+      if (isFreePlan && !daypassActive && typeof data?.chat_remaining === "number") {
         const next = Math.max(0, Math.floor(data.chat_remaining));
         setFreeRemaining((prev) => (prev == null ? next : Math.min(prev, next)));
-      } else if (isFreePlan) {
-        // si /api/chat ne renvoie pas chat_remaining, on refresh via /api/chat/quota
+      } else if (isFreePlan && !daypassActive) {
         void refreshFreeQuota();
       }
 
@@ -948,7 +1037,7 @@ function ChatClient() {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      if (assistantMessage.content && !isBlocked) triggerAvatarAnimation();
+      if (assistantMessage.content && !(isBlocked && !daypassActive)) triggerAvatarAnimation();
     } catch {
       setSendError(t.chatNetworkError);
     } finally {
@@ -960,6 +1049,7 @@ function ChatClient() {
     newMessage,
     iaId,
     isBlocked,
+    daypassActive,
     MAX_CHARS,
     t,
     isRecording,
@@ -1062,7 +1152,7 @@ function ChatClient() {
               <p className="hero__name">{displayNameUpper}</p>
               <p className="hero__subtitle">{t.subtitle(displayName)}</p>
 
-              {canUseVoice && !isBlocked && (
+              {canUseVoice && !(isBlocked && !daypassActive) && (
                 <div className="voiceToggle">
                   {!audioUnlocked ? (
                     <button type="button" className="pillBtn pillBtn--ghost" onClick={() => void unlockAudio()}>
@@ -1131,95 +1221,4 @@ function ChatClient() {
           )}
         </div>
 
-        {sendError && <p className="error">{sendError}</p>}
-
-        {!isBlocked && isFreePlan && nudge && (
-          <div className="nudge">
-            <div className="nudge__left">
-              <p className="nudge__title">{nudge.title}</p>
-              <p className="nudge__text">{nudge.text}</p>
-            </div>
-            <button type="button" className="pillBtn pillBtn--primary" onClick={handleUpgradeClick}>
-              {t.freeNudgeCta}
-            </button>
-          </div>
-        )}
-
-        {showPromo && (
-          <div className="promo">
-            <div className="badge">PLUS</div>
-            <div className="promo__texts">
-              <p className="promo__title">{t.promoTitle}</p>
-              <p className="promo__text">{t.promoText}</p>
-            </div>
-            <button type="button" className="pillBtn pillBtn--primary" onClick={handleUpgradeClick}>
-              {t.promoCta}
-            </button>
-          </div>
-        )}
-
-        {isBlocked && isFreePlan && (
-          <div className="paywall">
-            <div className="badge">PLUS</div>
-            <p className="paywall__title">{t.paywallTitle}</p>
-            <p className="paywall__text">{t.paywallText}</p>
-            <button
-              type="button"
-              className="pillBtn pillBtn--primary paywall__btn"
-              onClick={handleUpgradeClick}
-            >
-              <span>{t.paywallCta}</span>
-              <span aria-hidden="true">➜</span>
-            </button>
-            <a href={pricingUrl} className="paywall__link">
-              {t.paywallSeePlans}
-            </a>
-          </div>
-        )}
-
-        <form className="composer" onSubmit={handleSubmit}>
-          <div className="composer__field">
-            <textarea
-              ref={composerRef}
-              className="composer__input"
-              placeholder={t.inputPlaceholder(displayName)}
-              value={newMessage}
-              onChange={(e) => setNewMessage(clampText(e.target.value, MAX_CHARS))}
-              onKeyDown={handleComposerKeyDown}
-              rows={1}
-              maxLength={MAX_CHARS}
-              disabled={isBlocked && isFreePlan}
-            />
-          </div>
-
-          <div className="composer__actions">
-            {canUseVoice && !isBlocked && (
-              <button
-                type="button"
-                className={isRecording ? "iconBtn iconBtn--active" : "iconBtn"}
-                onClick={handleToggleRecording}
-                disabled={!sttSupported || sending || !voiceEnabled}
-                aria-label={t.sttStart}
-                title={!sttSupported ? "STT not supported" : isRecording ? t.sttStop : t.sttStart}
-              >
-                <span className="iconBtn__icon">{isRecording ? "■" : "🎤"}</span>
-              </button>
-            )}
-
-            <button
-              type="submit"
-              className="sendBtn"
-              disabled={sending || !newMessage.trim() || isTooLong || (isBlocked && isFreePlan)}
-              aria-label={t.send}
-              title={sending ? t.sending : t.send}
-            >
-              <span className="sendBtn__icon">➤</span>
-            </button>
-          </div>
-        </form>
-
-        <p className="note">{t.notePrivate}</p>
-      </section>
-    </main>
-  );
-}
+        
