@@ -637,3 +637,8 @@ function ChatClient() {
   {sendError && <div className="errorLine">{sendError}</div>}
 </form>
 
+      </section>
+    </main>
+  );
+}
+
