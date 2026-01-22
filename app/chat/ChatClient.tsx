@@ -923,7 +923,6 @@ export default function ChatClient() {
     // si pas d’iaId, l’effet plus haut redirige; on évite de flasher du contenu
     return null;
   }
-
   return (
     <main className="page">
       <header className="topbar">
