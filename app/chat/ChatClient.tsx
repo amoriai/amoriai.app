@@ -13,7 +13,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { LogoutButton } from "../components/LogoutButton";
 import { maxAmoriaForPlan, type PlanId } from "@/lib/plan";
-import { PaywallDaypass } from "../components/PaywallDaypass";
 
 type Locale = "fr" | "en" | "es";
 
@@ -52,34 +51,48 @@ type UiCopy = {
   genericError: string;
   notAuthenticated: string;
   profileNotFound: string;
+
   paywallTitle: string;
   paywallText: string;
   paywallCta: string;
   paywallSeePlans: string;
-  daypassTitle: string;
-  daypassText: string;
-  daypassCta: string;
-  daypassAltCta: string;
-  daypassLoading: string;
+
+  promoTitle: string;
+  promoText: string;
+  promoCta: string;
+
   voiceUnlock: string;
   voiceOn: string;
   voiceOff: string;
+
   sttStart: string;
   sttStop: string;
+
   notePrivate: string;
+
+  voiceLimitReached: string;
+  voiceServerError: string;
+  voiceNetworkError: string;
+
   chatNetworkError: string;
   chatServerErrorPrefix: string;
+
   myAmoria: string;
   createAmoria: string;
+
   tooLong: (max: number) => string;
   charsLeft: (left: number, max: number) => string;
+
   freeRemainingLabel: (n: number) => string;
   freeNudgeTitle3: string;
   freeNudgeText3: string;
   freeNudgeTitle1: string;
   freeNudgeText1: string;
   freeNudgeCta: string;
+
   gentleHook: string;
+
+  // optionnel : IP limit
   freeIpLimit: string;
 };
 
@@ -88,7 +101,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     backHome: "← Accueil",
     title: (name) => `Chat avec ${name}`,
     subtitle: (name) => `${name} est là. Tu peux parler librement, à ton rythme.`,
-    emptyState: () => `Je suis là. Prends ton temps, je t'écoute.💬`,
+    emptyState: () => "Je suis là. Prends ton temps, je t'écoute.💬",
     inputPlaceholder: (name) => `Écris à ${name}…`,
     send: "Envoyer",
     sending: "Envoi…",
@@ -101,20 +114,23 @@ const STRINGS: Record<Locale, UiCopy> = {
     profileNotFound:
       "Aucune AmorIA trouvée. Va dans « Mes AmorIAI » pour en créer une, puis reviens ici.",
     paywallTitle: "🔒 Limite atteinte pour ton accès gratuit.",
-    paywallText: "Pour continuer (et débloquer la voix), passe à AmorIAI Plus.",
+    paywallText:
+      "Pour continuer (et débloquer la voix), passe à AmorIAI Plus.",
     paywallCta: "Passer à AmorIAI Plus",
     paywallSeePlans: "Voir les forfaits →",
-    daypassTitle: "⏱️ Continuer maintenant",
-    daypassText: "Débloque le chat pendant 24h (paiement unique).",
-    daypassCta: "1,99$ — Pass 24h illimité",
-    daypassAltCta: "Ou passer à Plus",
-    daypassLoading: "Redirection vers paiement…",
+    promoTitle: "Tu veux continuer ?",
+    promoText:
+      "Avec Plus, tu gardes le fil, tu as plus de messages et la voix de ton compagnon.",
+    promoCta: "Découvrir AmorIAI Plus",
     voiceUnlock: "🔓 Activer l’audio",
     voiceOn: "🔊 Voix : ON",
     voiceOff: "🔇 Voix : OFF",
     sttStart: "Dicter",
     sttStop: "Stop",
     notePrivate: "Tes messages sont privés.",
+    voiceLimitReached: "Tu as atteint la limite de voix pour ton forfait.",
+    voiceServerError: "Erreur voice (serveur).",
+    voiceNetworkError: "Erreur voice (réseau).",
     chatNetworkError: "Erreur réseau. Vérifie ta connexion et réessaie.",
     chatServerErrorPrefix: "Erreur serveur : ",
     myAmoria: "Mes AmorIAI",
@@ -133,7 +149,8 @@ const STRINGS: Record<Locale, UiCopy> = {
     freeNudgeText1:
       "Si tu veux continuer juste après, passe à Plus pour garder la continuité (et activer la voix).",
     freeNudgeCta: "Continuer avec Plus",
-    gentleHook: "Je suis là, vraiment. Dis-moi ce qui te pèse le plus là, maintenant.",
+    gentleHook:
+      "Je suis là, vraiment. Dis-moi ce qui te pèse le plus là, maintenant.",
     freeIpLimit:
       "Limite gratuite atteinte pour ce réseau. Réessaie plus tard ou passe à Plus.",
   },
@@ -142,7 +159,7 @@ const STRINGS: Record<Locale, UiCopy> = {
     backHome: "← Home",
     title: (name) => `Chat with ${name}`,
     subtitle: (name) => `${name} is here. Take your time.`,
-    emptyState: () => `I'm here. Take your time, I'm listening.💬`,
+    emptyState: () => "I'm here. Take your time, I'm listening.💬",
     inputPlaceholder: (name) => `Write to ${name}…`,
     send: "Send",
     sending: "Sending…",
@@ -156,23 +173,23 @@ const STRINGS: Record<Locale, UiCopy> = {
     paywallText: "To continue (and unlock voice), upgrade to AmorIAI Plus.",
     paywallCta: "Upgrade to AmorIAI Plus",
     paywallSeePlans: "See plans →",
-    daypassTitle: "⏱️ Continue now",
-    daypassText: "Unlock chat for 24 hours (one-time payment).",
-    daypassCta: "$1.99 — 24h Unlimited Pass",
-    daypassAltCta: "Or upgrade to Plus",
-    daypassLoading: "Redirecting to payment…",
+    promoTitle: "Want to continue?",
+    promoText: "Plus keeps the thread, gives you more messages, and unlocks voice.",
+    promoCta: "Discover AmorIAI Plus",
     voiceUnlock: "🔓 Enable audio",
     voiceOn: "🔊 Voice: ON",
     voiceOff: "🔇 Voice: OFF",
     sttStart: "Dictate",
     sttStop: "Stop",
     notePrivate: "Your messages are private.",
+    voiceLimitReached: "You’ve reached the voice limit for your plan.",
+    voiceServerError: "Voice error (server).",
+    voiceNetworkError: "Voice error (network).",
     chatNetworkError: "Network error. Check your connection and try again.",
     chatServerErrorPrefix: "Server error: ",
     myAmoria: "My AmorIAI",
     createAmoria: "Create",
-    tooLong: (max) =>
-      `Your message is too long (max ${max} chars for your plan).`,
+    tooLong: (max) => `Your message is too long (max ${max} chars for your plan).`,
     charsLeft: (left, max) => `${left} / ${max}`,
     freeRemainingLabel: (n) => `${n} free message${n > 1 ? "s" : ""} left.`,
     freeNudgeTitle3: "We’re on a good track 🙂",
@@ -182,17 +199,15 @@ const STRINGS: Record<Locale, UiCopy> = {
     freeNudgeText1:
       "If you want to continue right after, upgrade to Plus for continuity (and voice).",
     freeNudgeCta: "Continue with Plus",
-    gentleHook:
-      "I’m here with you. What’s the one thing you wish someone understood today?",
-    freeIpLimit:
-      "Free limit reached for this network. Try later or upgrade to Plus.",
+    gentleHook: "I’m here with you. What’s the one thing you wish someone understood today?",
+    freeIpLimit: "Free limit reached for this network. Try later or upgrade to Plus.",
   },
 
   es: {
     backHome: "← Inicio",
     title: (name) => `Chat con ${name}`,
     subtitle: (name) => `${name} está aquí. Tómate tu tiempo.`,
-    emptyState: () => `Estoy aquí. Tómate tu tiempo, te escucho.💬`,
+    emptyState: () => "Estoy aquí. Tómate tu tiempo, te escucho.💬",
     inputPlaceholder: (name) => `Escribe a ${name}…`,
     send: "Enviar",
     sending: "Enviando…",
@@ -206,23 +221,23 @@ const STRINGS: Record<Locale, UiCopy> = {
     paywallText: "Para continuar (y desbloquear la voz), pásate a AmorIAI Plus.",
     paywallCta: "Pasar a AmorIAI Plus",
     paywallSeePlans: "Ver planes →",
-    daypassTitle: "⏱️ Continuar ahora",
-    daypassText: "Desbloquea el chat por 24 horas (pago único).",
-    daypassCta: "$1.99 — Pase ilimitado 24h",
-    daypassAltCta: "O pasar a Plus",
-    daypassLoading: "Redirigiendo al pago…",
+    promoTitle: "¿Quieres continuar?",
+    promoText: "Plus mantiene el hilo, te da más mensajes y desbloquea la voz.",
+    promoCta: "Descubrir AmorIAI Plus",
     voiceUnlock: "🔓 Activar audio",
     voiceOn: "🔊 Voz: ON",
     voiceOff: "🔇 Voz: OFF",
     sttStart: "Dictar",
     sttStop: "Stop",
     notePrivate: "Tus mensajes son privados.",
+    voiceLimitReached: "Has alcanzado el límite de voz para tu plan.",
+    voiceServerError: "Error de voz (servidor).",
+    voiceNetworkError: "Error de voz (red).",
     chatNetworkError: "Error de red. Verifica tu conexión e inténtalo de nuevo.",
     chatServerErrorPrefix: "Error del servidor: ",
     myAmoria: "Mis AmorIAI",
     createAmoria: "Crear",
-    tooLong: (max) =>
-      `Tu mensaje es demasiado largo (máx. ${max} caracteres para tu plan).`,
+    tooLong: (max) => `Tu mensaje es demasiado largo (máx. ${max} caracteres para tu plan).`,
     charsLeft: (left, max) => `${left} / ${max}`,
     freeRemainingLabel: (n) => `Te quedan ${n} mensaje${n > 1 ? "s" : ""} gratis.`,
     freeNudgeTitle3: "Vamos bien 🙂",
@@ -233,8 +248,7 @@ const STRINGS: Record<Locale, UiCopy> = {
       "Si quieres seguir justo después, pásate a Plus para mantener la continuidad (y voz).",
     freeNudgeCta: "Seguir con Plus",
     gentleHook: "Estoy contigo. ¿Qué te gustaría soltar hoy, aunque sea un poquito?",
-    freeIpLimit:
-      "Límite gratuito alcanzado para esta red. Inténtalo más tarde o pásate a Plus.",
+    freeIpLimit: "Límite gratuito alcanzado para esta red. Inténtalo más tarde o pásate a Plus.",
   },
 };
 
@@ -276,38 +290,52 @@ export default function ChatClient() {
   const locale = normalizeLocale(searchParams.get("lang"));
   const t = STRINGS[locale];
 
+  const SHOW_BUBBLE_AVATAR = true;
+
   const [ai, setAi] = useState<AmoriaRow | null>(null);
   const [aiLoading, setAiLoading] = useState(true);
   const [aiError, setAiError] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
+
   const [sending, setSending] = useState(false);
   const sendingRef = useRef(false);
-
   const [sendError, setSendError] = useState<string | null>(null);
 
   const [planCode, setPlanCode] = useState<string | null>(null);
   const [activeAmoriaCount, setActiveAmoriaCount] = useState<number>(0);
 
   const [canUseVoice, setCanUseVoice] = useState(false);
-  const [sttSupported, setSttSupported] = useState(false);
+  const [canPulseAvatar, setCanPulseAvatar] = useState(false);
+  const [canPlayAvatarVideo, setCanPlayAvatarVideo] = useState(false);
+
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+
   const [isRecording, setIsRecording] = useState(false);
+  const [sttSupported, setSttSupported] = useState(false);
+  const recognitionRef = useRef<any | null>(null);
 
   const [isBlocked, setIsBlocked] = useState(false);
 
-  const [daypassActive, setDaypassActive] = useState(false);
-  const [daypassLoading, setDaypassLoading] = useState(false);
-
+  // Ne jamais remonter l’affichage (évite 7 → 13)
   const [freeRemaining, setFreeRemaining] = useState<number | null>(null);
 
   const windowRef = useRef<HTMLDivElement | null>(null);
+  const shouldAutoScrollRef = useRef(true);
+
+  const [avatarPlaying, setAvatarPlaying] = useState(false);
+  const avatarTimerRef = useRef<number | null>(null);
+
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   const planId: PlanId = useMemo(() => normalizePlan(planCode), [planCode]);
   const maxAllowed = useMemo(() => maxAmoriaForPlan(planId), [planId]);
 
   const isFreePlan = planId === "free";
+  const isPaidPlan = !isFreePlan;
+
   const MAX_CHARS = useMemo(() => maxCharsForPlan(planId), [planId]);
   const isTooLong = useMemo(() => newMessage.length > MAX_CHARS, [newMessage, MAX_CHARS]);
 
@@ -320,6 +348,15 @@ export default function ChatClient() {
     () => (ai?.name?.trim() || "AmorIAI").trim(),
     [ai?.name]
   );
+  const displayNameUpper = useMemo(() => displayName.toUpperCase(), [displayName]);
+
+  const avatarImageUrl = ai?.avatar_image_url ?? null;
+
+  const avatarVideoUrl = useMemo(() => {
+    if (!avatarImageUrl) return null;
+    if (!/\.(png|jpe?g|webp)$/i.test(avatarImageUrl)) return null;
+    return avatarImageUrl.replace(/\.(png|jpe?g|webp)$/i, ".mp4");
+  }, [avatarImageUrl]);
 
   const homeUrl = useMemo(() => `/?lang=${locale}`, [locale]);
   const myAmoriaUrl = useMemo(() => `/my-amoria?lang=${locale}`, [locale]);
@@ -330,83 +367,12 @@ export default function ChatClient() {
     if (!iaId) router.replace(myAmoriaUrl);
   }, [iaId, router, myAmoriaUrl]);
 
-  // --------- LOAD AI + PLAN + COUNTS ---------
   useEffect(() => {
-    let mounted = true;
-
-    async function run() {
-      try {
-        setAiLoading(true);
-        setAiError(null);
-
-        const { data: auth } = await supabase.auth.getUser();
-        const user = auth?.user;
-
-        if (!user) {
-          if (mounted) setAiError(t.notAuthenticated);
-          return;
-        }
-
-        const { data: aiRow, error: aiErr } = await supabase
-          .from("amoria")
-          .select("*")
-          .eq("id", iaId)
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (aiErr || !aiRow) {
-          if (mounted) setAiError(t.profileNotFound);
-          return;
-        }
-
-        if (mounted) setAi(aiRow as AmoriaRow);
-
-        const { data: sub } = await supabase
-          .from("user_subscriptions")
-          .select("plan_id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        const plan = (sub?.plan_id as string | null) ?? "free";
-        if (mounted) setPlanCode(plan);
-
-        const { count } = await supabase
-          .from("amoria")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id)
-          .eq("is_archived", false);
-
-        if (mounted) setActiveAmoriaCount(count ?? 0);
-
-        const { data: rows } = await supabase
-          .from("chat_messages")
-          .select("id, role, content, created_at")
-          .eq("ia_id", iaId)
-          .order("created_at", { ascending: true });
-
-        if (mounted) {
-          const mapped: ChatMessage[] =
-            rows?.map((r: any) => ({
-              id: String(r.id),
-              role: r.role === "assistant" ? "assistant" : "user",
-              content: String(r.content ?? ""),
-              createdAt: String(r.created_at ?? new Date().toISOString()),
-            })) ?? [];
-
-          setMessages(mapped);
-        }
-      } catch {
-        if (mounted) setAiError(t.genericError);
-      } finally {
-        if (mounted) setAiLoading(false);
-      }
-    }
-
-    if (iaId) run();
-    return () => {
-      mounted = false;
-    };
-  }, [iaId, t]);
+    if (!iaId) return;
+    try {
+      window.localStorage.setItem("amoria_last_ia_id", iaId);
+    } catch {}
+  }, [iaId]);
 
   const handleUpgradeClick = useCallback(() => {
     const params = new URLSearchParams();
@@ -415,127 +381,379 @@ export default function ChatClient() {
     window.location.href = `/pricing?${params.toString()}`;
   }, [locale]);
 
-  const startDaypassCheckout = useCallback(async () => {
+  const unlockAudio = useCallback(async () => {
     try {
-      setSendError(null);
-      setDaypassLoading(true);
-
-      const r = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: "daypass24h", lang: locale }),
-      });
-
-      const data = await r.json().catch(() => ({} as any));
-
-      if (!r.ok || !data?.url) {
-        setDaypassLoading(false);
-        setSendError(data?.error ?? "Erreur paiement.");
-        return;
-      }
-
-      window.location.href = data.url;
-    } catch {
-      setDaypassLoading(false);
-      setSendError(t.chatNetworkError);
+      const a = new Audio();
+      a.muted = true;
+      a.src =
+        "data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA" +
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+      await a.play().catch(() => {});
+    } finally {
+      setAudioUnlocked(true);
     }
-  }, [locale, t.chatNetworkError]);
-
-  // --------- HANDLERS REQUIRED BY JSX ---------
-  const handleComposerKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        (e.currentTarget.form as HTMLFormElement | null)?.requestSubmit?.();
-      }
-    },
-    []
-  );
-
-  const handleToggleRecording = useCallback(() => {
-    setIsRecording((v) => !v);
   }, []);
 
-  const handleSubmit = useCallback(
-    async (e: FormEvent) => {
-      e.preventDefault();
-      if (sendingRef.current) return;
+  const handleWindowScroll = useCallback(() => {
+    const el = windowRef.current;
+    if (!el) return;
+    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 120;
+    shouldAutoScrollRef.current = nearBottom;
+  }, []);
 
-      const content = newMessage.trim();
-      if (!content) return;
+  const scrollToBottomIfNeeded = useCallback(() => {
+    const el = windowRef.current;
+    if (!el) return;
+    if (!shouldAutoScrollRef.current) return;
+    el.scrollTop = el.scrollHeight;
+  }, []);
 
-      if (isTooLong) {
-        setSendError(t.tooLong(MAX_CHARS));
-        return;
-      }
+  const triggerAvatarAnimation = useCallback(() => {
+    if (!canPlayAvatarVideo) return;
+    if (!avatarVideoUrl) return;
+    if (avatarTimerRef.current) {
+      window.clearTimeout(avatarTimerRef.current);
+      avatarTimerRef.current = null;
+    }
+    setAvatarPlaying(true);
+    avatarTimerRef.current = window.setTimeout(() => {
+      setAvatarPlaying(false);
+      avatarTimerRef.current = null;
+    }, 10_000);
+  }, [canPlayAvatarVideo, avatarVideoUrl]);
 
-      if (isBlocked && !daypassActive) return;
+  const autoGrow = useCallback(() => {
+    const el = composerRef.current;
+    if (!el) return;
+    el.style.height = "0px";
+    const next = Math.min(el.scrollHeight, 180);
+    el.style.height = `${next}px`;
+  }, []);
 
-      setSendError(null);
-      setSending(true);
-      sendingRef.current = true;
+  useEffect(() => {
+    autoGrow();
+  }, [newMessage, autoGrow]);
 
-      const optimistic: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "user",
-        content: clampText(content, MAX_CHARS),
-        createdAt: new Date().toISOString(),
-      };
+  // ---------- QUOTA helper (FREE) ----------
+  const refreshFreeQuota = useCallback(async () => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) return;
 
-      setMessages((m) => [...m, optimistic]);
-      setNewMessage("");
+      const r = await fetch("/api/chat/quota", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        cache: "no-store",
+      });
 
+      if (!r.ok) return;
+      const q = await r.json().catch(() => ({}));
+      if (typeof q?.chat_remaining !== "number") return;
+
+      const next = Math.max(0, Math.floor(q.chat_remaining));
+      setFreeRemaining((prev) => {
+        if (prev == null) return next;
+        return Math.min(prev, next);
+      });
+    } catch {}
+  }, []);
+
+  // ---------- PLAN + QUOTA ----------
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSubscriptionAndQuota = async () => {
       try {
-        const r = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ iaId, message: optimistic.content, lang: locale }),
-        });
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData?.user;
+        if (cancelled) return;
 
-        const data = await r.json().catch(() => ({} as any));
-
-        if (!r.ok) {
-          setSendError(data?.error ?? t.chatServerErrorPrefix + r.status);
+        if (!user) {
+          setPlanCode(null);
+          setActiveAmoriaCount(0);
+          setCanUseVoice(false);
+          setCanPulseAvatar(false);
+          setCanPlayAvatarVideo(false);
+          setSttSupported(false);
+          setFreeRemaining(null);
+          setIsBlocked(false);
           return;
         }
 
-        const reply =
-          typeof data?.reply === "string"
-            ? data.reply
-            : typeof data?.text === "string"
-            ? data.text
-            : "";
+        let sub: any = null;
 
-        if (reply) {
-          setMessages((m) => [
-            ...m,
-            {
-              id: crypto.randomUUID(),
-              role: "assistant",
-              content: reply,
-              createdAt: new Date().toISOString(),
-            },
-          ]);
+        const q1 = await supabase
+          .from("user_subscriptions")
+          .select(`pricing_plans ( code, has_voice, voice_limit )`)
+          .eq("user_id", user.id)
+          .eq("current", true)
+          .maybeSingle();
+
+        if (!q1.error && q1.data) sub = q1.data;
+
+        if (!sub) {
+          const q2 = await supabase
+            .from("user_subscriptions")
+            .select(`pricing_plans ( code, has_voice, voice_limit )`)
+            .eq("user_id", user.id)
+            .eq("status", "active")
+            .maybeSingle();
+
+          if (!q2.error && q2.data) sub = q2.data;
         }
 
-        if (typeof data?.freeRemaining === "number") setFreeRemaining(data.freeRemaining);
-        if (typeof data?.blocked === "boolean") setIsBlocked(data.blocked);
-        if (typeof data?.daypassActive === "boolean") setDaypassActive(data.daypassActive);
-      } catch {
-        setSendError(t.chatNetworkError);
-      } finally {
-        setSending(false);
-        sendingRef.current = false;
-      }
-    },
-    [MAX_CHARS, daypassActive, iaId, isBlocked, isTooLong, locale, newMessage, t]
-  );
+        const rawPlans: any = sub?.pricing_plans;
 
-  // --------- UI LOGIC ---------
+        let code: string | null = null;
+        let hasVoice = false;
+        let voiceLimit = 0;
+
+        const pickPlan = (p: any) => {
+          code = p?.code ?? null;
+          hasVoice = !!p?.has_voice;
+          voiceLimit = Number(p?.voice_limit ?? 0);
+        };
+
+        if (Array.isArray(rawPlans)) pickPlan(rawPlans[0] ?? {});
+        else if (rawPlans && typeof rawPlans === "object") pickPlan(rawPlans);
+
+        if (cancelled) return;
+
+        setPlanCode(code);
+
+        const paid = !!code && code !== "free";
+        setCanPulseAvatar(paid);
+        setCanPlayAvatarVideo(code === "unlimited");
+
+        const voiceOk = hasVoice && voiceLimit > 0;
+        setCanUseVoice(voiceOk);
+
+        if (!voiceOk) setSttSupported(false);
+        if (code !== "unlimited") setAvatarPlaying(false);
+
+        if (!code || code === "free") {
+          await refreshFreeQuota();
+        } else {
+          setFreeRemaining(null);
+          setIsBlocked(false);
+        }
+
+        const countRes = await supabase
+          .from("user_amoria")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("is_archived", false);
+
+        if (cancelled) return;
+        setActiveAmoriaCount(countRes.count ?? 0);
+      } catch {
+        if (cancelled) return;
+        setPlanCode(null);
+        setActiveAmoriaCount(0);
+        setCanUseVoice(false);
+        setCanPulseAvatar(false);
+        setCanPlayAvatarVideo(false);
+        setSttSupported(false);
+        setFreeRemaining(null);
+        setIsBlocked(false);
+      }
+    };
+
+    loadSubscriptionAndQuota();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshFreeQuota]);
+
+  // refresh quota quand on revient sur l’onglet (free only)
+  useEffect(() => {
+    if (!isFreePlan) return;
+    if (isBlocked) return;
+
+    const onFocus = () => void refreshFreeQuota();
+    const onVis = () => {
+      if (document.visibilityState === "visible") void refreshFreeQuota();
+    };
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVis);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [isFreePlan, isBlocked, refreshFreeQuota]);
+
+  // ---------- STT support ----------
+  useEffect(() => {
+    if (!canUseVoice) {
+      setSttSupported(false);
+      return;
+    }
+    if (typeof window === "undefined") return;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    setSttSupported(!!SpeechRecognition);
+  }, [canUseVoice]);
+
+  const startRecording = useCallback(() => {
+    if (!canUseVoice || isBlocked) return;
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+
+    recognition.lang = locale === "fr" ? "fr-FR" : locale === "es" ? "es-ES" : "en-US";
+    recognition.interimResults = true;
+    recognition.continuous = false;
+
+    let finalText = "";
+
+    recognition.onresult = (event: any) => {
+      let interim = "";
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) finalText += transcript + " ";
+        else interim += transcript;
+      }
+
+      const merged = (newMessage ? newMessage + " " : "") + finalText + interim;
+      setNewMessage(clampText(merged.trimStart(), MAX_CHARS));
+    };
+
+    recognition.onerror = () => {
+      setIsRecording(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+      recognitionRef.current = null;
+    };
+
+    setIsRecording(true);
+    recognition.start();
+  }, [canUseVoice, isBlocked, locale, newMessage, MAX_CHARS]);
+
+  const stopRecording = useCallback(() => {
+    const r = recognitionRef.current;
+    if (r) r.stop();
+    setIsRecording(false);
+  }, []);
+
+  const handleToggleRecording = useCallback(() => {
+    if (!canUseVoice || !sttSupported || sending || isBlocked) return;
+    if (isRecording) stopRecording();
+    else startRecording();
+  }, [canUseVoice, sttSupported, sending, isBlocked, isRecording, stopRecording, startRecording]);
+
+  // ---------- Load AI ----------
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadAI = async () => {
+      setAiLoading(true);
+      setAiError(null);
+      setAi(null);
+
+      if (!iaId) {
+        setAiLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("user_amoria")
+          .select("*")
+          .eq("id", iaId)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (error || !data) setAiError(t.genericError);
+        else setAi(data as AmoriaRow);
+      } catch {
+        if (cancelled) return;
+        setAiError(t.genericError);
+      } finally {
+        if (!cancelled) setAiLoading(false);
+      }
+    };
+
+    loadAI();
+    return () => {
+      cancelled = true;
+    };
+  }, [iaId, t.genericError]);
+
+  // ---------- History (paid only) ----------
+  useEffect(() => {
+    if (!iaId) return;
+    if (!isPaidPlan) return;
+
+    const ac = new AbortController();
+
+    const loadHistory = async () => {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+        if (!accessToken) return;
+
+        const res = await fetch(`/api/chat/history?iaId=${encodeURIComponent(iaId)}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          signal: ac.signal,
+          cache: "no-store",
+        });
+
+        if (!res.ok) return;
+
+        const data = (await res.json()) as ChatMessage[];
+        if (ac.signal.aborted) return;
+
+        setMessages(
+          data
+            .map((m) => ({ ...m, createdAt: m.createdAt ?? new Date().toISOString() }))
+            .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+        );
+      } catch {}
+    };
+
+    loadHistory();
+    return () => ac.abort();
+  }, [iaId, isPaidPlan]);
+
+  useEffect(() => {
+    scrollToBottomIfNeeded();
+  }, [messages.length, scrollToBottomIfNeeded]);
+
+  // cleanup
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+      if (avatarTimerRef.current) {
+        try {
+          window.clearTimeout(avatarTimerRef.current);
+        } catch {}
+        avatarTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  // ---------- NUDGE (free only) ----------
   const nudge = useMemo(() => {
     if (!isFreePlan) return null;
     if (isBlocked) return null;
-    if (daypassActive) return null;
     if (freeRemaining == null) return null;
     if (freeRemaining <= 0) return null;
 
@@ -546,24 +764,165 @@ export default function ChatClient() {
       return { kind: "n3" as const, title: t.freeNudgeTitle3, text: t.freeNudgeText3 };
     }
     return null;
-  }, [isFreePlan, isBlocked, daypassActive, freeRemaining, t]);
+  }, [isFreePlan, isBlocked, freeRemaining, t]);
 
   const showRemainBar = useMemo(() => {
-    return (
-      !isBlocked &&
-      !daypassActive &&
-      isFreePlan &&
-      typeof freeRemaining === "number" &&
-      freeRemaining > 0 &&
-      !nudge
-    );
-  }, [isBlocked, daypassActive, isFreePlan, freeRemaining, nudge]);
+    return !isBlocked && isFreePlan && typeof freeRemaining === "number" && freeRemaining > 0 && !nudge;
+  }, [isBlocked, isFreePlan, freeRemaining, nudge]);
 
-  const showPaywall = useMemo(() => {
-    return isBlocked && isFreePlan && !daypassActive;
-  }, [isBlocked, isFreePlan, daypassActive]);
+  const showPromo = useMemo(() => {
+    if (isBlocked) return false;
+    if (!isFreePlan) return false;
+    if (nudge) return false;
+    if (typeof freeRemaining === "number" && freeRemaining <= 3) return false;
+    return messages.length > 0 || freeRemaining != null;
+  }, [isBlocked, isFreePlan, nudge, freeRemaining, messages.length]);
 
-  if (!iaId) return null;
+  // ---------- Send message ----------
+  const sendMessage = useCallback(async () => {
+    setSendError(null);
+    if (sendingRef.current) return;
+    if (!newMessage.trim() || !iaId || isBlocked) return;
+
+    const trimmed = newMessage.trim();
+    if (trimmed.length > MAX_CHARS) {
+      setSendError(t.tooLong(MAX_CHARS));
+      return;
+    }
+
+    sendingRef.current = true;
+    setSending(true);
+
+    if (isRecording) stopRecording();
+
+    const content = trimmed;
+    const baseId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    const userMessage: ChatMessage = {
+      id: `${baseId}-user`,
+      role: "user",
+      content,
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setNewMessage("");
+
+    const ac = new AbortController();
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      if (!accessToken) {
+        setSendError(t.notAuthenticated);
+        return;
+      }
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ iaId, message: content, lang: locale }),
+        signal: ac.signal,
+        cache: "no-store",
+      });
+
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {}
+
+      const quotaHit =
+        res.status === 429 ||
+        data?.error === "quota_exceeded" ||
+        data?.error === "text_quota_reached" ||
+        data?.error === "free_limit_reached" ||
+        data?.error === "free_ip_limit";
+
+      if (!res.ok && isFreePlan && quotaHit) {
+        if (data?.error === "free_ip_limit") setSendError(t.freeIpLimit);
+        else setSendError(null);
+
+        setIsBlocked(true);
+        setFreeRemaining((prev) => (prev == null ? 0 : Math.min(prev, 0)));
+        return;
+      }
+
+      if (!res.ok) {
+        if (data?.error === "not_authenticated") return setSendError(t.notAuthenticated);
+        if (data?.error === "profile_not_found") return setSendError(t.profileNotFound);
+        if (data?.message) return setSendError(data.message);
+        return setSendError(t.chatServerErrorPrefix + (data?.error ?? "Unable to send message."));
+      }
+
+      // source of truth: API response
+      if (isFreePlan && typeof data?.chat_remaining === "number") {
+        const next = Math.max(0, Math.floor(data.chat_remaining));
+        setFreeRemaining((prev) => (prev == null ? next : Math.min(prev, next)));
+      } else if (isFreePlan) {
+        void refreshFreeQuota();
+      }
+
+      const assistantMessage: ChatMessage = {
+        id: `${baseId}-assistant`,
+        role: "assistant",
+        content: data?.reply ?? "",
+        createdAt: new Date().toISOString(),
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+
+      if (assistantMessage.content && !isBlocked) triggerAvatarAnimation();
+    } catch {
+      setSendError(t.chatNetworkError);
+    } finally {
+      ac.abort();
+      sendingRef.current = false;
+      setSending(false);
+    }
+  }, [
+    newMessage,
+    iaId,
+    isBlocked,
+    MAX_CHARS,
+    t,
+    isRecording,
+    stopRecording,
+    locale,
+    isFreePlan,
+    triggerAvatarAnimation,
+    refreshFreeQuota,
+  ]);
+
+  const handleSubmit = useCallback(
+    async (e: FormEvent) => {
+      e.preventDefault();
+      await sendMessage();
+    },
+    [sendMessage]
+  );
+
+  const handleComposerKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key !== "Enter") return;
+      if (e.shiftKey) return;
+      e.preventDefault();
+      if (sendingRef.current) return;
+      void sendMessage();
+    },
+    [sendMessage]
+  );
+
+  const avatarRingClass = canPulseAvatar ? "avatarRing avatarRing--live" : "avatarRing";
+  const showVideoNow = !!avatarImageUrl && canPlayAvatarVideo && !!avatarVideoUrl && avatarPlaying;
+
+  if (!iaId) {
+    // si pas d’iaId, l’effet plus haut redirige; on évite de flasher du contenu
+    return null;
+  }
 
   return (
     <main className="page">
@@ -590,8 +949,79 @@ export default function ChatClient() {
       </header>
 
       <section className="card">
-        {aiLoading && <div className="loadingLine">{t.loading}</div>}
-        {aiError && <div className="errorLine">{aiError}</div>}
+        <div className="hero">
+          {aiLoading ? (
+            <>
+              <div className="avatarRing avatarRing--skeleton" />
+              <div className="skeletonLine skeletonLine--title" />
+              <div className="skeletonLine skeletonLine--sub" />
+            </>
+          ) : aiError || !ai ? (
+            <>
+              <div className="avatarRing avatarRing--error">
+                <span className="avatarRing__bang">!</span>
+              </div>
+              <p className="hero__name">{t.aiNotFoundTitle}</p>
+              <p className="hero__subtitle">{aiError}</p>
+            </>
+          ) : (
+            <>
+              <div className={avatarRingClass}>
+                {avatarImageUrl ? (
+                  showVideoNow ? (
+                    <video
+                      key={avatarVideoUrl ?? "vid"}
+                      src={avatarVideoUrl ?? undefined}
+                      muted
+                      playsInline
+                      autoPlay
+                      preload="auto"
+                      className="avatarVid"
+                      onEnded={() => setAvatarPlaying(false)}
+                      aria-label="Avatar animé"
+                    />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={avatarImageUrl}
+                      alt={`Avatar de ${displayName}`}
+                      className="avatarImg"
+                    />
+                  )
+                ) : (
+                  <div className="avatarFallback">{displayName.charAt(0).toUpperCase()}</div>
+                )}
+              </div>
+
+              <p className="hero__name">{displayNameUpper}</p>
+              <p className="hero__subtitle">{t.subtitle(displayName)}</p>
+
+              {canUseVoice && !isBlocked && (
+                <div className="voiceToggle">
+                  {!audioUnlocked ? (
+                    <button
+                      type="button"
+                      className="pillBtn pillBtn--ghost"
+                      onClick={() => void unlockAudio()}
+                    >
+                      {t.voiceUnlock}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="pillBtn pillBtn--ghost"
+                      onClick={() => setVoiceEnabled((v) => !v)}
+                      aria-label="Activer ou désactiver la voix"
+                      title={voiceEnabled ? "OFF" : "ON"}
+                    >
+                      {voiceEnabled ? t.voiceOn : t.voiceOff}
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
         {showRemainBar && (
           <div className={"remainBar" + (freeRemaining! <= 3 ? " remainBar--hot" : "")}>
@@ -600,81 +1030,204 @@ export default function ChatClient() {
           </div>
         )}
 
-        <div className="chatBox" ref={windowRef}>
+        <div className="chatBox" ref={windowRef} onScroll={handleWindowScroll}>
           {messages.length === 0 ? (
-            <div className="empty">{t.emptyState(displayName)}</div>
-          ) : (
-            messages.map((m) => (
-              <div
-                key={m.id}
-                className={"bubble " + (m.role === "user" ? "bubble--me" : "bubble--ai")}
-              >
-                {m.content}
+            <div className="empty">
+              {t.emptyState(displayName)}
+              <div className="empty__hint" style={{ marginTop: 10, opacity: 0.85 }}>
+                {t.gentleHook}
               </div>
-            ))
-          )}
-        </div>
+            </div>
+          ) : (
+            <ul className="list">
+              {messages.map((m) => {
+                const isUser = m.role === "user";
+                const showTinyAvatar = SHOW_BUBBLE_AVATAR && !isUser && !!avatarImageUrl;
 
-        {showPaywall && (
-          <PaywallDaypass
-            title={t.paywallTitle}
-            text={t.paywallText}
-            daypassTitle={t.daypassTitle}
-            daypassText={t.daypassText}
-            daypassCta={t.daypassCta}
-            daypassAltCta={t.daypassAltCta}
-            daypassLoading={t.daypassLoading}
-            plusCta={t.paywallCta}
-            seePlansLabel={t.paywallSeePlans}
-            pricingUrl={pricingUrl}
-            isLoadingDaypass={daypassLoading}
-            onDaypass={startDaypassCheckout}
-            onPlus={handleUpgradeClick}
-          />
-        )}
+                return (
+                  <li key={m.id} className={isUser ? "row row--user" : "row row--assistant"}>
+                    {!isUser
+<div
+  className="chatBox"
+  ref={windowRef}
+  onScroll={handleWindowScroll}
+>
+  {messages.length === 0 ? (
+    <div className="empty">
+      {t.emptyState(displayName)}
 
-        <form className="composer" onSubmit={handleSubmit}>
-          <textarea
-            ref={composerRef}
-            className="composer__input"
-            placeholder={t.inputPlaceholder(displayName)}
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={handleComposerKeyDown}
-            aria-label="Message"
-          />
+      <div
+        className="empty__hint"
+        style={{ marginTop: 10, opacity: 0.85 }}
+      >
+        {t.gentleHook}
+      </div>
+    </div>
+  ) : (
+    <ul className="list">
+      {messages.map((m) => {
+        const isUser = m.role === "user";
+        const showTinyAvatar =
+          SHOW_BUBBLE_AVATAR && !isUser && !!avatarImageUrl;
 
-          <div className="composer__actions">
-            {canUseVoice && sttSupported && !(isBlocked && !daypassActive) && (
-              <button
-                type="button"
-                className="pillBtn pillBtn--ghost"
-                onClick={handleToggleRecording}
-                disabled={sending}
-              >
-                {isRecording ? t.sttStop : t.sttStart}
-              </button>
+        return (
+          <li
+            key={m.id}
+            className={isUser ? "row row--user" : "row row--assistant"}
+          >
+            {!isUser && (
+              <div className="row__left">
+                {showTinyAvatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    className="msgAvatar"
+                    src={avatarImageUrl!}
+                    alt=""
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <span
+                    className="msgAvatar msgAvatar--fallback"
+                    aria-hidden="true"
+                  >
+                    {displayName.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
             )}
 
-            <button
-              type="submit"
-              className="pillBtn pillBtn--primary"
-              disabled={sending || !newMessage.trim() || isTooLong || (isBlocked && !daypassActive)}
+            <div
+              className={
+                isUser ? "bubble bubble--user" : "bubble bubble--assistant"
+              }
             >
-              {sending ? t.sending : t.send}
-            </button>
-          </div>
+              <div className="bubble__text">{m.content}</div>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  )}
+</div>
 
-          <div className="composer__meta">
-            <span className={isTooLong ? "meta meta--err" : "meta"}>
-              {t.charsLeft(Math.min(newMessage.length, MAX_CHARS), MAX_CHARS)}
-            </span>
-            <span className="meta meta--muted">{t.notePrivate}</span>
-          </div>
+{sendError && <p className="error">{sendError}</p>}
 
-          {sendError && <div className="errorLine">{sendError}</div>}
-        </form>
-      </section>
-    </main>
-  );
+{!isBlocked && isFreePlan && nudge && (
+  <div className="nudge">
+    <div className="nudge__left">
+      <p className="nudge__title">{nudge.title}</p>
+      <p className="nudge__text">{nudge.text}</p>
+    </div>
+
+    <button
+      type="button"
+      className="pillBtn pillBtn--primary"
+      onClick={handleUpgradeClick}
+    >
+      {t.freeNudgeCta}
+    </button>
+  </div>
+)}
+
+{showPromo && (
+  <div className="promo">
+    <div className="badge">PLUS</div>
+
+    <div className="promo__texts">
+      <p className="promo__title">{t.promoTitle}</p>
+      <p className="promo__text">{t.promoText}</p>
+    </div>
+
+    <button
+      type="button"
+      className="pillBtn pillBtn--primary"
+      onClick={handleUpgradeClick}
+    >
+      {t.promoCta}
+    </button>
+  </div>
+)}
+
+{isBlocked && isFreePlan && (
+  <div className="paywall">
+    <div className="badge">PLUS</div>
+
+    <p className="paywall__title">{t.paywallTitle}</p>
+    <p className="paywall__text">{t.paywallText}</p>
+
+    <button
+      type="button"
+      className="pillBtn pillBtn--primary paywall__btn"
+      onClick={handleUpgradeClick}
+    >
+      <span>{t.paywallCta}</span>
+      <span aria-hidden="true">➜</span>
+    </button>
+
+    <a href={pricingUrl} className="paywall__link">
+      {t.paywallSeePlans}
+    </a>
+  </div>
+)}
+
+<form className="composer" onSubmit={handleSubmit}>
+  <div className="composer__field">
+    <textarea
+      ref={composerRef}
+      className="composer__input"
+      placeholder={t.inputPlaceholder(displayName)}
+      value={newMessage}
+      onChange={(e) =>
+        setNewMessage(clampText(e.target.value, MAX_CHARS))
+      }
+      onKeyDown={handleComposerKeyDown}
+      rows={1}
+      maxLength={MAX_CHARS}
+      disabled={isBlocked && isFreePlan}
+    />
+  </div>
+
+  <div className="composer__actions">
+    {canUseVoice && !isBlocked && (
+      <button
+        type="button"
+        className={isRecording ? "iconBtn iconBtn--active" : "iconBtn"}
+        onClick={handleToggleRecording}
+        disabled={!sttSupported || sending || !voiceEnabled}
+        aria-label={t.sttStart}
+        title={
+          !sttSupported
+            ? "STT not supported"
+            : isRecording
+            ? t.sttStop
+            : t.sttStart
+        }
+      >
+        <span className="iconBtn__icon">
+          {isRecording ? "■" : "🎤"}
+        </span>
+      </button>
+    )}
+
+    <button
+      type="submit"
+      className="sendBtn"
+      disabled={
+        sending ||
+        !newMessage.trim() ||
+        isTooLong ||
+        (isBlocked && isFreePlan)
+      }
+      aria-label={t.send}
+      title={sending ? t.sending : t.send}
+    >
+      <span className="sendBtn__icon">➤</span>
+    </button>
+  </div>
+</form>
+
+<p className="note">{t.notePrivate}</p>
+</section>
+</main>
+);
 }
