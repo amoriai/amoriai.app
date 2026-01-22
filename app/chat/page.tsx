@@ -3,14 +3,6 @@
 import React, { Suspense } from "react";
 import ChatClient from "./ChatClient";
 
-export default function ChatPage() {
-  return (
-    <Suspense fallback={<ChatSkeleton />}>
-      <ChatClient />
-    </Suspense>
-  );
-}
-
 function ChatSkeleton() {
   return (
     <main className="chat-shell">
@@ -21,5 +13,13 @@ function ChatSkeleton() {
       </div>
       <p className="chat-shell__text">Chargement…</p>
     </main>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<ChatSkeleton />}>
+      <ChatClient />
+    </Suspense>
   );
 }
