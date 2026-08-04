@@ -1065,9 +1065,8 @@ export default function HomePage({ searchParams }: PageProps) {
               <video
                 className="block aspect-[4/5] w-full rounded-[1.55rem] bg-black object-cover"
                 src={heroVideoSrc}
-                autoPlay
+                controls
                 loop
-                muted
                 playsInline
                 preload="metadata"
               />
@@ -1129,9 +1128,8 @@ export default function HomePage({ searchParams }: PageProps) {
                   <video
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
                     src={getPersonaVideoSrc(persona.id)}
-                    autoPlay
+                    controls
                     loop
-                    muted
                     playsInline
                     preload="metadata"
                   />
