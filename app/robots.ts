@@ -9,6 +9,5 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: "https://www.amoriai.app/sitemap.xml",
-    host: "https://www.amoriai.app",
   };
 }
