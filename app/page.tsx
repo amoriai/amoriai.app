@@ -1129,9 +1129,11 @@ export default function HomePage({ searchParams }: PageProps) {
                   <video
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
                     src={getPersonaVideoSrc(persona.id)}
+                    autoPlay
+                    loop
                     muted
                     playsInline
-                    preload="none"
+                    preload="metadata"
                   />
                 </div>
 
