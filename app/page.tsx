@@ -922,86 +922,18 @@ export default function HomePage({ searchParams }: PageProps) {
   };
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#030305] text-slate-100">
+    <main className="amoria-page min-h-screen overflow-hidden text-slate-100">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
-      <style>{`
-        @keyframes amoriaFadeUp {
-          from { opacity: 0; transform: translateY(18px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes amoriaFloat {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
-        }
-
-        @keyframes amoriaPulseSoft {
-          0%, 100% { opacity: .65; transform: scale(1); }
-          50% { opacity: 1; transform: scale(1.035); }
-        }
-
-        @keyframes amoriaMessageIn {
-          from { opacity: 0; transform: translateY(10px) scale(.98); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        .amoria-fade-up {
-          animation: amoriaFadeUp .75s ease-out both;
-        }
-
-        .amoria-float {
-          animation: amoriaFloat 6s ease-in-out infinite;
-        }
-
-        .amoria-soft-pulse {
-          animation: amoriaPulseSoft 4s ease-in-out infinite;
-        }
-
-        .amoria-message-user {
-          animation: amoriaMessageIn .6s ease-out .35s both;
-        }
-
-        .amoria-message-ai {
-          animation: amoriaMessageIn .6s ease-out 1s both;
-        }
-
-        .amoria-card {
-          transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease;
-        }
-
-        .amoria-card:hover {
-          transform: translateY(-6px);
-          box-shadow: 0 24px 60px rgba(0,0,0,.34);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .amoria-fade-up,
-          .amoria-float,
-          .amoria-soft-pulse,
-          .amoria-message-user,
-          .amoria-message-ai {
-            animation: none !important;
-          }
-
-          .amoria-card {
-            transition: none !important;
-          }
-        }
-      `}</style>
 
       <div
-        className="pointer-events-none fixed inset-0 opacity-80"
+        className="amoria-page-glow pointer-events-none fixed inset-0"
         aria-hidden="true"
-        style={{
-          background:
-            "radial-gradient(circle at 20% 8%, rgba(168,85,247,.16), transparent 30%), radial-gradient(circle at 82% 18%, rgba(236,72,153,.08), transparent 26%), radial-gradient(circle at 50% 85%, rgba(124,58,237,.06), transparent 32%)",
-        }}
       />
 
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-slate-950/80 backdrop-blur-xl">
+      <header className="amoria-header sticky top-0 z-50 border-b border-white/5 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <Link href={{ pathname: "/", query: { lang: locale } }} className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1058,7 +990,7 @@ export default function HomePage({ searchParams }: PageProps) {
 
             <Link
               href={withLang("/signup")}
-              className="hidden rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-violet-500/20 transition hover:scale-[1.02] sm:inline-flex amoria-soft-pulse"
+              className="amoria-nav-cta hidden rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-violet-500/20 sm:inline-flex"
             >
               {t.navSignup}
             </Link>
@@ -1068,9 +1000,9 @@ export default function HomePage({ searchParams }: PageProps) {
 
       <section
         id="hero"
-        className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-14 lg:grid-cols-[1.1fr_.9fr] lg:pt-20"
+        className="amoria-hero relative mx-auto grid max-w-7xl items-center gap-10 px-4 pb-20 pt-14 lg:grid-cols-[0.95fr_1.05fr] lg:gap-14 lg:pt-20"
       >
-        <div className="relative z-10 amoria-fade-up">
+        <div className="amoria-hero-copy relative z-10">
           <div className="mb-5 inline-flex rounded-full border border-violet-400/20 bg-violet-500/10 px-4 py-2 text-[0.72rem] font-bold tracking-[0.16em] text-violet-200">
             {t.heroKicker}
           </div>
@@ -1086,14 +1018,14 @@ export default function HomePage({ searchParams }: PageProps) {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               href={withLang("/signup")}
-              className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-7 py-3.5 text-sm font-bold text-white shadow-xl shadow-violet-500/25 transition hover:-translate-y-0.5 hover:brightness-110"
+              className="amoria-button amoria-button-primary inline-flex items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-7 py-3.5 text-sm font-bold text-white shadow-xl shadow-violet-500/25"
             >
               {t.heroPrimary}
             </Link>
 
             <a
               href="#how-it-works"
-              className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-bold text-white transition hover:bg-white/10"
+              className="amoria-button amoria-button-secondary inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-bold text-white"
             >
               {t.heroSecondary}
             </a>
@@ -1124,11 +1056,11 @@ export default function HomePage({ searchParams }: PageProps) {
           </div>
         </div>
 
-        <div className="relative mx-auto w-full max-w-lg amoria-fade-up">
-          <div className="absolute -inset-6 rounded-[2.8rem] bg-gradient-to-br from-violet-500/20 via-fuchsia-500/10 to-transparent blur-3xl amoria-soft-pulse" />
+        <div className="amoria-hero-visual relative mx-auto w-full max-w-2xl">
+          <div className="amoria-hero-halo absolute -inset-8 rounded-[3rem]" />
 
-          <div className="relative grid gap-4 sm:grid-cols-[0.88fr_1.12fr]">
-            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/60 p-2 shadow-2xl shadow-black/50 amoria-float">
+          <div className="relative grid gap-5 sm:grid-cols-[0.95fr_1.05fr]">
+            <div className="amoria-hero-video overflow-hidden rounded-[2rem] border border-white/10 bg-black/60 p-2 shadow-2xl shadow-black/50">
               {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
               <video
                 className="block aspect-[4/5] w-full rounded-[1.55rem] bg-black object-cover"
@@ -1141,7 +1073,7 @@ export default function HomePage({ searchParams }: PageProps) {
               />
             </div>
 
-            <div className="self-center rounded-[2rem] border border-white/10 bg-zinc-950/95 p-4 shadow-2xl shadow-black/40 backdrop-blur-xl">
+            <div className="amoria-hero-chat self-center rounded-[2rem] border border-white/10 bg-zinc-950/95 p-5 shadow-2xl shadow-black/40 backdrop-blur-xl">
               <div className="mb-4 flex items-center gap-3 border-b border-white/10 pb-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-xs font-black">
                   A
@@ -1155,13 +1087,13 @@ export default function HomePage({ searchParams }: PageProps) {
               </div>
 
               <div className="space-y-3">
-                <div className="ml-auto max-w-[92%] amoria-message-user">
+                <div className="amoria-message amoria-message-user ml-auto max-w-[92%]">
                   <div className="rounded-2xl rounded-br-md bg-white px-3.5 py-2.5 text-xs leading-5 text-zinc-950">
                     {t.demoUserMessage}
                   </div>
                 </div>
 
-                <div className="max-w-[95%] amoria-message-ai">
+                <div className="amoria-message amoria-message-ai max-w-[95%]">
                   <div className="rounded-2xl rounded-bl-md border border-violet-400/15 bg-violet-500/10 px-3.5 py-2.5 text-xs leading-5 text-slate-100">
                     {t.demoAiMessage}
                   </div>
@@ -1174,7 +1106,7 @@ export default function HomePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      <section id="companions" className="relative border-y border-white/5 bg-white/[0.02]">
+      <section id="companions" className="amoria-reveal relative border-y border-white/5 bg-white/[0.02]">
         <div className="mx-auto max-w-6xl px-4 py-20">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
@@ -1190,18 +1122,16 @@ export default function HomePage({ searchParams }: PageProps) {
             {t.personas.map((persona) => (
               <article
                 key={persona.id}
-                className="group amoria-card overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/80 shadow-xl shadow-black/20 hover:border-violet-400/30"
+                className="amoria-card amoria-persona-card group overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/80 shadow-xl shadow-black/20"
               >
                 <div className="aspect-[4/5] overflow-hidden bg-slate-900">
                   {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                   <video
                     className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
                     src={getPersonaVideoSrc(persona.id)}
-                    autoPlay
-                    loop
                     muted
                     playsInline
-                    preload="metadata"
+                    preload="none"
                   />
                 </div>
 
@@ -1216,7 +1146,7 @@ export default function HomePage({ searchParams }: PageProps) {
 
                   <Link
                     href={withLang("/signup")}
-                    className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-3 text-sm font-bold text-white transition hover:brightness-110"
+                    className="amoria-button amoria-button-primary mt-5 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-3 text-sm font-bold text-white"
                   >
                     {t.personaCta}
                   </Link>
@@ -1231,7 +1161,7 @@ export default function HomePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      <section id="how-it-works" className="relative mx-auto max-w-6xl px-4 py-20">
+      <section id="how-it-works" className="amoria-reveal relative mx-auto max-w-6xl px-4 py-20">
         <div className="text-center">
           <p className="text-xs font-bold tracking-[0.2em] text-violet-300">{t.howEyebrow}</p>
           <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t.howTitle}</h2>
@@ -1241,7 +1171,7 @@ export default function HomePage({ searchParams }: PageProps) {
           {t.howSteps.map((step) => (
             <article
               key={step.number}
-              className="amoria-card rounded-3xl border border-white/10 bg-white/[0.035] p-6"
+              className="amoria-card amoria-step-card rounded-3xl border border-white/10 bg-white/[0.035] p-6"
             >
               <div className="text-4xl font-black text-white/10">{step.number}</div>
               <h3 className="mt-4 text-xl font-bold">{step.title}</h3>
@@ -1251,7 +1181,7 @@ export default function HomePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      <section id="benefits" className="relative border-y border-white/5 bg-white/[0.02]">
+      <section id="benefits" className="amoria-reveal relative border-y border-white/5 bg-white/[0.02]">
         <div className="mx-auto max-w-6xl px-4 py-20">
           <div className="max-w-3xl">
             <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
@@ -1267,7 +1197,7 @@ export default function HomePage({ searchParams }: PageProps) {
             {t.benefits.map((benefit) => (
               <article
                 key={benefit.title}
-                className="amoria-card rounded-3xl border border-white/10 bg-zinc-950/80 p-6 hover:border-violet-400/25"
+                className="amoria-card amoria-benefit-card rounded-3xl border border-white/10 bg-zinc-950/80 p-6"
               >
                 <div className="text-3xl" aria-hidden="true">
                   {benefit.icon}
@@ -1280,7 +1210,7 @@ export default function HomePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      <section className="relative mx-auto grid max-w-6xl gap-10 px-4 py-20 lg:grid-cols-[.9fr_1.1fr] lg:items-center">
+      <section className="amoria-reveal relative mx-auto grid max-w-6xl gap-10 px-4 py-20 lg:grid-cols-[.9fr_1.1fr] lg:items-center">
         <div>
           <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
             {t.differenceEyebrow}
@@ -1310,7 +1240,7 @@ export default function HomePage({ searchParams }: PageProps) {
       </section>
 
 
-      <section className="relative border-y border-white/5 bg-white/[0.02]">
+      <section className="amoria-reveal relative border-y border-white/5 bg-white/[0.02]">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div>
             <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
@@ -1321,7 +1251,7 @@ export default function HomePage({ searchParams }: PageProps) {
 
             <Link
               href={withLang("/signup")}
-              className="mt-7 inline-flex rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-6 py-3 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:brightness-110"
+              className="amoria-button amoria-button-primary mt-7 inline-flex rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-6 py-3 text-sm font-black text-white shadow-lg shadow-violet-500/20"
             >
               {t.demoCta}
             </Link>
@@ -1378,7 +1308,7 @@ export default function HomePage({ searchParams }: PageProps) {
         />
       </div>
 
-      <section id="pricing" className="relative mx-auto max-w-6xl px-4 py-20">
+      <section id="pricing" className="amoria-reveal relative mx-auto max-w-6xl px-4 py-20">
         <div className="overflow-hidden rounded-[2rem] border border-violet-400/20 bg-gradient-to-br from-violet-500/10 via-zinc-950 to-fuchsia-500/5 p-7 shadow-2xl shadow-black/30 sm:p-10">
           <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
             <div>
@@ -1401,7 +1331,7 @@ export default function HomePage({ searchParams }: PageProps) {
             <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
               <Link
                 href={withLang("/signup")}
-                className="inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:brightness-110"
+                className="amoria-button amoria-button-primary inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-violet-500/20"
               >
                 {t.pricingPrimary}
               </Link>
@@ -1419,7 +1349,7 @@ export default function HomePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      <section className="relative border-t border-white/5 bg-white/[0.02]">
+      <section className="amoria-reveal relative border-t border-white/5 bg-white/[0.02]">
         <div className="mx-auto max-w-4xl px-4 py-20">
           <div className="text-center">
             <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
@@ -1450,7 +1380,7 @@ export default function HomePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      <section className="relative mx-auto max-w-4xl px-4 pb-24 pt-20 text-center">
+      <section className="amoria-reveal relative mx-auto max-w-4xl px-4 pb-24 pt-20 text-center">
         <h2 className="text-3xl font-black sm:text-4xl">{t.finalTitle}</h2>
         <p className="mx-auto mt-4 max-w-2xl leading-8 text-slate-300">{t.finalText}</p>
         <Link
