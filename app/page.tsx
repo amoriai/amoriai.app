@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import ReviewsSection from "./ReviewsSection";
+import "./home.css";
 
 type Locale = "fr" | "en" | "es";
 type PersonaId = "lyra" | "orion" | "kai" | "maelis";
