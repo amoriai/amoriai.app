@@ -1,24 +1,34 @@
 // app/page.tsx
+
 import Link from "next/link";
 import ReviewsSection from "./ReviewsSection";
 
 type Locale = "fr" | "en" | "es";
 type PersonaId = "lyra" | "orion" | "kai" | "maelis";
 
-type Persona = { id: PersonaId; title: string; description: string };
+type Persona = {
+  id: PersonaId;
+  title: string;
+  badge: string;
+  description: string;
+};
 
-// ✅ Avis (source FR unique) + meta Replika-like
 type ReviewCard = {
   id: string;
-  name: string; // ex: "Marie L."
-  date: string; // ex: "12 janv. 2026"
-  rating: number; // 1..5
-  fr: string; // texte FR
+  name: string;
+  date: string;
+  rating: number;
+  fr: string;
 };
 
 type Copy = {
   brandTagline: string;
-  nav: { home: string; features: string; pricing: string };
+  nav: {
+    home: string;
+    companions: string;
+    benefits: string;
+    pricing: string;
+  };
   navLogin: string;
   navSignup: string;
 
@@ -26,33 +36,76 @@ type Copy = {
   heroTitle: string;
   heroSubtitle: string;
   heroPrimary: string;
+  heroSecondary: string;
   heroSupport: string;
-  mobileNote: string;
-  langNote: string;
+  heroTrust: string[];
+  videoCaption: string;
 
-  personasTitle: string;
-  personasSubtitle: string;
+  companionsEyebrow: string;
+  companionsTitle: string;
+  companionsSubtitle: string;
   personas: Persona[];
   personaCta: string;
   personaCtaHint: string;
 
-  usageTitle: string;
-  usageBullets: string[];
+  howEyebrow: string;
+  howTitle: string;
+  howSteps: {
+    number: string;
+    title: string;
+    text: string;
+  }[];
 
-  // ✅ Reviews (Replika-like)
+  benefitsEyebrow: string;
+  benefitsTitle: string;
+  benefitsSubtitle: string;
+  benefits: {
+    icon: string;
+    title: string;
+    text: string;
+  }[];
+
+  differenceEyebrow: string;
+  differenceTitle: string;
+  differenceText: string;
+  differenceItems: string[];
+
+  demoEyebrow: string;
+  demoTitle: string;
+  demoSubtitle: string;
+  demoUserLabel: string;
+  demoUserMessage: string;
+  demoAiLabel: string;
+  demoAiMessage: string;
+  demoCta: string;
+
   reviewsTitle: string;
   reviewsSubtitle: string;
   reviewsPrivacyNote: string;
-  reviewsHelpfulLabel: string; // "Utile ?"
+  reviewsHelpfulLabel: string;
   reviewsYes: string;
   reviewsNo: string;
   reviews: ReviewCard[];
 
+  pricingEyebrow: string;
   pricingTitle: string;
   pricingText: string;
+  pricingBullets: string[];
+  pricingPrimary: string;
   seePricingLabel: string;
+  pricingNote: string;
 
-  videoCaption: string;
+  finalTitle: string;
+  finalText: string;
+  finalCta: string;
+
+  faqEyebrow: string;
+  faqTitle: string;
+  safetyNote: string;
+  faqs: {
+    question: string;
+    answer: string;
+  }[];
 
   footerCopy: string;
   footerLinks: {
@@ -64,7 +117,6 @@ type Copy = {
   };
 };
 
-// ✅ 5 avis FR (avec nom/date/étoiles) — 3 en janvier + 2 fin décembre
 const REVIEWS_FR: ReviewCard[] = [
   {
     id: "r1",
@@ -103,7 +155,6 @@ const REVIEWS_FR: ReviewCard[] = [
   },
 ];
 
-// ✅ Traductions associées par id (affichage auto selon la langue)
 const REVIEW_TRANSLATIONS: Record<string, { en: string; es: string }> = {
   r1: {
     en: "AmorIAI helped me calm down when my mind felt overwhelmed. It’s gentle and comforting.",
@@ -129,63 +180,215 @@ const REVIEW_TRANSLATIONS: Record<string, { en: string; es: string }> = {
 
 function translateReview(item: ReviewCard, locale: Locale) {
   if (locale === "fr") return item.fr;
-  const t = REVIEW_TRANSLATIONS[item.id];
-  if (!t) return item.fr;
-  return locale === "en" ? t.en : t.es;
+
+  const translation = REVIEW_TRANSLATIONS[item.id];
+  if (!translation) return item.fr;
+
+  return locale === "en" ? translation.en : translation.es;
 }
 
 const STRINGS: Record<Locale, Copy> = {
   fr: {
-    brandTagline: "Un espace calme • FR / EN / ES",
-    nav: { home: "Accueil", features: "Fonctionnalités", pricing: "Tarifs" },
+    brandTagline: "Ton compagnon IA • FR / EN / ES",
+    nav: {
+      home: "Accueil",
+      companions: "Compagnons",
+      benefits: "Pourquoi AmorIAI",
+      pricing: "Tarifs",
+    },
     navLogin: "Me connecter",
-    navSignup: "Commencer",
+    navSignup: "Commencer gratuitement",
 
-    heroKicker: "BIENVENUE SUR AMORIAI.APP",
-    heroTitle: "Un espace calme. Pour parler, respirer… et y voir clair.",
+    heroKicker: "UN COMPAGNON IA QUI PREND LE TEMPS DE T’ÉCOUTER",
+    heroTitle: "L’IA qui prend le temps de t’écouter.",
     heroSubtitle:
-      "Ici, tu peux tout déposer, sans te sentir jugé. AmorIAI t’écoute, te répond avec douceur et t’aide à comprendre ce que tu ressens à ton rythme.",
+      "Parle à un compagnon IA disponible quand tu en as besoin. Écris ce que tu ressens, clarifie tes pensées et avance à ton rythme, sans pression.",
     heroPrimary: "Commencer gratuitement",
-    heroSupport: "Gratuit pour commencer • Sans engagement • Annule quand tu veux",
-    mobileNote: "Fonctionne parfaitement sur mobile — aucune application à télécharger.",
-    langNote: "Choisis ta langue. Le reste, je m’en occupe.",
+    heroSecondary: "Voir comment ça fonctionne",
+    heroSupport: "Gratuit pour commencer • Sans engagement pour essayer • Aucune application à télécharger",
+    heroTrust: [
+      "Accessible 24 h/24",
+      "Des réponses adaptées à tes échanges",
+      "Français, anglais et espagnol",
+    ],
+    videoCaption: "Un aperçu de l’expérience AmorIAI.",
 
-    personasTitle: "Choisis ton compagnon IA — et commence à écrire",
-    personasSubtitle:
-      "Crée ton compte et commence maintenant. Tu peux écrire librement, comme dans un journal avec quelqu’un qui te répond. La voix est disponible avec l’abonnement.",
+    companionsEyebrow: "CHOISIS TON EXPÉRIENCE",
+    companionsTitle: "Choisis la personnalité qui te convient aujourd’hui.",
+    companionsSubtitle:
+      "Chaque compagnon possède une façon différente d’échanger. Commence avec celui qui correspond le mieux à ton besoin du moment.",
     personas: [
-      { id: "lyra", title: "Lyra — Compagnon IA doux", description: "Douce et rassurante. Parfaite pour déposer ce que tu gardes pour toi." },
-      { id: "orion", title: "Orion — Compagnon IA stable", description: "Calme et structuré. Pour t’aider à clarifier et décider." },
-      { id: "kai", title: "Kai — Compagnon IA nuancé", description: "Subtil et ouvert. Pour parler sans cases, sans pression." },
-      { id: "maelis", title: "Maelis — Compagnon IA mature", description: "Bienveillant, réaliste et posé. Comme quelqu’un qui comprend." },
+      {
+        id: "lyra",
+        title: "Lyra",
+        badge: "Douce et rassurante",
+        description:
+          "Pour déposer ce que tu gardes à l’intérieur et recevoir une réponse calme, chaleureuse et bienveillante.",
+      },
+      {
+        id: "orion",
+        title: "Orion",
+        badge: "Calme et structuré",
+        description:
+          "Pour mettre de l’ordre dans tes idées, prendre du recul et avancer plus clairement dans une décision.",
+      },
+      {
+        id: "kai",
+        title: "Kai",
+        badge: "Ouvert et nuancé",
+        description:
+          "Pour parler librement, sans étiquette, sans pression et sans devoir expliquer qui tu devrais être.",
+      },
+      {
+        id: "maelis",
+        title: "Maelis",
+        badge: "Mature et réaliste",
+        description:
+          "Pour recevoir une présence posée, honnête et bienveillante quand tu as besoin d’un regard plus stable.",
+      },
     ],
-    personaCta: "Créer mon AmorIAI",
-    personaCtaHint: "Exemple de compagnon IA - tu crées le tien après l’inscription.",
+    personaCta: "Choisir ce compagnon",
+    personaCtaHint: "Tu pourras personnaliser ton propre AmorIAI après l’inscription.",
 
-    usageTitle: "AmorIAI peut t’aider au quotidien",
-    usageBullets: [
-      "Parler quand tu n’as personne à qui te confier.",
-      "Écrire ce que tu ressens, comme dans un journal intime.",
-      "Te déposer le soir pour calmer ton mental.",
-      "Clarifier une décision quand tu hésites.",
-      "Revenir quand ça déborde, même pour 2 minutes.",
-      "Te sentir accompagné, sans pression ni jugement.",
+    howEyebrow: "SIMPLE À COMMENCER",
+    howTitle: "Commence en moins d’une minute.",
+    howSteps: [
+      {
+        number: "01",
+        title: "Crée ton compte",
+        text: "L’inscription prend seulement quelques instants et tu peux commencer gratuitement.",
+      },
+      {
+        number: "02",
+        title: "Choisis ton compagnon",
+        text: "Sélectionne la personnalité qui correspond le mieux à ce dont tu as besoin aujourd’hui.",
+      },
+      {
+        number: "03",
+        title: "Commence la conversation",
+        text: "Écris librement. Ton compagnon te répond et s’adapte progressivement à tes échanges.",
+      },
     ],
 
-    reviewsTitle: "Ce que nos utilisateurs disent",
-    reviewsSubtitle: "Des retours simples, après quelques jours d’utilisation.",
-    reviewsPrivacyNote: "Tes messages sont privés. Personne ne les lit.",
-    reviewsHelpfulLabel: "Cet avis est-il utile ?",
+    benefitsEyebrow: "UN ESPACE POUR TOI",
+    benefitsTitle: "Un espace pour parler, réfléchir et souffler.",
+    benefitsSubtitle:
+      "Tu n’as pas besoin de tout expliquer. Commence simplement par la première chose qui te vient.",
+    benefits: [
+      {
+        icon: "💬",
+        title: "Besoin de parler",
+        text: "Quand tu as quelque chose sur le cœur et que tu ne sais pas à qui le dire.",
+      },
+      {
+        icon: "🧠",
+        title: "Trop de pensées",
+        text: "Quand ton esprit tourne en boucle et que tu veux remettre de l’ordre dans tes idées.",
+      },
+      {
+        icon: "🌙",
+        title: "Soirées difficiles",
+        text: "Quand tout devient plus lourd le soir et que tu as besoin de déposer ce que tu ressens.",
+      },
+      {
+        icon: "💔",
+        title: "Rupture ou solitude",
+        text: "Quand l’absence, le silence ou le manque deviennent difficiles à porter seul.",
+      },
+      {
+        icon: "🧭",
+        title: "Décision à prendre",
+        text: "Quand tu hésites et que tu as besoin d’explorer calmement les différentes possibilités.",
+      },
+      {
+        icon: "📖",
+        title: "Journal interactif",
+        text: "Quand tu veux écrire pour comprendre ce qui se passe en toi, avec une réponse en retour.",
+      },
+    ],
+
+    differenceEyebrow: "POURQUOI AMORIAI",
+    differenceTitle: "Plus qu’un journal. Une conversation qui continue avec toi.",
+    differenceText:
+      "AmorIAI transforme l’écriture en échange interactif. Reviens quand tu veux, poursuis la conversation et retrouve un espace pensé pour t’aider à mettre tes idées en mots.",
+    differenceItems: [
+      "Une personnalité adaptée à ton besoin",
+      "Des réponses immédiates et personnalisées",
+      "Une expérience simple sur mobile et ordinateur",
+      "Un fil de conversation que tu peux reprendre",
+      "La voix disponible avec l’abonnement",
+      "Aucune pression pour trouver les mots parfaits",
+    ],
+
+    demoEyebrow: "VOIS COMMENT ÇA SE PASSE",
+    demoTitle: "Une conversation peut commencer avec une seule phrase.",
+    demoSubtitle:
+      "AmorIAI répond à ce que tu écris et t’aide à poursuivre sans te forcer à tout expliquer.",
+    demoUserLabel: "Toi",
+    demoUserMessage: "J’ai la tête pleine et je ne sais même pas par où commencer.",
+    demoAiLabel: "AmorIAI",
+    demoAiMessage:
+      "Tu n’as pas besoin de tout raconter d’un coup. Qu’est-ce qui prend le plus de place dans ta tête en ce moment?",
+    demoCta: "Commencer ma propre conversation",
+
+    reviewsTitle: "Ils ont commencé par quelques mots",
+    reviewsSubtitle: "Des utilisateurs racontent ce qu’AmorIAI leur apporte au quotidien.",
+    reviewsPrivacyNote: "Consulte notre politique de confidentialité pour savoir comment tes données sont traitées.",
+    reviewsHelpfulLabel: "Cet avis est-il utile?",
     reviewsYes: "Oui",
     reviewsNo: "Non",
     reviews: REVIEWS_FR,
 
-    pricingTitle: "Quand tu te sens prêt",
+    pricingEyebrow: "COMMENCE SANS PRESSION",
+    pricingTitle: "Commence gratuitement. Décide ensuite.",
     pricingText:
-      "Commence gratuitement, à ton rythme. Si tu en ressens le besoin, tu pourras ensuite débloquer plus d’échanges et la voix pour parler, pas seulement écrire.",
+      "Découvre AmorIAI sans payer. Une formule payante est offerte seulement si tu souhaites davantage d’échanges et l’accès à la voix.",
+    pricingBullets: [
+      "Création de compte gratuite",
+      "Accès immédiat à ton compagnon",
+      "Aucune application à installer",
+      "Les détails complets sont indiqués sur la page des tarifs",
+    ],
+    pricingPrimary: "Créer mon compte gratuit",
     seePricingLabel: "Voir les tarifs",
+    pricingNote: "Les limites et conditions du forfait gratuit sont indiquées lors de l’inscription.",
 
-    videoCaption: "Disponible en français, anglais et espagnol.",
+    finalTitle: "Commence simplement par « Bonjour ».",
+    finalText:
+      "Tu peux écrire une phrase, une pensée ou ce que tu ressens maintenant. Ton compagnon t’aidera à poursuivre.",
+    finalCta: "Parler à AmorIAI maintenant",
+
+    faqEyebrow: "QUESTIONS FRÉQUENTES",
+    faqTitle: "Avant de commencer",
+    safetyNote: "AmorIAI est un compagnon conversationnel. Il ne remplace pas les services médicaux, psychologiques ou d’urgence.",
+    faqs: [
+      {
+        question: "Est-ce qu’AmorIAI est gratuit?",
+        answer:
+          "Tu peux commencer gratuitement. Les limites du forfait gratuit et les options payantes sont présentées clairement lors de l’inscription et sur la page des tarifs.",
+      },
+      {
+        question: "AmorIAI remplace-t-il un psychologue?",
+        answer:
+          "Non. AmorIAI est un compagnon conversationnel et ne remplace pas un professionnel de la santé mentale, un diagnostic, un traitement ou les services d’urgence.",
+      },
+      {
+        question: "Puis-je l’utiliser sur mon téléphone?",
+        answer:
+          "Oui. AmorIAI fonctionne directement dans le navigateur de ton téléphone, de ta tablette ou de ton ordinateur, sans application à télécharger.",
+      },
+      {
+        question: "Puis-je changer de compagnon?",
+        answer:
+          "Oui. Tu peux explorer différentes personnalités et choisir celle qui correspond le mieux à ton besoin du moment.",
+      },
+      {
+        question: "Comment mes données sont-elles traitées?",
+        answer:
+          "Les détails sur la collecte, l’utilisation et la conservation des données se trouvent dans la politique de confidentialité d’AmorIAI.",
+      },
+    ],
+
     footerCopy: `© ${new Date().getFullYear()} AmorIAI.app`,
     footerLinks: {
       legal: "Mentions légales",
@@ -197,125 +400,445 @@ const STRINGS: Record<Locale, Copy> = {
   },
 
   en: {
-    brandTagline: "A Calm Space • FR / EN / ES",
-    nav: { home: "Home", features: "Features", pricing: "Pricing" },
+    brandTagline: "Your AI companion • FR / EN / ES",
+    nav: {
+      home: "Home",
+      companions: "Companions",
+      benefits: "Why AmorIAI",
+      pricing: "Pricing",
+    },
     navLogin: "Log in",
-    navSignup: "Get started",
+    navSignup: "Start free",
 
-    heroKicker: "WELCOME TO AMORIAI.APP",
-    heroTitle: "A calm space. To talk, breathe… and see things clearly.",
+    heroKicker: "AN AI COMPANION THAT TAKES TIME TO LISTEN",
+    heroTitle: "The AI that takes time to listen.",
     heroSubtitle:
-      "Here, you can drop everything without feeling judged. AmorIAI listens, answers gently, and helps you understand what you feel — at your pace.",
-    heroPrimary: "Start free",
-    heroSupport: "Free to start • No commitment • Cancel anytime",
-    mobileNote: "Works perfectly on mobile — no app required.",
-    langNote: "Choose your language. I’ll take it from there.",
+      "Talk to an AI companion whenever you need it. Put your thoughts into words, gain clarity and move forward at your own pace, without pressure.",
+    heroPrimary: "Start for free",
+    heroSecondary: "See how it works",
+    heroSupport: "Free to start • No commitment to try • No app required",
+    heroTrust: [
+      "Available 24/7",
+      "Replies adapted to your exchanges",
+      "French, English and Spanish",
+    ],
+    videoCaption: "A quick look at the AmorIAI experience.",
 
-    personasTitle: "Choose your AI companion — and start writing",
-    personasSubtitle:
-      "Create your account and begin right away. Write freely, like a private journal… with a reply on the other side. Voice is available with the subscription.",
+    companionsEyebrow: "CHOOSE YOUR EXPERIENCE",
+    companionsTitle: "Choose the personality that fits you today.",
+    companionsSubtitle:
+      "Each companion has a different way of communicating. Start with the one that best matches what you need right now.",
     personas: [
-      { id: "lyra", title: "Lyra — Gentle AI companion", description: "Soft and reassuring. Great for putting words on what you keep inside." },
-      { id: "orion", title: "Orion — Steady AI companion", description: "Calm and structured. Helps you think clearly and decide." },
-      { id: "kai", title: "Kai — Nuanced AI companion", description: "Open-minded and subtle. A space without labels or pressure." },
-      { id: "maelis", title: "Maelis — Mature AI companion", description: "Grounded, caring, realistic. Like someone who truly understands." },
+      {
+        id: "lyra",
+        title: "Lyra",
+        badge: "Gentle and reassuring",
+        description:
+          "For sharing what you keep inside and receiving a calm, warm and caring response.",
+      },
+      {
+        id: "orion",
+        title: "Orion",
+        badge: "Calm and structured",
+        description:
+          "For organizing your thoughts, taking a step back and moving more clearly through a decision.",
+      },
+      {
+        id: "kai",
+        title: "Kai",
+        badge: "Open and nuanced",
+        description:
+          "For speaking freely, without labels, pressure or having to explain who you are supposed to be.",
+      },
+      {
+        id: "maelis",
+        title: "Maelis",
+        badge: "Mature and grounded",
+        description:
+          "For a steady, honest and caring presence when you need a more balanced perspective.",
+      },
     ],
-    personaCta: "Create my AmorIAI",
-    personaCtaHint: "Example AI companion - you’ll create yours after signup.",
+    personaCta: "Choose this companion",
+    personaCtaHint: "You can personalize your own AmorIAI after signing up.",
 
-    usageTitle: "How AmorIAI can support you day to day",
-    usageBullets: [
-      "Talk when you don’t feel like you have someone to confide in.",
-      "Write what you feel, like in a private journal.",
-      "Unwind at night and quiet your mind.",
-      "Think through a decision when you’re hesitating.",
-      "Come back when it’s too much, even for two minutes.",
-      "Feel supported, with no pressure and no judgement.",
+    howEyebrow: "EASY TO START",
+    howTitle: "Start in less than a minute.",
+    howSteps: [
+      {
+        number: "01",
+        title: "Create your account",
+        text: "Signing up only takes a moment, and you can start for free.",
+      },
+      {
+        number: "02",
+        title: "Choose your companion",
+        text: "Select the personality that best matches what you need today.",
+      },
+      {
+        number: "03",
+        title: "Start the conversation",
+        text: "Write freely. Your companion responds and gradually adapts to your exchanges.",
+      },
     ],
 
-    reviewsTitle: "What users are saying",
-    reviewsSubtitle: "Simple feedback after a few days of using AmorIAI.",
-    reviewsPrivacyNote: "Your messages are private. No one reads them.",
+    benefitsEyebrow: "A SPACE FOR YOU",
+    benefitsTitle: "A place to talk, think and breathe.",
+    benefitsSubtitle:
+      "You do not need to explain everything. Start with the first thing that comes to mind.",
+    benefits: [
+      {
+        icon: "💬",
+        title: "Need to talk",
+        text: "When something is weighing on you and you do not know who to tell.",
+      },
+      {
+        icon: "🧠",
+        title: "Too many thoughts",
+        text: "When your mind keeps looping and you want to organize your ideas.",
+      },
+      {
+        icon: "🌙",
+        title: "Difficult evenings",
+        text: "When everything feels heavier at night and you need somewhere to put it.",
+      },
+      {
+        icon: "💔",
+        title: "Breakup or loneliness",
+        text: "When silence, absence or loneliness becomes difficult to carry alone.",
+      },
+      {
+        icon: "🧭",
+        title: "A decision to make",
+        text: "When you are unsure and want to calmly explore your options.",
+      },
+      {
+        icon: "📖",
+        title: "Interactive journal",
+        text: "When writing helps you understand yourself and you want a thoughtful reply.",
+      },
+    ],
+
+    differenceEyebrow: "WHY AMORIAI",
+    differenceTitle: "More than a journal. A conversation that continues with you.",
+    differenceText:
+      "AmorIAI turns writing into a real exchange. Come back whenever you want, continue where you left off and create a companion that feels right for you.",
+    differenceItems: [
+      "A personality suited to your needs",
+      "Immediate and personalized replies",
+      "A simple mobile and desktop experience",
+      "A conversation you can return to",
+      "Voice available with a subscription",
+      "No pressure to find the perfect words",
+    ],
+
+    demoEyebrow: "SEE HOW IT FEELS",
+    demoTitle: "A conversation can begin with one sentence.",
+    demoSubtitle:
+      "AmorIAI responds to what you write and helps you continue without making you explain everything at once.",
+    demoUserLabel: "You",
+    demoUserMessage: "My mind feels full and I do not even know where to begin.",
+    demoAiLabel: "AmorIAI",
+    demoAiMessage:
+      "You do not need to tell me everything at once. What is taking up the most space in your mind right now?",
+    demoCta: "Start my own conversation",
+
+    reviewsTitle: "They started with just a few words",
+    reviewsSubtitle: "Users share how AmorIAI fits into their daily lives.",
+    reviewsPrivacyNote: "See our privacy policy to learn how your data is handled.",
     reviewsHelpfulLabel: "Was this review helpful?",
     reviewsYes: "Yes",
     reviewsNo: "No",
     reviews: REVIEWS_FR,
 
-    pricingTitle: "When you feel ready",
+    pricingEyebrow: "START WITHOUT PRESSURE",
+    pricingTitle: "Start free. Decide later.",
     pricingText:
-      "Start free, at your own pace. When you need more, you can unlock additional messages — and voice to talk, not just type.",
+      "Discover AmorIAI for free. A paid plan is available only if you want more conversations and access to voice.",
+    pricingBullets: [
+      "Free account creation",
+      "Immediate access to your companion",
+      "No application to install",
+      "Full details are shown on the pricing page",
+    ],
+    pricingPrimary: "Create my free account",
     seePricingLabel: "See pricing",
+    pricingNote: "Free-plan limits and conditions are shown during signup.",
 
-    videoCaption: "Available in French, English, and Spanish.",
-    footerCopy: "© 2025 AmorIAI.app",
-    footerLinks: { legal: "Legal", privacy: "Privacy policy", terms: "Terms of use", contact: "Contact", about: "About" },
+    finalTitle: "Simply start with “Hello.”",
+    finalText:
+      "Simply write the first thing that comes to mind. Your AmorIAI companion will help you continue.",
+    finalCta: "Talk to AmorIAI now",
+
+    faqEyebrow: "FREQUENTLY ASKED QUESTIONS",
+    faqTitle: "Before you start",
+    safetyNote: "AmorIAI is a conversational companion. It does not replace medical, psychological or emergency services.",
+    faqs: [
+      {
+        question: "Is AmorIAI free?",
+        answer:
+          "You can start for free. Free-plan limits and paid options are clearly shown during signup and on the pricing page.",
+      },
+      {
+        question: "Does AmorIAI replace a therapist?",
+        answer:
+          "No. AmorIAI is a conversational companion and does not replace a mental-health professional, diagnosis, treatment or emergency services.",
+      },
+      {
+        question: "Can I use it on my phone?",
+        answer:
+          "Yes. AmorIAI works directly in your phone, tablet or computer browser, with no application to download.",
+      },
+      {
+        question: "Can I change companions?",
+        answer:
+          "Yes. You can explore different personalities and choose the one that best fits what you need at the time.",
+      },
+      {
+        question: "How is my data handled?",
+        answer:
+          "Details about data collection, use and retention are available in AmorIAI’s privacy policy.",
+      },
+    ],
+
+    footerCopy: `© ${new Date().getFullYear()} AmorIAI.app`,
+    footerLinks: {
+      legal: "Legal",
+      privacy: "Privacy policy",
+      terms: "Terms of use",
+      contact: "Contact",
+      about: "About",
+    },
   },
 
   es: {
-    brandTagline: "Un espacio tranquilo • FR / EN / ES",
-    nav: { home: "Inicio", features: "Funciones", pricing: "Precios" },
+    brandTagline: "Tu compañero de IA • FR / EN / ES",
+    nav: {
+      home: "Inicio",
+      companions: "Compañeros",
+      benefits: "Por qué AmorIAI",
+      pricing: "Precios",
+    },
     navLogin: "Iniciar sesión",
-    navSignup: "Empezar",
+    navSignup: "Empezar gratis",
 
-    heroKicker: "BIENVENIDX A AMORIAI.APP",
-    heroTitle: "Un espacio tranquilo. Para hablar, respirar… y ver claro.",
+    heroKicker: "UN COMPAÑERO DE IA QUE SE TOMA EL TIEMPO DE ESCUCHARTE",
+    heroTitle: "La IA que se toma el tiempo de escucharte.",
     heroSubtitle:
-      "Aquí puedes soltarlo todo sin sentirte juzgadx. AmorIAI te escucha, responde con suavidad y te ayuda a entender lo que sientes — a tu ritmo.",
+      "Habla con un compañero de IA cuando lo necesites. Expresa tus pensamientos, gana claridad y avanza a tu ritmo, sin presión.",
     heroPrimary: "Empezar gratis",
-    heroSupport: "Gratis para empezar • Sin compromiso • Cancela cuando quieras",
-    mobileNote: "Funciona perfecto en móvil — no necesitas app.",
-    langNote: "Elige tu idioma. Yo me encargo del resto.",
+    heroSecondary: "Ver cómo funciona",
+    heroSupport: "Gratis para empezar • Sin compromiso para probar • Sin aplicación",
+    heroTrust: [
+      "Disponible las 24 horas",
+      "Respuestas adaptadas a tus intercambios",
+      "Francés, inglés y español",
+    ],
+    videoCaption: "Una vista rápida de la experiencia AmorIAI.",
 
-    personasTitle: "Elige tu compañero de IA — y empieza a escribir",
-    personasSubtitle:
-      "Crea tu cuenta y empieza ahora. Escribe con libertad, como en un diario… con una respuesta al frente. La voz está disponible con suscripción.",
+    companionsEyebrow: "ELIGE TU EXPERIENCIA",
+    companionsTitle: "Elige la personalidad que te conviene hoy.",
+    companionsSubtitle:
+      "Cada compañero tiene una forma diferente de conversar. Empieza con el que mejor se adapte a lo que necesitas ahora.",
     personas: [
-      { id: "lyra", title: "Lyra — Compañero de IA suave", description: "Dulce y tranquilizador. Ideal para decir lo que guardas dentro." },
-      { id: "orion", title: "Orion — Compañero de IA estable", description: "Calmo y estructurado. Para pensar con claridad y decidir." },
-      { id: "kai", title: "Kai — Compañero de IA con matices", description: "Sutil y abierto. Un espacio sin etiquetas ni presión." },
-      { id: "maelis", title: "Maelis — Compañero de IA maduro", description: "Realista, sereno y amable. Como alguien que comprende." },
+      {
+        id: "lyra",
+        title: "Lyra",
+        badge: "Dulce y tranquilizadora",
+        description:
+          "Para expresar lo que guardas dentro y recibir una respuesta tranquila, cálida y comprensiva.",
+      },
+      {
+        id: "orion",
+        title: "Orion",
+        badge: "Calmo y estructurado",
+        description:
+          "Para ordenar tus ideas, tomar distancia y avanzar con más claridad en una decisión.",
+      },
+      {
+        id: "kai",
+        title: "Kai",
+        badge: "Abierto y matizado",
+        description:
+          "Para hablar libremente, sin etiquetas, sin presión y sin tener que justificar quién eres.",
+      },
+      {
+        id: "maelis",
+        title: "Maelis",
+        badge: "Maduro y realista",
+        description:
+          "Para recibir una presencia estable, honesta y amable cuando necesitas otra perspectiva.",
+      },
     ],
-    personaCta: "Crear mi AmorIAI",
-    personaCtaHint: "Ejemplo de compañero de IA - crearás el tuyo después de registrarte.",
+    personaCta: "Elegir este compañero",
+    personaCtaHint: "Podrás personalizar tu propio AmorIAI después de registrarte.",
 
-    usageTitle: "Cómo puede acompañarte AmorIAI cada día",
-    usageBullets: [
-      "Hablar cuando sientes que no tienes con quién desahogarte.",
-      "Escribir lo que llevas dentro, como en un diario personal.",
-      "Tomarte un momento por la noche para calmar la mente.",
-      "Pensar con más claridad cuando dudas o te sientes bloqueadx.",
-      "Volver cuando todo se siente demasiado, aunque sea por dos minutos.",
-      "Sentirte acompañado, sin presión ni juicios.",
+    howEyebrow: "FÁCIL DE EMPEZAR",
+    howTitle: "Empieza en menos de un minuto.",
+    howSteps: [
+      {
+        number: "01",
+        title: "Crea tu cuenta",
+        text: "Registrarte toma solo unos instantes y puedes empezar gratis.",
+      },
+      {
+        number: "02",
+        title: "Elige tu compañero",
+        text: "Selecciona la personalidad que mejor se adapta a lo que necesitas hoy.",
+      },
+      {
+        number: "03",
+        title: "Empieza la conversación",
+        text: "Escribe libremente. Tu compañero responde y se adapta poco a poco a tus intercambios.",
+      },
     ],
 
-    reviewsTitle: "Lo que dicen los usuarios",
-    reviewsSubtitle: "Opiniones simples después de unos días usando AmorIAI.",
-    reviewsPrivacyNote: "Tus mensajes son privados. Nadie los lee.",
+    benefitsEyebrow: "UN ESPACIO PARA TI",
+    benefitsTitle: "Un espacio para hablar, pensar y respirar.",
+    benefitsSubtitle:
+      "No necesitas explicarlo todo. Empieza por lo primero que te venga a la mente.",
+    benefits: [
+      {
+        icon: "💬",
+        title: "Necesitas hablar",
+        text: "Cuando algo te pesa y no sabes con quién compartirlo.",
+      },
+      {
+        icon: "🧠",
+        title: "Demasiados pensamientos",
+        text: "Cuando tu mente no se detiene y quieres ordenar tus ideas.",
+      },
+      {
+        icon: "🌙",
+        title: "Noches difíciles",
+        text: "Cuando todo se siente más pesado por la noche y necesitas expresarlo.",
+      },
+      {
+        icon: "💔",
+        title: "Ruptura o soledad",
+        text: "Cuando el silencio, la ausencia o la soledad se vuelven difíciles de llevar.",
+      },
+      {
+        icon: "🧭",
+        title: "Una decisión",
+        text: "Cuando dudas y quieres explorar tus opciones con calma.",
+      },
+      {
+        icon: "📖",
+        title: "Diario interactivo",
+        text: "Cuando escribir te ayuda a comprenderte y quieres recibir una respuesta.",
+      },
+    ],
+
+    differenceEyebrow: "POR QUÉ AMORIAI",
+    differenceTitle: "Más que un diario. Una conversación que continúa contigo.",
+    differenceText:
+      "AmorIAI convierte la escritura en un verdadero intercambio. Vuelve cuando quieras, continúa donde lo dejaste y crea un compañero que se adapte a ti.",
+    differenceItems: [
+      "Una personalidad adaptada a tus necesidades",
+      "Respuestas inmediatas y personalizadas",
+      "Una experiencia simple en móvil y computadora",
+      "Una conversación que puedes retomar",
+      "Voz disponible con suscripción",
+      "Sin presión para encontrar las palabras perfectas",
+    ],
+
+    demoEyebrow: "DESCUBRE CÓMO SE SIENTE",
+    demoTitle: "Una conversación puede empezar con una sola frase.",
+    demoSubtitle:
+      "AmorIAI responde a lo que escribes y te ayuda a continuar sin obligarte a explicarlo todo de una vez.",
+    demoUserLabel: "Tú",
+    demoUserMessage: "Tengo la cabeza llena y ni siquiera sé por dónde empezar.",
+    demoAiLabel: "AmorIAI",
+    demoAiMessage:
+      "No necesitas contarlo todo de una vez. ¿Qué es lo que más espacio ocupa en tu mente ahora mismo?",
+    demoCta: "Empezar mi propia conversación",
+
+    reviewsTitle: "Empezaron con unas pocas palabras",
+    reviewsSubtitle: "Usuarios cuentan cómo AmorIAI forma parte de su día a día.",
+    reviewsPrivacyNote: "Consulta nuestra política de privacidad para saber cómo tratamos tus datos.",
     reviewsHelpfulLabel: "¿Te fue útil esta reseña?",
     reviewsYes: "Sí",
     reviewsNo: "No",
     reviews: REVIEWS_FR,
 
-    pricingTitle: "Cuando te sientas listo",
+    pricingEyebrow: "EMPIEZA SIN PRESIÓN",
+    pricingTitle: "Empieza gratis. Decide después.",
     pricingText:
-      "Empieza gratis, a tu propio ritmo. Cuando lo necesites, podrás desbloquear más mensajes — y la voz para hablar, no solo escribir.",
+      "Descubre AmorIAI gratis. Hay un plan de pago disponible solo si quieres más conversaciones y acceso a la voz.",
+    pricingBullets: [
+      "Creación de cuenta gratuita",
+      "Acceso inmediato a tu compañero",
+      "Sin aplicación que instalar",
+      "Los detalles completos aparecen en la página de precios",
+    ],
+    pricingPrimary: "Crear mi cuenta gratis",
     seePricingLabel: "Ver precios",
+    pricingNote: "Los límites y condiciones del plan gratuito aparecen durante el registro.",
 
-    videoCaption: "Disponible en francés, inglés y español.",
-    footerCopy: "© 2025 AmorIAI.app",
-    footerLinks: { legal: "Aviso legal", privacy: "Política de privacidad", terms: "Términos de uso", contact: "Contacto", about: "Acerca de" },
+    finalTitle: "Empieza simplemente con «Hola».",
+    finalText:
+      "Escribe una frase, un pensamiento o lo que sientes ahora. Tu compañero te ayudará a continuar.",
+    finalCta: "Hablar con AmorIAI ahora",
+
+    faqEyebrow: "PREGUNTAS FRECUENTES",
+    faqTitle: "Antes de empezar",
+    safetyNote: "AmorIAI es un compañero conversacional. No sustituye a los servicios médicos, psicológicos ni de emergencia.",
+    faqs: [
+      {
+        question: "¿AmorIAI es gratis?",
+        answer:
+          "Puedes empezar gratis. Los límites del plan gratuito y las opciones de pago se muestran durante el registro y en la página de precios.",
+      },
+      {
+        question: "¿AmorIAI reemplaza a un psicólogo?",
+        answer:
+          "No. AmorIAI es un compañero conversacional y no sustituye a un profesional de salud mental, un diagnóstico, un tratamiento ni los servicios de emergencia.",
+      },
+      {
+        question: "¿Puedo usarlo en mi teléfono?",
+        answer:
+          "Sí. AmorIAI funciona directamente en el navegador de tu teléfono, tableta o computadora, sin descargar una aplicación.",
+      },
+      {
+        question: "¿Puedo cambiar de compañero?",
+        answer:
+          "Sí. Puedes explorar distintas personalidades y elegir la que mejor se adapte a lo que necesitas en cada momento.",
+      },
+      {
+        question: "¿Cómo se tratan mis datos?",
+        answer:
+          "Los detalles sobre la recopilación, el uso y la conservación de datos se encuentran en la política de privacidad de AmorIAI.",
+      },
+    ],
+
+    footerCopy: `© ${new Date().getFullYear()} AmorIAI.app`,
+    footerLinks: {
+      legal: "Aviso legal",
+      privacy: "Política de privacidad",
+      terms: "Términos de uso",
+      contact: "Contacto",
+      about: "Acerca de",
+    },
   },
 };
 
-function getLocaleFromSearchParams(searchParams: { [key: string]: string | string[] | undefined }): Locale {
-  const raw = searchParams["lang"];
+function getLocaleFromSearchParams(searchParams: {
+  [key: string]: string | string[] | undefined;
+}): Locale {
+  const raw = searchParams.lang;
   const value = Array.isArray(raw) ? raw[0] : raw;
-  if (value === "en" || value === "es" || value === "fr") return value;
+
+  if (value === "fr" || value === "en" || value === "es") {
+    return value;
+  }
+
   return "fr";
 }
 
 type PageProps = {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: {
+    [key: string]: string | string[] | undefined;
+  };
 };
 
 export default function HomePage({ searchParams }: PageProps) {
@@ -323,81 +846,201 @@ export default function HomePage({ searchParams }: PageProps) {
   const t = STRINGS[locale];
 
   const heroVideoSrc = `/amoria_${locale}.mp4`;
-  const getPersonaVideoSrc = (id: PersonaId) => `/amoria_${id}_${locale}.mp4`;
+  const getPersonaVideoSrc = (id: PersonaId) =>
+    `/amoria_${id}_${locale}.mp4`;
 
-  const withLang = (path: string) => ({ pathname: path, query: { lang: locale } });
-  const withLangPricingPublic = () => ({ pathname: "/pricing-public", query: { lang: locale } });
+  const withLang = (path: string) => ({
+    pathname: path,
+    query: { lang: locale },
+  });
 
-  const alreadyAccountText =
-    locale === "fr" ? "Déjà un compte ?" : locale === "en" ? "Already have an account?" : "¿Ya tienes una cuenta?";
-  const loginInlineLabel = locale === "fr" ? "Me connecter" : locale === "en" ? "Log in" : "Iniciar sesión";
+  const withLangPricingPublic = () => ({
+    pathname: "/pricing-public",
+    query: { lang: locale },
+  });
 
-  // ✅ ReviewsSection attend `text` déjà traduit
-  const mappedReviews = t.reviews.map((r) => ({
-    id: r.id,
-    name: r.name,
-    date: r.date,
-    rating: r.rating,
-    text: translateReview(r, locale),
+  const mappedReviews = t.reviews.map((review) => ({
+    id: review.id,
+    name: review.name,
+    date: review.date,
+    rating: review.rating,
+    text: translateReview(review, locale),
   }));
 
-  const thanksTitle = locale === "fr" ? "Merci !" : locale === "en" ? "Thanks!" : "¡Gracias!";
+  const thanksTitle =
+    locale === "fr" ? "Merci!" : locale === "en" ? "Thanks!" : "¡Gracias!";
+
   const thanksHint =
     locale === "fr"
       ? "Ton vote a été enregistré."
       : locale === "en"
-      ? "Your vote has been saved."
-      : "Tu voto se ha guardado.";
+        ? "Your vote has been saved."
+        : "Tu voto se ha guardado.";
+
+  const alreadyAccountText =
+    locale === "fr"
+      ? "Déjà un compte?"
+      : locale === "en"
+        ? "Already have an account?"
+        : "¿Ya tienes una cuenta?";
+
+  const loginInlineLabel =
+    locale === "fr"
+      ? "Me connecter"
+      : locale === "en"
+        ? "Log in"
+        : "Iniciar sesión";
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        name: "AmorIAI",
+        url: "https://www.amoriai.app",
+        inLanguage: locale,
+      },
+      {
+        "@type": "Organization",
+        name: "AmorIAI",
+        url: "https://www.amoriai.app",
+        logo: "https://www.amoriai.app/AmorIA_logo_transparent.png",
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: t.faqs.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: item.answer,
+          },
+        })),
+      },
+    ],
+  };
 
   return (
-    <main
-      className="min-h-screen pb-12 text-slate-100"
-      style={{ background: "radial-gradient(circle at top left,#111827 0,#020617 55%,#000 100%)" }}
-    >
-      {/* HEADER */}
-      <header className="sticky top-0 z-20 bg-gradient-to-b from-slate-950/95 via-slate-950/80 to-transparent backdrop-blur-xl">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5">
+    <main className="min-h-screen overflow-hidden bg-[#030305] text-slate-100">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <style>{`
+        @keyframes amoriaFadeUp {
+          from { opacity: 0; transform: translateY(18px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes amoriaFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+
+        @keyframes amoriaPulseSoft {
+          0%, 100% { opacity: .65; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.035); }
+        }
+
+        @keyframes amoriaMessageIn {
+          from { opacity: 0; transform: translateY(10px) scale(.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .amoria-fade-up {
+          animation: amoriaFadeUp .75s ease-out both;
+        }
+
+        .amoria-float {
+          animation: amoriaFloat 6s ease-in-out infinite;
+        }
+
+        .amoria-soft-pulse {
+          animation: amoriaPulseSoft 4s ease-in-out infinite;
+        }
+
+        .amoria-message-user {
+          animation: amoriaMessageIn .6s ease-out .35s both;
+        }
+
+        .amoria-message-ai {
+          animation: amoriaMessageIn .6s ease-out 1s both;
+        }
+
+        .amoria-card {
+          transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease;
+        }
+
+        .amoria-card:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 24px 60px rgba(0,0,0,.34);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .amoria-fade-up,
+          .amoria-float,
+          .amoria-soft-pulse,
+          .amoria-message-user,
+          .amoria-message-ai {
+            animation: none !important;
+          }
+
+          .amoria-card {
+            transition: none !important;
+          }
+        }
+      `}</style>
+
+      <div
+        className="pointer-events-none fixed inset-0 opacity-80"
+        aria-hidden="true"
+        style={{
+          background:
+            "radial-gradient(circle at 20% 8%, rgba(168,85,247,.16), transparent 30%), radial-gradient(circle at 82% 18%, rgba(236,72,153,.08), transparent 26%), radial-gradient(circle at 50% 85%, rgba(124,58,237,.06), transparent 32%)",
+        }}
+      />
+
+      <header className="sticky top-0 z-50 border-b border-white/5 bg-slate-950/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+          <Link href={{ pathname: "/", query: { lang: locale } }} className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/AmorIA_logo_transparent.png"
-              alt="Logo AmorIAI.app"
-              className="h-9 w-auto select-none"
+              alt="AmorIAI.app"
+              className="h-10 w-auto"
               draggable={false}
             />
-            <div className="flex flex-col">
-              <div className="text-sm font-semibold">AmorIAI.app</div>
-              <div className="text-[0.72rem] text-slate-400">{t.brandTagline}</div>
+            <div>
+              <div className="text-sm font-bold tracking-wide">AmorIAI.app</div>
+              <div className="text-[0.68rem] text-slate-400">{t.brandTagline}</div>
             </div>
-          </div>
+          </Link>
 
-          {/* Nav desktop */}
-          <nav className="hidden items-center gap-5 text-xs text-slate-300 md:flex">
-            <a href="#hero" className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50">
+          <nav className="hidden items-center gap-6 text-sm text-slate-300 lg:flex">
+            <a href="#hero" className="transition hover:text-white">
               {t.nav.home}
             </a>
-            <Link href={withLang("/features")} className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50">
-              {t.nav.features}
-            </Link>
-            <Link
-              href={withLangPricingPublic()}
-              className="border-b border-transparent pb-0.5 transition hover:border-slate-400 hover:text-slate-50"
-            >
+            <a href="#companions" className="transition hover:text-white">
+              {t.nav.companions}
+            </a>
+            <a href="#benefits" className="transition hover:text-white">
+              {t.nav.benefits}
+            </a>
+            <a href="#pricing" className="transition hover:text-white">
               {t.nav.pricing}
-            </Link>
+            </a>
           </nav>
 
-          {/* Lang + login + signup */}
           <div className="flex items-center gap-2">
-            {/* Lang switcher */}
-            <div className="flex items-center gap-0.5 rounded-full border border-slate-600/70 bg-slate-900/80 px-0.5 py-0.5 text-[0.7rem]">
+            <div className="flex rounded-full border border-white/10 bg-white/5 p-1 text-[0.68rem]">
               {(["fr", "en", "es"] as Locale[]).map((code) => (
                 <Link
                   key={code}
                   href={{ pathname: "/", query: { lang: code } }}
-                  className={`rounded-full px-2 py-0.5 transition ${
-                    locale === code ? "bg-slate-800 text-slate-50" : "text-slate-400 hover:text-slate-100"
+                  className={`rounded-full px-2.5 py-1 font-semibold transition ${
+                    locale === code
+                      ? "bg-white text-slate-950"
+                      : "text-slate-400 hover:text-white"
                   }`}
                 >
                   {code.toUpperCase()}
@@ -407,14 +1050,14 @@ export default function HomePage({ searchParams }: PageProps) {
 
             <Link
               href={withLang("/login")}
-              className="hidden items-center justify-center rounded-full border border-slate-500/70 px-3 py-1 text-[0.7rem] text-slate-100 transition hover:bg-slate-900/80 md:inline-flex"
+              className="hidden rounded-full border border-white/15 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10 md:inline-flex"
             >
               {t.navLogin}
             </Link>
 
             <Link
               href={withLang("/signup")}
-              className="hidden items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3.5 py-1.5 text-[0.78rem] font-medium text-white shadow-lg shadow-pink-500/40 transition hover:brightness-110 sm:inline-flex"
+              className="hidden rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-violet-500/20 transition hover:scale-[1.02] sm:inline-flex amoria-soft-pulse"
             >
               {t.navSignup}
             </Link>
@@ -422,163 +1065,424 @@ export default function HomePage({ searchParams }: PageProps) {
         </div>
       </header>
 
-      {/* HERO */}
-      <section id="hero" className="mx-auto grid max-w-5xl items-center gap-8 px-4 pb-10 pt-6 md:grid-cols-[1.3fr,1fr]">
-        <div className="flex flex-col gap-3">
-          <p className="text-[0.8rem] uppercase tracking-[0.18em] text-indigo-300">{t.heroKicker}</p>
-          <h1 className="text-3xl font-bold leading-tight md:text-[2.3rem]">{t.heroTitle}</h1>
-          <p className="max-w-xl text-sm leading-relaxed text-slate-300 md:text-[0.92rem]">{t.heroSubtitle}</p>
+      <section
+        id="hero"
+        className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-20 pt-14 lg:grid-cols-[1.1fr_.9fr] lg:pt-20"
+      >
+        <div className="relative z-10 amoria-fade-up">
+          <div className="mb-5 inline-flex rounded-full border border-violet-400/20 bg-violet-500/10 px-4 py-2 text-[0.72rem] font-bold tracking-[0.16em] text-violet-200">
+            {t.heroKicker}
+          </div>
 
-          <div className="mt-3 flex flex-col gap-2">
+          <h1 className="max-w-3xl text-4xl font-black leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
+            {t.heroTitle}
+          </h1>
+
+          <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+            {t.heroSubtitle}
+          </p>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               href={withLang("/signup")}
-              className="inline-flex items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-6 py-2.5 text-[0.96rem] font-medium text-white shadow-xl shadow-rose-400/40 transition hover:brightness-110"
+              className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-7 py-3.5 text-sm font-bold text-white shadow-xl shadow-violet-500/25 transition hover:-translate-y-0.5 hover:brightness-110"
             >
               {t.heroPrimary}
             </Link>
 
-            <div className="text-[0.8rem] text-slate-300">
-              {alreadyAccountText}{" "}
-              <Link href={withLang("/login")} className="font-semibold text-rose-300 hover:text-rose-200">
-                {loginInlineLabel}
-              </Link>
+            <a
+              href="#how-it-works"
+              className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-bold text-white transition hover:bg-white/10"
+            >
+              {t.heroSecondary}
+            </a>
+          </div>
+
+          <div className="mt-4 text-sm text-slate-400">
+            {alreadyAccountText}{" "}
+            <Link
+              href={withLang("/login")}
+              className="font-bold text-violet-300 hover:text-violet-200"
+            >
+              {loginInlineLabel}
+            </Link>
+          </div>
+
+          <p className="mt-5 text-xs leading-6 text-slate-400">{t.heroSupport}</p>
+
+          <div className="mt-7 grid max-w-2xl gap-3 sm:grid-cols-3">
+            {t.heroTrust.map((item) => (
+              <div
+                key={item}
+                className="flex items-center gap-2 rounded-2xl border border-white/8 bg-white/[0.035] px-3 py-3 text-xs text-slate-300"
+              >
+                <span className="text-emerald-400">✓</span>
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative mx-auto w-full max-w-lg amoria-fade-up">
+          <div className="absolute -inset-6 rounded-[2.8rem] bg-gradient-to-br from-violet-500/20 via-fuchsia-500/10 to-transparent blur-3xl amoria-soft-pulse" />
+
+          <div className="relative grid gap-4 sm:grid-cols-[0.88fr_1.12fr]">
+            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/60 p-2 shadow-2xl shadow-black/50 amoria-float">
+              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+              <video
+                className="block aspect-[4/5] w-full rounded-[1.55rem] bg-black object-cover"
+                src={heroVideoSrc}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+              />
+            </div>
+
+            <div className="self-center rounded-[2rem] border border-white/10 bg-zinc-950/95 p-4 shadow-2xl shadow-black/40 backdrop-blur-xl">
+              <div className="mb-4 flex items-center gap-3 border-b border-white/10 pb-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-xs font-black">
+                  A
+                </div>
+                <div>
+                  <div className="text-xs font-bold">AmorIAI</div>
+                  <div className="text-[0.65rem] text-emerald-400">
+                    ● {locale === "fr" ? "En ligne" : locale === "en" ? "Online" : "En línea"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="ml-auto max-w-[92%] amoria-message-user">
+                  <div className="rounded-2xl rounded-br-md bg-white px-3.5 py-2.5 text-xs leading-5 text-zinc-950">
+                    {t.demoUserMessage}
+                  </div>
+                </div>
+
+                <div className="max-w-[95%] amoria-message-ai">
+                  <div className="rounded-2xl rounded-bl-md border border-violet-400/15 bg-violet-500/10 px-3.5 py-2.5 text-xs leading-5 text-slate-100">
+                    {t.demoAiMessage}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <p className="mt-1 text-[0.82rem] text-slate-400">{t.heroSupport}</p>
-          <p className="text-[0.8rem] text-slate-300">{t.mobileNote}</p>
-          <p className="text-[0.8rem] text-slate-200">{t.langNote}</p>
-        </div>
-
-        <div className="flex flex-col items-center gap-2">
-          <div
-            className="w-full max-w-xs animate-[amoriaPulse_4s_ease-in-out_infinite] rounded-[1.6rem] p-[0.22rem]"
-            style={{ background: "linear-gradient(135deg,#f97316,#fb37ff,#38bdf8)" }}
-          >
-            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-            <video className="block w-full rounded-[1.45rem] bg-slate-950" src={heroVideoSrc} controls playsInline />
-          </div>
-          <p className="text-center text-[0.78rem] text-slate-400">{t.videoCaption}</p>
+          <p className="mt-3 text-center text-xs text-slate-500">{t.videoCaption}</p>
         </div>
       </section>
 
-      {/* PERSONAS */}
-      <section id="features" className="mx-auto max-w-5xl space-y-4 px-4 pb-10">
-        <div>
-          <h2 className="text-lg font-semibold md:text-xl">{t.personasTitle}</h2>
-          <p className="mt-1 max-w-2xl text-sm text-slate-300">{t.personasSubtitle}</p>
+      <section id="companions" className="relative border-y border-white/5 bg-white/[0.02]">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
+              {t.companionsEyebrow}
+            </p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
+              {t.companionsTitle}
+            </h2>
+            <p className="mt-4 leading-7 text-slate-300">{t.companionsSubtitle}</p>
+          </div>
+
+          <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {t.personas.map((persona) => (
+              <article
+                key={persona.id}
+                className="group amoria-card overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/80 shadow-xl shadow-black/20 hover:border-violet-400/30"
+              >
+                <div className="aspect-[4/5] overflow-hidden bg-slate-900">
+                  {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+                  <video
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+                    src={getPersonaVideoSrc(persona.id)}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
+                </div>
+
+                <div className="p-5">
+                  <div className="inline-flex rounded-full bg-violet-500/10 px-3 py-1 text-[0.68rem] font-bold text-violet-200">
+                    {persona.badge}
+                  </div>
+                  <h3 className="mt-3 text-xl font-black">{persona.title}</h3>
+                  <p className="mt-2 min-h-[6rem] text-sm leading-6 text-slate-300">
+                    {persona.description}
+                  </p>
+
+                  <Link
+                    href={withLang("/signup")}
+                    className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-3 text-sm font-bold text-white transition hover:brightness-110"
+                  >
+                    {t.personaCta}
+                  </Link>
+
+                  <p className="mt-3 text-center text-[0.7rem] leading-5 text-slate-500">
+                    {t.personaCtaHint}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="how-it-works" className="relative mx-auto max-w-6xl px-4 py-20">
+        <div className="text-center">
+          <p className="text-xs font-bold tracking-[0.2em] text-violet-300">{t.howEyebrow}</p>
+          <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t.howTitle}</h2>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {t.personas.map((persona) => (
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
+          {t.howSteps.map((step) => (
             <article
-              key={persona.id}
-              className="flex min-h-full flex-col overflow-hidden rounded-2xl border border-slate-700/70 bg-gradient-to-b from-slate-950/90 via-slate-950 to-black/90"
+              key={step.number}
+              className="amoria-card rounded-3xl border border-white/10 bg-white/[0.035] p-6"
             >
-              <div className="aspect-[4/5] w-full border-b border-slate-800 bg-slate-900">
-                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-                <video className="h-full w-full object-cover" src={getPersonaVideoSrc(persona.id)} controls playsInline />
-              </div>
-
-              <div className="flex flex-col gap-2 px-3.5 py-3.5">
-                <h3 className="text-sm font-semibold">{persona.title}</h3>
-                <p className="flex-1 text-[0.8rem] text-slate-300">{persona.description}</p>
-
-                <Link
-                  href={withLang("/signup")}
-                  className="mt-1 inline-flex w-full items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-3 py-2 text-[0.85rem] font-medium text-white shadow-lg shadow-rose-400/35 transition hover:brightness-110"
-                >
-                  {t.personaCta}
-                </Link>
-
-                <p className="text-center text-[0.72rem] leading-snug text-slate-400">{t.personaCtaHint}</p>
-              </div>
+              <div className="text-4xl font-black text-white/10">{step.number}</div>
+              <h3 className="mt-4 text-xl font-bold">{step.title}</h3>
+              <p className="mt-3 text-sm leading-7 text-slate-300">{step.text}</p>
             </article>
           ))}
         </div>
       </section>
 
-      {/* USAGE */}
-      <section className="mx-auto max-w-5xl border-t border-slate-900 px-4 pb-8 pt-7">
-        <h2 className="mb-3 text-lg font-semibold md:text-xl">{t.usageTitle}</h2>
-        <ul className="max-w-xl space-y-2 text-sm text-slate-300">
-          {t.usageBullets.map((item, index) => (
-            <li key={index} className="flex">
-              <span className="mr-2 text-rose-400">•</span>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
+      <section id="benefits" className="relative border-y border-white/5 bg-white/[0.02]">
+        <div className="mx-auto max-w-6xl px-4 py-20">
+          <div className="max-w-3xl">
+            <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
+              {t.benefitsEyebrow}
+            </p>
+            <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t.benefitsTitle}</h2>
+            <p className="mt-4 text-base leading-7 text-slate-300">
+              {t.benefitsSubtitle}
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {t.benefits.map((benefit) => (
+              <article
+                key={benefit.title}
+                className="amoria-card rounded-3xl border border-white/10 bg-zinc-950/80 p-6 hover:border-violet-400/25"
+              >
+                <div className="text-3xl" aria-hidden="true">
+                  {benefit.icon}
+                </div>
+                <h3 className="mt-4 text-lg font-bold">{benefit.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-300">{benefit.text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
       </section>
 
-      {/* ✅ REVIEWS (via ReviewsSection.tsx) */}
-      <ReviewsSection
-        locale={locale}
-        title={t.reviewsTitle}
-        subtitle={t.reviewsSubtitle}
-        privacyNote={t.reviewsPrivacyNote}
-        helpfulLabel={t.reviewsHelpfulLabel}
-        yesLabel={t.reviewsYes}
-        noLabel={t.reviewsNo}
-        thanksTitle={thanksTitle}
-        thanksHint={thanksHint}
-        reviews={mappedReviews}
-      />
+      <section className="relative mx-auto grid max-w-6xl gap-10 px-4 py-20 lg:grid-cols-[.9fr_1.1fr] lg:items-center">
+        <div>
+          <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
+            {t.differenceEyebrow}
+          </p>
+          <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t.differenceTitle}</h2>
+          <p className="mt-5 text-base leading-8 text-slate-300">{t.differenceText}</p>
 
-      {/* PRICING TEASER */}
-      <section id="pricing" className="mx-auto max-w-5xl px-4 pb-12">
-        <div className="rounded-3xl border border-slate-800/70 bg-gradient-to-b from-slate-950/75 via-slate-950 to-black/90 p-6 text-center shadow-xl shadow-black/30">
-          <h2 className="text-lg font-semibold md:text-xl">{t.pricingTitle}</h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm text-slate-300">{t.pricingText}</p>
+          <Link
+            href={withLang("/signup")}
+            className="mt-7 inline-flex rounded-full bg-white px-6 py-3 text-sm font-black text-slate-950 transition hover:scale-[1.02]"
+          >
+            {t.heroPrimary}
+          </Link>
+        </div>
 
-          <div className="mt-5 flex flex-col items-center gap-2">
+        <div className="grid gap-3 sm:grid-cols-2">
+          {t.differenceItems.map((item) => (
+            <div
+              key={item}
+              className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm text-slate-200"
+            >
+              <span className="mt-0.5 text-emerald-400">✓</span>
+              <span>{item}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+
+      <section className="relative border-y border-white/5 bg-white/[0.02]">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div>
+            <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
+              {t.demoEyebrow}
+            </p>
+            <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t.demoTitle}</h2>
+            <p className="mt-4 max-w-xl leading-8 text-slate-300">{t.demoSubtitle}</p>
+
             <Link
               href={withLang("/signup")}
-              className="inline-flex w-full max-w-sm items-center justify-center rounded-full bg-gradient-to-tr from-fuchsia-500 to-rose-400 px-6 py-3 text-[0.92rem] font-medium text-white shadow-lg shadow-rose-400/40 transition hover:brightness-110"
+              className="mt-7 inline-flex rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-6 py-3 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:brightness-110"
             >
-              {locale === "fr" ? "Créer mon compte gratuit" : locale === "en" ? "Create my free account" : "Crear mi cuenta gratis"}
+              {t.demoCta}
             </Link>
+          </div>
 
-            <Link
-              href={withLangPricingPublic()}
-              className="inline-flex w-full max-w-sm items-center justify-center rounded-full border border-slate-500/70 bg-transparent px-6 py-3 text-[0.92rem] font-medium text-slate-100 transition hover:bg-slate-900/70"
-            >
-              {t.seePricingLabel}
-            </Link>
+          <div className="rounded-[2rem] border border-white/10 bg-slate-950/80 p-5 shadow-2xl shadow-black/30 sm:p-7">
+            <div className="mb-5 flex items-center gap-3 border-b border-white/10 pb-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-sm font-black">
+                A
+              </div>
+              <div>
+                <div className="text-sm font-bold">AmorIAI</div>
+                <div className="text-xs text-emerald-400">
+                  ● {locale === "fr" ? "En ligne" : locale === "en" ? "Online" : "En línea"}
+                </div>
+              </div>
+            </div>
 
-            <div className="text-[0.78rem] text-slate-400">
-              {locale === "fr"
-                ? "Gratuit • Sans engagement • Annule quand tu veux"
-                : locale === "en"
-                ? "Free • No commitment • Cancel anytime"
-                : "Gratis • Sin compromiso • Cancela cuando quieras"}
+            <div className="space-y-4">
+              <div className="ml-auto max-w-[85%]">
+                <div className="mb-1 text-right text-[0.68rem] font-bold text-slate-500">
+                  {t.demoUserLabel}
+                </div>
+                <div className="rounded-2xl rounded-br-md bg-white px-4 py-3 text-sm leading-6 text-slate-950">
+                  {t.demoUserMessage}
+                </div>
+              </div>
+
+              <div className="max-w-[88%]">
+                <div className="mb-1 text-[0.68rem] font-bold text-violet-300">
+                  {t.demoAiLabel}
+                </div>
+                <div className="rounded-2xl rounded-bl-md border border-violet-400/15 bg-violet-500/10 px-4 py-3 text-sm leading-6 text-slate-100">
+                  {t.demoAiMessage}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="mx-auto max-w-5xl px-4 pb-4 text-center text-[0.78rem] text-slate-400">
-        <div className="mb-2">{t.footerCopy}</div>
+      <div className="relative border-y border-white/5 bg-white/[0.02]">
+        <ReviewsSection
+          locale={locale}
+          title={t.reviewsTitle}
+          subtitle={t.reviewsSubtitle}
+          privacyNote={t.reviewsPrivacyNote}
+          helpfulLabel={t.reviewsHelpfulLabel}
+          yesLabel={t.reviewsYes}
+          noLabel={t.reviewsNo}
+          thanksTitle={thanksTitle}
+          thanksHint={thanksHint}
+          reviews={mappedReviews}
+        />
+      </div>
 
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link href={withLang("/legal")} className="hover:text-slate-100">
-            {t.footerLinks.legal}
-          </Link>
-          <Link href={withLang("/legal/privacy")} className="hover:text-slate-100">
-            {t.footerLinks.privacy}
-          </Link>
-          <Link href={withLang("/legal/terms")} className="hover:text-slate-100">
-            {t.footerLinks.terms}
-          </Link>
-          <Link href={withLang("/contact")} className="hover:text-slate-100">
-            {t.footerLinks.contact}
-          </Link>
-          <Link href={withLang("/about")} className="hover:text-slate-100">
-            {t.footerLinks.about}
-          </Link>
+      <section id="pricing" className="relative mx-auto max-w-6xl px-4 py-20">
+        <div className="overflow-hidden rounded-[2rem] border border-violet-400/20 bg-gradient-to-br from-violet-500/10 via-zinc-950 to-fuchsia-500/5 p-7 shadow-2xl shadow-black/30 sm:p-10">
+          <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
+            <div>
+              <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
+                {t.pricingEyebrow}
+              </p>
+              <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t.pricingTitle}</h2>
+              <p className="mt-4 max-w-2xl leading-8 text-slate-300">{t.pricingText}</p>
+
+              <ul className="mt-7 grid gap-3 sm:grid-cols-2">
+                {t.pricingBullets.map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-sm text-slate-200">
+                    <span className="text-emerald-400">✓</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-slate-950/70 p-6">
+              <Link
+                href={withLang("/signup")}
+                className="inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-violet-500/20 transition hover:brightness-110"
+              >
+                {t.pricingPrimary}
+              </Link>
+
+              <Link
+                href={withLangPricingPublic()}
+                className="mt-3 inline-flex w-full items-center justify-center rounded-full border border-white/15 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/10"
+              >
+                {t.seePricingLabel}
+              </Link>
+
+              <p className="mt-4 text-center text-xs text-slate-400">{t.pricingNote}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative border-t border-white/5 bg-white/[0.02]">
+        <div className="mx-auto max-w-4xl px-4 py-20">
+          <div className="text-center">
+            <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
+              {t.faqEyebrow}
+            </p>
+            <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t.faqTitle}</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-400">
+              {t.safetyNote}
+            </p>
+          </div>
+
+          <div className="mt-10 space-y-3">
+            {t.faqs.map((item) => (
+              <details
+                key={item.question}
+                className="group rounded-2xl border border-white/10 bg-slate-950/70 px-5 py-4"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-bold text-white">
+                  <span>{item.question}</span>
+                  <span className="text-lg font-light text-violet-300 transition group-open:rotate-45">
+                    +
+                  </span>
+                </summary>
+                <p className="mt-3 text-sm leading-7 text-slate-300">{item.answer}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative mx-auto max-w-4xl px-4 pb-24 pt-20 text-center">
+        <h2 className="text-3xl font-black sm:text-4xl">{t.finalTitle}</h2>
+        <p className="mx-auto mt-4 max-w-2xl leading-8 text-slate-300">{t.finalText}</p>
+        <Link
+          href={withLang("/signup")}
+          className="mt-7 inline-flex rounded-full bg-white px-7 py-3.5 text-sm font-black text-slate-950 transition hover:scale-[1.02]"
+        >
+          {t.finalCta}
+        </Link>
+      </section>
+
+      <footer className="relative border-t border-white/5 bg-black/20">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-center text-xs text-slate-400 md:flex-row md:text-left">
+          <div>{t.footerCopy}</div>
+
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link href={withLang("/legal")} className="hover:text-white">
+              {t.footerLinks.legal}
+            </Link>
+            <Link href={withLang("/legal/privacy")} className="hover:text-white">
+              {t.footerLinks.privacy}
+            </Link>
+            <Link href={withLang("/legal/terms")} className="hover:text-white">
+              {t.footerLinks.terms}
+            </Link>
+            <Link href={withLang("/contact")} className="hover:text-white">
+              {t.footerLinks.contact}
+            </Link>
+            <Link href={withLang("/about")} className="hover:text-white">
+              {t.footerLinks.about}
+            </Link>
+          </div>
         </div>
       </footer>
     </main>
   );
-                  }
+}
