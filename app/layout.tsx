@@ -1,7 +1,9 @@
 // app/layout.tsx
+
 import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+
 import "./globals.css";
 
 import CookieBanner from "@/components/CookieBanner";
@@ -10,13 +12,20 @@ import RegisterSW from "./components/RegisterSW";
 export const metadata: Metadata = {
   title: "AmorIAI.app",
   description: "Partenaire IA bienveillant·e et multilingue.",
+
   manifest: "/manifest.webmanifest",
+
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
     apple: "/favicon.png",
   },
+
   themeColor: "#000000",
+
+  verification: {
+    google: "U3r2HtNk9XmtrlercSyRYaNqjbKiRwOP-I7ZEHLs-sI",
+  },
 };
 
 export const viewport: Viewport = {
@@ -25,7 +34,11 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
@@ -35,11 +48,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           strategy="afterInteractive"
         />
 
-        {/* Consent Mode v2: defaults = denied (avant toute mesure) */}
+        {/* Consent Mode v2 */}
         <Script id="gtag-consent-default" strategy="afterInteractive">
           {`
             window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
+
+            function gtag() {
+              dataLayer.push(arguments);
+            }
+
             gtag('js', new Date());
 
             gtag('consent', 'default', {
@@ -61,7 +78,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {/* PWA */}
         <RegisterSW />
 
-        {/* Cookies */}
+        {/* Cookie Banner */}
         <CookieBanner />
       </body>
     </html>
