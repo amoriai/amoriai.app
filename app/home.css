@@ -536,3 +536,34 @@
     animation: amoriaFadeUp 0.75s var(--amoria-ease) both;
   }
 }
+
+/* =========================================================
+   HERO — LARGE DESKTOP VISUAL
+   ========================================================= */
+
+@media (min-width: 1024px) {
+  .amoria-hero-visual {
+    width: min(100%, 760px);
+  }
+
+  .amoria-hero-visual > div:nth-child(2) {
+    min-height: 500px;
+    align-items: center;
+  }
+
+  .amoria-hero-video {
+    min-height: 470px;
+  }
+
+  .amoria-hero-video video {
+    min-height: 454px;
+    object-fit: cover;
+  }
+
+  .amoria-hero-chat {
+    min-height: 330px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
