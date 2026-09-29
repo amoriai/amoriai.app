@@ -190,69 +190,72 @@ function translateReview(item: ReviewCard, locale: Locale) {
 
 const STRINGS: Record<Locale, Copy> = {
   fr: {
-    brandTagline: "Ton compagnon IA • FR / EN / ES",
+    brandTagline: "Crée ton compagnon IA • FR / EN / ES",
     nav: {
       home: "Accueil",
-      companions: "Compagnons",
+      companions: "Exemples",
       benefits: "Pourquoi AmorIAI",
       pricing: "Tarifs",
     },
     navLogin: "Me connecter",
-    navSignup: "Commencer gratuitement",
+    navSignup: "Créer mon AmorIAI",
 
-    heroKicker: "UN COMPAGNON IA QUI PREND LE TEMPS DE T’ÉCOUTER",
-    heroTitle: "L’IA qui prend le temps de t’écouter.",
+    heroKicker: "CRÉE TON PROPRE COMPAGNON IA",
+    heroTitle: "Imagine-le. Personnalise-le. Fais-en ton AmorIAI.",
     heroSubtitle:
-      "Parle à un compagnon IA disponible quand tu en as besoin. Écris ce que tu ressens, clarifie tes pensées et avance à ton rythme, sans pression.",
-    heroPrimary: "Commencer gratuitement",
-    heroSecondary: "Voir comment ça fonctionne",
-    heroSupport: "Gratuit pour commencer • Sans engagement pour essayer • Aucune application à télécharger",
+      "Choisis la personnalité et la façon de communiquer qui te conviennent. Les compagnons présentés ici sont des exemples : après ton inscription, tu peux personnaliser ton propre AmorIAI et commencer à discuter.",
+    heroPrimary: "Créer mon AmorIAI gratuitement",
+    heroSecondary: "Voir des exemples",
+    heroSupport:
+      "Gratuit pour commencer • Personnalisable • Aucune application à télécharger",
     heroTrust: [
+      "Ton propre compagnon",
       "Accessible 24 h/24",
-      "Des réponses adaptées à tes échanges",
       "Français, anglais et espagnol",
     ],
     videoCaption: "Un aperçu de l’expérience AmorIAI.",
 
-    companionsEyebrow: "CHOISIS TON EXPÉRIENCE",
-    companionsTitle: "Choisis la personnalité qui te convient aujourd’hui.",
+    companionsEyebrow: "DES EXEMPLES POUR T’INSPIRER",
+    companionsTitle:
+      "Voici quelques AmorIAI possibles. Le tien peut être différent.",
     companionsSubtitle:
-      "Chaque compagnon possède une façon différente d’échanger. Commence avec celui qui correspond le mieux à ton besoin du moment.",
+      "Lyra, Orion, Kai et Maelis sont des exemples de personnalités. Explore-les pour découvrir l’expérience, puis crée et personnalise ton propre AmorIAI.",
     personas: [
       {
         id: "lyra",
         title: "Lyra",
         badge: "Douce et rassurante",
         description:
-          "Pour déposer ce que tu gardes à l’intérieur et recevoir une réponse calme, chaleureuse et bienveillante.",
+          "Un exemple de compagnon chaleureux, calme et bienveillant pour les moments où tu as simplement envie de parler.",
       },
       {
         id: "orion",
         title: "Orion",
         badge: "Calme et structuré",
         description:
-          "Pour mettre de l’ordre dans tes idées, prendre du recul et avancer plus clairement dans une décision.",
+          "Un exemple de compagnon posé et structuré, avec une façon claire et réfléchie de poursuivre la conversation.",
       },
       {
         id: "kai",
         title: "Kai",
         badge: "Ouvert et nuancé",
         description:
-          "Pour parler librement, sans étiquette, sans pression et sans devoir expliquer qui tu devrais être.",
+          "Un exemple de compagnon ouvert, naturel et sans étiquette, pensé pour une conversation plus libre.",
       },
       {
         id: "maelis",
         title: "Maelis",
         badge: "Mature et réaliste",
         description:
-          "Pour recevoir une présence posée, honnête et bienveillante quand tu as besoin d’un regard plus stable.",
+          "Un exemple de compagnon posé, honnête et bienveillant, avec une personnalité plus mature.",
       },
     ],
-    personaCta: "Choisir ce compagnon",
-    personaCtaHint: "Tu pourras personnaliser ton propre AmorIAI après l’inscription.",
+    personaCta: "Créer le mien",
+    personaCtaHint:
+      "Exemple seulement • Tu peux personnaliser ton propre AmorIAI après l’inscription.",
 
-    howEyebrow: "SIMPLE À COMMENCER",
-    howTitle: "Commence en moins d’une minute.",
+    howEyebrow: "CRÉE TON EXPÉRIENCE",
+    howTitle: "Ton AmorIAI en trois étapes.",
     howSteps: [
       {
         number: "01",
@@ -261,117 +264,129 @@ const STRINGS: Record<Locale, Copy> = {
       },
       {
         number: "02",
-        title: "Choisis ton compagnon",
-        text: "Sélectionne la personnalité qui correspond le mieux à ce dont tu as besoin aujourd’hui.",
+        title: "Crée ton AmorIAI",
+        text: "Personnalise ton compagnon et choisis la personnalité et la façon de communiquer qui te conviennent.",
       },
       {
         number: "03",
-        title: "Commence la conversation",
-        text: "Écris librement. Ton compagnon te répond et s’adapte progressivement à tes échanges.",
+        title: "Commence à discuter",
+        text: "Écris librement. Ton compagnon te répond et adapte progressivement ses échanges à votre conversation.",
       },
     ],
 
-    benefitsEyebrow: "UN ESPACE POUR TOI",
-    benefitsTitle: "Un espace pour parler, réfléchir et souffler.",
+    benefitsEyebrow: "TON COMPAGNON, À TA FAÇON",
+    benefitsTitle:
+      "Une expérience plus personnelle qu’un simple chat avec une IA.",
     benefitsSubtitle:
-      "Tu n’as pas besoin de tout expliquer. Commence simplement par la première chose qui te vient.",
+      "Les personnages que tu vois sur cette page servent d’exemples. Le but d’AmorIAI est de te permettre de créer une expérience qui te convient.",
     benefits: [
       {
+        icon: "✨",
+        title: "Ton propre AmorIAI",
+        text: "Après l’inscription, personnalise ton compagnon au lieu d’être limité aux personnages d’exemple.",
+      },
+      {
+        icon: "🎭",
+        title: "Sa personnalité",
+        text: "Choisis une personnalité et une façon de communiquer qui correspondent à l’expérience que tu recherches.",
+      },
+      {
         icon: "💬",
-        title: "Besoin de parler",
-        text: "Quand tu as quelque chose sur le cœur et que tu ne sais pas à qui le dire.",
+        title: "Des échanges personnalisés",
+        text: "Ton compagnon répond à ce que tu écris et adapte progressivement la conversation à vos échanges.",
       },
       {
-        icon: "🧠",
-        title: "Trop de pensées",
-        text: "Quand ton esprit tourne en boucle et que tu veux remettre de l’ordre dans tes idées.",
+        icon: "🕒",
+        title: "Disponible quand tu veux",
+        text: "Retrouve ton compagnon sur mobile, tablette ou ordinateur, directement dans ton navigateur.",
       },
       {
-        icon: "🌙",
-        title: "Soirées difficiles",
-        text: "Quand tout devient plus lourd le soir et que tu as besoin de déposer ce que tu ressens.",
+        icon: "🎙️",
+        title: "La voix avec l’abonnement",
+        text: "Selon la formule choisie, tu peux aussi accéder aux fonctions vocales d’AmorIAI.",
       },
       {
-        icon: "💔",
-        title: "Rupture ou solitude",
-        text: "Quand l’absence, le silence ou le manque deviennent difficiles à porter seul.",
-      },
-      {
-        icon: "🧭",
-        title: "Décision à prendre",
-        text: "Quand tu hésites et que tu as besoin d’explorer calmement les différentes possibilités.",
-      },
-      {
-        icon: "📖",
-        title: "Journal interactif",
-        text: "Quand tu veux écrire pour comprendre ce qui se passe en toi, avec une réponse en retour.",
+        icon: "🌍",
+        title: "Trois langues",
+        text: "Utilise AmorIAI en français, en anglais ou en espagnol.",
       },
     ],
 
     differenceEyebrow: "POURQUOI AMORIAI",
-    differenceTitle: "Plus qu’un journal. Une conversation qui continue avec toi.",
+    differenceTitle:
+      "Pas un personnage imposé. Un compagnon que tu peux personnaliser.",
     differenceText:
-      "AmorIAI transforme l’écriture en échange interactif. Reviens quand tu veux, poursuis la conversation et retrouve un espace pensé pour t’aider à mettre tes idées en mots.",
+      "Les compagnons affichés sur la page te montrent différentes possibilités. Après ton inscription, l’expérience ne s’arrête pas à Lyra, Orion, Kai ou Maelis : tu peux personnaliser ton propre AmorIAI et poursuivre la conversation à ta façon.",
     differenceItems: [
-      "Une personnalité adaptée à ton besoin",
+      "Des personnages d’exemple pour découvrir l’expérience",
+      "Ton propre compagnon personnalisable après l’inscription",
+      "Une personnalité et une façon de communiquer adaptées à tes préférences",
       "Des réponses immédiates et personnalisées",
-      "Une expérience simple sur mobile et ordinateur",
       "Un fil de conversation que tu peux reprendre",
-      "La voix disponible avec l’abonnement",
-      "Aucune pression pour trouver les mots parfaits",
+      "La voix disponible selon l’abonnement",
     ],
 
-    demoEyebrow: "VOIS COMMENT ÇA SE PASSE",
-    demoTitle: "Une conversation peut commencer avec une seule phrase.",
+    demoEyebrow: "UNE CONVERSATION QUI TE RESSEMBLE",
+    demoTitle: "Ton AmorIAI parle avec la personnalité que tu as choisie.",
     demoSubtitle:
-      "AmorIAI répond à ce que tu écris et t’aide à poursuivre sans te forcer à tout expliquer.",
+      "Tu n’as pas besoin d’utiliser un compagnon prédéfini. Crée le tien, puis commence simplement à discuter.",
     demoUserLabel: "Toi",
-    demoUserMessage: "J’ai la tête pleine et je ne sais même pas par où commencer.",
-    demoAiLabel: "AmorIAI",
+    demoUserMessage:
+      "J’ai envie de parler un peu, mais de quelque chose de léger ce soir.",
+    demoAiLabel: "Ton AmorIAI",
     demoAiMessage:
-      "Tu n’as pas besoin de tout raconter d’un coup. Qu’est-ce qui prend le plus de place dans ta tête en ce moment?",
-    demoCta: "Commencer ma propre conversation",
+      "Avec plaisir. On garde ça léger. Tu veux me raconter ta journée ou partir sur quelque chose de plus amusant?",
+    demoCta: "Créer mon propre AmorIAI",
 
     reviewsTitle: "Ils ont commencé par quelques mots",
-    reviewsSubtitle: "Des utilisateurs racontent ce qu’AmorIAI leur apporte au quotidien.",
-    reviewsPrivacyNote: "Consulte notre politique de confidentialité pour savoir comment tes données sont traitées.",
+    reviewsSubtitle:
+      "Des utilisateurs racontent ce qu’AmorIAI leur apporte au quotidien.",
+    reviewsPrivacyNote:
+      "Consulte notre politique de confidentialité pour savoir comment tes données sont traitées.",
     reviewsHelpfulLabel: "Cet avis est-il utile?",
     reviewsYes: "Oui",
     reviewsNo: "Non",
     reviews: REVIEWS_FR,
 
-    pricingEyebrow: "COMMENCE SANS PRESSION",
-    pricingTitle: "Commence gratuitement. Décide ensuite.",
+    pricingEyebrow: "COMMENCE GRATUITEMENT",
+    pricingTitle: "Crée ton AmorIAI. Décide ensuite.",
     pricingText:
-      "Découvre AmorIAI sans payer. Une formule payante est offerte seulement si tu souhaites davantage d’échanges et l’accès à la voix.",
+      "Tu peux commencer gratuitement. Une formule payante est offerte si tu souhaites davantage d’échanges et l’accès à certaines fonctions comme la voix.",
     pricingBullets: [
       "Création de compte gratuite",
-      "Accès immédiat à ton compagnon",
+      "Personnalisation de ton propre compagnon",
       "Aucune application à installer",
-      "Les détails complets sont indiqués sur la page des tarifs",
+      "Détails complets sur la page des tarifs",
     ],
-    pricingPrimary: "Créer mon compte gratuit",
+    pricingPrimary: "Créer mon AmorIAI gratuitement",
     seePricingLabel: "Voir les tarifs",
-    pricingNote: "Les limites et conditions du forfait gratuit sont indiquées lors de l’inscription.",
+    pricingNote:
+      "Les limites et conditions du forfait gratuit sont indiquées lors de l’inscription.",
 
-    finalTitle: "Commence simplement par « Bonjour ».",
+    finalTitle: "Ton AmorIAI n’existe pas encore. Crée-le.",
     finalText:
-      "Tu peux écrire une phrase, une pensée ou ce que tu ressens maintenant. Ton compagnon t’aidera à poursuivre.",
-    finalCta: "Parler à AmorIAI maintenant",
+      "Commence avec les exemples si tu veux t’inspirer, puis personnalise ton propre compagnon et lance votre première conversation.",
+    finalCta: "Créer mon AmorIAI",
 
     faqEyebrow: "QUESTIONS FRÉQUENTES",
-    faqTitle: "Avant de commencer",
-    safetyNote: "AmorIAI est un compagnon conversationnel. Il ne remplace pas les services médicaux, psychologiques ou d’urgence.",
+    faqTitle: "Avant de créer ton AmorIAI",
+    safetyNote:
+      "AmorIAI est un compagnon conversationnel. Il ne remplace pas les services médicaux, psychologiques ou d’urgence.",
     faqs: [
+      {
+        question: "Est-ce que Lyra, Orion, Kai et Maelis sont mes seuls choix?",
+        answer:
+          "Non. Ce sont des exemples de compagnons. Après ton inscription, tu peux personnaliser ton propre AmorIAI.",
+      },
+      {
+        question: "Puis-je créer mon propre compagnon?",
+        answer:
+          "Oui. AmorIAI te permet de personnaliser ton propre compagnon et sa façon d’échanger avec toi.",
+      },
       {
         question: "Est-ce qu’AmorIAI est gratuit?",
         answer:
-          "Tu peux commencer gratuitement. Les limites du forfait gratuit et les options payantes sont présentées clairement lors de l’inscription et sur la page des tarifs.",
-      },
-      {
-        question: "AmorIAI remplace-t-il un psychologue?",
-        answer:
-          "Non. AmorIAI est un compagnon conversationnel et ne remplace pas un professionnel de la santé mentale, un diagnostic, un traitement ou les services d’urgence.",
+          "Tu peux commencer gratuitement. Les limites du forfait gratuit et les options payantes sont présentées lors de l’inscription et sur la page des tarifs.",
       },
       {
         question: "Puis-je l’utiliser sur mon téléphone?",
@@ -379,9 +394,9 @@ const STRINGS: Record<Locale, Copy> = {
           "Oui. AmorIAI fonctionne directement dans le navigateur de ton téléphone, de ta tablette ou de ton ordinateur, sans application à télécharger.",
       },
       {
-        question: "Puis-je changer de compagnon?",
+        question: "AmorIAI remplace-t-il un psychologue?",
         answer:
-          "Oui. Tu peux explorer différentes personnalités et choisir celle qui correspond le mieux à ton besoin du moment.",
+          "Non. AmorIAI est un compagnon conversationnel et ne remplace pas un professionnel de la santé mentale, un diagnostic, un traitement ou les services d’urgence.",
       },
       {
         question: "Comment mes données sont-elles traitées?",
@@ -401,69 +416,71 @@ const STRINGS: Record<Locale, Copy> = {
   },
 
   en: {
-    brandTagline: "Your AI companion • FR / EN / ES",
+    brandTagline: "Create your AI companion • FR / EN / ES",
     nav: {
       home: "Home",
-      companions: "Companions",
+      companions: "Examples",
       benefits: "Why AmorIAI",
       pricing: "Pricing",
     },
     navLogin: "Log in",
-    navSignup: "Start free",
+    navSignup: "Create my AmorIAI",
 
-    heroKicker: "AN AI COMPANION THAT TAKES TIME TO LISTEN",
-    heroTitle: "The AI that takes time to listen.",
+    heroKicker: "CREATE YOUR OWN AI COMPANION",
+    heroTitle: "Imagine them. Personalize them. Make them your AmorIAI.",
     heroSubtitle:
-      "Talk to an AI companion whenever you need it. Put your thoughts into words, gain clarity and move forward at your own pace, without pressure.",
-    heroPrimary: "Start for free",
-    heroSecondary: "See how it works",
-    heroSupport: "Free to start • No commitment to try • No app required",
+      "Choose the personality and communication style that feel right for you. The companions shown here are examples: after signing up, you can personalize your own AmorIAI and start chatting.",
+    heroPrimary: "Create my AmorIAI for free",
+    heroSecondary: "See examples",
+    heroSupport: "Free to start • Customizable • No app required",
     heroTrust: [
+      "Your own companion",
       "Available 24/7",
-      "Replies adapted to your exchanges",
       "French, English and Spanish",
     ],
     videoCaption: "A quick look at the AmorIAI experience.",
 
-    companionsEyebrow: "CHOOSE YOUR EXPERIENCE",
-    companionsTitle: "Choose the personality that fits you today.",
+    companionsEyebrow: "EXAMPLES TO INSPIRE YOU",
+    companionsTitle:
+      "Here are a few possible AmorIAI companions. Yours can be different.",
     companionsSubtitle:
-      "Each companion has a different way of communicating. Start with the one that best matches what you need right now.",
+      "Lyra, Orion, Kai and Maelis are examples of different personalities. Explore them to discover the experience, then create and personalize your own AmorIAI.",
     personas: [
       {
         id: "lyra",
         title: "Lyra",
         badge: "Gentle and reassuring",
         description:
-          "For sharing what you keep inside and receiving a calm, warm and caring response.",
+          "An example of a warm, calm and caring companion for moments when you simply feel like talking.",
       },
       {
         id: "orion",
         title: "Orion",
         badge: "Calm and structured",
         description:
-          "For organizing your thoughts, taking a step back and moving more clearly through a decision.",
+          "An example of a thoughtful and structured companion with a clear, grounded way of continuing the conversation.",
       },
       {
         id: "kai",
         title: "Kai",
         badge: "Open and nuanced",
         description:
-          "For speaking freely, without labels, pressure or having to explain who you are supposed to be.",
+          "An example of an open, natural companion designed for a freer, less formal kind of conversation.",
       },
       {
         id: "maelis",
         title: "Maelis",
         badge: "Mature and grounded",
         description:
-          "For a steady, honest and caring presence when you need a more balanced perspective.",
+          "An example of a steady, honest and caring companion with a more mature personality.",
       },
     ],
-    personaCta: "Choose this companion",
-    personaCtaHint: "You can personalize your own AmorIAI after signing up.",
+    personaCta: "Create mine",
+    personaCtaHint:
+      "Example only • You can personalize your own AmorIAI after signing up.",
 
-    howEyebrow: "EASY TO START",
-    howTitle: "Start in less than a minute.",
+    howEyebrow: "CREATE YOUR EXPERIENCE",
+    howTitle: "Your AmorIAI in three steps.",
     howSteps: [
       {
         number: "01",
@@ -472,117 +489,128 @@ const STRINGS: Record<Locale, Copy> = {
       },
       {
         number: "02",
-        title: "Choose your companion",
-        text: "Select the personality that best matches what you need today.",
+        title: "Create your AmorIAI",
+        text: "Personalize your companion and choose the personality and communication style that feel right for you.",
       },
       {
         number: "03",
-        title: "Start the conversation",
-        text: "Write freely. Your companion responds and gradually adapts to your exchanges.",
+        title: "Start chatting",
+        text: "Write freely. Your companion responds and gradually adapts the conversation to your exchanges.",
       },
     ],
 
-    benefitsEyebrow: "A SPACE FOR YOU",
-    benefitsTitle: "A place to talk, think and breathe.",
+    benefitsEyebrow: "YOUR COMPANION, YOUR WAY",
+    benefitsTitle:
+      "A more personal experience than a simple AI chat.",
     benefitsSubtitle:
-      "You do not need to explain everything. Start with the first thing that comes to mind.",
+      "The characters you see on this page are examples. AmorIAI is designed to let you create an experience that fits you.",
     benefits: [
       {
+        icon: "✨",
+        title: "Your own AmorIAI",
+        text: "After signing up, personalize your companion instead of being limited to the example characters.",
+      },
+      {
+        icon: "🎭",
+        title: "Their personality",
+        text: "Choose a personality and communication style that match the experience you want.",
+      },
+      {
         icon: "💬",
-        title: "Need to talk",
-        text: "When something is weighing on you and you do not know who to tell.",
+        title: "Personalized exchanges",
+        text: "Your companion responds to what you write and gradually adapts the conversation to your exchanges.",
       },
       {
-        icon: "🧠",
-        title: "Too many thoughts",
-        text: "When your mind keeps looping and you want to organize your ideas.",
+        icon: "🕒",
+        title: "Available when you want",
+        text: "Return to your companion on mobile, tablet or computer, directly in your browser.",
       },
       {
-        icon: "🌙",
-        title: "Difficult evenings",
-        text: "When everything feels heavier at night and you need somewhere to put it.",
+        icon: "🎙️",
+        title: "Voice with a subscription",
+        text: "Depending on your plan, you can also access AmorIAI voice features.",
       },
       {
-        icon: "💔",
-        title: "Breakup or loneliness",
-        text: "When silence, absence or loneliness becomes difficult to carry alone.",
-      },
-      {
-        icon: "🧭",
-        title: "A decision to make",
-        text: "When you are unsure and want to calmly explore your options.",
-      },
-      {
-        icon: "📖",
-        title: "Interactive journal",
-        text: "When writing helps you understand yourself and you want a thoughtful reply.",
+        icon: "🌍",
+        title: "Three languages",
+        text: "Use AmorIAI in French, English or Spanish.",
       },
     ],
 
     differenceEyebrow: "WHY AMORIAI",
-    differenceTitle: "More than a journal. A conversation that continues with you.",
+    differenceTitle:
+      "Not a character chosen for you. A companion you can personalize.",
     differenceText:
-      "AmorIAI turns writing into a real exchange. Come back whenever you want, continue where you left off and create a companion that feels right for you.",
+      "The companions shown on this page demonstrate different possibilities. After signing up, the experience is not limited to Lyra, Orion, Kai or Maelis: you can personalize your own AmorIAI and continue the conversation your way.",
     differenceItems: [
-      "A personality suited to your needs",
+      "Example characters to discover the experience",
+      "Your own customizable companion after signup",
+      "A personality and communication style based on your preferences",
       "Immediate and personalized replies",
-      "A simple mobile and desktop experience",
       "A conversation you can return to",
-      "Voice available with a subscription",
-      "No pressure to find the perfect words",
+      "Voice available depending on your plan",
     ],
 
-    demoEyebrow: "SEE HOW IT FEELS",
-    demoTitle: "A conversation can begin with one sentence.",
+    demoEyebrow: "A CONVERSATION THAT FEELS LIKE YOURS",
+    demoTitle: "Your AmorIAI speaks with the personality you chose.",
     demoSubtitle:
-      "AmorIAI responds to what you write and helps you continue without making you explain everything at once.",
+      "You do not have to use a predefined companion. Create your own, then simply start chatting.",
     demoUserLabel: "You",
-    demoUserMessage: "My mind feels full and I do not even know where to begin.",
-    demoAiLabel: "AmorIAI",
+    demoUserMessage:
+      "I feel like talking for a bit, but I want to keep things light tonight.",
+    demoAiLabel: "Your AmorIAI",
     demoAiMessage:
-      "You do not need to tell me everything at once. What is taking up the most space in your mind right now?",
-    demoCta: "Start my own conversation",
+      "Absolutely. We can keep it light. Want to tell me about your day, or should we switch to something more fun?",
+    demoCta: "Create my own AmorIAI",
 
     reviewsTitle: "They started with just a few words",
     reviewsSubtitle: "Users share how AmorIAI fits into their daily lives.",
-    reviewsPrivacyNote: "See our privacy policy to learn how your data is handled.",
+    reviewsPrivacyNote:
+      "See our privacy policy to learn how your data is handled.",
     reviewsHelpfulLabel: "Was this review helpful?",
     reviewsYes: "Yes",
     reviewsNo: "No",
     reviews: REVIEWS_FR,
 
-    pricingEyebrow: "START WITHOUT PRESSURE",
-    pricingTitle: "Start free. Decide later.",
+    pricingEyebrow: "START FOR FREE",
+    pricingTitle: "Create your AmorIAI. Decide later.",
     pricingText:
-      "Discover AmorIAI for free. A paid plan is available only if you want more conversations and access to voice.",
+      "You can start for free. A paid plan is available if you want more conversations and access to certain features such as voice.",
     pricingBullets: [
       "Free account creation",
-      "Immediate access to your companion",
+      "Personalize your own companion",
       "No application to install",
-      "Full details are shown on the pricing page",
+      "Full details on the pricing page",
     ],
-    pricingPrimary: "Create my free account",
+    pricingPrimary: "Create my AmorIAI for free",
     seePricingLabel: "See pricing",
-    pricingNote: "Free-plan limits and conditions are shown during signup.",
+    pricingNote:
+      "Free-plan limits and conditions are shown during signup.",
 
-    finalTitle: "Simply start with “Hello.”",
+    finalTitle: "Your AmorIAI does not exist yet. Create them.",
     finalText:
-      "Simply write the first thing that comes to mind. Your AmorIAI companion will help you continue.",
-    finalCta: "Talk to AmorIAI now",
+      "Start with the examples if you want inspiration, then personalize your own companion and begin your first conversation.",
+    finalCta: "Create my AmorIAI",
 
     faqEyebrow: "FREQUENTLY ASKED QUESTIONS",
-    faqTitle: "Before you start",
-    safetyNote: "AmorIAI is a conversational companion. It does not replace medical, psychological or emergency services.",
+    faqTitle: "Before creating your AmorIAI",
+    safetyNote:
+      "AmorIAI is a conversational companion. It does not replace medical, psychological or emergency services.",
     faqs: [
+      {
+        question: "Are Lyra, Orion, Kai and Maelis my only choices?",
+        answer:
+          "No. They are example companions. After signing up, you can personalize your own AmorIAI.",
+      },
+      {
+        question: "Can I create my own companion?",
+        answer:
+          "Yes. AmorIAI lets you personalize your own companion and the way they communicate with you.",
+      },
       {
         question: "Is AmorIAI free?",
         answer:
-          "You can start for free. Free-plan limits and paid options are clearly shown during signup and on the pricing page.",
-      },
-      {
-        question: "Does AmorIAI replace a therapist?",
-        answer:
-          "No. AmorIAI is a conversational companion and does not replace a mental-health professional, diagnosis, treatment or emergency services.",
+          "You can start for free. Free-plan limits and paid options are shown during signup and on the pricing page.",
       },
       {
         question: "Can I use it on my phone?",
@@ -590,9 +618,9 @@ const STRINGS: Record<Locale, Copy> = {
           "Yes. AmorIAI works directly in your phone, tablet or computer browser, with no application to download.",
       },
       {
-        question: "Can I change companions?",
+        question: "Does AmorIAI replace a therapist?",
         answer:
-          "Yes. You can explore different personalities and choose the one that best fits what you need at the time.",
+          "No. AmorIAI is a conversational companion and does not replace a mental-health professional, diagnosis, treatment or emergency services.",
       },
       {
         question: "How is my data handled?",
@@ -612,69 +640,71 @@ const STRINGS: Record<Locale, Copy> = {
   },
 
   es: {
-    brandTagline: "Tu compañero de IA • FR / EN / ES",
+    brandTagline: "Crea tu compañero de IA • FR / EN / ES",
     nav: {
       home: "Inicio",
-      companions: "Compañeros",
+      companions: "Ejemplos",
       benefits: "Por qué AmorIAI",
       pricing: "Precios",
     },
     navLogin: "Iniciar sesión",
-    navSignup: "Empezar gratis",
+    navSignup: "Crear mi AmorIAI",
 
-    heroKicker: "UN COMPAÑERO DE IA QUE SE TOMA EL TIEMPO DE ESCUCHARTE",
-    heroTitle: "La IA que se toma el tiempo de escucharte.",
+    heroKicker: "CREA TU PROPIO COMPAÑERO DE IA",
+    heroTitle: "Imagínalo. Personalízalo. Hazlo tu AmorIAI.",
     heroSubtitle:
-      "Habla con un compañero de IA cuando lo necesites. Expresa tus pensamientos, gana claridad y avanza a tu ritmo, sin presión.",
-    heroPrimary: "Empezar gratis",
-    heroSecondary: "Ver cómo funciona",
-    heroSupport: "Gratis para empezar • Sin compromiso para probar • Sin aplicación",
+      "Elige la personalidad y la forma de comunicarse que mejor se adapten a ti. Los compañeros que aparecen aquí son ejemplos: después de registrarte, puedes personalizar tu propio AmorIAI y empezar a conversar.",
+    heroPrimary: "Crear mi AmorIAI gratis",
+    heroSecondary: "Ver ejemplos",
+    heroSupport: "Gratis para empezar • Personalizable • Sin aplicación",
     heroTrust: [
+      "Tu propio compañero",
       "Disponible las 24 horas",
-      "Respuestas adaptadas a tus intercambios",
       "Francés, inglés y español",
     ],
     videoCaption: "Una vista rápida de la experiencia AmorIAI.",
 
-    companionsEyebrow: "ELIGE TU EXPERIENCIA",
-    companionsTitle: "Elige la personalidad que te conviene hoy.",
+    companionsEyebrow: "EJEMPLOS PARA INSPIRARTE",
+    companionsTitle:
+      "Estos son algunos AmorIAI posibles. El tuyo puede ser diferente.",
     companionsSubtitle:
-      "Cada compañero tiene una forma diferente de conversar. Empieza con el que mejor se adapte a lo que necesitas ahora.",
+      "Lyra, Orion, Kai y Maelis son ejemplos de distintas personalidades. Explóralos para descubrir la experiencia y después crea y personaliza tu propio AmorIAI.",
     personas: [
       {
         id: "lyra",
         title: "Lyra",
         badge: "Dulce y tranquilizadora",
         description:
-          "Para expresar lo que guardas dentro y recibir una respuesta tranquila, cálida y comprensiva.",
+          "Un ejemplo de compañera cálida, tranquila y comprensiva para esos momentos en los que simplemente quieres hablar.",
       },
       {
         id: "orion",
         title: "Orion",
         badge: "Calmo y estructurado",
         description:
-          "Para ordenar tus ideas, tomar distancia y avanzar con más claridad en una decisión.",
+          "Un ejemplo de compañero reflexivo y estructurado, con una forma clara y serena de continuar la conversación.",
       },
       {
         id: "kai",
         title: "Kai",
         badge: "Abierto y matizado",
         description:
-          "Para hablar libremente, sin etiquetas, sin presión y sin tener que justificar quién eres.",
+          "Un ejemplo de compañero abierto y natural, pensado para una conversación más libre y sin etiquetas.",
       },
       {
         id: "maelis",
         title: "Maelis",
         badge: "Maduro y realista",
         description:
-          "Para recibir una presencia estable, honesta y amable cuando necesitas otra perspectiva.",
+          "Un ejemplo de compañero estable, honesto y comprensivo, con una personalidad más madura.",
       },
     ],
-    personaCta: "Elegir este compañero",
-    personaCtaHint: "Podrás personalizar tu propio AmorIAI después de registrarte.",
+    personaCta: "Crear el mío",
+    personaCtaHint:
+      "Solo es un ejemplo • Puedes personalizar tu propio AmorIAI después de registrarte.",
 
-    howEyebrow: "FÁCIL DE EMPEZAR",
-    howTitle: "Empieza en menos de un minuto.",
+    howEyebrow: "CREA TU EXPERIENCIA",
+    howTitle: "Tu AmorIAI en tres pasos.",
     howSteps: [
       {
         number: "01",
@@ -683,117 +713,129 @@ const STRINGS: Record<Locale, Copy> = {
       },
       {
         number: "02",
-        title: "Elige tu compañero",
-        text: "Selecciona la personalidad que mejor se adapta a lo que necesitas hoy.",
+        title: "Crea tu AmorIAI",
+        text: "Personaliza tu compañero y elige la personalidad y la forma de comunicarse que mejor se adapten a ti.",
       },
       {
         number: "03",
-        title: "Empieza la conversación",
-        text: "Escribe libremente. Tu compañero responde y se adapta poco a poco a tus intercambios.",
+        title: "Empieza a conversar",
+        text: "Escribe libremente. Tu compañero responde y adapta poco a poco la conversación a vuestros intercambios.",
       },
     ],
 
-    benefitsEyebrow: "UN ESPACIO PARA TI",
-    benefitsTitle: "Un espacio para hablar, pensar y respirar.",
+    benefitsEyebrow: "TU COMPAÑERO, A TU MANERA",
+    benefitsTitle:
+      "Una experiencia más personal que un simple chat con IA.",
     benefitsSubtitle:
-      "No necesitas explicarlo todo. Empieza por lo primero que te venga a la mente.",
+      "Los personajes que ves en esta página son ejemplos. AmorIAI está pensado para que puedas crear una experiencia que se adapte a ti.",
     benefits: [
       {
+        icon: "✨",
+        title: "Tu propio AmorIAI",
+        text: "Después de registrarte, personaliza tu compañero en lugar de limitarte a los personajes de ejemplo.",
+      },
+      {
+        icon: "🎭",
+        title: "Su personalidad",
+        text: "Elige una personalidad y una forma de comunicarse que coincidan con la experiencia que buscas.",
+      },
+      {
         icon: "💬",
-        title: "Necesitas hablar",
-        text: "Cuando algo te pesa y no sabes con quién compartirlo.",
+        title: "Intercambios personalizados",
+        text: "Tu compañero responde a lo que escribes y adapta poco a poco la conversación a vuestros intercambios.",
       },
       {
-        icon: "🧠",
-        title: "Demasiados pensamientos",
-        text: "Cuando tu mente no se detiene y quieres ordenar tus ideas.",
+        icon: "🕒",
+        title: "Disponible cuando quieras",
+        text: "Vuelve a tu compañero desde el móvil, la tableta o la computadora, directamente en tu navegador.",
       },
       {
-        icon: "🌙",
-        title: "Noches difíciles",
-        text: "Cuando todo se siente más pesado por la noche y necesitas expresarlo.",
+        icon: "🎙️",
+        title: "Voz con suscripción",
+        text: "Según el plan elegido, también puedes acceder a las funciones de voz de AmorIAI.",
       },
       {
-        icon: "💔",
-        title: "Ruptura o soledad",
-        text: "Cuando el silencio, la ausencia o la soledad se vuelven difíciles de llevar.",
-      },
-      {
-        icon: "🧭",
-        title: "Una decisión",
-        text: "Cuando dudas y quieres explorar tus opciones con calma.",
-      },
-      {
-        icon: "📖",
-        title: "Diario interactivo",
-        text: "Cuando escribir te ayuda a comprenderte y quieres recibir una respuesta.",
+        icon: "🌍",
+        title: "Tres idiomas",
+        text: "Utiliza AmorIAI en francés, inglés o español.",
       },
     ],
 
     differenceEyebrow: "POR QUÉ AMORIAI",
-    differenceTitle: "Más que un diario. Una conversación que continúa contigo.",
+    differenceTitle:
+      "No un personaje impuesto. Un compañero que puedes personalizar.",
     differenceText:
-      "AmorIAI convierte la escritura en un verdadero intercambio. Vuelve cuando quieras, continúa donde lo dejaste y crea un compañero que se adapte a ti.",
+      "Los compañeros de esta página muestran diferentes posibilidades. Después de registrarte, la experiencia no se limita a Lyra, Orion, Kai o Maelis: puedes personalizar tu propio AmorIAI y continuar la conversación a tu manera.",
     differenceItems: [
-      "Una personalidad adaptada a tus necesidades",
+      "Personajes de ejemplo para descubrir la experiencia",
+      "Tu propio compañero personalizable después del registro",
+      "Una personalidad y una forma de comunicarse según tus preferencias",
       "Respuestas inmediatas y personalizadas",
-      "Una experiencia simple en móvil y computadora",
       "Una conversación que puedes retomar",
-      "Voz disponible con suscripción",
-      "Sin presión para encontrar las palabras perfectas",
+      "Voz disponible según el plan",
     ],
 
-    demoEyebrow: "DESCUBRE CÓMO SE SIENTE",
-    demoTitle: "Una conversación puede empezar con una sola frase.",
+    demoEyebrow: "UNA CONVERSACIÓN QUE SE ADAPTA A TI",
+    demoTitle: "Tu AmorIAI habla con la personalidad que elegiste.",
     demoSubtitle:
-      "AmorIAI responde a lo que escribes y te ayuda a continuar sin obligarte a explicarlo todo de una vez.",
+      "No tienes que usar un compañero predefinido. Crea el tuyo y después empieza simplemente a conversar.",
     demoUserLabel: "Tú",
-    demoUserMessage: "Tengo la cabeza llena y ni siquiera sé por dónde empezar.",
-    demoAiLabel: "AmorIAI",
+    demoUserMessage:
+      "Quiero hablar un poco, pero esta noche prefiero algo ligero.",
+    demoAiLabel: "Tu AmorIAI",
     demoAiMessage:
-      "No necesitas contarlo todo de una vez. ¿Qué es lo que más espacio ocupa en tu mente ahora mismo?",
-    demoCta: "Empezar mi propia conversación",
+      "Claro. Lo mantenemos ligero. ¿Quieres contarme cómo fue tu día o prefieres que hablemos de algo más divertido?",
+    demoCta: "Crear mi propio AmorIAI",
 
     reviewsTitle: "Empezaron con unas pocas palabras",
-    reviewsSubtitle: "Usuarios cuentan cómo AmorIAI forma parte de su día a día.",
-    reviewsPrivacyNote: "Consulta nuestra política de privacidad para saber cómo tratamos tus datos.",
+    reviewsSubtitle:
+      "Usuarios cuentan cómo AmorIAI forma parte de su día a día.",
+    reviewsPrivacyNote:
+      "Consulta nuestra política de privacidad para saber cómo tratamos tus datos.",
     reviewsHelpfulLabel: "¿Te fue útil esta reseña?",
     reviewsYes: "Sí",
     reviewsNo: "No",
     reviews: REVIEWS_FR,
 
-    pricingEyebrow: "EMPIEZA SIN PRESIÓN",
-    pricingTitle: "Empieza gratis. Decide después.",
+    pricingEyebrow: "EMPIEZA GRATIS",
+    pricingTitle: "Crea tu AmorIAI. Decide después.",
     pricingText:
-      "Descubre AmorIAI gratis. Hay un plan de pago disponible solo si quieres más conversaciones y acceso a la voz.",
+      "Puedes empezar gratis. Hay un plan de pago si quieres más conversaciones y acceso a determinadas funciones, como la voz.",
     pricingBullets: [
       "Creación de cuenta gratuita",
-      "Acceso inmediato a tu compañero",
+      "Personaliza tu propio compañero",
       "Sin aplicación que instalar",
-      "Los detalles completos aparecen en la página de precios",
+      "Todos los detalles en la página de precios",
     ],
-    pricingPrimary: "Crear mi cuenta gratis",
+    pricingPrimary: "Crear mi AmorIAI gratis",
     seePricingLabel: "Ver precios",
-    pricingNote: "Los límites y condiciones del plan gratuito aparecen durante el registro.",
+    pricingNote:
+      "Los límites y condiciones del plan gratuito aparecen durante el registro.",
 
-    finalTitle: "Empieza simplemente con «Hola».",
+    finalTitle: "Tu AmorIAI todavía no existe. Créalo.",
     finalText:
-      "Escribe una frase, un pensamiento o lo que sientes ahora. Tu compañero te ayudará a continuar.",
-    finalCta: "Hablar con AmorIAI ahora",
+      "Empieza con los ejemplos si buscas inspiración, después personaliza tu propio compañero y comienza vuestra primera conversación.",
+    finalCta: "Crear mi AmorIAI",
 
     faqEyebrow: "PREGUNTAS FRECUENTES",
-    faqTitle: "Antes de empezar",
-    safetyNote: "AmorIAI es un compañero conversacional. No sustituye a los servicios médicos, psicológicos ni de emergencia.",
+    faqTitle: "Antes de crear tu AmorIAI",
+    safetyNote:
+      "AmorIAI es un compañero conversacional. No sustituye a los servicios médicos, psicológicos ni de emergencia.",
     faqs: [
+      {
+        question: "¿Lyra, Orion, Kai y Maelis son mis únicas opciones?",
+        answer:
+          "No. Son compañeros de ejemplo. Después de registrarte, puedes personalizar tu propio AmorIAI.",
+      },
+      {
+        question: "¿Puedo crear mi propio compañero?",
+        answer:
+          "Sí. AmorIAI te permite personalizar tu propio compañero y la forma en que se comunica contigo.",
+      },
       {
         question: "¿AmorIAI es gratis?",
         answer:
           "Puedes empezar gratis. Los límites del plan gratuito y las opciones de pago se muestran durante el registro y en la página de precios.",
-      },
-      {
-        question: "¿AmorIAI reemplaza a un psicólogo?",
-        answer:
-          "No. AmorIAI es un compañero conversacional y no sustituye a un profesional de salud mental, un diagnóstico, un tratamiento ni los servicios de emergencia.",
       },
       {
         question: "¿Puedo usarlo en mi teléfono?",
@@ -801,9 +843,9 @@ const STRINGS: Record<Locale, Copy> = {
           "Sí. AmorIAI funciona directamente en el navegador de tu teléfono, tableta o computadora, sin descargar una aplicación.",
       },
       {
-        question: "¿Puedo cambiar de compañero?",
+        question: "¿AmorIAI reemplaza a un psicólogo?",
         answer:
-          "Sí. Puedes explorar distintas personalidades y elegir la que mejor se adapte a lo que necesitas en cada momento.",
+          "No. AmorIAI es un compañero conversacional y no sustituye a un profesional de salud mental, un diagnóstico, un tratamiento ni los servicios de emergencia.",
       },
       {
         question: "¿Cómo se tratan mis datos?",
@@ -935,7 +977,10 @@ export default function HomePage({ searchParams }: PageProps) {
 
       <header className="amoria-header sticky top-0 z-50 border-b border-white/5 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <Link href={{ pathname: "/", query: { lang: locale } }} className="flex items-center gap-3">
+          <Link
+            href={{ pathname: "/", query: { lang: locale } }}
+            className="flex items-center gap-3"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/AmorIA_logo_transparent.png"
@@ -945,7 +990,9 @@ export default function HomePage({ searchParams }: PageProps) {
             />
             <div>
               <div className="text-sm font-bold tracking-wide">AmorIAI.app</div>
-              <div className="text-[0.68rem] text-slate-400">{t.brandTagline}</div>
+              <div className="text-[0.68rem] text-slate-400">
+                {t.brandTagline}
+              </div>
             </div>
           </Link>
 
@@ -1024,7 +1071,7 @@ export default function HomePage({ searchParams }: PageProps) {
             </Link>
 
             <a
-              href="#how-it-works"
+              href="#companions"
               className="amoria-button amoria-button-secondary inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-bold text-white"
             >
               {t.heroSecondary}
@@ -1041,7 +1088,9 @@ export default function HomePage({ searchParams }: PageProps) {
             </Link>
           </div>
 
-          <p className="mt-5 text-xs leading-6 text-slate-400">{t.heroSupport}</p>
+          <p className="mt-5 text-xs leading-6 text-slate-400">
+            {t.heroSupport}
+          </p>
 
           <div className="mt-7 grid max-w-2xl gap-3 sm:grid-cols-3">
             {t.heroTrust.map((item) => (
@@ -1078,9 +1127,14 @@ export default function HomePage({ searchParams }: PageProps) {
                   A
                 </div>
                 <div>
-                  <div className="text-xs font-bold">AmorIAI</div>
+                  <div className="text-xs font-bold">{t.demoAiLabel}</div>
                   <div className="text-[0.65rem] text-emerald-400">
-                    ● {locale === "fr" ? "En ligne" : locale === "en" ? "Online" : "En línea"}
+                    ●{" "}
+                    {locale === "fr"
+                      ? "En ligne"
+                      : locale === "en"
+                        ? "Online"
+                        : "En línea"}
                   </div>
                 </div>
               </div>
@@ -1101,11 +1155,16 @@ export default function HomePage({ searchParams }: PageProps) {
             </div>
           </div>
 
-          <p className="mt-3 text-center text-xs text-slate-500">{t.videoCaption}</p>
+          <p className="mt-3 text-center text-xs text-slate-500">
+            {t.videoCaption}
+          </p>
         </div>
       </section>
 
-      <section id="companions" className="amoria-reveal relative border-y border-white/5 bg-white/[0.02]">
+      <section
+        id="companions"
+        className="amoria-reveal relative border-y border-white/5 bg-white/[0.02]"
+      >
         <div className="mx-auto max-w-6xl px-4 py-20">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
@@ -1114,7 +1173,9 @@ export default function HomePage({ searchParams }: PageProps) {
             <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">
               {t.companionsTitle}
             </h2>
-            <p className="mt-4 leading-7 text-slate-300">{t.companionsSubtitle}</p>
+            <p className="mt-4 leading-7 text-slate-300">
+              {t.companionsSubtitle}
+            </p>
           </div>
 
           <div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -1161,10 +1222,17 @@ export default function HomePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      <section id="how-it-works" className="amoria-reveal relative mx-auto max-w-6xl px-4 py-20">
+      <section
+        id="how-it-works"
+        className="amoria-reveal relative mx-auto max-w-6xl px-4 py-20"
+      >
         <div className="text-center">
-          <p className="text-xs font-bold tracking-[0.2em] text-violet-300">{t.howEyebrow}</p>
-          <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t.howTitle}</h2>
+          <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
+            {t.howEyebrow}
+          </p>
+          <h2 className="mt-3 text-3xl font-black sm:text-4xl">
+            {t.howTitle}
+          </h2>
         </div>
 
         <div className="mt-12 grid gap-5 md:grid-cols-3">
@@ -1173,21 +1241,30 @@ export default function HomePage({ searchParams }: PageProps) {
               key={step.number}
               className="amoria-card amoria-step-card rounded-3xl border border-white/10 bg-white/[0.035] p-6"
             >
-              <div className="text-4xl font-black text-white/10">{step.number}</div>
+              <div className="text-4xl font-black text-white/10">
+                {step.number}
+              </div>
               <h3 className="mt-4 text-xl font-bold">{step.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-slate-300">{step.text}</p>
+              <p className="mt-3 text-sm leading-7 text-slate-300">
+                {step.text}
+              </p>
             </article>
           ))}
         </div>
       </section>
 
-      <section id="benefits" className="amoria-reveal relative border-y border-white/5 bg-white/[0.02]">
+      <section
+        id="benefits"
+        className="amoria-reveal relative border-y border-white/5 bg-white/[0.02]"
+      >
         <div className="mx-auto max-w-6xl px-4 py-20">
           <div className="max-w-3xl">
             <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
               {t.benefitsEyebrow}
             </p>
-            <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t.benefitsTitle}</h2>
+            <h2 className="mt-3 text-3xl font-black sm:text-4xl">
+              {t.benefitsTitle}
+            </h2>
             <p className="mt-4 text-base leading-7 text-slate-300">
               {t.benefitsSubtitle}
             </p>
@@ -1203,7 +1280,9 @@ export default function HomePage({ searchParams }: PageProps) {
                   {benefit.icon}
                 </div>
                 <h3 className="mt-4 text-lg font-bold">{benefit.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{benefit.text}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  {benefit.text}
+                </p>
               </article>
             ))}
           </div>
@@ -1215,8 +1294,12 @@ export default function HomePage({ searchParams }: PageProps) {
           <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
             {t.differenceEyebrow}
           </p>
-          <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t.differenceTitle}</h2>
-          <p className="mt-5 text-base leading-8 text-slate-300">{t.differenceText}</p>
+          <h2 className="mt-3 text-3xl font-black sm:text-4xl">
+            {t.differenceTitle}
+          </h2>
+          <p className="mt-5 text-base leading-8 text-slate-300">
+            {t.differenceText}
+          </p>
 
           <Link
             href={withLang("/signup")}
@@ -1239,15 +1322,18 @@ export default function HomePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-
       <section className="amoria-reveal relative border-y border-white/5 bg-white/[0.02]">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <div>
             <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
               {t.demoEyebrow}
             </p>
-            <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t.demoTitle}</h2>
-            <p className="mt-4 max-w-xl leading-8 text-slate-300">{t.demoSubtitle}</p>
+            <h2 className="mt-3 text-3xl font-black sm:text-4xl">
+              {t.demoTitle}
+            </h2>
+            <p className="mt-4 max-w-xl leading-8 text-slate-300">
+              {t.demoSubtitle}
+            </p>
 
             <Link
               href={withLang("/signup")}
@@ -1263,9 +1349,14 @@ export default function HomePage({ searchParams }: PageProps) {
                 A
               </div>
               <div>
-                <div className="text-sm font-bold">AmorIAI</div>
+                <div className="text-sm font-bold">{t.demoAiLabel}</div>
                 <div className="text-xs text-emerald-400">
-                  ● {locale === "fr" ? "En ligne" : locale === "en" ? "Online" : "En línea"}
+                  ●{" "}
+                  {locale === "fr"
+                    ? "En ligne"
+                    : locale === "en"
+                      ? "Online"
+                      : "En línea"}
                 </div>
               </div>
             </div>
@@ -1308,19 +1399,29 @@ export default function HomePage({ searchParams }: PageProps) {
         />
       </div>
 
-      <section id="pricing" className="amoria-reveal relative mx-auto max-w-6xl px-4 py-20">
+      <section
+        id="pricing"
+        className="amoria-reveal relative mx-auto max-w-6xl px-4 py-20"
+      >
         <div className="overflow-hidden rounded-[2rem] border border-violet-400/20 bg-gradient-to-br from-violet-500/10 via-zinc-950 to-fuchsia-500/5 p-7 shadow-2xl shadow-black/30 sm:p-10">
           <div className="grid gap-10 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
             <div>
               <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
                 {t.pricingEyebrow}
               </p>
-              <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t.pricingTitle}</h2>
-              <p className="mt-4 max-w-2xl leading-8 text-slate-300">{t.pricingText}</p>
+              <h2 className="mt-3 text-3xl font-black sm:text-4xl">
+                {t.pricingTitle}
+              </h2>
+              <p className="mt-4 max-w-2xl leading-8 text-slate-300">
+                {t.pricingText}
+              </p>
 
               <ul className="mt-7 grid gap-3 sm:grid-cols-2">
                 {t.pricingBullets.map((item) => (
-                  <li key={item} className="flex items-start gap-2 text-sm text-slate-200">
+                  <li
+                    key={item}
+                    className="flex items-start gap-2 text-sm text-slate-200"
+                  >
                     <span className="text-emerald-400">✓</span>
                     <span>{item}</span>
                   </li>
@@ -1343,7 +1444,9 @@ export default function HomePage({ searchParams }: PageProps) {
                 {t.seePricingLabel}
               </Link>
 
-              <p className="mt-4 text-center text-xs text-slate-400">{t.pricingNote}</p>
+              <p className="mt-4 text-center text-xs text-slate-400">
+                {t.pricingNote}
+              </p>
             </div>
           </div>
         </div>
@@ -1355,7 +1458,9 @@ export default function HomePage({ searchParams }: PageProps) {
             <p className="text-xs font-bold tracking-[0.2em] text-violet-300">
               {t.faqEyebrow}
             </p>
-            <h2 className="mt-3 text-3xl font-black sm:text-4xl">{t.faqTitle}</h2>
+            <h2 className="mt-3 text-3xl font-black sm:text-4xl">
+              {t.faqTitle}
+            </h2>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-400">
               {t.safetyNote}
             </p>
@@ -1373,7 +1478,9 @@ export default function HomePage({ searchParams }: PageProps) {
                     +
                   </span>
                 </summary>
-                <p className="mt-3 text-sm leading-7 text-slate-300">{item.answer}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-300">
+                  {item.answer}
+                </p>
               </details>
             ))}
           </div>
@@ -1382,7 +1489,9 @@ export default function HomePage({ searchParams }: PageProps) {
 
       <section className="amoria-reveal relative mx-auto max-w-4xl px-4 pb-24 pt-20 text-center">
         <h2 className="text-3xl font-black sm:text-4xl">{t.finalTitle}</h2>
-        <p className="mx-auto mt-4 max-w-2xl leading-8 text-slate-300">{t.finalText}</p>
+        <p className="mx-auto mt-4 max-w-2xl leading-8 text-slate-300">
+          {t.finalText}
+        </p>
         <Link
           href={withLang("/signup")}
           className="mt-7 inline-flex rounded-full bg-white px-7 py-3.5 text-sm font-black text-slate-950 transition hover:scale-[1.02]"
@@ -1399,7 +1508,10 @@ export default function HomePage({ searchParams }: PageProps) {
             <Link href={withLang("/legal")} className="hover:text-white">
               {t.footerLinks.legal}
             </Link>
-            <Link href={withLang("/legal/privacy")} className="hover:text-white">
+            <Link
+              href={withLang("/legal/privacy")}
+              className="hover:text-white"
+            >
               {t.footerLinks.privacy}
             </Link>
             <Link href={withLang("/legal/terms")} className="hover:text-white">
